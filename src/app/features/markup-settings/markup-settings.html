@@ -1,0 +1,187 @@
+<!-- Breadcrumb -->
+<div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    <nav class="flex items-center space-x-2 text-sm">
+      <a routerLink="/dashboard" class="flex items-center text-slate-500 hover:text-primary transition-colors">
+        <lucide-icon name="home" [size]="14" class="mr-1"></lucide-icon>
+        Home
+      </a>
+      <lucide-icon name="chevron-right" [size]="14" class="text-slate-400"></lucide-icon>
+      <span class="text-slate-800 dark:text-slate-200 font-medium">Mark-up Settings</span>
+    </nav>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="bg-gray-50 dark:bg-slate-900 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+
+      <!-- Sidebar -->
+      <aside class="w-full lg:w-64 flex-shrink-0">
+        <div
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+            <h2 class="font-semibold text-slate-800 dark:text-slate-200">Configuration</h2>
+          </div>
+          <ul class="flex flex-col">
+            <li>
+              <button (click)="activeSection = 'markup'"
+                [ngClass]="activeSection === 'markup' ? 'text-primary bg-blue-50/80 dark:bg-blue-900/20 border-l-4 border-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-l-4 border-transparent'"
+                class="w-full flex items-center px-4 py-3 text-sm transition-all">
+                <lucide-icon name="percent-circle" [size]="18" class="mr-3 flex-shrink-0"></lucide-icon>
+                Mark-up Settings
+              </button>
+            </li>
+            <li>
+              <button (click)="activeSection = 'commission'"
+                [ngClass]="activeSection === 'commission' ? 'text-primary bg-blue-50/80 dark:bg-blue-900/20 border-l-4 border-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-l-4 border-transparent'"
+                class="w-full flex items-center px-4 py-3 text-sm transition-all">
+                <lucide-icon name="file-text" [size]="18" class="mr-3 flex-shrink-0"></lucide-icon>
+                Commission Reports
+              </button>
+            </li>
+            <li>
+              <button (click)="activeSection = 'preferences'"
+                [ngClass]="activeSection === 'preferences' ? 'text-primary bg-blue-50/80 dark:bg-blue-900/20 border-l-4 border-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-l-4 border-transparent'"
+                class="w-full flex items-center px-4 py-3 text-sm transition-all">
+                <lucide-icon name="settings" [size]="18" class="mr-3 flex-shrink-0"></lucide-icon>
+                General Preferences
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Tip card -->
+        <div class="mt-6 bg-gradient-to-br from-primary to-blue-600 rounded-xl p-6 text-white shadow-lg">
+          <lucide-icon name="lightbulb" [size]="32" class="text-white/80 mb-4"></lucide-icon>
+          <h3 class="font-bold text-lg mb-2">Did you know?</h3>
+          <p class="text-blue-100 text-sm leading-relaxed">
+            Setting a percentage markup automatically adjusts pricing based on fluctuating base fares.
+          </p>
+        </div>
+      </aside>
+
+      <!-- Main panel -->
+      <div class="flex-1">
+
+        <!-- MARKUP SETTINGS PANEL -->
+        <div *ngIf="activeSection === 'markup'"
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+          <div class="mb-8">
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Mark-up Configuration</h1>
+            <p class="text-slate-500 dark:text-slate-400">Select the mark-up method and enter the value you want to
+              charge your customers for each service type.</p>
+          </div>
+
+          <!-- Column Headers -->
+          <div
+            class="hidden md:grid grid-cols-12 gap-4 pb-4 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            <div class="col-span-4">Service Type</div>
+            <div class="col-span-8 grid grid-cols-2">
+              <div class="text-center">Percentage Markup</div>
+              <div class="text-center">Fixed Amount Markup</div>
+            </div>
+          </div>
+
+          <!-- Service Rows -->
+          <div class="space-y-2 mt-4">
+            <div *ngFor="let service of services"
+              class="group rounded-xl p-4 md:grid md:grid-cols-12 md:gap-4 md:items-center transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/30 border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+
+              <!-- Service Label -->
+              <div class="col-span-4 flex items-center mb-4 md:mb-0">
+                <div [ngClass]="service.iconBg" class="p-2.5 rounded-lg mr-3 flex-shrink-0">
+                  <lucide-icon [name]="service.icon" [size]="20" [ngClass]="service.iconColor"></lucide-icon>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-slate-800 dark:text-slate-200 text-sm">{{ service.label }}</h3>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ service.description }}</p>
+                </div>
+              </div>
+
+              <!-- Markup Options -->
+              <div class="col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <!-- Percentage Option -->
+                <div
+                  class="flex items-center justify-between md:justify-center gap-3 p-3 md:p-0 rounded-lg border md:border-0 border-slate-200 dark:border-slate-700"
+                  [ngClass]="service.markup.type === 'percent' ? 'bg-blue-50/50 dark:bg-blue-900/10 md:bg-transparent md:dark:bg-transparent border-primary/30 md:border-0' : 'bg-white dark:bg-slate-800/50 md:bg-transparent'">
+                  <label class="flex items-center cursor-pointer gap-2 select-none">
+                    <input type="radio" [name]="service.key + '_type'" value="percent"
+                      [checked]="service.markup.type === 'percent'" (change)="setType(service, 'percent')"
+                      class="w-4 h-4 text-primary focus:ring-primary border-slate-300 dark:border-slate-600 cursor-pointer" />
+                    <span class="text-xs text-slate-600 dark:text-slate-400 md:hidden">Percentage</span>
+                  </label>
+                  <div class="relative w-32">
+                    <input type="number" [(ngModel)]="service.markup.percentValue"
+                      [disabled]="service.markup.type !== 'percent'" placeholder="0" min="0" max="100"
+                      class="block w-full pl-3 pr-8 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary shadow-sm disabled:opacity-40 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed transition" />
+                    <span class="absolute right-3 top-2 text-slate-400 text-sm pointer-events-none">%</span>
+                  </div>
+                </div>
+
+                <!-- Fixed Amount Option -->
+                <div
+                  class="flex items-center justify-between md:justify-center gap-3 p-3 md:p-0 rounded-lg border md:border-0 border-slate-200 dark:border-slate-700"
+                  [ngClass]="service.markup.type === 'fixed' ? 'bg-blue-50/50 dark:bg-blue-900/10 md:bg-transparent md:dark:bg-transparent border-primary/30 md:border-0' : 'bg-white dark:bg-slate-800/50 md:bg-transparent'">
+                  <label class="flex items-center cursor-pointer gap-2 select-none">
+                    <input type="radio" [name]="service.key + '_type'" value="fixed"
+                      [checked]="service.markup.type === 'fixed'" (change)="setType(service, 'fixed')"
+                      class="w-4 h-4 text-primary focus:ring-primary border-slate-300 dark:border-slate-600 cursor-pointer" />
+                    <span class="text-xs text-slate-600 dark:text-slate-400 md:hidden">Fixed Amount</span>
+                  </label>
+                  <div class="relative w-32">
+                    <span class="absolute left-3 top-2 text-slate-400 text-sm pointer-events-none">₹</span>
+                    <input type="number" [(ngModel)]="service.markup.fixedValue"
+                      [disabled]="service.markup.type !== 'fixed'" placeholder="0.00" min="0"
+                      class="block w-full pl-6 pr-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary shadow-sm disabled:opacity-40 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed transition" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="mt-10 pt-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-4">
+            <button (click)="resetToDefault()"
+              class="px-6 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+              Reset to Default
+            </button>
+            <button (click)="saveSettings()"
+              class="px-8 py-2.5 text-sm font-medium text-white bg-primary hover:bg-sky-600 shadow-lg shadow-primary/30 rounded-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+              <lucide-icon name="save" [size]="16"></lucide-icon>
+              Save Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- COMMISSION REPORTS placeholder -->
+        <div *ngIf="activeSection === 'commission'"
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-center flex flex-col items-center gap-4 min-h-[400px] justify-center">
+          <div class="bg-blue-50 dark:bg-slate-700 p-4 rounded-full">
+            <lucide-icon name="file-bar-chart" [size]="48" class="text-primary opacity-70"></lucide-icon>
+          </div>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200">Commission Reports</h2>
+          <p class="text-slate-500 dark:text-slate-400 max-w-sm">Detailed commission and earnings reports will be
+            available here soon.</p>
+        </div>
+
+        <!-- GENERAL PREFERENCES placeholder -->
+        <div *ngIf="activeSection === 'preferences'"
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-center flex flex-col items-center gap-4 min-h-[400px] justify-center">
+          <div class="bg-purple-50 dark:bg-slate-700 p-4 rounded-full">
+            <lucide-icon name="settings-2" [size]="48" class="text-purple-500 opacity-70"></lucide-icon>
+          </div>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200">General Preferences</h2>
+          <p class="text-slate-500 dark:text-slate-400 max-w-sm">Platform-wide preferences and notifications settings
+            will be configured here.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

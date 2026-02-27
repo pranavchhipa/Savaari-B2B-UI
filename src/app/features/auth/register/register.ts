@@ -1,0 +1,44 @@
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { LucideAngularModule } from 'lucide-angular';
+import { HeaderComponent } from '../../../components/layout/header/header';
+import { FooterComponent } from '../../../components/layout/footer/footer';
+
+@Component({
+  selector: 'app-register',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule, FooterComponent],
+  templateUrl: './register.html',
+  styleUrl: './register.css'
+})
+export class RegisterComponent {
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+
+  registerForm = this.fb.group({
+    companyName: ['', [Validators.required]],
+    fullName: ['', [Validators.required]],
+    email: ['', [Validators.required, Validators.email]],
+    phone: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
+    confirmPassword: ['', [Validators.required]]
+  }, { validators: this.passwordMatchValidator });
+
+  passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.get('password')?.value;
+    const confirmPassword = control.get('confirmPassword')?.value;
+    return password === confirmPassword ? null : { mismatch: true };
+  }
+
+  onSubmit() {
+    if (this.registerForm.valid) {
+      console.log('Registration details:', this.registerForm.value);
+      // Mock successful registration redirection
+      this.router.navigate(['/login']);
+    } else {
+      this.registerForm.markAllAsTouched();
+    }
+  }
+}

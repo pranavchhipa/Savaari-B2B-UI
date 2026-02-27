@@ -1,0 +1,126 @@
+<nav
+  class="sticky top-0 z-50 bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur shadow-sm border-b border-slate-200 dark:border-slate-700">
+  <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer group"
+        [routerLink]="isPublicRoute ? '/' : '/dashboard'">
+        <span
+          class="text-2xl font-black text-slate-800 dark:text-white tracking-tighter group-hover:text-primary transition-colors">SAVAARI</span>
+        <div class="bg-primary text-white font-bold px-2 py-0.5 md:px-3 md:py-1 rounded skew-x-[-10deg] shadow-lg">
+          <span class="skew-x-[10deg] inline-block tracking-wide text-xs md:text-sm">B2B CAB</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2 md:space-x-4">
+
+        <!-- PUBLIC VIEW -->
+        <ng-container *ngIf="isPublicRoute">
+          <a routerLink="/login" routerLinkActive="text-primary font-semibold"
+            class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium text-sm transition cursor-pointer">Log
+            in</a>
+          <a routerLink="/register" routerLinkActive="ring-2 ring-primary"
+            class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm hover:shadow-md cursor-pointer ml-4">Register</a>
+        </ng-container>
+
+        <!-- B2B PORTAL VIEW -->
+        <ng-container *ngIf="!isPublicRoute">
+          <div class="flex items-center">
+            <div class="flex items-center space-x-1 md:space-x-2 overflow-x-auto hide-scrollbar max-w-full mr-2">
+              <!-- Wallet Navigation / Balance Display -->
+              <a routerLink="/wallet"
+                routerLinkActive="ring-2 ring-sky-300 dark:ring-sky-600 bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300"
+                class="hidden md:flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-600 px-3 py-1.5 rounded-full text-[13px] font-bold mr-1 shadow-sm transition-all cursor-pointer group">
+                <div
+                  class="bg-gradient-to-br from-sky-400 to-blue-500 text-white rounded-full p-1 mr-2 shadow-sm group-hover:scale-110 transition-transform">
+                  <lucide-icon name="wallet" [size]="14"></lucide-icon>
+                </div>
+                ₹ {{ (balance$ | async) | number:'1.0-0' }}
+              </a>
+
+              <div
+                class="hidden lg:flex items-center text-slate-500 dark:text-slate-400 border-l border-slate-200 dark:border-slate-700 pl-3 mr-2 text-[12px] font-medium whitespace-nowrap">
+                <lucide-icon name="headset" [size]="14" class="mr-1.5"></lucide-icon>
+                Support: 0 90 4545 0000
+              </div>
+
+              <div class="flex items-center space-x-1 border-l border-slate-200 dark:border-slate-700 pl-2">
+                <a routerLink="/dashboard" routerLinkActive="bg-primary text-white shadow-sm"
+                  [routerLinkActiveOptions]="{exact: true}"
+                  class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition">Home</a>
+
+                <a routerLink="/bookings" routerLinkActive="bg-primary text-white shadow-sm"
+                  class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition">Bookings</a>
+
+                <a routerLink="/reports" routerLinkActive="bg-primary text-white shadow-sm"
+                  class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition">Reports</a>
+
+                <a routerLink="/markup-settings" routerLinkActive="bg-primary text-white shadow-sm"
+                  class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition whitespace-nowrap">Mark-up</a>
+              </div>
+            </div>
+
+            <!-- Global invisible overlay to close dropdown when clicking outside -->
+            <div *ngIf="isUserDropdownOpen" class="fixed inset-0 z-40" (click)="isUserDropdownOpen = false"></div>
+
+            <!-- User Dropdown Menu -->
+            <div
+              class="relative ml-2 md:ml-4 flex items-center border-l border-slate-200 dark:border-slate-700 pl-2 md:pl-4">
+              <button (click)="isUserDropdownOpen = !isUserDropdownOpen"
+                class="flex items-center gap-2 outline-none p-1 pr-2 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700 relative z-50 cursor-pointer">
+                <div
+                  class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-primary to-sky-600 text-white flex items-center justify-center font-bold text-[13px] md:text-[15px] shadow-inner uppercase tracking-wider">
+                  P
+                </div>
+                <div class="hidden md:flex flex-col items-start px-1 text-left">
+                  <span class="text-[13px] font-bold text-slate-800 dark:text-slate-200 leading-tight">Pranav</span>
+                  <span class="text-[10px] text-slate-500 font-medium leading-none">Travel Agent</span>
+                </div>
+                <lucide-icon name="chevron-down" [size]="14"
+                  class="text-slate-400 mt-1 md:ml-1 text-primary"></lucide-icon>
+              </button>
+
+              <!-- Dropdown Panel -->
+              <div *ngIf="isUserDropdownOpen"
+                class="absolute top-full right-0 mt-3 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden py-2 z-50 animate-in fade-in slide-in-from-top-2 origin-top-right">
+                <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700/80 mb-1">
+                  <p class="text-sm font-bold text-slate-900 dark:text-white">Pranav Chhipa</p>
+                  <p class="text-[11px] text-slate-500 truncate mt-0.5" title="pranav@savaari.in">
+                    pranav@savaari.in</p>
+                </div>
+                <a routerLink="/account-settings" (click)="isUserDropdownOpen = false"
+                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
+                  <lucide-icon name="user" [size]="16" class="text-slate-400"></lucide-icon>
+                  My Account
+                </a>
+                <a routerLink="/bookings" (click)="isUserDropdownOpen = false"
+                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
+                  <lucide-icon name="briefcase" [size]="16" class="text-slate-400"></lucide-icon>
+                  My Bookings
+                </a>
+                <div class="h-px bg-slate-100 dark:bg-slate-700/80 my-1"></div>
+                <button (click)="toggleDarkMode(); isUserDropdownOpen = false"
+                  class="w-full flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer text-left">
+                  <div class="flex items-center gap-3">
+                    <lucide-icon name="moon" [size]="16" class="text-slate-400 dark:hidden"></lucide-icon>
+                    <lucide-icon name="sun" [size]="16" class="text-slate-400 hidden dark:block"></lucide-icon>
+                    Dark Mode
+                  </div>
+                  <span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <span class="dark:hidden">Off</span>
+                    <span class="hidden dark:inline">On</span>
+                  </span>
+                </button>
+                <div class="h-px bg-slate-100 dark:bg-slate-700/80 my-1"></div>
+                <a routerLink="/" (click)="isUserDropdownOpen = false"
+                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer">
+                  <lucide-icon name="log-out" [size]="16" class="text-red-500"></lucide-icon>
+                  Log Out
+                </a>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+      </div>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,339 @@
+<div
+  class="relative min-h-[600px] flex items-center justify-center bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 pb-20 pt-8">
+  <!-- Interactive Background that reacts to tab selection -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute inset-0 bg-black/20 z-10"></div>
+    <div [ngClass]="{
+        'opacity-100': selectedTab === 'ONE_WAY',
+        'opacity-0': selectedTab !== 'ONE_WAY'
+      }" class="absolute inset-0 transition-opacity duration-1000">
+      <img src="assets/images/savaari-scenic-ertiga.png" class="w-full h-full object-cover"
+        style="object-position: center 40%;">
+    </div>
+    <div [ngClass]="{
+        'opacity-100': selectedTab === 'ROUND_TRIP',
+        'opacity-0': selectedTab !== 'ROUND_TRIP'
+      }" class="absolute inset-0 transition-opacity duration-1000">
+      <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=2000"
+        class="w-full h-full object-cover">
+    </div>
+    <div [ngClass]="{
+        'opacity-100': selectedTab === 'LOCAL',
+        'opacity-0': selectedTab !== 'LOCAL'
+      }" class="absolute inset-0 transition-opacity duration-1000">
+      <img src="https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?auto=format&fit=crop&w=2000"
+        class="w-full h-full object-cover">
+    </div>
+    <div [ngClass]="{
+        'opacity-100': selectedTab === 'AIRPORT',
+        'opacity-0': selectedTab !== 'AIRPORT'
+      }" class="absolute inset-0 transition-opacity duration-1000">
+      <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=2000"
+        class="w-full h-full object-cover">
+    </div>
+  </div>
+
+  <div class="relative z-20 w-full max-w-6xl px-4 mt-8">
+    <div
+      class="bg-surface-light dark:bg-surface-dark shadow-2xl rounded-2xl overflow-visible border border-slate-200 dark:border-slate-800 transition-all duration-300">
+
+      <!-- Top Navigation Tabs -->
+      <div
+        class="flex border-b border-slate-100 dark:border-slate-800 relative z-30 bg-white dark:bg-slate-900 rounded-t-2xl overflow-hidden">
+        <button (click)="selectTab('ONE_WAY')"
+          [ngClass]="{'border-primary text-primary bg-primary/5': selectedTab === 'ONE_WAY', 'border-transparent hover:text-primary text-slate-500': selectedTab !== 'ONE_WAY'}"
+          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all tracking-wider focus:outline-none">
+          ONE WAY
+        </button>
+        <button (click)="selectTab('ROUND_TRIP')"
+          [ngClass]="{'border-primary text-primary bg-primary/5': selectedTab === 'ROUND_TRIP', 'border-transparent hover:text-primary text-slate-500': selectedTab !== 'ROUND_TRIP'}"
+          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all tracking-wider focus:outline-none">
+          ROUND TRIP
+        </button>
+        <button (click)="selectTab('LOCAL')"
+          [ngClass]="{'border-primary text-primary bg-primary/5': selectedTab === 'LOCAL', 'border-transparent hover:text-primary text-slate-500': selectedTab !== 'LOCAL'}"
+          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all tracking-wider focus:outline-none">
+          LOCAL
+        </button>
+        <button (click)="selectTab('AIRPORT')"
+          [ngClass]="{'border-primary text-primary bg-primary/5': selectedTab === 'AIRPORT', 'border-transparent hover:text-primary text-slate-500': selectedTab !== 'AIRPORT'}"
+          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all tracking-wider focus:outline-none">
+          AIRPORT
+        </button>
+      </div>
+
+      <!-- Dynamic Form Content Area -->
+      <div class="p-8 pb-12 relative">
+        <form [formGroup]="bookingForm" class="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+
+          <!-- ============================ -->
+          <!-- TAB: ONE WAY & ROUND TRIP (Shared From/To) -->
+          <!-- ============================ -->
+          <ng-container *ngIf="selectedTab === 'ONE_WAY' || selectedTab === 'ROUND_TRIP'">
+            <div
+              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
+              <label
+                class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">From
+                <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <input formControlName="fromCity"
+                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium"
+                  placeholder="City - e.g. Bangalore" type="text" />
+              </div>
+            </div>
+
+            <div
+              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors relative">
+              <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">To
+                <span class="text-red-500">*</span></label>
+              <div class="relative flex items-center">
+                <input formControlName="toCity"
+                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium"
+                  placeholder="City - e.g. Mysore" type="text" />
+              </div>
+              <!-- Subtle Add City Link for Round Trip -->
+              <button *ngIf="selectedTab === 'ROUND_TRIP'"
+                class="absolute -bottom-6 left-0 flex items-center gap-1 text-primary hover:text-[#1C8CBA] transition-colors group">
+                <lucide-icon name="plus-circle" [size]="12"
+                  class="group-hover:scale-110 transition-transform"></lucide-icon>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Add City</span>
+              </button>
+            </div>
+          </ng-container>
+
+          <!-- ============================ -->
+          <!-- TAB: LOCAL (City Only) -->
+          <!-- ============================ -->
+          <ng-container *ngIf="selectedTab === 'LOCAL'">
+            <div
+              class="md:col-span-2 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
+              <label
+                class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">City
+                <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <input formControlName="fromCity"
+                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium"
+                  placeholder="City - e.g. Bangalore" type="text" />
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ============================ -->
+          <!-- TAB: AIRPORT -->
+          <!-- ============================ -->
+          <ng-container *ngIf="selectedTab === 'AIRPORT'">
+            <!-- TRIP TYPE (Col 1) -->
+            <div
+              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
+              <label
+                class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Trip
+                <span class="text-red-500">*</span></label>
+              <p-select formControlName="tripType" [options]="tripTypes" optionLabel="label" optionValue="value"
+                placeholder="Select Trip Type" styleClass="w-full !border-none !bg-transparent !shadow-none"
+                panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+              </p-select>
+            </div>
+
+            <!-- FIELD 1 (Col 2) -->
+            <div
+              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
+              <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">
+                {{ airportLabel1 }}
+              </label>
+              <div class="relative flex items-center">
+                <lucide-icon
+                  *ngIf="bookingForm.get('tripType')?.value === 'drop' || bookingForm.get('tripType')?.value === 'round'"
+                  name="crosshair" [size]="14" class="text-slate-400 mr-2"></lucide-icon>
+                <input *ngIf="bookingForm.get('tripType')?.value === 'pickup' || !bookingForm.get('tripType')?.value"
+                  formControlName="dropAirport"
+                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
+                  placeholder="Start typing city - e.g. Bangalore" type="text" />
+                <input
+                  *ngIf="bookingForm.get('tripType')?.value === 'drop' || bookingForm.get('tripType')?.value === 'round'"
+                  formControlName="pickupAddress"
+                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
+                  placeholder="Start typing your address" type="text" />
+              </div>
+            </div>
+
+            <!-- FIELD 2 (Col 3) - Only if Trip Type is selected -->
+            <div *ngIf="bookingForm.get('tripType')?.value"
+              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
+              <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">
+                {{ airportLabel2 }}
+              </label>
+              <div class="relative flex items-center">
+                <lucide-icon *ngIf="bookingForm.get('tripType')?.value === 'pickup'" name="crosshair" [size]="14"
+                  class="text-slate-400 mr-2"></lucide-icon>
+                <input *ngIf="bookingForm.get('tripType')?.value === 'pickup'" formControlName="pickupAddress"
+                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
+                  placeholder="Start typing your address" type="text" />
+                <input
+                  *ngIf="bookingForm.get('tripType')?.value === 'drop' || bookingForm.get('tripType')?.value === 'round'"
+                  formControlName="dropAirport"
+                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
+                  placeholder="Start typing city - e.g. Bangalore" type="text" />
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ============================ -->
+          <!-- SHARED DATE/TIME FIELDS -->
+          <!-- ============================ -->
+
+          <!-- Pick Up Date (Used in ALL tabs) -->
+          <div
+            class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-0.5 focus-within:border-primary transition-colors">
+            <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Pick
+              Up</label>
+            <div class="relative flex justify-between items-center">
+              <p-datepicker formControlName="pickupDate" [showIcon]="false" dateFormat="yy-mm-dd" appendTo="body"
+                styleClass="w-full border-none bg-transparent"
+                inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-medium !shadow-none">
+              </p-datepicker>
+              <lucide-icon name="calendar" [size]="14" class="text-slate-400 ml-2"></lucide-icon>
+            </div>
+          </div>
+
+          <!-- Return Date (Used ONLY in ROUND TRIP) -->
+          <ng-container *ngIf="selectedTab === 'ROUND_TRIP'">
+            <div
+              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-0.5 focus-within:border-primary transition-colors">
+              <label
+                class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Return
+                <span class="text-red-500">*</span></label>
+              <div class="relative flex justify-between items-center">
+                <p-datepicker formControlName="returnDate" [showIcon]="false" dateFormat="yy-mm-dd" appendTo="body"
+                  styleClass="w-full border-none bg-transparent"
+                  inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-medium !shadow-none">
+                </p-datepicker>
+                <lucide-icon name="calendar" [size]="14" class="text-slate-400 ml-2"></lucide-icon>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Pick Up Time (Used in ALL tabs, positioned differently based on grid) -->
+          <div
+            class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors"
+            [ngClass]="{
+              'md:col-start-4': selectedTab === 'LOCAL' || selectedTab === 'ONE_WAY' || (selectedTab === 'AIRPORT' && !bookingForm.get('tripType')?.value)
+            }">
+            <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Pick
+              Up At</label>
+            <div class="relative flex justify-between items-center">
+              <p-datepicker formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
+                appendTo="body" styleClass="w-full border-none bg-transparent"
+                inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-medium !shadow-none">
+              </p-datepicker>
+              <lucide-icon name="clock" [size]="14" class="text-slate-400 ml-2"></lucide-icon>
+            </div>
+          </div>
+        </form>
+
+        <!-- Error Banner -->
+        <div *ngIf="showError"
+          class="mt-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-600 dark:text-red-400 text-sm animate-fade-in">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <!-- Centered Floating Explore Button -->
+        <div class="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 w-full flex justify-center">
+          <button (click)="onExploreCabs()"
+            class="bg-primary hover:bg-[#1C8CBA] text-white px-10 py-3.5 rounded-lg font-bold shadow-lg shadow-primary/40 transition-all hover:-translate-y-0.5 mt-8 tracking-wide text-sm active:scale-95 flex items-center justify-center min-w-[200px]">
+            EXPLORE CABS
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WHAT SETS SAVAARI APART Section -->
+<div class="bg-white dark:bg-slate-950 py-24 pb-32 overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 text-center">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-16 mb-24 relative">
+      <!-- Air Travel -->
+      <div class="group flex flex-col items-center">
+        <div class="mb-6 animate-flight">
+          <lucide-icon name="plane" [size]="56"
+            class="text-primary/20 group-hover:text-primary transition-colors"></lucide-icon>
+        </div>
+        <h3 class="text-primary text-2xl font-bold mb-2">Air Travel?</h3>
+        <p class="text-slate-500 dark:text-slate-400 italic text-sm">Expensive & Shared spaces</p>
+      </div>
+      <!-- Train -->
+      <div class="group flex flex-col items-center">
+        <div class="mb-6 animate-track">
+          <lucide-icon name="train" [size]="56"
+            class="text-primary/20 group-hover:text-primary transition-colors"></lucide-icon>
+        </div>
+        <h3 class="text-primary text-2xl font-bold mb-2">Taking a Train?</h3>
+        <p class="text-slate-500 dark:text-slate-400 italic text-sm">Question marks over Hygiene</p>
+      </div>
+      <!-- On-demand Cabs -->
+      <div class="group flex flex-col items-center">
+        <div class="mb-6 animate-car">
+          <lucide-icon name="car" [size]="56"
+            class="text-primary/20 group-hover:text-primary transition-colors"></lucide-icon>
+        </div>
+        <h3 class="text-primary text-2xl font-bold mb-2">On-demand Cabs?</h3>
+        <p class="text-slate-500 dark:text-slate-400 italic text-sm">Risks due to Multiple rides</p>
+      </div>
+    </div>
+
+    <!-- Value Prop Bar -->
+    <h2 class="text-primary text-3xl font-extrabold mb-12 tracking-tight uppercase">WHAT SETS SAVAARI APART?</h2>
+
+    <div class="bg-primary rounded-[3rem] p-6 lg:p-10 shadow-2xl shadow-primary/40">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-4 items-center">
+        <!-- Clean Car -->
+        <div
+          class="flex items-center gap-4 text-left px-4 group glow-on-hover py-2 rounded-2xl transition-all cursor-default">
+          <div
+            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
+            <lucide-icon name="sparkles" [size]="32" class="text-primary"></lucide-icon>
+          </div>
+          <div>
+            <span class="block text-white font-extrabold text-lg leading-tight">Clean and<br />Hygienic Car</span>
+          </div>
+        </div>
+        <!-- Transparent Billing -->
+        <div
+          class="flex items-center gap-4 text-left px-4 group glow-on-hover py-2 rounded-2xl transition-all cursor-default">
+          <div
+            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
+            <lucide-icon name="receipt-text" [size]="32" class="text-primary"></lucide-icon>
+          </div>
+          <div>
+            <span class="block text-white font-extrabold text-lg leading-tight">Transparent<br />Billing</span>
+          </div>
+        </div>
+        <!-- Expert Chauffeurs -->
+        <div
+          class="flex items-center gap-4 text-left px-4 group glow-on-hover py-2 rounded-2xl transition-all cursor-default">
+          <div
+            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
+            <lucide-icon name="user-check" [size]="32" class="text-primary"></lucide-icon>
+          </div>
+          <div>
+            <span class="block text-white font-extrabold text-lg leading-tight">Expert<br />Chauffeurs</span>
+          </div>
+        </div>
+        <!-- 2000+ Cities -->
+        <div
+          class="flex items-center gap-4 text-left px-4 group glow-on-hover py-2 rounded-2xl transition-all cursor-default">
+          <div
+            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
+            <lucide-icon name="globe" [size]="32" class="text-primary"></lucide-icon>
+          </div>
+          <div>
+            <span class="block text-white font-extrabold text-lg leading-tight">2000+<br />cities</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

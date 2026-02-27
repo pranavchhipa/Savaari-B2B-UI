@@ -1,0 +1,97 @@
+<div class="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+  <!-- Dynamic Background elements (matching landing page aesthetic) -->
+  <div class="absolute inset-0">
+    <img alt="Premium Chauffeur Driven Car" class="w-full h-full object-cover opacity-20"
+      src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=2000" />
+    <div class="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-900/50"></div>
+  </div>
+
+  <div class="sm:mx-auto sm:w-full sm:max-w-md mt-[64px] relative z-10">
+    <div class="text-center mb-8">
+      <div
+        class="inline-flex justify-center items-center bg-primary text-white font-bold px-4 py-2 rounded skew-x-[-10deg] shadow-lg mb-6">
+        <span class="skew-x-[10deg] inline-block tracking-wide text-2xl">B2B CAB</span>
+      </div>
+      <h2 class="text-3xl font-display font-bold text-white tracking-tight">Sign in to your account</h2>
+      <p class="mt-2 text-sm text-slate-300">
+        Or
+        <a routerLink="/register" class="font-medium text-primary hover:text-primary-light transition-colors">
+          create a new corporate account
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10 mb-[64px]">
+    <div
+      class="bg-surface-light dark:bg-surface-dark py-8 px-4 shadow-2xl rounded-2xl sm:px-10 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
+      <form class="space-y-6" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="email">Email
+            Address <span class="text-red-500">*</span></label>
+          <div class="relative mt-1 rounded-md shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <lucide-icon name="mail" [size]="18" class="text-slate-400"></lucide-icon>
+            </div>
+            <input formControlName="email" id="email" type="email" autocomplete="email" placeholder="name@company.com"
+              class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
+              [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': loginForm.get('email')?.invalid && loginForm.get('email')?.touched}" />
+          </div>
+          <p *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+            class="mt-2 text-sm text-red-600 dark:text-red-400">
+            Please enter a valid email address.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="password">Password <span
+              class="text-red-500">*</span></label>
+          <div class="relative mt-1 rounded-md shadow-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <lucide-icon name="lock" [size]="18" class="text-slate-400"></lucide-icon>
+            </div>
+            <input formControlName="password" id="password" type="password" autocomplete="current-password"
+              placeholder="••••••••"
+              class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
+              [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': loginForm.get('password')?.invalid && loginForm.get('password')?.touched}" />
+          </div>
+          <p *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+            class="mt-2 text-sm text-red-600 dark:text-red-400">
+            Password must be at least 6 characters.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <input formControlName="rememberMe" id="remember-me" type="checkbox"
+              class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer" />
+            <label class="ml-2 block text-sm text-slate-600 dark:text-slate-400 cursor-pointer" for="remember-me">
+              Remember me
+            </label>
+          </div>
+
+          <div class="text-sm">
+            <a href="#" class="font-medium text-primary hover:text-primary-dark transition-colors">
+              Forgot your password?
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <button type="submit"
+            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all shadow-primary/40 disabled:opacity-70 disabled:cursor-not-allowed group relative overflow-hidden">
+            <!-- Hover sheen effect -->
+            <div
+              class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]">
+            </div>
+            <span class="flex items-center justify-center w-full">
+              Sign In <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<app-footer></app-footer>

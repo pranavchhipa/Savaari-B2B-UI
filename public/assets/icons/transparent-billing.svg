@@ -1,0 +1,12 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Meter/Gauge -->
+  <path d="M12 36C12 24.9543 20.9543 16 32 16C43.0457 16 52 24.9543 52 36" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M18 16L20 19M44 19L46 16M32 12V16" stroke="#00A8E1" stroke-width="1.5"/>
+  <line x1="32" y1="36" x2="40" y2="24" stroke="#00A8E1" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="32" cy="36" r="2" fill="#333"/>
+  
+  <!-- Bill/Cash -->
+  <rect x="18" y="38" width="28" height="16" rx="2" fill="white" stroke="#333" stroke-width="1.5"/>
+  <circle cx="32" cy="46" r="4" stroke="#00A8E1" stroke-width="1"/>
+  <path d="M30 46H34M32 44V48" stroke="#00A8E1" stroke-width="1.5"/>
+</svg>

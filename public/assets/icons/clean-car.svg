@@ -1,0 +1,20 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Car Body -->
+  <path d="M54 44H10C7.79086 44 6 42.2091 6 40V34C6 31.7909 7.79086 30 10 30H14L20 18H44L50 30H54C56.2091 30 58 31.7909 58 34V40C58 42.2091 56.2091 44 54 44Z" fill="white" stroke="#333" stroke-width="1.5"/>
+  <!-- Windows -->
+  <path d="M22 20H42L47 30H17L22 20Z" fill="#F0F9FF" stroke="#333" stroke-width="1.5"/>
+  <line x1="32" y1="20" x2="32" y2="30" stroke="#333" stroke-width="1.5"/>
+  <!-- Wheels -->
+  <circle cx="16" cy="44" r="5" fill="white" stroke="#333" stroke-width="1.5"/>
+  <circle cx="16" cy="44" r="2" fill="#333"/>
+  <circle cx="48" cy="44" r="5" fill="white" stroke="#333" stroke-width="1.5"/>
+  <circle cx="48" cy="44" r="2" fill="#333"/>
+  <!-- Sparkles -->
+  <g fill="#00A8E1">
+    <circle cx="52" cy="14" r="1.5"/>
+    <circle cx="56" cy="18" r="1"/>
+    <circle cx="12" cy="18" r="1.5"/>
+    <circle cx="8" cy="22" r="1"/>
+    <circle cx="48" cy="22" r="0.8"/>
+  </g>
+</svg>

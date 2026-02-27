@@ -1,0 +1,271 @@
+<!-- Breadcrumb -->
+<div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    <nav class="flex items-center space-x-2 text-sm">
+      <a routerLink="/dashboard" class="flex items-center text-slate-500 hover:text-primary transition-colors">
+        <lucide-icon name="home" [size]="14" class="mr-1"></lucide-icon>
+        Home
+      </a>
+      <lucide-icon name="chevron-right" [size]="14" class="text-slate-400"></lucide-icon>
+      <span class="text-slate-800 dark:text-slate-200 font-medium">Reports</span>
+    </nav>
+  </div>
+</div>
+
+<div class="bg-gray-50 dark:bg-slate-900 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+
+      <!-- Sidebar -->
+      <aside class="w-full lg:w-56 flex-shrink-0">
+        <div
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
+            <h2 class="font-semibold text-slate-700 dark:text-slate-200 text-sm">Reports</h2>
+          </div>
+          <ul>
+            <li>
+              <div
+                class="flex items-center justify-between px-4 py-3 text-sm text-primary font-medium bg-blue-50/60 dark:bg-blue-900/20 border-l-4 border-primary cursor-pointer">
+                <div class="flex items-center gap-2">
+                  <lucide-icon name="file-bar-chart" [size]="16"></lucide-icon>
+                  Trip Reports
+                </div>
+                <lucide-icon name="chevron-right" [size]="14"></lucide-icon>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Info tip card -->
+        <div class="mt-4 bg-gradient-to-br from-primary to-blue-600 rounded-xl p-5 text-white shadow-lg">
+          <lucide-icon name="info" [size]="24" class="text-white/80 mb-3"></lucide-icon>
+          <h3 class="font-bold text-sm mb-1">Pro Tip</h3>
+          <p class="text-blue-100 text-xs leading-relaxed">Export your report as CSV to share with your finance team or
+            import into Excel.</p>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1">
+
+        <!-- Date Range Selector Card -->
+        <div
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8 mb-6">
+          <div class="mb-6">
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Trip Reports</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Select the date range and click on 'View' to see the list of all trips executed within the selected
+              period.
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-4">
+
+            <!-- Start Date -->
+            <div class="flex-1 min-w-0">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Start Date <span
+                  class="text-red-500">*</span></label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <lucide-icon name="calendar" [size]="16" class="text-slate-400"></lucide-icon>
+                </div>
+                <input type="date" [(ngModel)]="startDateStr"
+                  class="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
+              </div>
+            </div>
+
+            <!-- End Date -->
+            <div class="flex-1 min-w-0">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">End Date <span
+                  class="text-red-500">*</span></label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <lucide-icon name="calendar" [size]="16" class="text-slate-400"></lucide-icon>
+                </div>
+                <input type="date" [(ngModel)]="endDateStr"
+                  class="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
+              </div>
+            </div>
+
+            <!-- View Button -->
+            <div class="flex items-end">
+              <button (click)="viewReports()" [disabled]="isLoading"
+                class="w-full sm:w-auto px-8 py-2.5 text-sm font-bold text-white bg-primary hover:bg-sky-600 disabled:opacity-70 rounded-lg shadow-lg shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap">
+                <span *ngIf="!isLoading">VIEW</span>
+                <svg *ngIf="isLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                  viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span *ngIf="isLoading">Loading...</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Results Area -->
+        <div *ngIf="hasViewed">
+
+          <!-- Summary Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div
+              class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4">
+              <div
+                class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                <lucide-icon name="route" [size]="22" class="text-primary"></lucide-icon>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Trips</p>
+                <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ trips.length }}</p>
+              </div>
+            </div>
+            <div
+              class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4">
+              <div
+                class="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                <lucide-icon name="check-circle" [size]="22" class="text-emerald-500"></lucide-icon>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Completed</p>
+                <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ completedCount }}</p>
+              </div>
+            </div>
+            <div
+              class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4">
+              <div
+                class="w-12 h-12 bg-sky-50 dark:bg-sky-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                <lucide-icon name="indian-rupee" [size]="22" class="text-primary"></lucide-icon>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Fare</p>
+                <p class="text-2xl font-bold text-slate-900 dark:text-white">₹{{ totalFare.toLocaleString() }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div
+            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <h2 class="font-semibold text-slate-800 dark:text-slate-200 text-sm">{{ trips.length }} trips found</h2>
+              <button (click)="downloadCSV()"
+                class="flex items-center gap-2 px-4 py-2 text-xs font-medium text-primary border border-primary/30 hover:bg-primary hover:text-white rounded-lg transition-all">
+                <lucide-icon name="download" [size]="14"></lucide-icon>
+                Export CSV
+              </button>
+            </div>
+
+            <!-- Desktop Table -->
+            <div class="hidden md:block overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                    <th
+                      class="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Trip ID</th>
+                    <th
+                      class="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Date</th>
+                    <th
+                      class="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Passenger</th>
+                    <th
+                      class="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Route</th>
+                    <th
+                      class="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Type</th>
+                    <th
+                      class="px-5 py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Status</th>
+                    <th
+                      class="px-5 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Fare</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                  <tr *ngFor="let trip of trips" class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                    <td class="px-5 py-4">
+                      <span class="text-primary font-semibold text-xs font-mono">{{ trip.id }}</span>
+                    </td>
+                    <td class="px-5 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">{{ trip.date }}</td>
+                    <td class="px-5 py-4 font-medium text-slate-800 dark:text-slate-200">{{ trip.passengerName }}</td>
+                    <td class="px-5 py-4 text-slate-600 dark:text-slate-400">
+                      <div class="flex items-center gap-1">
+                        <span>{{ trip.pickupCity }}</span>
+                        <lucide-icon name="arrow-right" [size]="12" class="text-slate-400 flex-shrink-0"></lucide-icon>
+                        <span>{{ trip.dropCity }}</span>
+                      </div>
+                    </td>
+                    <td class="px-5 py-4 text-slate-500 dark:text-slate-400 text-xs">{{ trip.tripType }}</td>
+                    <td class="px-5 py-4 text-center">
+                      <span [ngClass]="{
+                        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': trip.status === 'Completed',
+                        'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400': trip.status === 'Cancelled',
+                        'bg-blue-100 text-primary dark:bg-blue-900/30': trip.status === 'Ongoing'
+                      }" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium">
+                        {{ trip.status }}
+                      </span>
+                    </td>
+                    <td class="px-5 py-4 text-right font-semibold text-slate-800 dark:text-slate-200">
+                      <span *ngIf="trip.fare > 0">₹{{ trip.fare.toLocaleString() }}</span>
+                      <span *ngIf="trip.fare === 0" class="text-slate-400 font-normal">—</span>
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot class="border-t-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60">
+                  <tr>
+                    <td colspan="6"
+                      class="px-5 py-4 text-sm font-semibold text-slate-700 dark:text-slate-300 text-right">Total
+                      Collected:</td>
+                    <td class="px-5 py-4 text-right font-bold text-primary">₹{{ totalFare.toLocaleString() }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Mobile Cards -->
+            <div class="md:hidden divide-y divide-slate-100 dark:divide-slate-700">
+              <div *ngFor="let trip of trips" class="p-4">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="text-primary font-semibold text-xs font-mono">{{ trip.id }}</span>
+                  <span [ngClass]="{
+                    'bg-emerald-100 text-emerald-700': trip.status === 'Completed',
+                    'bg-red-100 text-red-600': trip.status === 'Cancelled'
+                  }" class="px-2.5 py-0.5 rounded-full text-xs font-medium">{{ trip.status }}</span>
+                </div>
+                <p class="font-semibold text-slate-800 dark:text-slate-200 text-sm">{{ trip.passengerName }}</p>
+                <p class="text-xs text-slate-500 mt-0.5">{{ trip.pickupCity }} → {{ trip.dropCity }}</p>
+                <div class="flex justify-between items-center mt-2">
+                  <span class="text-xs text-slate-400">{{ trip.date }} · {{ trip.tripType }}</span>
+                  <span class="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                    {{ trip.fare > 0 ? '₹' + trip.fare.toLocaleString() : '—' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Empty state (before View is clicked) -->
+        <div *ngIf="!hasViewed"
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-dashed border-slate-300 dark:border-slate-600 p-12 text-center flex flex-col items-center gap-4">
+          <div class="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
+            <lucide-icon name="calendar-search" [size]="32" class="text-slate-400"></lucide-icon>
+          </div>
+          <div>
+            <p class="font-medium text-slate-600 dark:text-slate-400">Select a date range above</p>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">and click VIEW to load your trip reports</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

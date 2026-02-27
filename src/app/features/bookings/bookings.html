@@ -1,0 +1,743 @@
+<!-- Main Wrapper mimicking the mockup body background -->
+<div class="bg-gray-100 dark:bg-slate-900 min-h-screen text-slate-800 dark:text-slate-100 font-sans antialiased">
+
+    <!-- Top Breadcrumb bar -->
+    <div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <nav aria-label="Breadcrumb" class="flex">
+                <ol class="flex items-center space-x-2">
+                    <li><a class="text-slate-500 hover:text-primary text-sm transition-colors cursor-pointer"
+                            routerLink="/dashboard">Home</a></li>
+                    <li class="text-slate-400 text-sm">/</li>
+                    <li><a aria-current="page" class="text-primary font-medium text-sm cursor-pointer">Bookings</a></li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+        <div class="md:flex md:gap-8">
+
+            <!-- Sidebar -->
+            <aside class="md:w-64 flex-shrink-0 mb-8 md:mb-0">
+                <div class="sticky top-24">
+                    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 px-2">Manage Bookings</h2>
+                    <nav
+                        class="space-y-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden p-2">
+
+                        <!-- Upcoming Tab -->
+                        <a (click)="setActiveTab('upcoming')"
+                            [ngClass]="activeTab === 'upcoming' ? 'bg-blue-50 dark:bg-sky-900/20 text-primary border-l-4 border-primary shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary border-l-4 border-transparent'"
+                            class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all cursor-pointer">
+                            <lucide-icon name="list-end" [size]="20"
+                                [ngClass]="activeTab === 'upcoming' ? 'text-primary' : 'text-slate-400 group-hover:text-primary'"
+                                class="mr-3 transition-colors"></lucide-icon>
+                            Upcoming
+                        </a>
+
+                        <!-- Cancelled Tab -->
+                        <a (click)="setActiveTab('cancelled')"
+                            [ngClass]="activeTab === 'cancelled' ? 'bg-blue-50 dark:bg-sky-900/20 text-primary border-l-4 border-primary shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary border-l-4 border-transparent'"
+                            class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all cursor-pointer">
+                            <lucide-icon name="x-circle" [size]="20"
+                                [ngClass]="activeTab === 'cancelled' ? 'text-primary' : 'text-slate-400 group-hover:text-primary'"
+                                class="mr-3 transition-colors"></lucide-icon>
+                            Cancelled
+                        </a>
+
+                        <!-- Completed Tab -->
+                        <a (click)="setActiveTab('completed')"
+                            [ngClass]="activeTab === 'completed' ? 'bg-blue-50 dark:bg-sky-900/20 text-primary border-l-4 border-primary shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary border-l-4 border-transparent'"
+                            class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all cursor-pointer">
+                            <lucide-icon name="check-circle" [size]="20"
+                                [ngClass]="activeTab === 'completed' ? 'text-primary' : 'text-slate-400 group-hover:text-primary'"
+                                class="mr-3 transition-colors"></lucide-icon>
+                            Completed
+                            <span *ngIf="activeTab === 'completed'"
+                                class="ml-auto opacity-0 bg-primary text-white py-0.5 px-2 rounded-full text-xs transition-opacity duration-300">0</span>
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Main Booking List Area -->
+            <div class="flex-1 min-h-[500px]">
+
+                <!-- UPCOMING VIEW -->
+                <!-- UPCOMING VIEW -->
+                <div *ngIf="activeTab === 'upcoming'">
+                    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Upcoming Bookings</h1>
+                        <div class="flex space-x-2">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <lucide-icon name="search" [size]="16" class="text-slate-400"></lucide-icon>
+                                </div>
+                                <input
+                                    class="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-primary focus:border-primary w-full md:w-64"
+                                    placeholder="Search Trip ID..." type="text" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Upcoming Booking Card 1 -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">15</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Jan
+                                    2026</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Mumbai,
+                                                Maharashtra</h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">Confirmed</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
+                                            Airport Drop (Sedan)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Andheri West, Mumbai, Maharashtra 400053
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <div class="flex flex-col sm:flex-row items-end sm:items-center">
+                                                <span class="font-bold text-primary">S0126-7892341</span>
+                                                <button
+                                                    class="text-slate-400 hover:text-primary transition-colors ml-1 mt-1 sm:mt-0"
+                                                    title="Copy ID">
+                                                    <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Details
+                                            <lucide-icon name="arrow-right" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Booking Card 2 -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">18</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Jan
+                                    2026</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Pune,
+                                                Maharashtra</h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">Confirmed</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
+                                            Outstation (Round Trip)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Koregaon Park, Pune, Maharashtra 411001
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <div class="flex flex-col sm:flex-row items-end sm:items-center">
+                                                <span class="font-bold text-primary">S0126-7892342</span>
+                                                <button
+                                                    class="text-slate-400 hover:text-primary transition-colors ml-1 mt-1 sm:mt-0"
+                                                    title="Copy ID">
+                                                    <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Details
+                                            <lucide-icon name="arrow-right" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- CANCELLED VIEW -->
+                <div *ngIf="activeTab === 'cancelled'">
+                    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Cancelled Bookings</h1>
+                        <div class="flex space-x-2">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <lucide-icon name="search" [size]="16" class="text-slate-400"></lucide-icon>
+                                </div>
+                                <input
+                                    class="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-primary focus:border-primary w-full md:w-64"
+                                    placeholder="Search Trip ID..." type="text" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Booking List Content -->
+                    <div class="space-y-4">
+
+                        <!-- Sample Booking Card 1 (22 Dec) -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">22</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Dec
+                                    2025</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Bangalore,
+                                                Karnataka</h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">Cancelled</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
+                                            Local Rental (8hr/80km)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Deepanjali Nagar, Deepanjali Nagar, Bengaluru, Karnataka
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <span class="font-bold text-primary">S1225-9589756</span>
+                                            <button class="text-slate-400 hover:text-primary transition-colors ml-1"
+                                                title="Copy ID">
+                                                <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                            </button>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Details
+                                            <lucide-icon name="arrow-right" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample Booking Card 2 (20 Nov) -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">20</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Nov
+                                    2025</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Bangalore,
+                                                Karnataka</h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">Cancelled</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
+                                            Local Rental (8hr/80km)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Bengaluru, Bengaluru, Karnataka
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <span class="font-bold text-primary">S1125-9292589</span>
+                                            <button class="text-slate-400 hover:text-primary transition-colors ml-1"
+                                                title="Copy ID">
+                                                <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                            </button>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Details
+                                            <lucide-icon name="arrow-right" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample Booking Card 3 (20 Nov) -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">20</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Nov
+                                    2025</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Bangalore,
+                                                Karnataka</h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">Cancelled</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
+                                            Local Rental (8hr/80km)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Banaswadi, Banaswadi, Bengaluru, Karnataka
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <span class="font-bold text-primary">S1125-9304173</span>
+                                            <button class="text-slate-400 hover:text-primary transition-colors ml-1"
+                                                title="Copy ID">
+                                                <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                            </button>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Details
+                                            <lucide-icon name="arrow-right" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample Booking Card 4 (19 Nov) -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">19</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Nov
+                                    2025</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Bangalore,
+                                                Karnataka</h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">Cancelled</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
+                                            Local Rental (8hr/80km)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Banaswadi, Banaswadi, Bengaluru, Karnataka
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <span class="font-bold text-primary">S1125-9293398</span>
+                                            <button class="text-slate-400 hover:text-primary transition-colors ml-1"
+                                                title="Copy ID">
+                                                <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                            </button>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Details
+                                            <lucide-icon name="arrow-right" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample Booking Card 5 (17 Nov) -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">17</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Nov
+                                    2025</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Pune,
+                                                Maharashtra</h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">Cancelled</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="train-front" [size]="16"
+                                                class="mr-1 text-purple-500"></lucide-icon>
+                                            Outstation (241 km)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Charholi Budruk - Wadmukhwadi Road, Kotwal Wadi, Maharashtra 412105
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <!-- Adjusted flex wrapping for long Trip ID to match mockup styling -->
+                                            <div class="flex flex-col sm:flex-row items-end sm:items-center">
+                                                <span class="font-bold text-primary">S1125-9295914</span>
+                                                <button
+                                                    class="text-slate-400 hover:text-primary transition-colors ml-1 mt-1 sm:mt-0"
+                                                    title="Copy ID">
+                                                    <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Details
+                                            <lucide-icon name="arrow-right" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Pagination -->
+                    <div
+                        class="mt-8 flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-6">
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                            Showing <span class="font-medium text-slate-800 dark:text-slate-200">1</span> to <span
+                                class="font-medium text-slate-800 dark:text-slate-200">5</span> of <span
+                                class="font-medium text-slate-800 dark:text-slate-200">12</span> results
+                        </p>
+                        <div class="flex space-x-2">
+                            <button
+                                class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-md text-sm font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition">Previous</button>
+                            <button
+                                class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-md text-sm font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition">Next</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMPLETED VIEW -->
+                <!-- COMPLETED VIEW -->
+                <div *ngIf="activeTab === 'completed'">
+                    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Completed Bookings</h1>
+                        <div class="flex space-x-2">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <lucide-icon name="search" [size]="16" class="text-slate-400"></lucide-icon>
+                                </div>
+                                <input
+                                    class="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-primary focus:border-primary w-full md:w-64"
+                                    placeholder="Search Trip ID..." type="text" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Completed Booking Card 1 -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">05</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Dec
+                                    2025</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Hyderabad,
+                                                Telangana</h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">Completed</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
+                                            Local Rental (12hr/120km)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Madhapur, Hyderabad, Telangana 500081
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <div class="flex flex-col sm:flex-row items-end sm:items-center">
+                                                <span class="font-bold text-primary">S1225-7823901</span>
+                                                <button
+                                                    class="text-slate-400 hover:text-primary transition-colors ml-1 mt-1 sm:mt-0"
+                                                    title="Copy ID">
+                                                    <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Invoice
+                                            <lucide-icon name="receipt" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Completed Booking Card 2 -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">28</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Nov
+                                    2025</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Chennai,
+                                                Tamil Nadu</h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">Completed</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
+                                            Airport Pickup (SUV)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Chennai International Airport, Meenambakkam, Chennai
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <div class="flex flex-col sm:flex-row items-end sm:items-center">
+                                                <span class="font-bold text-primary">S1125-7823902</span>
+                                                <button
+                                                    class="text-slate-400 hover:text-primary transition-colors ml-1 mt-1 sm:mt-0"
+                                                    title="Copy ID">
+                                                    <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Invoice
+                                            <lucide-icon name="receipt" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Completed Booking Card 3 -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+                            <div
+                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
+                                <span
+                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">10</span>
+                                <span
+                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Nov
+                                    2025</span>
+                            </div>
+                            <div class="flex-1 p-5">
+                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Delhi, NCR
+                                            </h3>
+                                            <span
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">Completed</span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
+                                            Outstation (Agra Round Trip)
+                                        </div>
+                                        <div
+                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
+                                            <div class="flex items-start gap-2">
+                                                <lucide-icon name="map-pin" [size]="16"
+                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                    <span
+                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    Connaught Place, New Delhi, Delhi 110001
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col lg:items-end gap-2">
+                                        <div
+                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                            <span class="text-xs">TRIP ID</span>
+                                            <div class="flex flex-col sm:flex-row items-end sm:items-center">
+                                                <span class="font-bold text-primary">S1125-7823903</span>
+                                                <button
+                                                    class="text-slate-400 hover:text-primary transition-colors ml-1 mt-1 sm:mt-0"
+                                                    title="Copy ID">
+                                                    <lucide-icon name="copy" [size]="14"></lucide-icon>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button
+                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
+                                            View Invoice
+                                            <lucide-icon name="receipt" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer for Bookings Page -->
+    <app-footer></app-footer>
+</div>

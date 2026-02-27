@@ -1,0 +1,56 @@
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, NavigationEnd, Event } from '@angular/router';
+import { LucideAngularModule, Wallet } from 'lucide-angular';
+import { CommonModule } from '@angular/common';
+import { filter, Subscription, Observable } from 'rxjs';
+import { WalletService } from '../../../core/services/wallet.service';
+
+@Component({
+  selector: 'app-header',
+  standalone: true,
+  imports: [RouterLink, RouterLinkActive, LucideAngularModule, CommonModule],
+  templateUrl: './header.html',
+  styleUrl: './header.component.css',
+})
+export class HeaderComponent implements OnInit, OnDestroy {
+  isPublicRoute = false;
+  isUserDropdownOpen = false;
+  private routeSub!: Subscription;
+  balance$!: Observable<number>;
+
+  constructor(
+    private router: Router,
+    private cdr: ChangeDetectorRef,
+    private walletService: WalletService
+  ) {
+    this.balance$ = this.walletService.balance$;
+
+    this.routeSub = this.router.events.pipe(
+      filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      this.checkRoute(event.urlAfterRedirects);
+      this.cdr.detectChanges();
+    });
+  }
+
+  ngOnInit() {
+    this.checkRoute(this.router.url);
+  }
+
+  ngOnDestroy() {
+    if (this.routeSub) {
+      this.routeSub.unsubscribe();
+    }
+  }
+
+  private checkRoute(url: string) {
+    const path = url ? url.split('?')[0] : ''; // Remove query params, safely
+    this.isPublicRoute = path === '/' || path.startsWith('/login') || path.startsWith('/register');
+  }
+
+  toggleDarkMode() {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark');
+    }
+  }
+}

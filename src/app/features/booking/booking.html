@@ -1,0 +1,670 @@
+<main class="max-w-7xl mx-auto px-4 pb-12 pt-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8" *ngIf="!bookingConfirmed">
+        <div class="lg:col-span-8 space-y-6">
+
+            <!-- Step Progress Indicator -->
+            <div class="flex items-center space-x-4 mb-8">
+                <div class="flex items-center space-x-2">
+                    <span
+                        [ngClass]="{'bg-primary text-white': !step1Complete, 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400': step1Complete}"
+                        class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors">1</span>
+                    <span
+                        [ngClass]="{'font-bold text-slate-900 dark:text-white': !step1Complete, 'font-medium text-slate-500 dark:text-slate-400': step1Complete}"
+                        class="transition-colors">Pickup Details</span>
+                </div>
+                <div class="h-px w-8 bg-slate-300 dark:bg-slate-700"></div>
+                <div class="flex items-center space-x-2">
+                    <span
+                        [ngClass]="{'bg-primary text-white': step1Complete, 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400': !step1Complete}"
+                        class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors">2</span>
+                    <span
+                        [ngClass]="{'font-bold text-slate-900 dark:text-white': step1Complete, 'font-medium text-slate-500 dark:text-slate-400': !step1Complete}"
+                        class="transition-colors">Payment Selection</span>
+                </div>
+            </div>
+
+            <!-- STEP 1: Contact & Pickup Details -->
+            <div [hidden]="step1Complete"
+                class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div
+                    class="bg-primary/5 dark:bg-primary/10 px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Contact & Pickup Details</h2>
+                </div>
+                <div class="p-8">
+                    <form class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="relative group">
+                                <input id="name" type="text" value="John Smith"
+                                    class="peer block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
+                                    placeholder=" " />
+                                <label for="name"
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Full
+                                    Name</label>
+                            </div>
+                            <div class="relative group">
+                                <input id="email" type="email" value="john.smith@corporate.com"
+                                    class="peer block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
+                                    placeholder=" " />
+                                <label for="email"
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Email
+                                    Address</label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex">
+                                <div class="relative w-24">
+                                    <select
+                                        class="block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-tl-lg">
+                                        <option>+91</option>
+                                        <option>+1</option>
+                                        <option>+44</option>
+                                    </select>
+                                    <label class="absolute text-xs text-slate-500 top-2 left-4">Code</label>
+                                </div>
+                                <div class="relative flex-1">
+                                    <input id="phone" type="tel" value="9876543210"
+                                        class="peer block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-tr-lg"
+                                        placeholder=" " />
+                                    <label for="phone"
+                                        class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Phone
+                                        Number</label>
+                                </div>
+                            </div>
+                            <div class="relative group">
+                                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
+                                    <lucide-icon name="map-pin" [size]="20"></lucide-icon>
+                                </div>
+                                <input id="pickup" type="text" value="Bengaluru International Airport"
+                                    class="peer block w-full pl-12 pr-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
+                                    placeholder=" " />
+                                <label for="pickup"
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-12 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Pickup
+                                    Address</label>
+                            </div>
+                        </div>
+
+                        <div class="relative group">
+                            <textarea id="landmark" rows="2" placeholder=" "
+                                class="peer block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg">Gate 5, Arrival Hall</textarea>
+                            <label for="landmark"
+                                class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Landmark
+                                / Door Number / Building</label>
+                        </div>
+
+                        <div
+                            class="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-4 rounded-xl flex gap-3">
+                            <lucide-icon name="info" [size]="20" class="text-amber-500"></lucide-icon>
+                            <p class="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+                                Please click on "Proceed" below to confirm your contact details and view the minimum
+                                package fare for this itinerary.
+                            </p>
+                        </div>
+
+                        <div class="flex justify-center pt-4">
+                            <button type="button" (click)="proceedToPayment()"
+                                class="bg-primary hover:bg-sky-700 text-white font-semibold py-3 px-12 rounded-full shadow-lg shadow-sky-200 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                                Proceed to Next Step
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- STEP 1 COMPLETED: Collapsed View -->
+            <div [hidden]="!step1Complete"
+                class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden opacity-60">
+                <div class="px-6 py-4 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold text-sm">✓</span>
+                        <h2 class="text-lg font-semibold text-slate-400 dark:text-slate-500">Contact Details Verified
+                        </h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2 INACTIVE: Collapsed View -->
+            <div [hidden]="step1Complete"
+                class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden opacity-60">
+                <div class="px-6 py-4 flex justify-between items-center cursor-not-allowed">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-lg font-semibold text-slate-400 dark:text-slate-500">Payment Details</h2>
+                    </div>
+                    <lucide-icon name="lock" [size]="20" class="text-slate-400"></lucide-icon>
+                </div>
+            </div>
+
+            <!-- STEP 2: Payment Details -->
+            <div [hidden]="!step1Complete"
+                class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <lucide-icon name="wallet" [size]="24" class="mr-2 text-primary"></lucide-icon>
+                        Choose Payment Option
+                    </h2>
+                    <button (click)="step1Complete = false"
+                        class="text-sm font-medium text-primary hover:underline flex items-center">
+                        <lucide-icon name="arrow-left" [size]="16" class="mr-1"></lucide-icon> Back to Pickup
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 mb-4" *ngIf="{ balance: walletBalance$ | async } as walletObj">
+
+                    <!-- Option 1 -->
+                    <label (click)="setPaymentOption(1)"
+                        [ngClass]="{'border-primary bg-sky-50 dark:bg-sky-950/30 ring-1 ring-primary': paymentOption === 1, 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900': paymentOption !== 1}"
+                        class="relative flex flex-col md:flex-row items-start md:items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-primary/50 gap-4">
+                        <input type="radio" name="payment_option"
+                            class="absolute top-5 right-5 text-primary focus:ring-primary h-4 w-4"
+                            [checked]="paymentOption === 1" />
+                        <div
+                            class="flex-shrink-0 w-12 h-12 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full flex items-center justify-center font-bold text-lg">
+                            1</div>
+                        <div class="flex-1 pr-8">
+                            <h3 class="font-bold text-slate-900 dark:text-white mb-1 leading-tight">25% by Agent | 75% +
+                                Extras by Customer</h3>
+                            <p class="text-xs text-slate-500 leading-relaxed">Agent pays 25% base fare now. Remaining
+                                75% + all extras collected from Customer by Driver.</p>
+                        </div>
+                        <div
+                            class="text-left md:text-right mt-2 md:mt-0 flex-shrink-0 w-32 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-700 pt-2 md:pt-0 md:pl-4">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Pay
+                                Now</span>
+                            <span class="text-xl font-black text-primary">₹{{ (selectedCar?.price || 0) * 0.25 |
+                                number:'1.0-0' }}</span>
+                        </div>
+                    </label>
+
+                    <!-- Option 2 -->
+                    <label (click)="setPaymentOption(2)"
+                        [ngClass]="{'border-primary bg-sky-50 dark:bg-sky-950/30 ring-1 ring-primary': paymentOption === 2, 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900': paymentOption !== 2}"
+                        class="relative flex flex-col md:flex-row items-start md:items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-primary/50 gap-4">
+                        <input type="radio" name="payment_option"
+                            class="absolute top-5 right-5 text-primary focus:ring-primary h-4 w-4"
+                            [checked]="paymentOption === 2" />
+                        <div
+                            class="flex-shrink-0 w-12 h-12 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full flex items-center justify-center font-bold text-lg">
+                            2</div>
+                        <div class="flex-1 pr-8">
+                            <h3 class="font-bold text-slate-900 dark:text-white mb-1 leading-tight">25% Now | 75% by
+                                Agent Later | Extras by Customer</h3>
+                            <p class="text-xs text-slate-500 leading-relaxed">Agent pays 25% now, 75% 48 hours before
+                                trip. Extras collected from Customer by Driver.</p>
+                        </div>
+                        <div
+                            class="text-left md:text-right mt-2 md:mt-0 flex-shrink-0 w-32 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-700 pt-2 md:pt-0 md:pl-4">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Pay
+                                Now</span>
+                            <span class="text-xl font-black text-primary">₹{{ (selectedCar?.price || 0) * 0.25 |
+                                number:'1.0-0' }}</span>
+                        </div>
+                    </label>
+
+                    <!-- Option 3 -->
+                    <label (click)="setPaymentOption(3)"
+                        [ngClass]="{'border-primary bg-sky-50 dark:bg-sky-950/30 ring-1 ring-primary': paymentOption === 3, 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900': paymentOption !== 3}"
+                        class="relative flex flex-col md:flex-row items-start md:items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-primary/50 gap-4">
+                        <input type="radio" name="payment_option"
+                            class="absolute top-5 right-5 text-primary focus:ring-primary h-4 w-4"
+                            [checked]="paymentOption === 3" />
+                        <div
+                            class="flex-shrink-0 w-12 h-12 bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 rounded-full flex items-center justify-center font-bold text-lg shadow-inner">
+                            <lucide-icon name="wallet" [size]="20"></lucide-icon>
+                        </div>
+                        <div class="flex-1 pr-8">
+                            <h3
+                                class="font-bold text-slate-900 dark:text-white mb-1 leading-tight flex items-center gap-2">
+                                25% Now | 75% by Agent | All Extras via Wallet
+                                <span
+                                    class="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">B2B
+                                    Preferred</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 leading-relaxed">Agent pays 25% now, 75% 48 hours before.
+                                All extras settled via Agent Wallet. Zero cash from Customer.</p>
+                        </div>
+                        <div
+                            class="text-left md:text-right mt-2 md:mt-0 flex-shrink-0 w-32 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-700 pt-2 md:pt-0 md:pl-4">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Pay
+                                Now</span>
+                            <span class="text-xl font-black text-primary">₹{{ (selectedCar?.price || 0) * 0.25 |
+                                number:'1.0-0' }}</span>
+                        </div>
+                    </label>
+
+                    <!-- Option 4 -->
+                    <label (click)="setPaymentOption(4)"
+                        [ngClass]="{'border-primary bg-sky-50 dark:bg-sky-950/30 ring-1 ring-primary': paymentOption === 4, 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900': paymentOption !== 4}"
+                        class="relative flex flex-col md:flex-row items-start md:items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:border-primary/50 gap-4">
+                        <input type="radio" name="payment_option"
+                            class="absolute top-5 right-5 text-primary focus:ring-primary h-4 w-4"
+                            [checked]="paymentOption === 4" />
+                        <div
+                            class="flex-shrink-0 w-12 h-12 bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 rounded-full flex items-center justify-center font-bold text-lg shadow-inner">
+                            <lucide-icon name="wallet" [size]="20"></lucide-icon>
+                        </div>
+                        <div class="flex-1 pr-8">
+                            <h3
+                                class="font-bold text-slate-900 dark:text-white mb-1 leading-tight flex items-center gap-2">
+                                100% Payment via Agent Wallet
+                                <span
+                                    class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Corporate</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 leading-relaxed">Full base fare paid upfront. Extras
+                                auto-debited. Seamless VIP experience.</p>
+                        </div>
+                        <div
+                            class="text-left md:text-right mt-2 md:mt-0 flex-shrink-0 w-32 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-700 pt-2 md:pt-0 md:pl-4">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Pay
+                                Now</span>
+                            <span class="text-xl font-black text-primary">₹{{ selectedCar?.price | number:'1.0-0'
+                                }}</span>
+                        </div>
+                    </label>
+
+                    <!-- Wallet Alert -->
+                    <div *ngIf="(paymentOption === 3 || paymentOption === 4) && !hasSufficientWalletBalance(walletObj.balance)"
+                        class="bg-rose-50 border border-rose-200 dark:bg-rose-900/20 dark:border-rose-800 text-rose-700 dark:text-rose-400 p-4 rounded-xl flex items-start gap-3 mt-2 animate-in fade-in zoom-in-95 duration-200">
+                        <lucide-icon name="alert-triangle" [size]="20" class="mt-0.5 flex-shrink-0"></lucide-icon>
+                        <div>
+                            <p class="text-sm font-bold mb-1">Insufficient Wallet Balance</p>
+                            <p class="text-xs leading-relaxed">This payment mode requires a wallet deduction of ₹{{
+                                getPayNowAmount() | number:'1.0-0' }}, but you only have ₹{{ (walletObj.balance || 0) |
+                                number:'1.0-0' }}. Please Top Up your Wallet to proceed.</p>
+                            <button routerLink="/wallet" class="mt-2 text-xs font-bold underline">Top Up Now</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl mb-8 flex items-start space-x-3">
+                    <lucide-icon name="info" [size]="20" class="text-slate-400 mt-0.5"></lucide-icon>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Selection dictates how extra kilometers and toll charges are managed. Please configure with
+                        discretion based on corporate or retail guest profiles.
+                    </p>
+                </div>
+
+                <div class="mb-8">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Got a
+                        coupon?</label>
+                    <div class="flex space-x-2">
+                        <div class="relative flex-grow">
+                            <lucide-icon name="ticket" [size]="18"
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></lucide-icon>
+                            <input type="text" placeholder="Enter coupon code"
+                                class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
+                        </div>
+                        <button
+                            class="px-6 py-2.5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors">Apply</button>
+                    </div>
+                </div>
+
+                <div
+                    class="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-800 rounded-xl mb-8 shadow-sm">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-sky-100 dark:bg-sky-900/50 p-2 rounded-full hidden sm:block">
+                            <lucide-icon name="briefcase" [size]="20" class="text-primary"></lucide-icon>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 dark:text-white text-sm">Value Added Services (VAS)</h4>
+                            <p class="text-xs text-slate-500 mt-0.5">Luggage carrier, prefer driver, etc.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <button (click)="openVASModal()"
+                            class="text-sm font-bold text-primary hover:underline flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-sm">
+                            <lucide-icon name="plus" [size]="14" class="mr-1"></lucide-icon> Add Services
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active VAS Display -->
+                <div class="flex gap-2 mb-8" *ngIf="vasLuggageCarrier || vasLanguageDriver">
+                    <div *ngIf="vasLuggageCarrier"
+                        class="bg-blue-50 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center">
+                        <lucide-icon name="briefcase" [size]="12" class="mr-1.5"></lucide-icon> Luggage Carrier Added
+                    </div>
+                    <div *ngIf="vasLanguageDriver"
+                        class="bg-blue-50 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center">
+                        <lucide-icon name="users" [size]="12" class="mr-1.5"></lucide-icon> Preferred Driver Added
+                    </div>
+                </div>
+
+                <button (click)="bookNow()"
+                    [disabled]="(paymentOption === 3 || paymentOption === 4) && !hasSufficientWalletBalance((walletBalance$ | async)!)"
+                    class="w-full py-4 bg-primary hover:bg-sky-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-bold text-lg rounded-xl shadow-lg shadow-sky-200 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none disabled:shadow-none">
+                    Book Now
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT SIDEBAR -->
+        <div class="lg:col-span-4 space-y-6">
+
+            <div
+                class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+                <h3 class="text-slate-900 dark:text-white font-bold mb-6 text-center uppercase tracking-wider text-xs">
+                    Our Promise of Quality</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <div
+                            class="w-16 h-16 mx-auto mb-3 rounded-full bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center border-2 border-dashed border-primary/30">
+                            <lucide-icon name="check-circle" [size]="24" class="text-primary"></lucide-icon>
+                        </div>
+                        <p class="text-[10px] font-semibold text-slate-500 uppercase">Since 2006</p>
+                    </div>
+                    <div class="text-center">
+                        <div
+                            class="w-16 h-16 mx-auto mb-3 rounded-full bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center border-2 border-dashed border-primary/30">
+                            <lucide-icon name="user-check" [size]="24" class="text-primary"></lucide-icon>
+                        </div>
+                        <p class="text-[10px] font-semibold text-slate-500 uppercase">Expert Staff</p>
+                    </div>
+                    <div class="text-center">
+                        <div
+                            class="w-16 h-16 mx-auto mb-3 rounded-full bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center border-2 border-dashed border-primary/30">
+                            <lucide-icon name="star" [size]="24" class="text-primary"></lucide-icon>
+                        </div>
+                        <p class="text-[10px] font-semibold text-slate-500 uppercase">9.5/10 Rated</p>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden sticky top-6">
+                <div class="bg-slate-900 dark:bg-slate-800 px-6 py-4">
+                    <h3 class="text-white font-semibold flex items-center gap-2">
+                        <lucide-icon name="receipt" [size]="20" class="text-primary"></lucide-icon>
+                        Booking Summary
+                    </h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Itinerary</span>
+                        <div class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-[15px]">
+                            <span>{{itinerary?.fromCity || 'Bangalore'}}</span>
+                            <lucide-icon name="arrow-right" [size]="14" class="text-primary"></lucide-icon>
+                            <span>{{itinerary?.toCity || 'Mysore'}}</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup
+                                Date</span>
+                            <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">
+                                {{itinerary?.pickupDate ? (itinerary?.pickupDate | date:'dd MMM yyyy') : 'Tomorrow'}}
+                            </span>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup
+                                Time</span>
+                            <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">
+                                {{itinerary?.pickupTime || '09:30 PM'}}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center py-3 border-y border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <lucide-icon name="car" [size]="20" class="text-slate-400"></lucide-icon>
+                            <span class="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                {{selectedCar?.name || 'Wagon R or Equivalent'}}
+                            </span>
+                        </div>
+                        <span
+                            class="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-600 dark:text-slate-400 font-black uppercase tracking-tighter">
+                            {{selectedCar?.type || 'SEDAN'}}
+                        </span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-slate-500">KMs Included</span>
+                        <span class="text-sm font-bold text-slate-900 dark:text-white">
+                            {{selectedCar?.kmsIncluded || '145 km'}}
+                        </span>
+                    </div>
+
+                    <!-- Total Fare (Always visible) -->
+                    <div
+                        class="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Estimated
+                                Total Fare</p>
+                            <p class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                                ₹ {{(selectedCar?.price || 2196) | number:'1.0-0'}}
+                            </p>
+                        </div>
+                        <span
+                            class="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-black uppercase tracking-tighter">
+                            ALL INCLUSIVE
+                        </span>
+                    </div>
+
+                    <!-- Dynamic Pay Now (Visible during Payment Selection) -->
+                    <div *ngIf="step1Complete"
+                        class="pt-4 mt-4 border-t-2 border-dashed border-primary/30 flex justify-between items-end bg-sky-50 dark:bg-sky-900/40 p-5 rounded-xl">
+                        <div>
+                            <p class="text-[12px] font-bold text-primary uppercase tracking-widest mb-1">Amount to Pay
+                                Now</p>
+                            <p class="text-3xl font-black text-primary tracking-tight">
+                                ₹ {{ getPayNowAmount() | number:'1.0-0' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 border-t border-slate-100 dark:border-slate-800">
+                    <div class="flex items-start gap-2 text-[11px] text-slate-500 leading-tight">
+                        <lucide-icon name="shield-check" [size]="14"
+                            class="mt-0.5 flex-shrink-0 text-emerald-500"></lucide-icon>
+                        <p>Price includes fuel, driver allowance, and basic toll. Parking and extra KMs billed as
+                            actuals.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="flex justify-center flex-wrap items-center gap-6 opacity-40 grayscale hover:grayscale-0 transition-all duration-300">
+                <img alt="Visa Logo" class="h-6 object-contain"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFm29_otD-Ra_H1IEAJvhLHWRC1lFIi6-JbQtpB6mvG0-b9dzJB9DM6CxHmK--FAHU3LTXpYJq95DjX4h_5e48aCgPJPzuy7SNNcvCLCzlqynmarXIs4Nt7q8jy_SByhb6hb5S9yJm3Ts1OI1xQfZeHmIdDBS_GUiOGwkJMn00mIN5o13kxt78gwmeYNNJFTDpQhpKFizsgkqsnGhzWiGqdhR5c-JE1afUN9Y69k2ykUyaFRM32EH-4gkpuwNFR0WHJXeG6CDrxEBE" />
+                <img alt="Mastercard Logo" class="h-6 object-contain"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCxD0GzrcoPpDHhGTif3JaGoSW1Zo8ZXBuHS_OK5DzBqm_i6ykR_c-TqegL_lz_NHeD_zhL-pHwoxKDX-QLqoIHhqzEH8aQSVeF4Y8q5W2LIn1g9Ke1JzrHuC5wcASSvWaEoXTcRLzHjRlCulsaqi1w6X7KzTbi4nnRgZlPw629lownBzzjFir6ggNdEXeWAH_O97KMK7QliXvsDEch2A543xleRyt5yKOZiZAhhAWe9E0IGuOLfZ8lnR-xTLLlA1XHBw3a55KtCxE" />
+                <img alt="UPI Logo" class="h-6 object-contain"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFMTU2n1SkYaBCa8liYKb8f2q--RI5wgEDjwAAr6yL04m66jQe9VIweDd-MsfT_hAAhbgQW9vvQWFPRNxEgu0tRqbGIixPZYNdwgcHHAEQXL14a4fuD5gXCTTK9Yir_Z0iCpcAa1DepSWeS2-B0UoJIbJ6hwFjxVqyLgp72tu_BobtMVLyj2PyuHE_GLBohAUOaCsL81uAN3JJKMJtDRWPO9_enFQ9GUW0Xq5LCs3H6OYe6ofE_iKfSu6JwLT1UOiJ66PEoSKlVGXu" />
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Booking Confirmation Screen -->
+    <div *ngIf="bookingConfirmed"
+        class="max-w-3xl mx-auto mt-4 mb-24 bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 p-8 text-center animate-in zoom-in duration-300">
+        <div
+            class="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+            <lucide-icon name="check-circle" [size]="40" class="text-emerald-500"></lucide-icon>
+        </div>
+        <h1 class="text-3xl font-black text-slate-900 dark:text-white mb-2">Booking Confirmed!</h1>
+        <p class="text-slate-500 mb-6">Your B2B Cab has been successfully booked.</p>
+
+        <div
+            class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 text-left mb-8 max-w-md mx-auto border border-slate-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-4">
+                <span class="text-sm font-bold text-slate-500">Booking ID</span>
+                <span class="text-lg font-black text-slate-900 dark:text-white">{{bookingId}}</span>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-slate-500">Itinerary</span>
+                <span class="text-sm font-bold text-slate-900 dark:text-white">{{itinerary?.fromCity}} to
+                    {{itinerary?.toCity}}</span>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-slate-500">Amount Paid Now</span>
+                <span class="text-sm font-bold text-slate-900 dark:text-white">₹ {{ getPayNowAmount() | number:'1.0-0'
+                    }}</span>
+            </div>
+            <div class="flex justify-between items-center" *ngIf="paymentOption === 3 || paymentOption === 4">
+                <span
+                    class="text-sm border border-emerald-500 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded text-xs font-bold uppercase">Payment
+                    Mode</span>
+                <span class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1"><lucide-icon
+                        name="wallet" [size]="14" class="text-primary"></lucide-icon> Agent Wallet</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button routerLink="/bookings"
+                class="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">View
+                Bookings</button>
+            <button routerLink="/dashboard"
+                class="px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-sm hover:bg-sky-600 transition-colors">Book
+                Another Cab</button>
+        </div>
+    </div>
+</main>
+
+<!-- Full Screen Processing Overlay -->
+<div *ngIf="isProcessingWallet"
+    class="fixed inset-0 z-[110] bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm flex items-center justify-center flex-col animate-fade-in">
+    <lucide-icon name="loader-2" [size]="48" class="text-primary animate-spin mb-4"></lucide-icon>
+    <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Processing Payment</h2>
+    <p class="text-slate-500 animate-pulse text-sm">Please do not refresh or close this page...</p>
+</div>
+
+<!-- Razorpay-Styled Mock Modal overlay -->
+<div *ngIf="showRazorpayModal"
+    class="fixed inset-0 z-[100] flex animate-fade-in bg-black/60 items-center justify-center p-4">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col relative">
+        <button (click)="closeModal()"
+            class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 dark:hover:text-white z-50 w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 hover:scale-110 transition-transform cursor-pointer">
+            <lucide-icon name="x" [size]="28"></lucide-icon>
+        </button>
+
+        <div
+            class="bg-gradient-to-r from-blue-900 to-slate-900 p-6 text-white text-center rounded-b-[2rem] shadow-sm relative overflow-hidden">
+            <div class="absolute inset-0 opacity-10"
+                style="background-image: url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'3\' cy=\'3\' r=\'3\'/%3E%3Ccircle cx=\'13\' cy=\'13\' r=\'3\'/%3E%3C/g%3E%3C/svg%3E');">
+            </div>
+            <div class="relative z-10">
+                <div class="flex justify-center mb-3">
+                    <div
+                        class="bg-white p-2 text-blue-900 font-bold text-xs uppercase tracking-wider rounded inline-flex items-center shadow-lg transform rotate-3">
+                        <lucide-icon name="car" [size]="16" class="mr-1"></lucide-icon> EliteDrive
+                    </div>
+                </div>
+                <p class="text-sm text-blue-200 font-medium mb-1">Paying EliteDrive Corporate</p>
+                <div class="flex items-center justify-center gap-1 mb-2">
+                    <span class="text-lg opacity-80">₹</span>
+                    <h2 class="text-4xl font-bold tracking-tight">{{ getPayNowAmount() | number:'1.0-0' }}</h2>
+                </div>
+                <div
+                    class="inline-flex items-center gap-1 text-[10px] bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                    <lucide-icon name="shield-check" [size]="12"></lucide-icon> Secured by Razorpay
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 bg-slate-50 dark:bg-slate-900 flex-grow">
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 mx-2">Payment Options</p>
+            <div class="space-y-3">
+                <div (click)="simulateGatewayPayment()"
+                    class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center cursor-pointer hover:border-primary transition-colors group">
+                    <div
+                        class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                        <lucide-icon name="zap" [size]="18"></lucide-icon>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 dark:text-white text-sm">UPI</h4>
+                        <p class="text-xs text-slate-500">Google Pay, PhonePe, Paytm</p>
+                    </div>
+                    <lucide-icon name="chevron-right" [size]="16" class="ml-auto text-slate-400"></lucide-icon>
+                </div>
+
+                <div (click)="simulateGatewayPayment()"
+                    class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center cursor-pointer hover:border-primary transition-colors group">
+                    <div
+                        class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                        <lucide-icon name="credit-card" [size]="20"></lucide-icon>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 dark:text-white text-sm">Cards</h4>
+                        <p class="text-xs text-slate-500">Visa, Mastercard, RuPay & More</p>
+                    </div>
+                    <lucide-icon name="chevron-right" [size]="16" class="ml-auto text-slate-400"></lucide-icon>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-center">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Razorpay_logo.svg/1024px-Razorpay_logo.svg.png"
+                    class="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VAS Modal -->
+<div *ngIf="showVASModal"
+    class="fixed inset-0 z-[100] flex animate-fade-in bg-black/60 items-center justify-center p-4">
+    <div
+        class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-200">
+        <div
+            class="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center">
+                <lucide-icon name="briefcase" [size]="20" class="mr-2 text-primary"></lucide-icon>
+                Value-Added Services
+            </h3>
+            <button (click)="closeVASModal()"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-10 w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-sm">
+                <lucide-icon name="x" [size]="18"></lucide-icon>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+
+            <div (click)="toggleVasLuggage()"
+                class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between cursor-pointer hover:border-primary transition-all shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center">
+                        <lucide-icon name="briefcase" [size]="20"></lucide-icon>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 dark:text-white text-sm">Luggage Carrier</h4>
+                        <p class="text-xs text-slate-500 mt-0.5">Required for extra baggage.</p>
+                    </div>
+                </div>
+                <div class="w-6 h-6 rounded border-2 flex items-center justify-center transition-colors"
+                    [ngClass]="vasLuggageCarrier ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-slate-600'">
+                    <lucide-icon name="check" [size]="14" *ngIf="vasLuggageCarrier"></lucide-icon>
+                </div>
+            </div>
+
+            <div (click)="toggleVasLanguage()"
+                class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between cursor-pointer hover:border-primary transition-all shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center">
+                        <lucide-icon name="users" [size]="20"></lucide-icon>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 dark:text-white text-sm">Preferred Driver</h4>
+                        <p class="text-xs text-slate-500 mt-0.5">English speaking or highly rated.</p>
+                    </div>
+                </div>
+                <div class="w-6 h-6 rounded border-2 flex items-center justify-center transition-colors"
+                    [ngClass]="vasLanguageDriver ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-slate-600'">
+                    <lucide-icon name="check" [size]="14" *ngIf="vasLanguageDriver"></lucide-icon>
+                </div>
+            </div>
+
+            <div
+                class="bg-sky-50 dark:bg-sky-900/20 text-sky-800 dark:text-sky-300 p-4 rounded-xl text-xs font-medium mt-4">
+                Selected services are subject to availability. Any applicable fees will be added to the final invoice
+                payable by the customer.
+            </div>
+
+            <button (click)="closeVASModal()"
+                class="w-full mt-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-3 rounded-lg hover:shadow-lg transition-all">
+                Confirm Selections
+            </button>
+        </div>
+    </div>
+</div>

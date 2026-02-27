@@ -1,0 +1,104 @@
+/* You can add global styles to this file, and also import other style files */
+@import "primeicons/primeicons.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure [hidden] always hides elements (overrides any Tailwind utility classes) */
+[hidden] {
+    display: none !important;
+}
+
+/* Global PrimeNG Overrides for Dark Mode */
+.dark .p-select,
+.dark .p-select-label,
+.dark .p-datepicker,
+.dark .p-datepicker-input,
+.dark .p-datepicker-header,
+.dark .p-datepicker-calendar-container,
+.dark .p-inputtext,
+.dark .p-select-dropdown,
+.dark .p-datepicker-trigger {
+    background-color: transparent !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    color: rgba(226, 232, 240, 1) !important;
+    /* text-slate-200 */
+    box-shadow: none !important;
+}
+
+.dark .p-inputtext::placeholder {
+    color: rgba(148, 163, 184, 1) !important;
+    /* text-slate-400 */
+    opacity: 0.7;
+}
+
+/* Ensure overlay panels match the dark theme */
+.dark .p-select-panel,
+.dark .p-datepicker-panel,
+.dark .p-datepicker-calendar-container {
+    background: #1e293b !important;
+    /* slate-800 */
+    border: 1px solid #334155 !important;
+    /* slate-700 */
+    color: #f1f5f9 !important;
+    /* slate-100 */
+}
+
+.dark .p-select-option,
+.dark .p-datepicker-calendar td>span {
+    color: #cbd5e1 !important;
+    /* slate-300 */
+}
+
+.dark .p-select-option.p-highlight,
+.dark .p-datepicker-calendar td>span.p-highlight {
+    background: #334155 !important;
+    /* slate-700 */
+    color: #38bdf8 !important;
+    /* sky-400 */
+}
+
+/* Specific overrides to remove boxes around controls */
+.p-select,
+.p-datepicker-input,
+.p-datepicker {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding-left: 0 !important;
+}
+
+.p-select-label {
+    padding-left: 0 !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
