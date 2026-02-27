@@ -53,7 +53,14 @@
         <div
           class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8 mb-6">
           <div class="mb-6">
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Trip Reports</h1>
+            <div class="flex items-center gap-3 mb-2">
+              <a routerLink="/dashboard"
+                class="flex items-center justify-center w-9 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm group">
+                <lucide-icon name="arrow-left" [size]="18"
+                  class="group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
+              </a>
+              <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Trip Reports</h1>
+            </div>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Select the date range and click on 'View' to see the list of all trips executed within the selected
               period.

@@ -2,13 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
+import { RouterLink } from '@angular/router';
 import { WalletService, WalletTransaction } from '../../core/services/wallet.service';
 import { Observable } from 'rxjs';
 
 @Component({
     selector: 'app-wallet-dashboard',
     standalone: true,
-    imports: [CommonModule, FormsModule, LucideAngularModule],
+    imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink],
     templateUrl: './wallet-dashboard.html'
 })
 export class WalletDashboardComponent implements OnInit {
