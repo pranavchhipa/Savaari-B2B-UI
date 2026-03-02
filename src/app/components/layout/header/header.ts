@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener, ElementRef } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd, Event } from '@angular/router';
 import { LucideAngularModule, Wallet } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
@@ -21,7 +21,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private walletService: WalletService
+    private walletService: WalletService,
+    private elementRef: ElementRef
   ) {
     this.balance$ = this.walletService.balance$;
 
@@ -51,6 +52,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
   toggleDarkMode() {
     if (typeof document !== 'undefined') {
       document.documentElement.classList.toggle('dark');
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    // If the dropdown is open and the click is outside this component, close it
+    if (this.isUserDropdownOpen && !this.elementRef.nativeElement.contains(event.target)) {
+      this.isUserDropdownOpen = false;
     }
   }
 }
