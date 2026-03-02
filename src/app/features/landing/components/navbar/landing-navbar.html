@@ -1,0 +1,65 @@
+<nav class="absolute top-0 left-0 right-0 z-50 bg-transparent border-b border-primary-foreground/10">
+    <div class="container mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
+        <!-- Logo -->
+        <a href="#" class="flex items-center">
+            <!-- Changed from 'hero-car' string path to real logo -->
+            <img src="/savaari-logo.png" alt="Savaari B2B CAB" class="h-9 brightness-0 invert" />
+        </a>
+
+        <!-- Desktop nav -->
+        <div class="hidden md:flex items-center gap-8">
+            <a *ngFor="let link of navLinks" [href]="link.href"
+                class="text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground transition-colors cursor-pointer">
+                {{ link.label }}
+            </a>
+        </div>
+
+        <!-- Desktop CTAs -->
+        <div class="hidden md:flex items-center gap-3">
+            <a href="tel:09045450000"
+                class="flex items-center gap-1.5 text-sm font-semibold text-primary-foreground mr-2 cursor-pointer inline-flex items-center px-3 py-1.5 rounded-md hover:bg-primary-foreground/10 transition-colors">
+                <lucide-icon name="phone" class="w-4 h-4 text-primary-foreground"></lucide-icon>
+                0 90 4545 0000
+            </a>
+            <button routerLink="/login"
+                class="inline-flex items-center justify-center rounded-md border border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 text-sm font-medium h-9 px-4 cursor-pointer bg-transparent transition-colors">
+                Login
+            </button>
+            <button routerLink="/register"
+                class="inline-flex items-center justify-center rounded-md gradient-cyan text-primary-foreground font-semibold shadow-cyan hover:opacity-90 transition-opacity border-0 h-9 px-4 cursor-pointer">
+                Partner With Us
+            </button>
+        </div>
+
+        <!-- Mobile toggle -->
+        <button (click)="toggleMobile()" class="md:hidden p-2 text-foreground bg-transparent border-0 cursor-pointer">
+            <lucide-icon [name]="mobileOpen ? 'x' : 'menu'" [size]="20"></lucide-icon>
+        </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div *ngIf="mobileOpen"
+        class="md:hidden overflow-hidden bg-background border-b border-border animate-in slide-in-from-top-2 duration-200">
+        <div class="px-4 py-4 flex flex-col gap-3">
+            <a *ngFor="let link of navLinks" [href]="link.href" (click)="toggleMobile()"
+                class="text-sm font-medium text-muted-foreground hover:text-primary py-2 cursor-pointer">
+                {{ link.label }}
+            </a>
+            <a href="tel:09045450000"
+                class="flex items-center gap-1.5 text-sm font-semibold text-primary py-2 cursor-pointer">
+                <lucide-icon name="phone" class="w-4 h-4"></lucide-icon>
+                0 90 4545 0000
+            </a>
+            <div class="flex gap-3 pt-2">
+                <button
+                    class="flex-1 inline-flex items-center justify-center rounded-md border border-primary text-primary bg-transparent text-sm h-9 px-4 cursor-pointer">
+                    Login
+                </button>
+                <button
+                    class="flex-1 inline-flex items-center justify-center rounded-md gradient-cyan text-primary-foreground font-semibold border-0 text-sm h-9 px-4 cursor-pointer">
+                    Partner With Us
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>

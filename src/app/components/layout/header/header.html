@@ -14,11 +14,29 @@
 
         <!-- PUBLIC VIEW -->
         <ng-container *ngIf="isPublicRoute">
-          <a routerLink="/login" routerLinkActive="text-primary font-semibold"
-            class="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium text-sm transition cursor-pointer">Log
-            in</a>
-          <a routerLink="/register" routerLinkActive="ring-2 ring-primary"
-            class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm hover:shadow-md cursor-pointer ml-4">Register</a>
+          <div class="hidden md:flex items-center gap-6 mr-6">
+            <a href="/#solutions"
+              class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+              Solutions
+            </a>
+            <a href="/#value-props"
+              class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+              Why Savaari
+            </a>
+            <a href="/#overview"
+              class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+              About
+            </a>
+            <a href="/#cta"
+              class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+              Contact
+            </a>
+          </div>
+          <a href="tel:09045450000"
+            class="hidden md:flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition-colors cursor-pointer mr-2">
+            <lucide-icon name="headphones" class="w-4 h-4 text-primary"></lucide-icon>
+            0 90 4545 0000
+          </a>
         </ng-container>
 
         <!-- B2B PORTAL VIEW -->
