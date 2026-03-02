@@ -1,30 +1,110 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    darkMode: ["class"],
     content: [
         "./src/**/*.{html,ts}",
     ],
-    darkMode: "class",
     theme: {
-        extend: {
-            colors: {
-                primary: "#0EA5E9", // Sky 500 - Deep Azure Blue-ish
-                "primary-dark": "#0284C7", // Sky 600
-                "background-light": "#F8FAFC", // Slate 50
-                "background-dark": "#0F172A", // Slate 900
-                "surface-light": "#FFFFFF",
-                "surface-dark": "#1E293B", // Slate 800
+        container: {
+            center: true,
+            padding: "2rem",
+            screens: {
+                "2xl": "1400px",
             },
+        },
+        extend: {
             fontFamily: {
-                display: ["Inter", "sans-serif"],
-                body: ["Inter", "sans-serif"],
+                sans: ["Inter", "system-ui", "sans-serif"],
+                display: ["Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"],
+            },
+            colors: {
+                border: "hsl(var(--border))",
+                input: "hsl(var(--input))",
+                ring: "hsl(var(--ring))",
+                background: "hsl(var(--background))",
+                foreground: "hsl(var(--foreground))",
+                primary: {
+                    DEFAULT: "hsl(var(--primary))",
+                    dark: "var(--primary-dark)",
+                    foreground: "hsl(var(--primary-foreground))",
+                },
+                secondary: {
+                    DEFAULT: "hsl(var(--secondary))",
+                    foreground: "hsl(var(--secondary-foreground))",
+                },
+                destructive: {
+                    DEFAULT: "hsl(var(--destructive))",
+                    foreground: "hsl(var(--destructive-foreground))",
+                },
+                muted: {
+                    DEFAULT: "hsl(var(--muted))",
+                    foreground: "hsl(var(--muted-foreground))",
+                },
+                accent: {
+                    DEFAULT: "hsl(var(--accent))",
+                    foreground: "hsl(var(--accent-foreground))",
+                },
+                popover: {
+                    DEFAULT: "hsl(var(--popover))",
+                    foreground: "hsl(var(--popover-foreground))",
+                },
+                card: {
+                    DEFAULT: "hsl(var(--card))",
+                    foreground: "hsl(var(--card-foreground))",
+                },
+                cyan: {
+                    DEFAULT: "hsl(var(--cyan))",
+                    dark: "hsl(var(--cyan-dark))",
+                    light: "hsl(var(--cyan-light))",
+                },
+                amber: {
+                    DEFAULT: "hsl(var(--amber))",
+                    hover: "hsl(var(--amber-hover))",
+                },
+                success: {
+                    DEFAULT: "hsl(var(--success))",
+                    foreground: "hsl(var(--success-foreground))",
+                },
+                "slate-blue": "hsl(var(--slate-blue))",
+                "background-light": "#F8FAFC", // Keep old ones
+                "background-dark": "#0F172A",
+                "surface-light": "#FFFFFF",
+                "surface-dark": "#1E293B",
             },
             borderRadius: {
-                DEFAULT: "0.5rem",
+                lg: "var(--radius)",
+                md: "calc(var(--radius) - 2px)",
+                sm: "calc(var(--radius) - 4px)",
+            },
+            keyframes: {
+                "accordion-down": {
+                    from: { height: "0" },
+                    to: { height: "var(--radix-accordion-content-height)" },
+                },
+                "accordion-up": {
+                    from: { height: "var(--radix-accordion-content-height)" },
+                    to: { height: "0" },
+                },
+                marquee: {
+                    "0%": { transform: "translateX(0%)" },
+                    "100%": { transform: "translateX(-50%)" },
+                },
+                "count-up": {
+                    "0%": { opacity: "0", transform: "translateY(20px)" },
+                    "100%": { opacity: "1", transform: "translateY(0)" },
+                },
+            },
+            animation: {
+                "accordion-down": "accordion-down 0.2s ease-out",
+                "accordion-up": "accordion-up 0.2s ease-out",
+                marquee: "marquee 30s linear infinite",
+                "count-up": "count-up 0.6s ease-out forwards",
             },
         },
     },
     plugins: [
         require('@tailwindcss/typography'),
-        require('@tailwindcss/forms')
+        require('@tailwindcss/forms'),
+        require('tailwindcss-animate')
     ],
 }

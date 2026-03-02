@@ -1,0 +1,44 @@
+<section id="solutions" class="py-24 bg-background">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <span class="inline-block text-xs font-bold uppercase tracking-widest text-primary mb-4">
+                Solutions
+            </span>
+            <h2
+                class="font-display text-3xl sm:text-4xl font-extrabold text-foreground leading-tight max-w-2xl mx-auto">
+                Tailored for Every Business Need
+            </h2>
+        </div>
+
+        <div
+            class="grid lg:grid-cols-3 gap-0 lg:gap-0 rounded-2xl overflow-hidden border border-border animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div *ngFor="let sol of solutions; let i = index; let isLast = last"
+                [ngClass]="{'lg:border-r border-b lg:border-b-0 border-border': !isLast}"
+                class="group p-8 lg:p-10 bg-background hover:bg-secondary/50 transition-all duration-300 flex flex-col">
+                <div
+                    class="w-14 h-14 rounded-xl bg-cyan-light flex items-center justify-center mb-6 group-hover:gradient-cyan transition-colors duration-300">
+                    <lucide-icon [name]="sol.icon"
+                        class="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors duration-300"></lucide-icon>
+                </div>
+                <h3 class="font-display font-bold text-xl text-foreground mb-3">
+                    {{ sol.title }}
+                </h3>
+                <p class="text-muted-foreground text-sm leading-relaxed mb-6 flex-1">
+                    {{ sol.description }}
+                </p>
+                <ul class="space-y-2.5 mb-6">
+                    <li *ngFor="let f of sol.features" class="flex items-center gap-2.5 text-sm text-foreground">
+                        <lucide-icon name="check-circle-2" class="w-4 h-4 text-success flex-shrink-0"></lucide-icon>
+                        {{ f }}
+                    </li>
+                </ul>
+                <a href="#cta"
+                    class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-cyan-dark transition-colors group/link cursor-pointer">
+                    Learn more
+                    <lucide-icon name="arrow-right"
+                        class="w-4 h-4 group-hover/link:translate-x-1 transition-transform"></lucide-icon>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

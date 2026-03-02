@@ -1,6 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 @import "primeicons/primeicons.css";
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -101,4 +101,132 @@
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 200 25% 15%;
+
+        --card: 0 0% 100%;
+        --card-foreground: 200 25% 15%;
+
+        --popover: 0 0% 100%;
+        --popover-foreground: 200 25% 15%;
+
+        /* Savaari Cyan Blue */
+        --primary: 195 100% 45%;
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 195 20% 96%;
+        --secondary-foreground: 200 25% 15%;
+
+        --muted: 200 15% 95%;
+        --muted-foreground: 200 10% 46%;
+
+        /* Warm Amber accent */
+        --accent: 30 95% 55%;
+        --accent-foreground: 0 0% 100%;
+
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 200 15% 90%;
+        --input: 200 15% 90%;
+        --ring: 195 100% 45%;
+
+        --radius: 0.625rem;
+
+        /* Custom tokens */
+        --cyan: 195 100% 45%;
+        --cyan-dark: 195 80% 30%;
+        --cyan-light: 195 60% 92%;
+        --amber: 30 95% 55%;
+        --amber-hover: 30 95% 48%;
+        --success: 152 60% 42%;
+        --success-foreground: 0 0% 100%;
+        --slate-blue: 200 20% 60%;
+
+        --sidebar-background: 195 80% 30%;
+        --sidebar-foreground: 0 0% 95%;
+        --sidebar-primary: 195 100% 45%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 195 60% 35%;
+        --sidebar-accent-foreground: 0 0% 95%;
+        --sidebar-border: 195 60% 35%;
+        --sidebar-ring: 195 100% 45%;
+    }
+
+    .dark {
+        --background: 200 30% 7%;
+        --foreground: 0 0% 95%;
+        --card: 200 30% 10%;
+        --card-foreground: 0 0% 95%;
+        --popover: 200 30% 10%;
+        --popover-foreground: 0 0% 95%;
+        --primary: 195 100% 45%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 200 25% 15%;
+        --secondary-foreground: 0 0% 95%;
+        --muted: 200 25% 15%;
+        --muted-foreground: 200 10% 60%;
+        --accent: 30 95% 55%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 62% 30%;
+        --destructive-foreground: 0 0% 95%;
+        --border: 200 25% 18%;
+        --input: 200 25% 18%;
+        --ring: 195 100% 45%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground font-sans antialiased;
+    }
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .gradient-cyan {
+        background: linear-gradient(135deg, hsl(195 100% 45%), hsl(195 80% 35%));
+    }
+
+    .gradient-cyan-dark {
+        background: linear-gradient(180deg, hsl(195 80% 28%), hsl(195 80% 22%));
+    }
+
+    .gradient-amber {
+        background: linear-gradient(135deg, hsl(30 95% 55%), hsl(25 95% 50%));
+    }
+
+    .text-gradient-cyan {
+        background: linear-gradient(135deg, hsl(195 100% 45%), hsl(195 80% 55%));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .shadow-cyan {
+        box-shadow: 0 4px 24px -4px hsl(195 100% 45% / 0.35);
+    }
+
+    .shadow-amber {
+        box-shadow: 0 4px 24px -4px hsl(30 95% 55% / 0.4);
+    }
+
+    .shadow-card {
+        box-shadow: 0 1px 3px hsl(200 25% 15% / 0.06), 0 8px 24px hsl(200 25% 15% / 0.06);
+    }
+
+    .shadow-card-hover {
+        box-shadow: 0 4px 12px hsl(200 25% 15% / 0.08), 0 16px 40px hsl(200 25% 15% / 0.1);
+    }
 }

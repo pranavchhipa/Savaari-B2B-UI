@@ -13,6 +13,7 @@ import { HeaderComponent } from './components/layout/header/header';
 export class AppComponent {
     protected readonly title = signal('savaari-b2b-scratch');
     isPublicRoute = false;
+    isLandingPage = false;
 
     constructor(private router: Router) {
         this.checkRoute(this.router.url);
@@ -24,6 +25,8 @@ export class AppComponent {
     }
 
     private checkRoute(url: string) {
-        this.isPublicRoute = url === '/' || url.startsWith('/login') || url.startsWith('/register');
+        const path = url ? url.split('?')[0].split('#')[0] : '';
+        this.isPublicRoute = path === '/' || path === '' || path.startsWith('/login') || path.startsWith('/register');
+        this.isLandingPage = path === '/' || path === '';
     }
 }

@@ -1,0 +1,37 @@
+<section id="value-props" class="py-24 gradient-cyan-dark">
+    <div class="container mx-auto px-4 lg:px-8">
+        <div class="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <span class="inline-block text-xs font-bold uppercase tracking-widest text-cyan-light mb-4">
+                Why Choose Savaari B2B
+            </span>
+            <h2
+                class="font-display text-3xl sm:text-4xl font-extrabold text-primary-foreground leading-tight max-w-2xl mx-auto">
+                Everything Your Enterprise Needs for Ground Mobility
+            </h2>
+        </div>
+
+        <div class="space-y-6">
+            <div *ngFor="let prop of props; let i = index"
+                class="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-6 sm:p-8 rounded-2xl bg-primary-foreground/[0.04] border border-primary-foreground/[0.08] hover:bg-primary-foreground/[0.08] transition-all duration-300 group animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <div
+                    class="w-14 h-14 rounded-xl gradient-cyan flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                    <lucide-icon [name]="prop.icon" class="w-7 h-7 text-primary-foreground"></lucide-icon>
+                </div>
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-3 mb-2">
+                        <h3 class="font-display font-bold text-lg text-primary-foreground">
+                            {{ prop.title }}
+                        </h3>
+                        <span
+                            class="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary/30 text-cyan-light">
+                            {{ prop.highlight }}
+                        </span>
+                    </div>
+                    <p class="text-primary-foreground/60 text-sm leading-relaxed max-w-2xl">
+                        {{ prop.description }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

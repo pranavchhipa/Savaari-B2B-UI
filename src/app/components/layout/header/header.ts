@@ -44,8 +44,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   private checkRoute(url: string) {
-    const path = url ? url.split('?')[0] : ''; // Remove query params, safely
-    this.isPublicRoute = path === '/' || path.startsWith('/login') || path.startsWith('/register');
+    const path = url ? url.split('?')[0].split('#')[0] : ''; // Remove query params and hashes, safely
+    this.isPublicRoute = path === '/' || path === '' || path.startsWith('/login') || path.startsWith('/register');
   }
 
   toggleDarkMode() {
