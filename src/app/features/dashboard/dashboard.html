@@ -2,62 +2,62 @@
   class="relative min-h-[600px] flex items-center justify-center bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 pb-20 pt-8">
   <!-- Interactive Background that reacts to tab selection -->
   <div class="absolute inset-0 overflow-hidden">
-    <div class="absolute inset-0 bg-black/20 z-10"></div>
+    <div class="absolute inset-0 bg-slate-900/40 z-10 transition-colors duration-1000"></div>
     <div [ngClass]="{
-        'opacity-100': selectedTab === 'ONE_WAY',
-        'opacity-0': selectedTab !== 'ONE_WAY'
-      }" class="absolute inset-0 transition-opacity duration-1000">
-      <img src="assets/images/savaari-scenic-ertiga.png" class="w-full h-full object-cover"
-        style="object-position: center 40%;">
-    </div>
-    <div [ngClass]="{
-        'opacity-100': selectedTab === 'ROUND_TRIP',
-        'opacity-0': selectedTab !== 'ROUND_TRIP'
-      }" class="absolute inset-0 transition-opacity duration-1000">
-      <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=2000"
+        'opacity-100 scale-100': selectedTab === 'ONE_WAY',
+        'opacity-0 scale-105': selectedTab !== 'ONE_WAY'
+      }" class="absolute inset-0 transition-all duration-1000 ease-out">
+      <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=3200&q=100"
         class="w-full h-full object-cover">
     </div>
     <div [ngClass]="{
-        'opacity-100': selectedTab === 'LOCAL',
-        'opacity-0': selectedTab !== 'LOCAL'
-      }" class="absolute inset-0 transition-opacity duration-1000">
-      <img src="https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?auto=format&fit=crop&w=2000"
+        'opacity-100 scale-100': selectedTab === 'ROUND_TRIP',
+        'opacity-0 scale-105': selectedTab !== 'ROUND_TRIP'
+      }" class="absolute inset-0 transition-all duration-1000 ease-out">
+      <img src="https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=3200&q=100"
         class="w-full h-full object-cover">
     </div>
     <div [ngClass]="{
-        'opacity-100': selectedTab === 'AIRPORT',
-        'opacity-0': selectedTab !== 'AIRPORT'
-      }" class="absolute inset-0 transition-opacity duration-1000">
-      <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=2000"
+        'opacity-100 scale-100': selectedTab === 'LOCAL',
+        'opacity-0 scale-105': selectedTab !== 'LOCAL'
+      }" class="absolute inset-0 transition-all duration-1000 ease-out">
+      <img src="https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?auto=format&fit=crop&w=3200&q=100"
+        class="w-full h-full object-cover">
+    </div>
+    <div [ngClass]="{
+        'opacity-100 scale-100': selectedTab === 'AIRPORT',
+        'opacity-0 scale-105': selectedTab !== 'AIRPORT'
+      }" class="absolute inset-0 transition-all duration-1000 ease-out">
+      <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=3200&q=100"
         class="w-full h-full object-cover">
     </div>
   </div>
 
   <div class="relative z-20 w-full max-w-6xl px-4 mt-8">
     <div
-      class="bg-surface-light dark:bg-surface-dark shadow-2xl rounded-2xl overflow-visible border border-slate-200 dark:border-slate-800 transition-all duration-300">
+      class="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md shadow-2xl rounded-3xl overflow-visible border border-slate-200/50 dark:border-slate-700/50 transition-all duration-500 hover:shadow-cyan/20">
 
       <!-- Top Navigation Tabs -->
       <div
         class="flex border-b border-slate-100 dark:border-slate-800 relative z-30 bg-white dark:bg-slate-900 rounded-t-2xl overflow-hidden">
         <button (click)="selectTab('ONE_WAY')"
-          [ngClass]="{'border-primary text-primary bg-primary/5': selectedTab === 'ONE_WAY', 'border-transparent hover:text-primary text-slate-500': selectedTab !== 'ONE_WAY'}"
-          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all tracking-wider focus:outline-none">
+          [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'ONE_WAY', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'ONE_WAY'}"
+          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all duration-300 tracking-widest focus:outline-none">
           ONE WAY
         </button>
         <button (click)="selectTab('ROUND_TRIP')"
-          [ngClass]="{'border-primary text-primary bg-primary/5': selectedTab === 'ROUND_TRIP', 'border-transparent hover:text-primary text-slate-500': selectedTab !== 'ROUND_TRIP'}"
-          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all tracking-wider focus:outline-none">
+          [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'ROUND_TRIP', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'ROUND_TRIP'}"
+          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all duration-300 tracking-widest focus:outline-none">
           ROUND TRIP
         </button>
         <button (click)="selectTab('LOCAL')"
-          [ngClass]="{'border-primary text-primary bg-primary/5': selectedTab === 'LOCAL', 'border-transparent hover:text-primary text-slate-500': selectedTab !== 'LOCAL'}"
-          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all tracking-wider focus:outline-none">
+          [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'LOCAL', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'LOCAL'}"
+          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all duration-300 tracking-widest focus:outline-none">
           LOCAL
         </button>
         <button (click)="selectTab('AIRPORT')"
-          [ngClass]="{'border-primary text-primary bg-primary/5': selectedTab === 'AIRPORT', 'border-transparent hover:text-primary text-slate-500': selectedTab !== 'AIRPORT'}"
-          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all tracking-wider focus:outline-none">
+          [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'AIRPORT', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'AIRPORT'}"
+          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all duration-300 tracking-widest focus:outline-none">
           AIRPORT
         </button>
       </div>
@@ -141,16 +141,13 @@
                 {{ airportLabel1 }}
               </label>
               <div class="relative flex items-center">
-                <lucide-icon
-                  *ngIf="bookingForm.get('tripType')?.value === 'drop' || bookingForm.get('tripType')?.value === 'round'"
-                  name="crosshair" [size]="14" class="text-slate-400 mr-2"></lucide-icon>
+                <lucide-icon *ngIf="bookingForm.get('tripType')?.value === 'drop'" name="crosshair" [size]="14"
+                  class="text-slate-400 mr-2"></lucide-icon>
                 <input *ngIf="bookingForm.get('tripType')?.value === 'pickup' || !bookingForm.get('tripType')?.value"
                   formControlName="dropAirport"
                   class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
                   placeholder="Start typing city - e.g. Bangalore" type="text" />
-                <input
-                  *ngIf="bookingForm.get('tripType')?.value === 'drop' || bookingForm.get('tripType')?.value === 'round'"
-                  formControlName="pickupAddress"
+                <input *ngIf="bookingForm.get('tripType')?.value === 'drop'" formControlName="pickupAddress"
                   class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
                   placeholder="Start typing your address" type="text" />
               </div>
@@ -168,9 +165,7 @@
                 <input *ngIf="bookingForm.get('tripType')?.value === 'pickup'" formControlName="pickupAddress"
                   class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
                   placeholder="Start typing your address" type="text" />
-                <input
-                  *ngIf="bookingForm.get('tripType')?.value === 'drop' || bookingForm.get('tripType')?.value === 'round'"
-                  formControlName="dropAirport"
+                <input *ngIf="bookingForm.get('tripType')?.value === 'drop'" formControlName="dropAirport"
                   class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
                   placeholder="Start typing city - e.g. Bangalore" type="text" />
               </div>
@@ -187,11 +182,13 @@
             <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Pick
               Up</label>
             <div class="relative flex justify-between items-center">
-              <p-datepicker formControlName="pickupDate" [showIcon]="false" dateFormat="yy-mm-dd" appendTo="body"
-                styleClass="w-full border-none bg-transparent"
+              <p-datepicker #pickupDate formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy"
+                appendTo="body" styleClass="w-full border-none bg-transparent"
                 inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-medium !shadow-none">
               </p-datepicker>
-              <lucide-icon name="calendar" [size]="14" class="text-slate-400 ml-2"></lucide-icon>
+              <lucide-icon name="calendar" [size]="14"
+                class="text-slate-400 ml-2 cursor-pointer hover:text-primary transition-colors"
+                (click)="pickupDate.toggle()"></lucide-icon>
             </div>
           </div>
 
@@ -203,11 +200,13 @@
                 class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Return
                 <span class="text-red-500">*</span></label>
               <div class="relative flex justify-between items-center">
-                <p-datepicker formControlName="returnDate" [showIcon]="false" dateFormat="yy-mm-dd" appendTo="body"
-                  styleClass="w-full border-none bg-transparent"
+                <p-datepicker #returnDate formControlName="returnDate" [showIcon]="false" dateFormat="dd-mm-yy"
+                  appendTo="body" styleClass="w-full border-none bg-transparent"
                   inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-medium !shadow-none">
                 </p-datepicker>
-                <lucide-icon name="calendar" [size]="14" class="text-slate-400 ml-2"></lucide-icon>
+                <lucide-icon name="calendar" [size]="14"
+                  class="text-slate-400 ml-2 cursor-pointer hover:text-primary transition-colors"
+                  (click)="returnDate.toggle()"></lucide-icon>
               </div>
             </div>
           </ng-container>
@@ -221,11 +220,13 @@
             <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Pick
               Up At</label>
             <div class="relative flex justify-between items-center">
-              <p-datepicker formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
+              <p-datepicker #pickupTime formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
                 appendTo="body" styleClass="w-full border-none bg-transparent"
                 inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-medium !shadow-none">
               </p-datepicker>
-              <lucide-icon name="clock" [size]="14" class="text-slate-400 ml-2"></lucide-icon>
+              <lucide-icon name="clock" [size]="14"
+                class="text-slate-400 ml-2 cursor-pointer hover:text-primary transition-colors"
+                (click)="pickupTime.toggle()"></lucide-icon>
             </div>
           </div>
         </form>
@@ -240,8 +241,10 @@
         <!-- Centered Floating Explore Button -->
         <div class="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 w-full flex justify-center">
           <button (click)="onExploreCabs()"
-            class="bg-primary hover:bg-[#1C8CBA] text-white px-10 py-3.5 rounded-lg font-bold shadow-lg shadow-primary/40 transition-all hover:-translate-y-0.5 mt-8 tracking-wide text-sm active:scale-95 flex items-center justify-center min-w-[200px]">
+            class="bg-gradient-to-r from-primary to-[#1C8CBA] hover:from-[#1C8CBA] hover:to-sky-500 text-white px-12 py-4 rounded-xl font-bold shadow-xl shadow-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-primary/50 mt-8 tracking-widest text-sm active:scale-95 flex items-center justify-center min-w-[240px] border border-white/10">
             EXPLORE CABS
+            <lucide-icon name="arrow-right" [size]="18"
+              class="ml-2 group-hover:translate-x-1 transition-transform"></lucide-icon>
           </button>
         </div>
       </div>

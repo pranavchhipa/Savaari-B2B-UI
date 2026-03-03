@@ -29,8 +29,7 @@ export class DashboardComponent implements OnInit {
 
   tripTypes = [
     { label: 'Drop to Airport', value: 'drop' },
-    { label: 'Pickup from Airport', value: 'pickup' },
-    { label: 'Airport Round Trip', value: 'round' }
+    { label: 'Pickup from Airport', value: 'pickup' }
   ];
 
   ngOnInit() {
@@ -38,14 +37,18 @@ export class DashboardComponent implements OnInit {
   }
 
   initForm() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayAfter = new Date();
+    dayAfter.setDate(dayAfter.getDate() + 2);
     this.bookingForm = this.fb.group({
       fromCity: [''],
       toCity: [''],
       tripType: [null],
       pickupAddress: [''],
       dropAirport: [''],
-      pickupDate: [new Date()],
-      returnDate: [new Date()],
+      pickupDate: [tomorrow],
+      returnDate: [dayAfter],
       pickupTime: [new Date(new Date().setHours(18, 0, 0, 0))]
     });
   }
@@ -53,7 +56,7 @@ export class DashboardComponent implements OnInit {
   get airportLabel1(): string {
     const type = this.bookingForm?.get('tripType')?.value;
     if (type === 'pickup') return 'PICKUP AIRPORT';
-    if (type === 'drop' || type === 'round') return 'PICKUP ADDRESS';
+    if (type === 'drop') return 'PICKUP ADDRESS';
     return 'DROP AIRPORT';
   }
 
@@ -77,20 +80,33 @@ export class DashboardComponent implements OnInit {
     this.showError = false;
     this.errorMessage = '';
 
-    console.log(`Exploring cabs for ${this.selectedTab}:`, this.bookingForm.value);
-
     const val = this.bookingForm.value;
+    const isRoundTrip = this.selectedTab === 'ROUND_TRIP';
+    const isAirport = this.selectedTab === 'AIRPORT';
+    const tripType = isRoundTrip ? 'Round Trip' : this.selectedTab === 'LOCAL' ? 'Local' : isAirport ? 'Airport' : 'One Way';
 
-    // Save basic search itinerary to state
+    // Parse pickupTime to hh:mm AM/PM string
+    const timeDate: Date = val.pickupTime instanceof Date ? val.pickupTime : new Date();
+    const hours = timeDate.getHours();
+    const minutes = timeDate.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    const pickupTimeStr = `${String(h12).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
+
     this.bookingState.setItinerary({
       fromCity: val.fromCity || 'Bangalore',
       toCity: val.toCity || 'Mysore',
       pickupDate: val.pickupDate || new Date(),
-      pickupTime: '09:30 PM', // Hardcoded mockup fallback
-      tripType: this.selectedTab === 'ONE_WAY' ? 'One Way' : 'Round Trip'
+      pickupTime: pickupTimeStr,
+      tripType: tripType,
+      ...(isRoundTrip && { returnDate: val.returnDate || new Date() }),
+      ...(isAirport && {
+        airportSubType: val.tripType || 'drop',
+        pickupAddress: val.pickupAddress || '',
+        dropAirport: val.dropAirport || ''
+      })
     });
 
-    // Bypassing validation for the UI mockup preview...
     this.router.navigate(['/select-car']);
   }
 }

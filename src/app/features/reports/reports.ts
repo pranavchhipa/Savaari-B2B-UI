@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -21,7 +21,8 @@ interface TripReport {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule, FooterComponent],
   templateUrl: './reports.html',
-  styleUrl: './reports.css'
+  styleUrl: './reports.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ReportsComponent {
   // Native date input uses YYYY-MM-DD strings

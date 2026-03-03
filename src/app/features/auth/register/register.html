@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+<div class="min-h-screen bg-slate-900 flex flex-col pt-4 pb-6 sm:px-6 lg:px-8 relative overflow-hidden">
   <!-- Dynamic Background elements (matching landing page aesthetic) -->
   <div class="absolute inset-0">
     <img alt="Premium Chauffeur Driven Car" class="w-full h-full object-cover opacity-20"
@@ -6,10 +6,10 @@
     <div class="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-900/50"></div>
   </div>
 
-  <div class="sm:mx-auto sm:w-full sm:max-w-xl mt-[64px] relative z-10">
-    <div class="text-center mb-8">
+  <div class="sm:mx-auto sm:w-full sm:max-w-xl relative z-10">
+    <div class="text-center mb-4">
       <div
-        class="inline-flex justify-center items-center bg-primary text-white font-bold px-4 py-2 rounded skew-x-[-10deg] shadow-lg mb-6">
+        class="inline-flex justify-center items-center bg-primary text-white font-bold px-4 py-2 rounded skew-x-[-10deg] shadow-lg mb-3">
         <span class="skew-x-[10deg] inline-block tracking-wide text-2xl">B2B CAB</span>
       </div>
       <h2 class="text-3xl font-display font-bold text-white tracking-tight">Create Corporate Account</h2>
@@ -24,9 +24,69 @@
 
   <div class="sm:mx-auto sm:w-full sm:max-w-xl relative z-10 mb-[64px]">
     <div
-      class="bg-surface-light dark:bg-surface-dark py-8 px-4 shadow-2xl rounded-2xl sm:px-10 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
-      <form class="space-y-6" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      class="bg-surface-light dark:bg-surface-dark py-5 px-4 shadow-2xl rounded-2xl sm:px-10 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
+      <form class="space-y-4" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
 
+        <!-- Row 1: Name (First + Last) -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Name <span class="text-red-500">*</span>
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1">
+            <div class="relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <lucide-icon name="user" [size]="18" class="text-slate-400"></lucide-icon>
+              </div>
+              <input formControlName="firstName" id="firstName" type="text" placeholder="First Name"
+                class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched}" />
+            </div>
+            <div class="relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <lucide-icon name="user" [size]="18" class="text-slate-400"></lucide-icon>
+              </div>
+              <input formControlName="lastName" id="lastName" type="text" placeholder="Last Name"
+                class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Email + Phone -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <!-- Email -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="email">Email Id
+              <span class="text-red-500">*</span></label>
+            <div class="relative mt-1 rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <lucide-icon name="mail" [size]="18" class="text-slate-400"></lucide-icon>
+              </div>
+              <input formControlName="email" id="email" type="email" autocomplete="email"
+                class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('email')?.invalid && registerForm.get('email')?.touched}" />
+            </div>
+            <p *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+              class="mt-1 text-xs text-red-600 dark:text-red-400">Please enter a valid email.</p>
+          </div>
+
+          <!-- Phone with +91 prefix -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="phone">Mobile
+              Phone <span class="text-red-500">*</span></label>
+            <div class="flex mt-1 rounded-md shadow-sm">
+              <span
+                class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium">+91</span>
+              <input formControlName="phone" id="phone" type="tel" placeholder="10-digit number"
+                class="flex-1 block w-full rounded-r-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 px-3 transition-shadow"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('phone')?.invalid && registerForm.get('phone')?.touched}" />
+            </div>
+            <p *ngIf="registerForm.get('phone')?.invalid && registerForm.get('phone')?.touched"
+              class="mt-1 text-xs text-red-600 dark:text-red-400">Please enter a valid 10-digit number.</p>
+          </div>
+        </div>
+
+        <!-- Row 3: Company Name + Company City -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <!-- Company Name -->
           <div>
@@ -36,57 +96,29 @@
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <lucide-icon name="building-2" [size]="18" class="text-slate-400"></lucide-icon>
               </div>
-              <input formControlName="companyName" id="companyName" type="text" placeholder="Acme Corp"
+              <input formControlName="companyName" id="companyName" type="text"
                 class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
                 [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('companyName')?.invalid && registerForm.get('companyName')?.touched}" />
             </div>
           </div>
 
-          <!-- Full Name -->
+          <!-- Company City -->
           <div>
-            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="fullName">Admin Full
-              Name <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="companyCity">Company
+              City <span class="text-red-500">*</span></label>
             <div class="relative mt-1 rounded-md shadow-sm">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <lucide-icon name="user" [size]="18" class="text-slate-400"></lucide-icon>
+                <lucide-icon name="map-pin" [size]="18" class="text-slate-400"></lucide-icon>
               </div>
-              <input formControlName="fullName" id="fullName" type="text" autocomplete="name" placeholder="John Doe"
+              <input formControlName="companyCity" id="companyCity" type="text"
+                placeholder="Start typing city - e.g. Bangalore"
                 class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
-                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('fullName')?.invalid && registerForm.get('fullName')?.touched}" />
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('companyCity')?.invalid && registerForm.get('companyCity')?.touched}" />
             </div>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <!-- Email Address -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="email">Work
-              Email <span class="text-red-500">*</span></label>
-            <div class="relative mt-1 rounded-md shadow-sm">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <lucide-icon name="mail" [size]="18" class="text-slate-400"></lucide-icon>
-              </div>
-              <input formControlName="email" id="email" type="email" autocomplete="email" placeholder="name@company.com"
-                class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
-                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('email')?.invalid && registerForm.get('email')?.touched}" />
-            </div>
-          </div>
-
-          <!-- Phone Number -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="phone">Phone
-              Number <span class="text-red-500">*</span></label>
-            <div class="relative mt-1 rounded-md shadow-sm">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <lucide-icon name="phone" [size]="18" class="text-slate-400"></lucide-icon>
-              </div>
-              <input formControlName="phone" id="phone" type="tel" placeholder="10-digit number"
-                class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
-                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('phone')?.invalid && registerForm.get('phone')?.touched}" />
-            </div>
-          </div>
-        </div>
-
+        <!-- Row 4: Password + Confirm Password -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <!-- Password -->
           <div>
@@ -101,15 +133,13 @@
                 [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': registerForm.get('password')?.invalid && registerForm.get('password')?.touched}" />
             </div>
             <p *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
-              class="mt-1 text-xs text-red-600 dark:text-red-400">
-              At least 6 characters.
-            </p>
+              class="mt-1 text-xs text-red-600 dark:text-red-400">At least 6 characters.</p>
           </div>
 
           <!-- Confirm Password -->
           <div>
             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
-              for="confirmPassword">Confirm Password <span class="text-red-500">*</span></label>
+              for="confirmPassword">Re-enter Password <span class="text-red-500">*</span></label>
             <div class="relative mt-1 rounded-md shadow-sm">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <lucide-icon name="lock" [size]="18" class="text-slate-400"></lucide-icon>
@@ -119,9 +149,7 @@
                 [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch')) && registerForm.get('confirmPassword')?.touched}" />
             </div>
             <p *ngIf="registerForm.hasError('mismatch') && registerForm.get('confirmPassword')?.touched"
-              class="mt-1 text-xs text-red-600 dark:text-red-400">
-              Passwords do not match.
-            </p>
+              class="mt-1 text-xs text-red-600 dark:text-red-400">Passwords do not match.</p>
           </div>
         </div>
 

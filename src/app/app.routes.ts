@@ -1,27 +1,17 @@
 import { Routes } from '@angular/router';
 import { LandingComponent } from './features/landing/landing';
-import { LoginComponent } from './features/auth/login/login';
-import { RegisterComponent } from './features/auth/register/register';
-import { DashboardComponent } from './features/dashboard/dashboard';
-import { BookingsComponent } from './features/bookings/bookings';
-import { MarkupSettingsComponent } from './features/markup-settings/markup-settings';
-import { AccountSettingsComponent } from './features/account-settings/account-settings';
-import { ReportsComponent } from './features/reports/reports';
-import { SelectCarComponent } from './features/select-car/select-car';
-import { BookingComponent } from './features/booking/booking';
 import { bookingGuard } from './core/guards/booking.guard';
-import { WalletDashboardComponent } from './features/wallet-dashboard/wallet-dashboard';
 
 export const routes: Routes = [
     { path: '', component: LandingComponent },
-    { path: 'login', component: LoginComponent },
-    { path: 'register', component: RegisterComponent },
-    { path: 'dashboard', component: DashboardComponent },
-    { path: 'bookings', component: BookingsComponent },
-    { path: 'markup-settings', component: MarkupSettingsComponent },
-    { path: 'account-settings', component: AccountSettingsComponent },
-    { path: 'reports', component: ReportsComponent },
-    { path: 'select-car', component: SelectCarComponent },
-    { path: 'booking', component: BookingComponent, canActivate: [bookingGuard] },
-    { path: 'wallet', component: WalletDashboardComponent }
+    { path: 'login', loadComponent: () => import('./features/auth/login/login').then(m => m.LoginComponent) },
+    { path: 'register', loadComponent: () => import('./features/auth/register/register').then(m => m.RegisterComponent) },
+    { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard').then(m => m.DashboardComponent) },
+    { path: 'bookings', loadComponent: () => import('./features/bookings/bookings').then(m => m.BookingsComponent) },
+    { path: 'markup-settings', loadComponent: () => import('./features/markup-settings/markup-settings').then(m => m.MarkupSettingsComponent) },
+    { path: 'account-settings', loadComponent: () => import('./features/account-settings/account-settings').then(m => m.AccountSettingsComponent) },
+    { path: 'reports', loadComponent: () => import('./features/reports/reports').then(m => m.ReportsComponent) },
+    { path: 'select-car', loadComponent: () => import('./features/select-car/select-car').then(m => m.SelectCarComponent) },
+    { path: 'booking', loadComponent: () => import('./features/booking/booking').then(m => m.BookingComponent), canActivate: [bookingGuard] },
+    { path: 'wallet', loadComponent: () => import('./features/wallet-dashboard/wallet-dashboard').then(m => m.WalletDashboardComponent) }
 ];

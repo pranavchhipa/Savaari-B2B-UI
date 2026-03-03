@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+<div class="min-h-screen bg-slate-900 flex flex-col pt-12 pb-12 sm:px-6 lg:px-8 relative overflow-hidden">
   <!-- Dynamic Background elements (matching landing page aesthetic) -->
   <div class="absolute inset-0">
     <img alt="Premium Chauffeur Driven Car" class="w-full h-full object-cover opacity-20"
@@ -6,7 +6,7 @@
     <div class="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-900/50"></div>
   </div>
 
-  <div class="sm:mx-auto sm:w-full sm:max-w-md mt-[64px] relative z-10">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
     <div class="text-center mb-8">
       <div
         class="inline-flex justify-center items-center bg-primary text-white font-bold px-4 py-2 rounded skew-x-[-10deg] shadow-lg mb-6">
@@ -27,6 +27,7 @@
       class="bg-surface-light dark:bg-surface-dark py-8 px-4 shadow-2xl rounded-2xl sm:px-10 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
       <form class="space-y-6" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
 
+        <!-- Email -->
         <div>
           <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="email">Email
             Address <span class="text-red-500">*</span></label>
@@ -44,9 +45,10 @@
           </p>
         </div>
 
+        <!-- Password -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="password">Password <span
-              class="text-red-500">*</span></label>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="password">Password
+            <span class="text-red-500">*</span></label>
           <div class="relative mt-1 rounded-md shadow-sm">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <lucide-icon name="lock" [size]="18" class="text-slate-400"></lucide-icon>
@@ -62,6 +64,7 @@
           </p>
         </div>
 
+        <!-- Forgot Password + Remember Me -->
         <div class="flex items-center justify-between">
           <div class="flex items-center">
             <input formControlName="rememberMe" id="remember-me" type="checkbox"
@@ -78,15 +81,19 @@
           </div>
         </div>
 
-        <div>
+        <!-- Buttons: Register (gray) + Sign In (blue) -->
+        <div class="flex gap-3">
+          <a routerLink="/register"
+            class="flex-1 flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-500 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all">
+            Register
+          </a>
           <button type="submit"
-            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all shadow-primary/40 disabled:opacity-70 disabled:cursor-not-allowed group relative overflow-hidden">
-            <!-- Hover sheen effect -->
+            class="flex-1 flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all shadow-primary/40 group relative overflow-hidden">
             <div
               class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]">
             </div>
             <span class="flex items-center justify-center w-full">
-              Sign In <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
+              Login <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
             </span>
           </button>
         </div>

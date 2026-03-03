@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -12,10 +12,12 @@ type AccountSection = 'personal' | 'password';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule, FooterComponent],
   templateUrl: './account-settings.html',
-  styleUrl: './account-settings.css'
+  styleUrl: './account-settings.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AccountSettingsComponent {
   activeSection: AccountSection = 'personal';
+  private location = inject(Location);
 
   // Personal Info model
   profile = {
@@ -76,5 +78,9 @@ export class AccountSettingsComponent {
     this.passwordSuccess = true;
     this.passwords = { current: '', newPass: '', confirm: '' };
     setTimeout(() => this.passwordSuccess = false, 3000);
+  }
+
+  goBack() {
+    this.location.back();
   }
 }

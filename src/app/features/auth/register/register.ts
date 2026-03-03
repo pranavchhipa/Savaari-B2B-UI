@@ -1,27 +1,30 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { HeaderComponent } from '../../../components/layout/header/header';
 import { FooterComponent } from '../../../components/layout/footer/footer';
+
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule, FooterComponent],
   templateUrl: './register.html',
-  styleUrl: './register.css'
+  styleUrl: './register.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RegisterComponent {
   private fb = inject(FormBuilder);
   private router = inject(Router);
 
   registerForm = this.fb.group({
-    companyName: ['', [Validators.required]],
-    fullName: ['', [Validators.required]],
+    firstName: ['', [Validators.required]],
+    lastName: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+    companyName: ['', [Validators.required]],
+    companyCity: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(6)]],
     confirmPassword: ['', [Validators.required]]
   }, { validators: this.passwordMatchValidator });

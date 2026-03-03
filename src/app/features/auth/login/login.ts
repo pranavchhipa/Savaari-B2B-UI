@@ -1,17 +1,18 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { HeaderComponent } from '../../../components/layout/header/header';
 import { FooterComponent } from '../../../components/layout/footer/footer';
+
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule, FooterComponent],
   templateUrl: './login.html',
-  styleUrl: './login.css'
+  styleUrl: './login.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginComponent {
   private fb = inject(FormBuilder);

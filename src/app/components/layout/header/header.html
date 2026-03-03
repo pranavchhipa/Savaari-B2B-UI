@@ -1,25 +1,25 @@
-<nav
-  class="sticky top-0 z-50 bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur shadow-sm border-b border-slate-200 dark:border-slate-700">
+<nav [ngClass]="{
+    'sticky top-0 z-50 border-b transition-all duration-300': true,
+    'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-slate-200/50 dark:border-slate-800/50 shadow-sm': isScrolled,
+    'bg-white dark:bg-surface-dark border-transparent': !isScrolled
+  }">
   <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16">
       <div class="flex items-center gap-4 md:gap-8">
         <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer group"
           [routerLink]="isPublicRoute ? '/' : '/dashboard'">
-          <span
-            class="text-2xl font-black text-slate-800 dark:text-white tracking-tighter group-hover:text-primary transition-colors">SAVAARI</span>
           <div class="bg-primary text-white font-bold px-2 py-0.5 md:px-3 md:py-1 rounded skew-x-[-10deg] shadow-lg">
-            <span class="skew-x-[10deg] inline-block tracking-wide text-xs md:text-sm">B2B CAB</span>
+            <span class="skew-x-[10deg] inline-block tracking-wide text-xs md:text-xl">B2B CAB</span>
           </div>
         </div>
 
-        <!-- B2B Support on Left -->
-        <ng-container *ngIf="!isPublicRoute">
-          <div
-            class="hidden lg:flex items-center text-slate-500 dark:text-slate-400 text-[12px] font-medium whitespace-nowrap">
-            <lucide-icon name="headset" [size]="14" class="mr-1.5"></lucide-icon>
-            Support: 0 90 4545 0000
-          </div>
-        </ng-container>
+        <!-- Customer Care 24x7 - shown on all routes -->
+        <div
+          class="hidden lg:flex items-center text-slate-500 dark:text-slate-400 text-[12px] font-medium whitespace-nowrap">
+          <lucide-icon name="headset" [size]="14" class="mr-1.5"></lucide-icon>
+          Customer Care 24x7: 0 90 4545 0000
+        </div>
+
       </div>
       <div class="flex items-center space-x-2 md:space-x-4">
 
@@ -43,11 +43,7 @@
               Contact
             </a>
           </div>
-          <a href="tel:09045450000"
-            class="hidden md:flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition-colors cursor-pointer mr-2">
-            <lucide-icon name="headphones" class="w-4 h-4 text-primary"></lucide-icon>
-            0 90 4545 0000
-          </a>
+
         </ng-container>
 
         <!-- B2B PORTAL VIEW -->

@@ -1,30 +1,38 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { RouterLink } from '@angular/router';
 import { WalletService, WalletTransaction } from '../../core/services/wallet.service';
 import { Observable } from 'rxjs';
-
+import { FooterComponent } from '../../components/layout/footer/footer';
 @Component({
     selector: 'app-wallet-dashboard',
     standalone: true,
-    imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink],
-    templateUrl: './wallet-dashboard.html'
+    imports: [CommonModule, FormsModule, LucideAngularModule, FooterComponent],
+
+    templateUrl: './wallet-dashboard.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WalletDashboardComponent implements OnInit {
-    balance$!: Observable<number>;
-    transactions$!: Observable<WalletTransaction[]>;
+    private walletService = inject(WalletService);
+    private location = inject(Location);
+    private cdr = inject(ChangeDetectorRef);
+
+    balance$: Observable<number> = this.walletService.balance$;
+    transactions$: Observable<WalletTransaction[]> = this.walletService.transactions$;
 
     showTopUpModal = false;
     topUpAmount = 10000;
-    isProcessing = false;
+    isProcessing = true; // This is for initial loading state
 
-    constructor(private walletService: WalletService) { }
+    constructor() { }
 
     ngOnInit(): void {
-        this.balance$ = this.walletService.balance$;
-        this.transactions$ = this.walletService.transactions$;
+        // Mock loading delay to show skeleton
+        setTimeout(() => {
+            this.isProcessing = false;
+            this.cdr.markForCheck();
+        }, 1000);
     }
 
     openTopUpModal(): void {
@@ -49,5 +57,9 @@ export class WalletDashboardComponent implements OnInit {
             this.isProcessing = false;
             this.showTopUpModal = false;
         }, 1500);
+    }
+
+    goBack() {
+        this.location.back();
     }
 }

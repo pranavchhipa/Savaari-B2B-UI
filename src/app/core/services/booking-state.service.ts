@@ -7,6 +7,11 @@ export interface Itinerary {
     pickupDate: Date;
     pickupTime: string;
     tripType: string;
+    returnDate?: Date;       // Round Trip only
+    localPackage?: string;   // Local only: '8hr/80km' | '12hr/120km'
+    airportSubType?: string; // Airport only: 'drop' | 'pickup'
+    pickupAddress?: string;  // Airport only
+    dropAirport?: string;    // Airport only
 }
 
 export interface SelectedCar {
@@ -82,6 +87,10 @@ export class BookingStateService {
                 } else {
                     parsed.pickupDate = date;
                 }
+            }
+            if (isItinerary && parsed?.returnDate) {
+                const rDate = new Date(parsed.returnDate);
+                parsed.returnDate = isNaN(rDate.getTime()) ? undefined : rDate;
             }
             return parsed;
         } catch (e) {

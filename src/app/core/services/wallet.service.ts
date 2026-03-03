@@ -44,6 +44,8 @@ export class WalletService {
     public transactions$ = this.transactionsSubject.asObservable();
 
     constructor() {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+
         // Load from local storage if available for persistence
         const savedBalance = localStorage.getItem('savaari_b2b_wallet_balance');
         const savedTxns = localStorage.getItem('savaari_b2b_wallet_txns');

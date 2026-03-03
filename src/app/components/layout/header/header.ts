@@ -15,6 +15,7 @@ import { WalletService } from '../../../core/services/wallet.service';
 export class HeaderComponent implements OnInit, OnDestroy {
   isPublicRoute = false;
   isUserDropdownOpen = false;
+  isScrolled = false;
   private routeSub!: Subscription;
   balance$!: Observable<number>;
 
@@ -61,5 +62,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (this.isUserDropdownOpen && !this.elementRef.nativeElement.contains(event.target)) {
       this.isUserDropdownOpen = false;
     }
+  }
+
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    this.isScrolled = window.scrollY > 10;
   }
 }
