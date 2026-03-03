@@ -332,8 +332,12 @@
                                     <lucide-icon name="wallet" [size]="28"></lucide-icon>
                                 </div>
                                 <div class="p-8 text-center" *ngIf="isProcessingWallet">
-                                    <app-car-loader
-                                        text="Processing your secure payment... almost there!"></app-car-loader>
+                                    <div class="flex flex-col items-center gap-4">
+                                        <lucide-icon name="loader-2" [size]="48"
+                                            class="text-primary animate-spin"></lucide-icon>
+                                        <p class="text-slate-500 animate-pulse text-sm">Processing your secure
+                                            payment... almost there!</p>
+                                    </div>
                                 </div>
                                 <div class="flex-1">
                                     <div class="flex items-center gap-3 mb-1">
