@@ -99,13 +99,13 @@
             <div class="flex items-end">
               <button (click)="viewReports()" [disabled]="isLoading"
                 class="w-full sm:w-auto px-8 py-2.5 text-sm font-bold text-white bg-primary hover:bg-sky-600 disabled:opacity-70 rounded-lg shadow-lg shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap">
-                <span *ngIf="!isLoading">VIEW</span>
-                <svg *ngIf="isLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                <span [style.display]="(isLoading) ? 'none' : null">VIEW</span>
+                <svg [style.display]="(!isLoading) ? 'none' : null" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
                   viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                 </svg>
-                <span *ngIf="isLoading">Loading...</span>
+                <span [style.display]="(!isLoading) ? 'none' : null">Loading...</span>
               </button>
             </div>
 
@@ -114,7 +114,7 @@
         </div>
 
         <!-- Results Area -->
-        <div *ngIf="hasViewed">
+        <div [style.display]="(!hasViewed) ? 'none' : null">
 
           <!-- Summary Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -156,7 +156,7 @@
           <!-- Table -->
           <div
             class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div *ngIf="hasViewed" class="space-y-6">
+            <div [style.display]="(!hasViewed) ? 'none' : null" class="space-y-6">
               <!-- Report Header -->
               <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -172,7 +172,7 @@
               </div>
 
               <!-- Loading State -->
-              <div *ngIf="isLoading"
+              <div [style.display]="(!isLoading) ? 'none' : null"
                 class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div class="p-6 space-y-4">
                   <div class="grid grid-cols-4 gap-4 mb-8">
@@ -183,7 +183,7 @@
               </div>
 
               <!-- Stats Cards -->
-              <div *ngIf="!isLoading" class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+              <div [style.display]="(isLoading) ? 'none' : null" class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
@@ -237,8 +237,8 @@
                         </span>
                       </td>
                       <td class="px-5 py-4 text-right font-semibold text-slate-800 dark:text-slate-200">
-                        <span *ngIf="trip.fare > 0">₹{{ trip.fare.toLocaleString() }}</span>
-                        <span *ngIf="trip.fare === 0" class="text-slate-400 font-normal">—</span>
+                        <span [style.display]="(trip.fare <= 0) ? 'none' : null">₹{{ trip.fare.toLocaleString() }}</span>
+                        <span [style.display]="(trip.fare !== 0) ? 'none' : null" class="text-slate-400 font-normal">—</span>
                       </td>
                     </tr>
                   </tbody>
@@ -278,7 +278,7 @@
           </div>
 
           <!-- Empty state (before View is clicked) -->
-          <div *ngIf="!hasViewed"
+          <div [style.display]="(hasViewed) ? 'none' : null"
             class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-dashed border-slate-300 dark:border-slate-600 p-12 text-center flex flex-col items-center gap-4">
             <div class="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
               <lucide-icon name="calendar-search" [size]="32" class="text-slate-400"></lucide-icon>

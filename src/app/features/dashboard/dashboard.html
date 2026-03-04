@@ -69,7 +69,7 @@
           <!-- ============================ -->
           <!-- TAB: ONE WAY & ROUND TRIP (Shared From/To) -->
           <!-- ============================ -->
-          <ng-container *ngIf="selectedTab === 'ONE_WAY' || selectedTab === 'ROUND_TRIP'">
+          <div [style.display]="selectedTab !== 'ONE_WAY' && selectedTab !== 'ROUND_TRIP' ? 'none' : null" class="contents">
             <div
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
               <label
@@ -92,19 +92,19 @@
                   placeholder="City - e.g. Mysore" type="text" />
               </div>
               <!-- Subtle Add City Link for Round Trip -->
-              <button *ngIf="selectedTab === 'ROUND_TRIP'"
+              <button [style.display]="selectedTab !== 'ROUND_TRIP' ? 'none' : null"
                 class="absolute -bottom-6 left-0 flex items-center gap-1 text-primary hover:text-[#1C8CBA] transition-colors group">
                 <lucide-icon name="plus-circle" [size]="12"
                   class="group-hover:scale-110 transition-transform"></lucide-icon>
                 <span class="text-[10px] font-bold uppercase tracking-wider">Add City</span>
               </button>
             </div>
-          </ng-container>
+          </div>
 
           <!-- ============================ -->
           <!-- TAB: LOCAL (City Only) -->
           <!-- ============================ -->
-          <ng-container *ngIf="selectedTab === 'LOCAL'">
+          <div [style.display]="selectedTab !== 'LOCAL' ? 'none' : null" class="contents">
             <div
               class="md:col-span-2 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
               <label
@@ -116,12 +116,12 @@
                   placeholder="City - e.g. Bangalore" type="text" />
               </div>
             </div>
-          </ng-container>
+          </div>
 
           <!-- ============================ -->
           <!-- TAB: AIRPORT -->
           <!-- ============================ -->
-          <ng-container *ngIf="selectedTab === 'AIRPORT'">
+          <div [style.display]="selectedTab !== 'AIRPORT' ? 'none' : null" class="contents">
             <!-- TRIP TYPE (Col 1) -->
             <div
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
@@ -141,36 +141,36 @@
                 {{ airportLabel1 }}
               </label>
               <div class="relative flex items-center">
-                <lucide-icon *ngIf="bookingForm.get('tripType')?.value === 'drop'" name="crosshair" [size]="14"
+                <lucide-icon [style.display]="bookingForm.get('tripType')?.value !== 'drop' ? 'none' : null" name="crosshair" [size]="14"
                   class="text-slate-400 mr-2"></lucide-icon>
-                <input *ngIf="bookingForm.get('tripType')?.value === 'pickup' || !bookingForm.get('tripType')?.value"
+                <input [style.display]="bookingForm.get('tripType')?.value === 'drop' ? 'none' : null"
                   formControlName="dropAirport"
                   class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
                   placeholder="Start typing city - e.g. Bangalore" type="text" />
-                <input *ngIf="bookingForm.get('tripType')?.value === 'drop'" formControlName="pickupAddress"
+                <input [style.display]="bookingForm.get('tripType')?.value !== 'drop' ? 'none' : null" formControlName="pickupAddress"
                   class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
                   placeholder="Start typing your address" type="text" />
               </div>
             </div>
 
             <!-- FIELD 2 (Col 3) - Only if Trip Type is selected -->
-            <div *ngIf="bookingForm.get('tripType')?.value"
+            <div [style.display]="!bookingForm.get('tripType')?.value ? 'none' : null"
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
               <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">
                 {{ airportLabel2 }}
               </label>
               <div class="relative flex items-center">
-                <lucide-icon *ngIf="bookingForm.get('tripType')?.value === 'pickup'" name="crosshair" [size]="14"
+                <lucide-icon [style.display]="bookingForm.get('tripType')?.value !== 'pickup' ? 'none' : null" name="crosshair" [size]="14"
                   class="text-slate-400 mr-2"></lucide-icon>
-                <input *ngIf="bookingForm.get('tripType')?.value === 'pickup'" formControlName="pickupAddress"
+                <input [style.display]="bookingForm.get('tripType')?.value !== 'pickup' ? 'none' : null" formControlName="pickupAddress"
                   class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
                   placeholder="Start typing your address" type="text" />
-                <input *ngIf="bookingForm.get('tripType')?.value === 'drop'" formControlName="dropAirport"
+                <input [style.display]="bookingForm.get('tripType')?.value !== 'drop' ? 'none' : null" formControlName="dropAirport"
                   class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 font-medium"
                   placeholder="Start typing city - e.g. Bangalore" type="text" />
               </div>
             </div>
-          </ng-container>
+          </div>
 
           <!-- ============================ -->
           <!-- SHARED DATE/TIME FIELDS -->
@@ -193,7 +193,7 @@
           </div>
 
           <!-- Return Date (Used ONLY in ROUND TRIP) -->
-          <ng-container *ngIf="selectedTab === 'ROUND_TRIP'">
+          <div [style.display]="selectedTab !== 'ROUND_TRIP' ? 'none' : null" class="contents">
             <div
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-0.5 focus-within:border-primary transition-colors">
               <label
@@ -209,7 +209,7 @@
                   (click)="returnDate.toggle()"></lucide-icon>
               </div>
             </div>
-          </ng-container>
+          </div>
 
           <!-- Pick Up Time (Used in ALL tabs, positioned differently based on grid) -->
           <div
@@ -232,7 +232,7 @@
         </form>
 
         <!-- Error Banner -->
-        <div *ngIf="showError"
+        <div [style.display]="!showError ? 'none' : null"
           class="mt-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-600 dark:text-red-400 text-sm animate-fade-in">
           <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
           <span>{{ errorMessage }}</span>

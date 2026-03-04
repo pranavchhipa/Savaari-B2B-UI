@@ -66,7 +66,7 @@
       <div class="flex-1">
 
         <!-- MARKUP SETTINGS PANEL -->
-        <div *ngIf="activeSection === 'markup'"
+        <div [style.display]="(activeSection !== 'markup') ? 'none' : null"
           class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
           <div class="mb-8">
             <div class="flex items-center gap-3 mb-2">
@@ -165,7 +165,7 @@
         </div>
 
         <!-- COMMISSION REPORTS placeholder -->
-        <div *ngIf="activeSection === 'commission'"
+        <div [style.display]="(activeSection !== 'commission') ? 'none' : null"
           class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-center flex flex-col items-center gap-4 min-h-[400px] justify-center">
           <div class="bg-blue-50 dark:bg-slate-700 p-4 rounded-full">
             <lucide-icon name="file-bar-chart" [size]="48" class="text-primary opacity-70"></lucide-icon>
@@ -176,7 +176,7 @@
         </div>
 
         <!-- GENERAL PREFERENCES placeholder -->
-        <div *ngIf="activeSection === 'preferences'"
+        <div [style.display]="(activeSection !== 'preferences') ? 'none' : null"
           class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-center flex flex-col items-center gap-4 min-h-[400px] justify-center">
           <div class="bg-purple-50 dark:bg-slate-700 p-4 rounded-full">
             <lucide-icon name="settings-2" [size]="48" class="text-purple-500 opacity-70"></lucide-icon>

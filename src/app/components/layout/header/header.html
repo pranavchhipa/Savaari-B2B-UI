@@ -24,7 +24,7 @@
       <div class="flex items-center space-x-2 md:space-x-4">
 
         <!-- PUBLIC VIEW -->
-        <ng-container *ngIf="isPublicRoute">
+        <div [style.display]="(!isPublicRoute) ? 'none' : null" class="contents">
           <div class="hidden md:flex items-center gap-6 mr-6">
             <a href="/#solutions"
               class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
@@ -44,10 +44,10 @@
             </a>
           </div>
 
-        </ng-container>
+        </div>
 
         <!-- B2B PORTAL VIEW -->
-        <ng-container *ngIf="!isPublicRoute">
+        <div [style.display]="(isPublicRoute) ? 'none' : null" class="contents">
           <div class="flex items-center">
 
             <div class="flex items-center space-x-4 overflow-x-auto hide-scrollbar max-w-full mr-2">
@@ -92,7 +92,7 @@
               </button>
 
               <!-- Dropdown Panel -->
-              <div *ngIf="isUserDropdownOpen"
+              <div [style.display]="(!isUserDropdownOpen) ? 'none' : null"
                 class="absolute top-full right-0 mt-3 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden py-2 z-50 animate-in fade-in slide-in-from-top-2 origin-top-right">
                 <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700/80 mb-1">
                   <p class="text-sm font-bold text-slate-900 dark:text-white">Pranav Chhipa</p>
@@ -141,7 +141,7 @@
               </div>
             </div>
           </div>
-        </ng-container>
+        </div>
 
       </div>
     </div>

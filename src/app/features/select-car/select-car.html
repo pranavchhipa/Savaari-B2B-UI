@@ -8,7 +8,7 @@
             </ol>
         </nav>
 
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4" *ngIf="itinerary">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4" [style.display]="(!itinerary) ? 'none' : null">
             <div class="flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <button (click)="goBack()"
@@ -18,38 +18,38 @@
                     </button>
                     <h1 class="text-[14px] md:text-[15px] font-medium text-slate-800 dark:text-slate-200">
                         <!-- Local: show City > Local (package) -->
-                        <ng-container *ngIf="isLocal">
-                            <span class="font-bold">{{itinerary.fromCity || 'Bangalore'}}</span>
+                        <span [style.display]="(!isLocal) ? 'none' : null" class="contents">
+                            <span class="font-bold">{{itinerary?.fromCity || 'Bangalore'}}</span>
                             <span class="text-slate-400 mx-2 text-xs">&gt;</span>
                             <span class="font-bold">Local</span>
                             <span
                                 class="ml-2 text-[11px] px-2 py-0.5 bg-sky-100 dark:bg-sky-900/40 rounded text-sky-600 dark:text-sky-400 font-bold tracking-tight">
                                 {{selectedLocalPackage === '8hr' ? '8hr/80km' : '12hr/120km'}}
                             </span>
-                        </ng-container>
+                        </span>
                         <!-- Airport: Cab to [City] Airport -->
-                        <ng-container *ngIf="isAirport">
-                            <span class="font-bold">Cab to {{itinerary.dropAirport || itinerary.fromCity ||
+                        <span [style.display]="(!isAirport) ? 'none' : null" class="contents">
+                            <span class="font-bold">Cab to {{itinerary?.dropAirport || itinerary?.fromCity ||
                                 'Bangalore'}} Airport</span>
                             <span
                                 class="ml-2 text-[11px] px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded text-amber-700 dark:text-amber-300 font-bold tracking-tight">
                                 {{airportSubTypeLabel}}
                             </span>
-                        </ng-container>
+                        </span>
                         <!-- One Way / Round Trip -->
-                        <ng-container *ngIf="!isLocal && !isAirport">
-                            <span class="font-bold">{{itinerary.fromCity || 'Bangalore'}}</span>
+                        <span [style.display]="(isLocal || isAirport) ? 'none' : null" class="contents">
+                            <span class="font-bold">{{itinerary?.fromCity || 'Bangalore'}}</span>
                             <span class="text-slate-400 mx-2 text-xs">/</span>
-                            <span class="font-bold">{{itinerary.toCity || 'Mysore'}}</span>
-                            <ng-container *ngIf="itinerary.tripType === 'Round Trip'">
+                            <span class="font-bold">{{itinerary?.toCity || 'Mysore'}}</span>
+                            <span [style.display]="(itinerary?.tripType !== 'Round Trip') ? 'none' : null" class="contents">
                                 <span class="text-slate-400 mx-2 text-xs">/</span>
-                                <span class="font-bold">{{itinerary.fromCity || 'Bangalore'}}</span>
-                            </ng-container>
+                                <span class="font-bold">{{itinerary?.fromCity || 'Bangalore'}}</span>
+                            </span>
                             <span
                                 class="ml-2 text-[11px] px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-400 uppercase font-bold tracking-tight">
-                                {{itinerary.tripType}}
+                                {{itinerary?.tripType}}
                             </span>
-                        </ng-container>
+                        </span>
                     </h1>
                 </div>
 
@@ -58,15 +58,15 @@
                         <span class="text-[10px] uppercase font-bold text-slate-400">Pick up</span>
                         <div class="flex items-center text-[13px] font-bold text-slate-800 dark:text-slate-200">
                             <lucide-icon name="calendar" [size]="14" class="text-primary mr-1.5"></lucide-icon>
-                            {{itinerary.pickupDate | date:'dd-MM-yyyy'}}
+                            {{itinerary?.pickupDate | date:'dd-MM-yyyy'}}
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2" *ngIf="itinerary.tripType === 'Round Trip'">
+                    <div class="flex items-center gap-2" [style.display]="(itinerary?.tripType !== 'Round Trip') ? 'none' : null">
                         <span class="text-[10px] uppercase font-bold text-slate-400">Return</span>
                         <div class="flex items-center text-[13px] font-bold text-slate-800 dark:text-slate-200">
                             <lucide-icon name="calendar" [size]="14" class="text-primary mr-1.5"></lucide-icon>
-                            {{itinerary.returnDate ? (itinerary.returnDate | date:'dd-MM-yyyy') : (itinerary.pickupDate
+                            {{itinerary?.returnDate ? (itinerary?.returnDate | date:'dd-MM-yyyy') : (itinerary?.pickupDate
                             | date:'dd-MM-yyyy')}}
                         </div>
                     </div>
@@ -75,7 +75,7 @@
                         <span class="text-[10px] uppercase font-bold text-slate-400">Time</span>
                         <div class="flex items-center text-[13px] font-bold text-slate-800 dark:text-slate-200">
                             <lucide-icon name="clock" [size]="14" class="text-primary mr-1.5"></lucide-icon>
-                            {{itinerary.pickupTime || '09:30 PM'}}
+                            {{itinerary?.pickupTime || '09:30 PM'}}
                         </div>
                     </div>
 
@@ -95,7 +95,7 @@
         <div class="space-y-6">
 
             <!-- Price Alert Mock Modal Banner -->
-            <div *ngIf="showPriceAlert"
+            <div [style.display]="(!showPriceAlert) ? 'none' : null"
                 class="bg-sky-100 dark:bg-sky-900/30 border border-sky-300 dark:border-sky-800 p-4 rounded-xl flex items-start justify-between shadow-sm">
                 <div class="flex items-start gap-3">
                     <div class="p-2 bg-primary/10 rounded-full text-primary">
@@ -127,7 +127,7 @@
             </div>
 
             <!-- Loading State -->
-            <div *ngIf="isLoading" class="space-y-4">
+            <div [style.display]="(!isLoading) ? 'none' : null" class="space-y-4">
 
                 <div *ngFor="let i of [1,2,3]"
                     class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
@@ -151,7 +151,7 @@
             </div>
 
             <!-- Cab List -->
-            <div *ngIf="!isLoading" class="space-y-4">
+            <div [style.display]="(isLoading) ? 'none' : null" class="space-y-4">
                 <div *ngFor="let car of carsToDisplay"
                     class="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-slate-200 dark:border-slate-700 overflow-hidden group mb-4">
                     <div class="p-4 flex flex-col md:flex-row gap-4 items-center">
@@ -171,7 +171,7 @@
                                     <lucide-icon name="gauge" [size]="12" class="mr-1"></lucide-icon> Includes
                                     {{ getCarKms(car.kmsIncluded) }}
                                 </span>
-                                <span *ngIf="car.hoursIncluded"
+                                <span [style.display]="(!car.hoursIncluded) ? 'none' : null"
                                     class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
                                     <lucide-icon name="clock" [size]="12" class="mr-1"></lucide-icon>
                                     {{car.hoursIncluded}}
@@ -223,7 +223,7 @@
                         <div
                             class="p-5 animate-slide-up border-t-0 border-slate-100 dark:border-slate-800 transition-all duration-300">
                             <!-- Inclusions -->
-                            <div *ngIf="activeTab[car.id] === 'inclusions' || !activeTab[car.id]"
+                            <div [style.display]="(activeTab[car.id] !== 'inclusions' && activeTab[car.id]) ? 'none' : null"
                                 class="flex flex-wrap gap-x-12 gap-y-4">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -265,7 +265,7 @@
                             </div>
 
                             <!-- Exclusions -->
-                            <div *ngIf="activeTab[car.id] === 'exclusions'" class="flex flex-wrap gap-x-12 gap-y-4">
+                            <div [style.display]="(activeTab[car.id] !== 'exclusions') ? 'none' : null" class="flex flex-wrap gap-x-12 gap-y-4">
                                 <div class="flex items-center gap-3">
                                     <div
                                         class="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
@@ -294,7 +294,7 @@
                             </div>
 
                             <!-- Facilities -->
-                            <div *ngIf="activeTab[car.id] === 'facilities'" class="flex flex-wrap gap-x-12 gap-y-4">
+                            <div [style.display]="(activeTab[car.id] !== 'facilities') ? 'none' : null" class="flex flex-wrap gap-x-12 gap-y-4">
                                 <div class="flex items-center gap-3">
                                     <div
                                         class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
@@ -314,7 +314,7 @@
                             </div>
 
                             <!-- T&C -->
-                            <div *ngIf="activeTab[car.id] === 'tc'" class="space-y-2">
+                            <div [style.display]="(activeTab[car.id] !== 'tc') ? 'none' : null" class="space-y-2">
                                 <div *ngFor="let line of car.tc" class="flex items-start gap-2">
                                     <div class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0"></div>
                                     <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{{line}}</p>
@@ -330,7 +330,7 @@
 
 
     <!-- NEW Minimalist Modify Search Modal (Exact Match to 2nd SS) -->
-    <div *ngIf="isModifyModalOpen"
+    <div [style.display]="(!isModifyModalOpen) ? 'none' : null"
         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 transition-all animate-fade-in">
         <div
             class="bg-white dark:bg-slate-900 rounded-[20px] shadow-2xl w-full max-w-5xl p-10 pb-14 relative border border-slate-100 dark:border-slate-800">
@@ -346,7 +346,7 @@
                 class="grid grid-cols-1 gap-x-6 gap-y-6" [formGroup]="modifyForm">
 
                 <!-- AIRPORT FIELDS: TRIP sub-type, PICKUP ADDRESS, DROP AIRPORT -->
-                <ng-container *ngIf="isAirport">
+                <span [style.display]="(!isAirport) ? 'none' : null" class="contents">
                     <!-- TRIP Type Dropdown -->
                     <div class="flex flex-col">
                         <label
@@ -381,10 +381,10 @@
                                 placeholder="e.g. Bangalore">
                         </div>
                     </div>
-                </ng-container>
+                </span>
 
                 <!-- FROM / CITY (Hidden for Airport) -->
-                <div class="flex flex-col" *ngIf="!isAirport">
+                <div class="flex flex-col" [style.display]="(isAirport) ? 'none' : null">
                     <label
                         class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">{{isLocal
                         ? 'City' : 'From'}}</label>
@@ -396,7 +396,7 @@
                 </div>
 
                 <!-- TO (Hidden for Local and Airport) -->
-                <div class="flex flex-col" *ngIf="!isLocal && !isAirport">
+                <div class="flex flex-col" [style.display]="(isLocal || isAirport) ? 'none' : null">
                     <label
                         class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">To</label>
                     <div class="relative">
@@ -416,13 +416,13 @@
                             class="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 pr-10 focus:border-primary transition-all outline-none text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100">
                         <lucide-icon name="calendar" [size]="16" class="absolute right-3 text-slate-400"></lucide-icon>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-1 italic" *ngIf="itinerary">Current: {{itinerary.pickupDate
+                    <p class="text-[10px] text-slate-400 mt-1 italic" [style.display]="(!itinerary) ? 'none' : null">Current: {{itinerary?.pickupDate
                         |
                         date:'dd-MM-yyyy'}}</p>
                 </div>
 
                 <!-- RETURN (Round Trip Only) -->
-                <div class="flex flex-col" *ngIf="isRoundTrip">
+                <div class="flex flex-col" [style.display]="(!isRoundTrip) ? 'none' : null">
                     <label
                         class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Return</label>
                     <div class="relative flex items-center group">
@@ -430,7 +430,7 @@
                             class="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 pr-10 focus:border-primary transition-all outline-none text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100">
                         <lucide-icon name="calendar" [size]="16" class="absolute right-3 text-slate-400"></lucide-icon>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-1 italic" *ngIf="itinerary?.returnDate">Current:
+                    <p class="text-[10px] text-slate-400 mt-1 italic" [style.display]="(!itinerary?.returnDate) ? 'none' : null">Current:
                         {{itinerary?.returnDate | date:'dd-MM-yyyy'}}</p>
                 </div>
 
