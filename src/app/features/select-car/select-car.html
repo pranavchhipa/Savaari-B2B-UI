@@ -120,9 +120,24 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                 <div class="text-sm">
                     <span class="text-slate-500 dark:text-slate-400">Showing</span>
-                    <span class="font-bold text-slate-800 dark:text-slate-200 ml-1">{{carsToDisplay.length}}
-                        Cabs</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-200 ml-1">{{carsToDisplay.length}} Cabs</span>
                     <span class="text-slate-500 dark:text-slate-400"> matching your search</span>
+                </div>
+
+                <!-- Local Package Toggles -->
+                <div *ngIf="isLocal && !isLoading" class="flex justify-center md:justify-end">
+                    <div class="inline-flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                        <button (click)="selectLocalPackage('8hr')"
+                            [ngClass]="{'bg-white dark:bg-slate-700 shadow-sm text-primary font-bold': selectedLocalPackage === '8hr', 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300': selectedLocalPackage !== '8hr'}"
+                            class="px-6 py-2 rounded-md text-[13px] transition-all focus:outline-none">
+                            8 hrs | 80 km
+                        </button>
+                        <button (click)="selectLocalPackage('12hr')"
+                            [ngClass]="{'bg-white dark:bg-slate-700 shadow-sm text-primary font-bold': selectedLocalPackage === '12hr', 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300': selectedLocalPackage !== '12hr'}"
+                            class="px-6 py-2 rounded-md text-[13px] transition-all focus:outline-none">
+                            12 hrs | 120 km
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -223,7 +238,7 @@
                         <div
                             class="p-5 animate-slide-up border-t-0 border-slate-100 dark:border-slate-800 transition-all duration-300">
                             <!-- Inclusions -->
-                            <div *ngIf="activeTab[car.id] === 'inclusions' || !activeTab[car.id]"
+                            <div [hidden]="activeTab[car.id] !== 'inclusions' && activeTab[car.id]"
                                 class="flex flex-wrap gap-x-12 gap-y-4">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -265,7 +280,7 @@
                             </div>
 
                             <!-- Exclusions -->
-                            <div *ngIf="activeTab[car.id] === 'exclusions'" class="flex flex-wrap gap-x-12 gap-y-4">
+                            <div [hidden]="activeTab[car.id] !== 'exclusions'" class="flex flex-wrap gap-x-12 gap-y-4">
                                 <div class="flex items-center gap-3">
                                     <div
                                         class="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
@@ -294,7 +309,7 @@
                             </div>
 
                             <!-- Facilities -->
-                            <div *ngIf="activeTab[car.id] === 'facilities'" class="flex flex-wrap gap-x-12 gap-y-4">
+                            <div [hidden]="activeTab[car.id] !== 'facilities'" class="flex flex-wrap gap-x-12 gap-y-4">
                                 <div class="flex items-center gap-3">
                                     <div
                                         class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
@@ -314,7 +329,7 @@
                             </div>
 
                             <!-- T&C -->
-                            <div *ngIf="activeTab[car.id] === 'tc'" class="space-y-2">
+                            <div [hidden]="activeTab[car.id] !== 'tc'" class="space-y-2">
                                 <div *ngFor="let line of car.tc" class="flex items-start gap-2">
                                     <div class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0"></div>
                                     <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{{line}}</p>
