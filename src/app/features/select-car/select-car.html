@@ -117,15 +117,15 @@
             </div>
 
             <!-- Cab Search Results -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                <div class="text-sm">
+            <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 mb-6">
+                <div class="text-sm text-center md:text-left md:col-start-1">
                     <span class="text-slate-500 dark:text-slate-400">Showing</span>
                     <span class="font-bold text-slate-800 dark:text-slate-200 ml-1">{{carsToDisplay.length}} Cabs</span>
                     <span class="text-slate-500 dark:text-slate-400"> matching your search</span>
                 </div>
 
                 <!-- Local Package Toggles -->
-                <div *ngIf="isLocal && !isLoading" class="flex justify-center md:justify-end">
+                <div *ngIf="isLocal && !isLoading" class="flex justify-center md:col-start-2">
                     <div class="inline-flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                         <button (click)="selectLocalPackage('8hr')"
                             [ngClass]="{'bg-white dark:bg-slate-700 shadow-sm text-primary font-bold': selectedLocalPackage === '8hr', 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300': selectedLocalPackage !== '8hr'}"
