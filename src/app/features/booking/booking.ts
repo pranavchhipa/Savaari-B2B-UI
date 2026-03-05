@@ -44,8 +44,8 @@ export class BookingComponent implements OnInit {
   vasLuggageCarrier = false;
   vasLanguageDriver = false;
 
-  // 1, 2, or 3 corresponding to B2B payment choices
-  paymentOption = 1;
+  // 0 = no selection, 1/2/3 = B2B payment choices
+  paymentOption = 0;
 
   // --- Option 1: Flexible Agent Payment Slider ---
   option1SliderPercent: number = 25;   // Agent-chosen percentage (25% to 100%)

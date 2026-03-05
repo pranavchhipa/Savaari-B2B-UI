@@ -552,9 +552,9 @@
                         </div>
                     </div>
 
-                    <button (click)="bookNow()" [disabled]="!hasSufficientWalletBalance((walletBalance$ | async)!)"
+                    <button (click)="bookNow()" [disabled]="paymentOption === 0 || !hasSufficientWalletBalance((walletBalance$ | async)!)"
                         class="w-full py-4 bg-primary hover:bg-sky-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-bold text-lg rounded-xl shadow-lg shadow-sky-200 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none disabled:shadow-none">
-                        Book Now
+                        {{ paymentOption === 0 ? 'Select a Payment Option' : 'Book Now' }}
                     </button>
                 </div> <!-- Ends WalletObj Wrapper (line 237) -->
             </div> <!-- Ends Step 2 Container (line 224) -->
@@ -714,7 +714,10 @@
                             <div class="flex justify-between items-end">
                                 <div>
                                     <p class="text-[12px] font-bold text-primary uppercase tracking-widest mb-1">Amount to Pay Now</p>
-                                    <p class="text-2xl font-black text-primary tracking-tight">
+                                    <p *ngIf="paymentOption === 0" class="text-sm font-semibold text-slate-400 italic">
+                                        Select a payment option
+                                    </p>
+                                    <p *ngIf="paymentOption !== 0" class="text-2xl font-black text-primary tracking-tight">
                                         ₹ {{ getPayNowAmount() | number:'1.0-0' }}
                                     </p>
                                 </div>
