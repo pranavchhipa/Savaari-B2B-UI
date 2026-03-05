@@ -112,18 +112,32 @@ export class DashboardComponent implements OnInit {
   /** Load source cities from CityService */
   private loadSourceCities() {
     const apiParams = this.getApiParams();
-    this.cityService.getSourceCities(apiParams.tripType, apiParams.subTripType).subscribe(cities => {
-      this.sourceCities = cities;
-      this.cdr.markForCheck();
+    this.cityService.getSourceCities(apiParams.tripType, apiParams.subTripType).subscribe({
+      next: (cities) => {
+        this.sourceCities = cities;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load source cities:', err);
+        this.sourceCities = [];
+        this.cdr.markForCheck();
+      }
     });
   }
 
   /** Load destination cities based on selected source city */
   private loadDestinationCities(sourceCityId: number) {
     const apiParams = this.getApiParams();
-    this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, sourceCityId).subscribe(cities => {
-      this.destinationCities = cities;
-      this.cdr.markForCheck();
+    this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, sourceCityId).subscribe({
+      next: (cities) => {
+        this.destinationCities = cities;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load destination cities:', err);
+        this.destinationCities = [];
+        this.cdr.markForCheck();
+      }
     });
   }
 
