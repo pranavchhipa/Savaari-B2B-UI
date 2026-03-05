@@ -16,54 +16,18 @@ export interface WalletTransaction {
     providedIn: 'root'
 })
 export class WalletService {
-    private balanceSubject = new BehaviorSubject<number>(25000); // Initial mock balance of 25k
+    private balanceSubject = new BehaviorSubject<number>(0); // Zero balance for testing insufficient balance flow
     public balance$ = this.balanceSubject.asObservable();
 
-    private transactionsSubject = new BehaviorSubject<WalletTransaction[]>([
-        {
-            id: 'tx_init_001',
-            date: new Date(Date.now() - 86400000 * 2), // 2 days ago
-            type: 'TOPUP',
-            amount: 40000,
-            balanceAfter: 40000,
-            description: 'Initial Wallet Topup via IMPS',
-            referenceId: 'IMPS/12398471/HDFC',
-            status: 'SUCCESS'
-        },
-        {
-            id: 'tx_bk_001',
-            date: new Date(Date.now() - 86400000 * 1), // 1 day ago
-            type: 'BOOKING_PAYMENT',
-            amount: -15000,
-            balanceAfter: 25000,
-            description: 'Payment for Booking #SV-884Y',
-            referenceId: 'B-8842',
-            status: 'SUCCESS'
-        }
-    ]);
+    private transactionsSubject = new BehaviorSubject<WalletTransaction[]>([]);
     public transactions$ = this.transactionsSubject.asObservable();
 
     constructor() {
         if (typeof window === 'undefined' || !window.localStorage) return;
 
-        // Load from local storage if available for persistence
-        const savedBalance = localStorage.getItem('savaari_b2b_wallet_balance');
-        const savedTxns = localStorage.getItem('savaari_b2b_wallet_txns');
-
-        if (savedBalance) {
-            this.balanceSubject.next(parseFloat(savedBalance));
-        }
-
-        if (savedTxns) {
-            try {
-                const parsed = JSON.parse(savedTxns);
-                // Correct date parsing
-                parsed.forEach((tx: any) => tx.date = new Date(tx.date));
-                this.transactionsSubject.next(parsed);
-            } catch (e) {
-                console.error('Failed to parse wallet transactions');
-            }
-        }
+        // Clear saved wallet state so all users start at ₹0 for testing
+        localStorage.removeItem('savaari_b2b_wallet_balance');
+        localStorage.removeItem('savaari_b2b_wallet_txns');
     }
 
     getCurrentBalance(): number {
