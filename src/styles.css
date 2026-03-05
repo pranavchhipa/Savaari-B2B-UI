@@ -115,6 +115,14 @@
 
 .p-select-label {
     padding-left: 0 !important;
+    font-size: 13px !important;
+    font-style: italic !important;
+    font-weight: 500 !important;
+    color: rgb(100 116 139) !important; /* slate-500 */
+}
+
+.p-select-label.p-placeholder {
+    color: rgb(148 163 184) !important; /* slate-400 */
 }
 
 @keyframes fadeIn {

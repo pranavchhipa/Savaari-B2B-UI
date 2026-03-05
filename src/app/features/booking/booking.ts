@@ -44,8 +44,14 @@ export class BookingComponent implements OnInit {
   vasLuggageCarrier = false;
   vasLanguageDriver = false;
 
-  // 1, 2, 3, or 4 corresponding to B2B payment choices
+  // 1, 2, or 3 corresponding to B2B payment choices
   paymentOption = 1;
+
+  // --- Option 1: Flexible Agent Payment Slider ---
+  option1SliderPercent: number = 25;   // Agent-chosen percentage (25% to 100%)
+  readonly SLIDER_MIN = 25;
+  readonly SLIDER_MAX = 100;
+  readonly SLIDER_STEP = 5;            // 5% increments for clean amounts
 
   isProcessingWallet = false;
   bookingConfirmed = false;
@@ -89,6 +95,20 @@ export class BookingComponent implements OnInit {
 
   setPaymentOption(option: number) {
     this.paymentOption = option;
+    // Reset slider to minimum when switching to Option 1
+    if (option === 1) {
+      this.option1SliderPercent = 25;
+    }
+    this.cdr.markForCheck();
+  }
+
+  /** Called when the Option 1 slider value changes */
+  onSliderChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    let val = parseInt(target.value, 10);
+    if (val < this.SLIDER_MIN) val = this.SLIDER_MIN;
+    if (val > this.SLIDER_MAX) val = this.SLIDER_MAX;
+    this.option1SliderPercent = val;
     this.cdr.markForCheck();
   }
 
@@ -122,8 +142,9 @@ export class BookingComponent implements OnInit {
     if (!pickupDt) return false;
 
     const now = new Date();
-    const diffInHours = (pickupDt.getTime() - now.getTime()) / (1000 * 60 * 60);
-    return diffInHours < 48;
+    // Compare at minute-level to avoid seconds/ms precision issues
+    const diffInMinutes = Math.floor((pickupDt.getTime() - now.getTime()) / (1000 * 60));
+    return diffInMinutes < 48 * 60;  // < 2880 minutes
   }
 
   isBookingWindowValid(): boolean {
@@ -131,40 +152,82 @@ export class BookingComponent implements OnInit {
     if (!pickupDt) return false;
 
     const now = new Date();
-    const diffInHours = (pickupDt.getTime() - now.getTime()) / (1000 * 60 * 60);
-    return diffInHours >= 6;
+    // Compare at minute-level to avoid seconds/ms precision issues
+    const diffInMinutes = Math.floor((pickupDt.getTime() - now.getTime()) / (1000 * 60));
+    return diffInMinutes >= 6 * 60;  // >= 360 minutes
   }
 
+  /**
+   * Calculates the amount to deduct from wallet RIGHT NOW at booking time.
+   *
+   * Option 1 (Flexible): Agent pays slider % of fare. No deferred deduction.
+   * Option 2 (Full Agent): 25% now, 75% deferred 48h before. Urgent → 100% now.
+   * Option 3 (Full + Buffer): 25% now, 95% deferred 48h before. Urgent → (100% + 20%) now.
+   */
   getPayNowAmount(optionOverride?: number): number {
     if (!this.selectedCar) return 0;
     const total = this.selectedCar.price;
     const option = optionOverride !== undefined ? optionOverride : this.paymentOption;
-
     const isUrgent = this.isBookingUrgent();
 
-    // Option 1: Partial Agent | Rest to Driver
-    // This option ALWAYS involves paying 25% now to Savaari. 
-    // The rest is handled by the customer directly to the driver, 
-    // so the "48h wallet deduction" rule does not apply here.
+    // Option 1: Flexible Agent — slider % of total, urgent doesn't matter
     if (option === 1) {
-      return Math.round(total * 0.25);
+      return Math.round(total * (this.option1SliderPercent / 100));
     }
 
-    // Options 2 & 3: Full Agent (Wallet)
-    // If booking within 48 Hours, 100% amount must be deducted upon confirmation 
-    // because the "48h before trip" deadline has already passed.
-    if (isUrgent) {
-      return total;
+    // Option 2: Full Agent (25/75)
+    if (option === 2) {
+      return isUrgent ? total : Math.round(total * 0.25);
     }
 
-    // Standard Booking Logic (>48h) for Options 2 & 3
-    // Standard upfront is 25%, rest deferred via Wallet auto-deduction.
-    return Math.round(total * 0.25);
+    // Option 3: Full Agent + 20% Buffer
+    if (option === 3) {
+      return isUrgent ? Math.round(total * 1.20) : Math.round(total * 0.25);
+    }
+
+    return 0;
   }
 
+  /**
+   * Amount auto-deducted from wallet 48 hours before trip.
+   * Returns 0 for Option 1 (no deferred) or urgent bookings (everything upfront).
+   */
+  getDeferredAmount(optionOverride?: number): number {
+    if (!this.selectedCar) return 0;
+    const total = this.selectedCar.price;
+    const option = optionOverride !== undefined ? optionOverride : this.paymentOption;
+
+    // Option 1 never has deferred deductions
+    if (option === 1) return 0;
+
+    // Urgent bookings pay everything upfront — nothing deferred
+    if (this.isBookingUrgent()) return 0;
+
+    // Option 2: 75% deferred
+    if (option === 2) return Math.round(total * 0.75);
+
+    // Option 3: 75% + 20% buffer = 95% deferred
+    if (option === 3) return Math.round(total * 0.95);
+
+    return 0;
+  }
+
+  /** For Option 1: amount the driver collects from the customer */
+  getDriverCollectsAmount(): number {
+    if (!this.selectedCar) return 0;
+    const total = this.selectedCar.price;
+    return total - Math.round(total * (this.option1SliderPercent / 100));
+  }
+
+  /** Total agent wallet commitment (now + deferred) */
+  getTotalAgentCommitment(optionOverride?: number): number {
+    const option = optionOverride !== undefined ? optionOverride : this.paymentOption;
+    return this.getPayNowAmount(option) + this.getDeferredAmount(option);
+  }
+
+  /** Returns the 20% buffer amount for Option 3 display */
   getOption3BufferAmount(): number {
     if (!this.selectedCar) return 0;
-    // Rule 3: 25% now + (remaining 75% + 20% buffer) later
     return Math.round(this.selectedCar.price * 0.20);
   }
 

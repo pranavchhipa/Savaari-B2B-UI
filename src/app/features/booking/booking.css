@@ -1,0 +1,86 @@
+/* ===================================================================
+ * Custom Range Slider for Payment Option 1 (Flexible Agent Payment)
+ * Matches Savaari B2B primary color scheme with dark mode support.
+ * =================================================================== */
+
+/* Track styling */
+.payment-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  outline: none;
+  transition: all 0.2s ease;
+  background: linear-gradient(
+    to right,
+    #24a3d6 0%,
+    #24a3d6 var(--slider-fill, 0%),
+    #e2e8f0 var(--slider-fill, 0%),
+    #e2e8f0 100%
+  );
+}
+
+/* Dark mode track */
+:host-context(.dark) .payment-slider,
+.dark .payment-slider {
+  background: linear-gradient(
+    to right,
+    #24a3d6 0%,
+    #24a3d6 var(--slider-fill, 0%),
+    #334155 var(--slider-fill, 0%),
+    #334155 100%
+  );
+}
+
+/* Thumb — WebKit (Chrome, Safari, Edge) */
+.payment-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #24a3d6;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.15s ease;
+}
+
+.payment-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(36, 163, 214, 0.3);
+}
+
+.payment-slider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+}
+
+/* Thumb — Firefox */
+.payment-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #24a3d6;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Firefox track */
+.payment-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+}
+
+.dark .payment-slider::-moz-range-track {
+  background: #334155;
+}
+
+/* Firefox filled portion */
+.payment-slider::-moz-range-progress {
+  height: 8px;
+  border-radius: 9999px;
+  background: #24a3d6;
+}

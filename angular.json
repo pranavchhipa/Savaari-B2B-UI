@@ -47,7 +47,13 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.production.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,
@@ -64,7 +70,8 @@
               "buildTarget": "savaari-b2b-scratch:build:production"
             },
             "development": {
-              "buildTarget": "savaari-b2b-scratch:build:development"
+              "buildTarget": "savaari-b2b-scratch:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

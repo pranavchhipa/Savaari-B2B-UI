@@ -1,21 +1,28 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { AvailabilityResponse } from '../models';
 
 export interface Itinerary {
     fromCity: string;
+    fromCityId?: number;      // Savaari integer city ID for API calls
     toCity: string;
+    toCityId?: number;        // Savaari integer city ID for API calls
     pickupDate: Date;
     pickupTime: string;
-    tripType: string;
-    returnDate?: Date;       // Round Trip only
-    localPackage?: string;   // Local only: '8hr/80km' | '12hr/120km'
-    airportSubType?: string; // Airport only: 'drop' | 'pickup'
-    pickupAddress?: string;  // Airport only
-    dropAirport?: string;    // Airport only
+    tripType: string;         // UI label: 'One Way', 'Round Trip', 'Local', 'Airport'
+    subTripType?: string;     // API value: 'oneWay', 'roundTrip', '880', etc.
+    returnDate?: Date;        // Round Trip only
+    duration?: number;        // Calculated number of days for round trip
+    localPackage?: string;    // Local only: '8hr/80km' | '12hr/120km'
+    airportSubType?: string;  // Airport only: 'drop' | 'pickup'
+    pickupAddress?: string;   // Airport / booking address
+    dropAirport?: string;     // Airport only
+    localityId?: number;      // Savaari locality ID for airport transfers
 }
 
 export interface SelectedCar {
     id: string;
+    carTypeId?: number;       // Savaari car type integer ID for booking-create API
     name: string;
     image: string;
     price: number;
@@ -24,7 +31,9 @@ export interface SelectedCar {
     seats: string;
     bags: string;
     ac: string;
-    type: string; // e.g. 'SEDAN', 'SUV'
+    type: string;             // e.g. 'SEDAN', 'SUV'
+    extraKmRate?: number;     // Rate per extra km from availability API
+    nightAllowance?: number;  // Driver night allowance from availability API
 }
 
 @Injectable({
@@ -39,10 +48,13 @@ export class BookingStateService {
     private readonly DEFAULTS = {
         ITINERARY: {
             fromCity: 'Bangalore',
+            fromCityId: 377,
             toCity: 'Mysore',
+            toCityId: 237,
             pickupDate: new Date(),
             pickupTime: '09:30 PM',
-            tripType: 'One Way'
+            tripType: 'One Way',
+            subTripType: 'oneWay',
         } as Itinerary,
         CAR: {
             id: 'wagonr',
@@ -59,9 +71,11 @@ export class BookingStateService {
 
     private currentItinerarySubject = new BehaviorSubject<Itinerary | null>(this.loadFromStorage(this.STORAGE_KEYS.ITINERARY, true));
     private selectedCarSubject = new BehaviorSubject<SelectedCar | null>(this.loadFromStorage(this.STORAGE_KEYS.CAR, false));
+    private availabilityResponseSubject = new BehaviorSubject<AvailabilityResponse | null>(null);
 
     public readonly currentItinerary$ = this.currentItinerarySubject.asObservable();
     public readonly selectedCar$ = this.selectedCarSubject.asObservable();
+    public readonly availabilityResponse$ = this.availabilityResponseSubject.asObservable();
 
     constructor() { }
 
@@ -129,11 +143,20 @@ export class BookingStateService {
         return this.selectedCarSubject.value;
     }
 
+    setAvailabilityResponse(response: AvailabilityResponse) {
+        this.availabilityResponseSubject.next(response);
+    }
+
+    getAvailabilityResponse(): AvailabilityResponse | null {
+        return this.availabilityResponseSubject.value;
+    }
+
     /**
      * Resets the booking state to defaults (useful for new search flows)
      */
     resetState(): void {
         this.setItinerary(this.DEFAULTS.ITINERARY);
         this.setSelectedCar(this.DEFAULTS.CAR);
+        this.availabilityResponseSubject.next(null);
     }
 }

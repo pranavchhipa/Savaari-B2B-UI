@@ -239,43 +239,93 @@
 
                     <div class="grid grid-cols-1 gap-4 mb-4">
 
-                        <!-- Option 1: Partial Agent / Rest Driver -->
+                        <!-- ============================================ -->
+                        <!-- OPTION 1: Flexible Agent Payment (Slider)    -->
+                        <!-- ============================================ -->
                         <div (click)="setPaymentOption(1)" [class.border-primary]="paymentOption === 1"
                             [class.bg-primary/5]="paymentOption === 1"
-                            class="relative flex items-center p-6 bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-100 dark:border-slate-800 cursor-pointer hover:border-primary/50 transition-all group">
-                            <div class="flex items-center flex-1 gap-6">
-                                <div
-                                    class="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-xl font-bold text-slate-400 group-hover:text-primary transition-colors">
-                                    1
+                            class="relative flex flex-col p-6 bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-100 dark:border-slate-800 cursor-pointer hover:border-primary/50 transition-all group">
+
+                            <!-- Top Row: Icon + Description + Pay Now + Radio -->
+                            <div class="flex items-center w-full">
+                                <div class="flex items-center flex-1 gap-6">
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-xl font-bold text-slate-400 group-hover:text-primary transition-colors">
+                                        1
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                            Flexible Agent Payment
+                                        </h4>
+                                        <p class="text-[11px] text-slate-500 mt-1 max-w-sm">
+                                            Choose how much to pay via Wallet (min 25%). Remaining amount + extras paid directly to Driver by Customer.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="flex-1">
-                                    <h4
-                                        class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                        25% by Agent | 75% + Extras to Driver
-                                    </h4>
-                                    <p class="text-[11px] text-slate-500 mt-1 max-w-sm">
-                                        Pay 25% now via Wallet. Remaining 75% and all extras paid directly to Driver by
-                                        Customer during trip.
-                                    </p>
+                                <div class="flex items-center gap-8 ml-4">
+                                    <div class="text-right">
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pay Now</div>
+                                        <div class="text-lg font-black text-primary">₹{{ getPayNowAmount(1) | number:'1.0-0' }}</div>
+                                    </div>
+                                    <div class="w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center shrink-0"
+                                        [class.border-primary]="paymentOption === 1"
+                                        [class.bg-primary]="paymentOption === 1">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-white shadow-sm"
+                                            *ngIf="paymentOption === 1"></div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-8 ml-4">
-                                <div class="text-right">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pay
-                                        Now</div>
-                                    <div class="text-lg font-black text-primary">₹{{ getPayNowAmount(1) | number:'1.0-0'
-                                        }}</div>
+
+                            <!-- Slider Panel (expanded when Option 1 is selected) -->
+                            <div *ngIf="paymentOption === 1"
+                                class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 w-full"
+                                (click)="$event.stopPropagation()">
+
+                                <!-- Slider Label Row -->
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">
+                                        Agent Pays: {{ option1SliderPercent }}%
+                                    </span>
+                                    <span class="text-xs font-bold text-slate-500">
+                                        Driver Collects: {{ 100 - option1SliderPercent }}%
+                                    </span>
                                 </div>
-                                <div class="w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center shrink-0"
-                                    [class.border-primary]="paymentOption === 1"
-                                    [class.bg-primary]="paymentOption === 1">
-                                    <div class="w-2.5 h-2.5 rounded-full bg-white shadow-sm"
-                                        *ngIf="paymentOption === 1"></div>
+
+                                <!-- Range Slider -->
+                                <input type="range"
+                                    [min]="SLIDER_MIN"
+                                    [max]="SLIDER_MAX"
+                                    [step]="SLIDER_STEP"
+                                    [value]="option1SliderPercent"
+                                    (input)="onSliderChange($event)"
+                                    [style.--slider-fill]="((option1SliderPercent - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN) * 100) + '%'"
+                                    class="payment-slider w-full h-2 rounded-full appearance-none cursor-pointer"
+                                />
+
+                                <!-- Min/Max Labels -->
+                                <div class="flex justify-between mt-1">
+                                    <span class="text-[10px] text-slate-400">25%</span>
+                                    <span class="text-[10px] text-slate-400">100%</span>
+                                </div>
+
+                                <!-- Breakdown Row -->
+                                <div class="flex justify-between items-center mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                    <div class="text-center flex-1">
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">You Pay (Wallet)</div>
+                                        <div class="text-sm font-black text-primary">₹{{ getPayNowAmount(1) | number:'1.0-0' }}</div>
+                                    </div>
+                                    <div class="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+                                    <div class="text-center flex-1">
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Driver Collects</div>
+                                        <div class="text-sm font-black text-slate-700 dark:text-slate-300">₹{{ getDriverCollectsAmount() | number:'1.0-0' }}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Option 2: Full Agent (Deferred) -->
+                        <!-- ============================================ -->
+                        <!-- OPTION 2: Full Agent Payment (25/75)         -->
+                        <!-- ============================================ -->
                         <div (click)="setPaymentOption(2)" [class.border-primary]="paymentOption === 2"
                             [class.bg-primary/5]="paymentOption === 2"
                             class="relative flex items-center p-6 bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-100 dark:border-slate-800 cursor-pointer hover:border-primary/50 transition-all group">
@@ -285,22 +335,35 @@
                                     2
                                 </div>
                                 <div class="flex-1">
-                                    <h4
-                                        class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                        Full Agent Payment (25% Now | 75% 48h Before)
+                                    <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                        <ng-container *ngIf="!isBookingUrgent()">
+                                            Full Agent Payment (25% Now | 75% 48h Before)
+                                        </ng-container>
+                                        <ng-container *ngIf="isBookingUrgent()">
+                                            Full Agent Payment (100% Now)
+                                            <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[9px] font-black uppercase rounded-full">Urgent</span>
+                                        </ng-container>
                                     </h4>
                                     <p class="text-[11px] text-slate-500 mt-1 max-w-sm">
-                                        Pay 25% now via Wallet. Remaining 75% auto-deducted 48h before trip. Booking
-                                        cancels if funds unavailable.
+                                        <ng-container *ngIf="!isBookingUrgent()">
+                                            Pay 25% now via Wallet. Remaining 75% (₹{{ getDeferredAmount(2) | number:'1.0-0' }})
+                                            auto-deducted 48h before trip. Extras collected from Customer.
+                                            <span class="text-red-500 font-semibold">Booking auto-cancels if funds unavailable.</span>
+                                        </ng-container>
+                                        <ng-container *ngIf="isBookingUrgent()">
+                                            Trip is within 48 hours. Full 100% fare required now via Wallet. Extras collected from Customer.
+                                        </ng-container>
                                     </p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-8 ml-4">
                                 <div class="text-right">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pay
-                                        Now</div>
-                                    <div class="text-lg font-black text-primary">₹{{ getPayNowAmount(2) | number:'1.0-0'
-                                        }}</div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pay Now</div>
+                                    <div class="text-lg font-black text-primary">₹{{ getPayNowAmount(2) | number:'1.0-0' }}</div>
+                                    <!-- Show deferred amount when NOT urgent -->
+                                    <div *ngIf="!isBookingUrgent()" class="text-[9px] text-slate-400 mt-0.5">
+                                        + ₹{{ getDeferredAmount(2) | number:'1.0-0' }} in 48h
+                                    </div>
                                 </div>
                                 <div class="w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center shrink-0"
                                     [class.border-primary]="paymentOption === 2"
@@ -311,7 +374,9 @@
                             </div>
                         </div>
 
-                        <!-- Option 3: Full Agent + 20% Buffer (RECOMMENDED) -->
+                        <!-- ============================================ -->
+                        <!-- OPTION 3: Full Agent + 20% Buffer (RECOMMENDED) -->
+                        <!-- ============================================ -->
                         <div (click)="setPaymentOption(3)" [class.border-primary]="paymentOption === 3"
                             [class.bg-sky-50/50]="paymentOption === 3" [class.dark:bg-sky-950/20]="paymentOption === 3"
                             [class.ring-2]="paymentOption === 3" [class.ring-primary/20]="paymentOption === 3"
@@ -320,8 +385,7 @@
 
                             <!-- Recommended Badge -->
                             <div class="absolute top-0 right-0">
-                                <div
-                                    class="bg-primary text-white text-[9px] font-black px-4 py-1 rounded-bl-xl uppercase tracking-widest shadow-sm">
+                                <div class="bg-primary text-white text-[9px] font-black px-4 py-1 rounded-bl-xl uppercase tracking-widest shadow-sm">
                                     Recommended
                                 </div>
                             </div>
@@ -331,35 +395,42 @@
                                     class="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
                                     <lucide-icon name="wallet" [size]="28"></lucide-icon>
                                 </div>
-                                <div class="p-8 text-center" *ngIf="isProcessingWallet">
-                                    <div class="flex flex-col items-center gap-4">
-                                        <lucide-icon name="loader-2" [size]="48"
-                                            class="text-primary animate-spin"></lucide-icon>
-                                        <p class="text-slate-500 animate-pulse text-sm">Processing your secure
-                                            payment... almost there!</p>
-                                    </div>
-                                </div>
                                 <div class="flex-1">
                                     <div class="flex items-center gap-3 mb-1">
                                         <h4 class="text-base font-black text-slate-900 dark:text-white leading-tight">
-                                            Option 3: 100% Wallet Payment
+                                            <ng-container *ngIf="!isBookingUrgent()">
+                                                100% Wallet + 20% Buffer
+                                            </ng-container>
+                                            <ng-container *ngIf="isBookingUrgent()">
+                                                (100% + 20%) Payment Now (Fare + Buffer)
+                                            </ng-container>
                                         </h4>
                                         <span
                                             class="px-3 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-full shadow-md shrink-0 tracking-wider">B2B
                                             Preferred</span>
                                     </div>
                                     <p class="text-xs text-slate-500 max-w-sm leading-relaxed">
-                                        25% now. Rest 75% + 20% extra buffer auto-deducted 48h before. <span
-                                            class="text-primary font-bold">Zero cash handling for customer.</span>
+                                        <ng-container *ngIf="!isBookingUrgent()">
+                                            25% now. 75% + 20% buffer (₹{{ getDeferredAmount(3) | number:'1.0-0' }})
+                                            auto-deducted 48h before trip.
+                                            <span class="text-primary font-bold">Zero cash handling for customer.</span>
+                                        </ng-container>
+                                        <ng-container *ngIf="isBookingUrgent()">
+                                            Trip within 48h. Full fare + 20% buffer
+                                            (₹{{ getPayNowAmount(3) | number:'1.0-0' }}) required now.
+                                            <span class="text-primary font-bold">Zero cash handling for customer.</span>
+                                        </ng-container>
                                     </p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-8 ml-4">
                                 <div class="text-right">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pay
-                                        Now</div>
-                                    <div class="text-2xl font-black text-primary">₹{{ getPayNowAmount(3) |
-                                        number:'1.0-0' }}</div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pay Now</div>
+                                    <div class="text-2xl font-black text-primary">₹{{ getPayNowAmount(3) | number:'1.0-0' }}</div>
+                                    <!-- Show deferred amount when NOT urgent -->
+                                    <div *ngIf="!isBookingUrgent()" class="text-[9px] text-slate-400 mt-0.5">
+                                        + ₹{{ getDeferredAmount(3) | number:'1.0-0' }} in 48h
+                                    </div>
                                 </div>
                                 <div class="w-7 h-7 rounded-full border-2 border-slate-200 flex items-center justify-center shrink-0 transition-all"
                                     [class.border-primary]="paymentOption === 3"
@@ -375,10 +446,13 @@
                             class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl flex items-start gap-3">
                             <lucide-icon name="alert-triangle" [size]="18" class="text-amber-600 mt-0.5"></lucide-icon>
                             <div>
-                                <h5 class="text-sm font-bold text-amber-800 dark:text-amber-400">Urgent Booking: 100%
-                                    Upfront Required</h5>
-                                <p class="text-[11px] text-amber-700 dark:text-amber-500/70">As this trip is within 48
-                                    hours, full payment must be deducted from your wallet now to confirm.</p>
+                                <h5 class="text-sm font-bold text-amber-800 dark:text-amber-400">Urgent Booking — Less than 48 Hours to Pickup</h5>
+                                <p class="text-[11px] text-amber-700 dark:text-amber-500/70">
+                                    Since the 48-hour deferred payment deadline has passed:
+                                    <strong>Option 2</strong> requires 100% now;
+                                    <strong>Option 3</strong> requires (100% + 20%) now (fare + buffer).
+                                    Option 1 (Flexible) is unaffected.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -636,14 +710,30 @@
 
                         <!-- Dynamic Pay Now (Visible during Payment Selection) -->
                         <div *ngIf="step1Complete"
-                            class="pt-3 mt-3 border-t-2 border-dashed border-primary/30 flex justify-between items-end bg-sky-50 dark:bg-sky-900/40 p-4 rounded-xl">
-                            <div>
-                                <p class="text-[12px] font-bold text-primary uppercase tracking-widest mb-1">Amount
-                                    to
-                                    Pay Now</p>
-                                <p class="text-2xl font-black text-primary tracking-tight">
-                                    ₹ {{ getPayNowAmount() | number:'1.0-0' }}
-                                </p>
+                            class="pt-3 mt-3 border-t-2 border-dashed border-primary/30 flex flex-col gap-2 bg-sky-50 dark:bg-sky-900/40 p-4 rounded-xl">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p class="text-[12px] font-bold text-primary uppercase tracking-widest mb-1">Amount to Pay Now</p>
+                                    <p class="text-2xl font-black text-primary tracking-tight">
+                                        ₹ {{ getPayNowAmount() | number:'1.0-0' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- Deferred amount info for Options 2 & 3 -->
+                            <div *ngIf="getDeferredAmount() > 0"
+                                class="flex justify-between items-center text-xs pt-2 border-t border-primary/10">
+                                <span class="text-slate-500">Auto-deducted 48h before trip</span>
+                                <span class="font-bold text-slate-700 dark:text-slate-300">
+                                    ₹ {{ getDeferredAmount() | number:'1.0-0' }}
+                                </span>
+                            </div>
+                            <!-- Driver collection info for Option 1 -->
+                            <div *ngIf="paymentOption === 1 && getDriverCollectsAmount() > 0"
+                                class="flex justify-between items-center text-xs pt-2 border-t border-primary/10">
+                                <span class="text-slate-500">Driver collects from customer</span>
+                                <span class="font-bold text-slate-700 dark:text-slate-300">
+                                    ₹ {{ getDriverCollectsAmount() | number:'1.0-0' }}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -731,11 +821,19 @@
             </div>
             <div class="flex justify-between items-center mb-2">
                 <span class="text-sm text-slate-500">Amount Paid Now</span>
-                <span class="text-sm font-bold text-slate-900 dark:text-white">₹ {{ getPayNowAmount() |
-                    number:'1.0-0'
-                    }}</span>
+                <span class="text-sm font-bold text-slate-900 dark:text-white">₹ {{ getPayNowAmount() | number:'1.0-0' }}</span>
             </div>
-            <div class="flex justify-between items-center" *ngIf="paymentOption === 3 || paymentOption === 4">
+            <!-- Deferred amount for Options 2 & 3 -->
+            <div class="flex justify-between items-center mb-2" *ngIf="getDeferredAmount() > 0">
+                <span class="text-sm text-slate-500">Auto-deducted 48h Before</span>
+                <span class="text-sm font-bold text-amber-600 dark:text-amber-400">₹ {{ getDeferredAmount() | number:'1.0-0' }}</span>
+            </div>
+            <!-- Driver collects for Option 1 -->
+            <div class="flex justify-between items-center mb-2" *ngIf="paymentOption === 1 && getDriverCollectsAmount() > 0">
+                <span class="text-sm text-slate-500">Driver Collects from Customer</span>
+                <span class="text-sm font-bold text-slate-600 dark:text-slate-400">₹ {{ getDriverCollectsAmount() | number:'1.0-0' }}</span>
+            </div>
+            <div class="flex justify-between items-center" *ngIf="paymentOption === 2 || paymentOption === 3">
                 <span
                     class="text-sm border border-emerald-500 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded text-xs font-bold uppercase">Payment
                     Mode</span>

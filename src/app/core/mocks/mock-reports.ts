@@ -1,0 +1,137 @@
+import {
+  ReportOverview,
+  ReportDetailedEntry,
+  ReportCancellationEntry,
+  ReportFinancialEntry,
+} from '../models';
+
+export const MOCK_REPORT_OVERVIEW: ReportOverview = {
+  totalBookings: 47,
+  completedBookings: 38,
+  cancelledBookings: 9,
+  totalRevenue: 156840,
+};
+
+export const MOCK_REPORT_DETAILED: ReportDetailedEntry[] = [
+  {
+    bookingId: 'SBN-8821',
+    customerName: 'Raj Kumar',
+    sourceCity: 'Bangalore',
+    destinationCity: 'Mysore',
+    tripType: 'outstation',
+    pickupDateTime: '15-03-2026 09:30',
+    carType: 'Innova Crysta',
+    driverName: 'Ravi Kumar',
+    fare: 4896,
+    status: 'completed',
+  },
+  {
+    bookingId: 'SBN-7732',
+    customerName: 'Priya Sharma',
+    sourceCity: 'Mumbai',
+    destinationCity: 'Pune',
+    tripType: 'outstation',
+    pickupDateTime: '14-03-2026 06:00',
+    carType: 'Ertiga',
+    driverName: 'Suresh Patil',
+    fare: 3392,
+    status: 'completed',
+  },
+  {
+    bookingId: 'SBN-6543',
+    customerName: 'Amit Patel',
+    sourceCity: 'Delhi',
+    destinationCity: 'Agra',
+    tripType: 'outstation',
+    pickupDateTime: '10-03-2026 07:00',
+    carType: 'Etios',
+    driverName: 'Mohammad Ali',
+    fare: 2616,
+    status: 'completed',
+  },
+  {
+    bookingId: 'SBN-5544',
+    customerName: 'Deepa Rani',
+    sourceCity: 'Chennai',
+    destinationCity: 'Pondicherry',
+    tripType: 'outstation',
+    pickupDateTime: '08-03-2026 10:00',
+    carType: 'Wagon R',
+    fare: 2196,
+    status: 'cancelled',
+  },
+  {
+    bookingId: 'SBN-4455',
+    customerName: 'Vikram Singh',
+    sourceCity: 'Jaipur',
+    destinationCity: 'Udaipur',
+    tripType: 'outstation',
+    pickupDateTime: '05-03-2026 08:00',
+    carType: 'SUV (6+1)',
+    driverName: 'Ramesh Yadav',
+    fare: 5200,
+    status: 'completed',
+  },
+  {
+    bookingId: 'SBN-3366',
+    customerName: 'Neha Gupta',
+    sourceCity: 'Hyderabad',
+    destinationCity: 'Warangal',
+    tripType: 'outstation',
+    pickupDateTime: '03-03-2026 09:00',
+    carType: 'Innova',
+    driverName: 'Krishna Reddy',
+    fare: 3800,
+    status: 'completed',
+  },
+  {
+    bookingId: 'SBN-2277',
+    customerName: 'Sunil Kumar',
+    sourceCity: 'Bangalore',
+    destinationCity: 'Coorg',
+    tripType: 'outstation',
+    pickupDateTime: '01-03-2026 06:30',
+    carType: 'Ertiga',
+    fare: 4500,
+    status: 'cancelled',
+  },
+];
+
+export const MOCK_REPORT_CANCELLATIONS: ReportCancellationEntry[] = [
+  {
+    bookingId: 'SBN-5544',
+    cancellationReason: 'Customer changed plans',
+    cancellationTime: '07-03-2026 18:30',
+    cancellationCharge: 200,
+  },
+  {
+    bookingId: 'SBN-2277',
+    cancellationReason: 'No driver available',
+    cancellationTime: '28-02-2026 22:00',
+    cancellationCharge: 0,
+  },
+];
+
+export const MOCK_REPORT_FINANCIAL: ReportFinancialEntry[] = [
+  {
+    bookingId: 'SBN-8821',
+    baseFare: 4896,
+    extras: 0,
+    commission: 489,
+    settlementAmount: 4407,
+  },
+  {
+    bookingId: 'SBN-7732',
+    baseFare: 3392,
+    extras: 0,
+    commission: 339,
+    settlementAmount: 3053,
+  },
+  {
+    bookingId: 'SBN-6543',
+    baseFare: 2616,
+    extras: 200,
+    commission: 261,
+    settlementAmount: 2555,
+  },
+];
