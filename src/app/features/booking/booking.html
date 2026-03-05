@@ -472,7 +472,7 @@
                                         walletBalance$ | async | number:'1.0-0' }}</div>
                                 </div>
                             </div>
-                            <button
+                            <button routerLink="/wallet"
                                 class="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-primary hover:bg-primary/5 transition-all">
                                 + Add Funds
                             </button>
@@ -483,7 +483,8 @@
                             class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-xl flex items-center gap-3">
                             <lucide-icon name="alert-circle" [size]="16" class="text-red-500"></lucide-icon>
                             <p class="text-[11px] font-bold text-red-600 dark:text-red-400">
-                                Insufficient balance to pay ₹{{ getPayNowAmount() | number:'1.0-0' }}. Please add funds.
+                                Insufficient balance to pay ₹{{ getPayNowAmount() | number:'1.0-0' }}.
+                                <a routerLink="/wallet" class="underline font-black hover:text-red-800 dark:hover:text-red-300">Top up now</a>
                             </p>
                         </div>
                         <div *ngIf="hasSufficientWalletBalance(walletBalance$ | async)"
