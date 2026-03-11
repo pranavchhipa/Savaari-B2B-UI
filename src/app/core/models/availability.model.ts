@@ -1,34 +1,82 @@
 /**
- * Availability models.
+ * Availability models — confirmed from live API (March 2026).
  *
- * POST /availabilities.php -- checks cab availability for a given itinerary.
- * The response shape will be confirmed from Savaari sample responses.
+ * GET /availabilities → api.savaari.com/partner_api/public/availabilities
+ *
+ * Required query params: rate_source, rate_type, sourceCity, tripType,
+ *   subTripType, pickupDateTime (DD-MM-YYYY HH:MM), duration,
+ *   destinationCity, token, agentId (base64), api_source
  */
 
 export interface AvailabilityRequest {
-  sourceCity: number;          // Integer city ID
+  sourceCity: number;          // Integer city ID (e.g. 377 = Bangalore)
   tripType: string;            // 'local' | 'outstation' | 'airport'
-  subTripType: string;         // 'oneWay' | 'roundTrip' | '880' | '880P2D' | '440' | '12120' | 'pick_airport' | 'drop_airport'
+  subTripType: string;         // 'oneWay' | 'roundTrip' | '880' etc.
   destinationCity?: number;    // Required for outstation
   pickupDateTime: string;      // Format: DD-MM-YYYY HH:MM
-  duration?: number;           // Days -- required for outstation roundTrip
+  duration?: number;           // Days — always required (1 for oneWay)
   localityId?: number;         // Required for airport transfers
 }
 
-/** A single car option returned from the availability API */
+/**
+ * Normalized car used by the app.
+ * The AvailabilityService maps raw API cars to this shape.
+ */
 export interface AvailableCar {
-  carTypeId: number;           // e.g. 4 = Tata Indigo, 7 = Ertiga
-  carName: string;
-  fare: number;
-  kmsIncluded: number;
-  extraKmRate: number;
-  nightAllowance: number;
-  tollsIncluded?: boolean;
-  termsAndConditions?: string;
-  [key: string]: unknown;      // Catch-all for fields we discover later
+  carId?: string;
+  carTypeId?: number;
+  carType?: string;            // "AC Minivan", "Toyota Innova Crysta", etc.
+  carName: string;             // "Toyota Innova"
+  fare: number;                // discounted totalAmount
+  originalFare?: number;       // regular totalAmount
+  kmsIncluded?: number;        // packageKilometer
+  extraKmRate?: number;        // extraKilometer rate
+  nightAllowance?: number;     // nightCharge
+  seatCapacity?: number;
+  luggageCapacity?: number;
+  inclusions?: string[];       // text-only from API's [{text,image}]
+  exclusions?: string[];
+  carImage?: string;           // URL from API
+  carImageLarge?: string;      // URL from API
+  tncData?: string[];          // Terms and conditions
+  [key: string]: unknown;
 }
 
-/** POST /availabilities.php response */
+/** Raw GET /availabilities response from API */
+export interface RawAvailabilityResponse {
+  status: string;
+  data: {
+    [key: string]: {
+      availableCars: RawAvailableCar[];
+      soldoutCars: unknown[];
+    };
+  };
+}
+
+/** Raw car object from the API (before normalization) */
+export interface RawAvailableCar {
+  carId: number;
+  carType: string;
+  carName: string;
+  carNameAlias: string;
+  package: string;
+  rates: {
+    discounted: { totalAmount: number; extraKilometer: number; nightCharge: number; packageKilometer: number; driverAllowance: number; [key: string]: unknown };
+    regular: { totalAmount: number; extraKilometer: number; nightCharge: number; packageKilometer: number; [key: string]: unknown };
+  };
+  seatCapacity: number;
+  lugguageCapacity: number;   // API typo
+  inclusions: { text: string; image: string }[];
+  exclusions: { text: string; image: string }[];
+  facilities: { text: string; image: string }[];
+  tnc_data: string[];
+  carImage: string;
+  carImageLarge: string;
+  soldoutFlag: boolean;
+  [key: string]: unknown;
+}
+
+/** Normalized response used by the app */
 export interface AvailabilityResponse {
   status?: string;
   cars: AvailableCar[];

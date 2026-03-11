@@ -84,3 +84,34 @@
   border-radius: 9999px;
   background: #24a3d6;
 }
+
+/* ===================================================================
+ * Print Voucher Styles
+ * Hides everything except the booking confirmation card.
+ * =================================================================== */
+
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only the booking confirmation section */
+  .booking-voucher-print,
+  .booking-voucher-print * {
+    visibility: visible;
+  }
+
+  .booking-voucher-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 40px;
+  }
+
+  /* Hide action buttons in print */
+  .no-print {
+    display: none !important;
+  }
+}

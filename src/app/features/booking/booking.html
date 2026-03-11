@@ -97,18 +97,20 @@
                             <div class="relative group">
                                 <input id="guestName" type="text" [(ngModel)]="guestName" name="guestName"
                                     class="peer block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
+                                    [class.!border-red-400]="formSubmitAttempted && !isGuestNameValid()"
                                     placeholder=" " />
                                 <label for="guestName"
-                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Guest
-                                    Name</label>
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Customer
+                                    Name <span class="text-red-500">*</span></label>
                             </div>
+                            <div *ngIf="formSubmitAttempted && !isGuestNameValid()" class="text-xs text-red-500 mt-1 ml-4">Customer name is required (min 2 characters)</div>
                             <div class="relative group">
                                 <input id="guestEmail" type="email" [(ngModel)]="guestEmail" name="guestEmail"
                                     class="peer block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
                                     placeholder=" " />
                                 <label for="guestEmail"
-                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Guest
-                                    Email (Optional)</label>
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Customer
+                                    Email Address</label>
                             </div>
                         </div>
 
@@ -124,47 +126,110 @@
                                     <lucide-icon name="lock" [size]="14"></lucide-icon>
                                 </div>
                             </div>
-                            <div class="flex">
-                                <div class="relative w-24">
-                                    <select name="phoneCode"
-                                        class="block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-tl-lg">
-                                        <option>+91</option>
-                                        <option>+1</option>
-                                        <option>+44</option>
-                                    </select>
-                                    <label class="absolute text-xs text-slate-500 top-2 left-4">Code</label>
-                                </div>
-                                <div class="relative flex-1">
+                            <div class="relative country-code-wrapper">
+                                <label for="phone"
+                                    class="absolute text-xs text-slate-500 top-2 left-4 z-10 pointer-events-none">Phone Number <span class="text-red-500">*</span></label>
+                                <div class="flex items-center bg-slate-50 border-0 border-b-2 border-slate-200 rounded-lg focus-within:border-primary transition-all"
+                                    [class.!border-red-400]="formSubmitAttempted && !isPhoneValid()">
+                                    <div class="country-code-trigger shrink-0 pl-3 pr-1 py-1 cursor-pointer" (click)="countryDropdownOpen = !countryDropdownOpen">
+                                        <div class="flex items-center gap-1.5 mt-4 mb-0.5">
+                                            <img *ngIf="selectedCountryCode"
+                                                [src]="'https://flagcdn.com/w40/' + selectedCountryCode.iso2 + '.png'"
+                                                [alt]="selectedCountryCode.countryName"
+                                                class="w-7 h-5 object-cover rounded-[3px] shadow-sm border border-slate-200" />
+                                            <span class="font-semibold text-sm text-slate-800">+{{selectedCountryCode?.isdCode || '91'}}</span>
+                                            <lucide-icon name="chevron-down" [size]="14" class="text-slate-400"></lucide-icon>
+                                        </div>
+                                    </div>
+                                    <div class="w-px h-7 bg-slate-200 shrink-0 mt-3"></div>
                                     <input id="phone" type="tel" [(ngModel)]="phone" name="phone"
-                                        class="peer block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-tr-lg"
-                                        placeholder=" " />
-                                    <label for="phone"
-                                        class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Phone
-                                        Number</label>
+                                        class="flex-1 bg-transparent border-0 outline-none pt-6 pb-2 px-3 text-slate-900 text-sm focus:ring-0"
+                                        placeholder="Enter phone number" />
+                                </div>
+                                <!-- Country code dropdown -->
+                                <div *ngIf="countryDropdownOpen"
+                                    class="absolute left-0 top-full mt-1 w-72 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
+                                    <div class="p-2 border-b border-slate-100">
+                                        <input type="text" [(ngModel)]="countrySearch" name="countrySearch"
+                                            placeholder="Search country or code..."
+                                            class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md outline-none focus:border-primary bg-slate-50" />
+                                    </div>
+                                    <div class="max-h-52 overflow-y-auto">
+                                        <div *ngFor="let cc of filteredCountryCodes"
+                                            class="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 cursor-pointer transition-colors"
+                                            [style.background-color]="cc.isdCode === selectedCountryCode?.isdCode ? 'rgb(0 150 199 / 0.06)' : ''"
+                                            (click)="selectCountry(cc)">
+                                            <img [src]="'https://flagcdn.com/w40/' + cc.iso2 + '.png'"
+                                                [alt]="cc.countryName"
+                                                class="w-6 h-4 object-cover rounded-[2px] shadow-sm border border-slate-100" />
+                                            <span class="text-sm text-slate-700 flex-1">{{cc.countryName}}</span>
+                                            <span class="text-xs text-slate-400 font-medium">+{{cc.isdCode}}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                            <div *ngIf="formSubmitAttempted && !isPhoneValid()" class="text-xs text-red-500 mt-1 ml-4">Valid phone number required (min 10 digits)</div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Pickup Address with locality autocomplete -->
                             <div class="relative group">
-                                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
+                                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary z-10 pointer-events-none">
                                     <lucide-icon name="map-pin" [size]="18"></lucide-icon>
                                 </div>
-                                <input id="pickup" type="text" [(ngModel)]="pickupAddress" name="pickupAddress"
-                                    class="peer block w-full pl-12 pr-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
-                                    placeholder=" " />
-                                <label for="pickup"
-                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-12 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Pickup
-                                    Address</label>
+                                <p-autoComplete
+                                    [(ngModel)]="pickupAddress"
+                                    name="pickupAddress"
+                                    [suggestions]="pickupSuggestions"
+                                    (completeMethod)="searchPickupAddress($event)"
+                                    [minLength]="2"
+                                    [delay]="250"
+                                    placeholder="Pickup locality or address"
+                                    appendTo="body"
+                                    styleClass="w-full"
+                                    inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
+                                    panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 bg-white"
+                                    [forceSelection]="false"
+                                    [completeOnFocus]="false">
+                                    <ng-template pTemplate="item" let-item>
+                                        <div class="flex items-center gap-2 px-2 py-1.5">
+                                            <lucide-icon name="map-pin" [size]="14" class="text-slate-400 shrink-0"></lucide-icon>
+                                            <span class="text-sm text-slate-700">{{ item }}</span>
+                                        </div>
+                                    </ng-template>
+                                </p-autoComplete>
+                                <label
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 top-2 left-12 scale-75 font-medium pointer-events-none">Pickup
+                                    Address <span class="text-red-500">*</span></label>
                             </div>
+                            <div *ngIf="formSubmitAttempted && !isPickupAddressValid()" class="text-xs text-red-500 mt-1 ml-4">Pickup address is required (min 3 characters)</div>
+                            <!-- Drop Address with locality autocomplete -->
                             <div class="relative group">
-                                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-rose-500">
+                                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-rose-500 z-10 pointer-events-none">
                                     <lucide-icon name="map-pin" [size]="18"></lucide-icon>
                                 </div>
-                                <input id="drop" type="text" [(ngModel)]="dropAddress" name="dropAddress"
-                                    class="peer block w-full pl-12 pr-4 pt-6 pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
-                                    placeholder=" " />
-                                <label for="drop"
-                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-12 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Drop
+                                <p-autoComplete
+                                    [(ngModel)]="dropAddress"
+                                    name="dropAddress"
+                                    [suggestions]="dropSuggestions"
+                                    (completeMethod)="searchDropAddress($event)"
+                                    [minLength]="2"
+                                    [delay]="250"
+                                    placeholder="Drop locality or address"
+                                    appendTo="body"
+                                    styleClass="w-full"
+                                    inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
+                                    panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 bg-white"
+                                    [forceSelection]="false"
+                                    [completeOnFocus]="false">
+                                    <ng-template pTemplate="item" let-item>
+                                        <div class="flex items-center gap-2 px-2 py-1.5">
+                                            <lucide-icon name="map-pin" [size]="14" class="text-slate-400 shrink-0"></lucide-icon>
+                                            <span class="text-sm text-slate-700">{{ item }}</span>
+                                        </div>
+                                    </ng-template>
+                                </p-autoComplete>
+                                <label
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 top-2 left-12 scale-75 font-medium pointer-events-none">Drop
                                     Address</label>
                             </div>
                         </div>
@@ -457,43 +522,99 @@
                         </div>
                     </div>
 
-                    <!-- Wallet Balance Check -->
-                    <div
-                        class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <lucide-icon name="wallet" [size]="20" class="text-primary"></lucide-icon>
-                                </div>
-                                <div>
-                                    <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Your Wallet
-                                        Balance</h5>
-                                    <div class="text-xl font-black text-slate-800 dark:text-slate-100">₹{{
-                                        walletBalance$ | async | number:'1.0-0' }}</div>
-                                </div>
+                    <!-- Wallet Balance + Inline Top-Up -->
+                    <div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <lucide-icon name="wallet" [size]="20" class="text-primary"></lucide-icon>
+                          </div>
+                          <div>
+                            <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Your Wallet Balance</h5>
+                            <div class="text-xl font-black text-slate-800 dark:text-slate-100">
+                              ₹{{ walletObj.balance | number:'1.0-0' }}
                             </div>
-                            <button routerLink="/wallet"
-                                class="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-primary hover:bg-primary/5 transition-all">
-                                + Add Funds
-                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Sufficient balance indicator -->
+                      <div *ngIf="paymentOption !== 0 && hasSufficientWalletBalance(walletObj.balance)"
+                        class="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-xl flex items-center gap-3">
+                        <lucide-icon name="check-circle" [size]="16" class="text-emerald-500"></lucide-icon>
+                        <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                          Sufficient balance for this booking.
+                        </p>
+                      </div>
+
+                      <!-- No payment selected yet -->
+                      <div *ngIf="paymentOption === 0"
+                        class="p-3 bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl flex items-center gap-3">
+                        <lucide-icon name="info" [size]="16" class="text-slate-400"></lucide-icon>
+                        <p class="text-[11px] font-medium text-slate-500">
+                          Select a payment option to check wallet balance.
+                        </p>
+                      </div>
+
+                      <!-- Insufficient balance — show top-up -->
+                      <div *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance(walletObj.balance)">
+                        <!-- Warning banner -->
+                        <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl flex items-center gap-3 mb-4">
+                          <lucide-icon name="alert-triangle" [size]="16" class="text-amber-500"></lucide-icon>
+                          <div>
+                            <p class="text-xs font-bold text-amber-700 dark:text-amber-400">
+                              Insufficient Balance — Need ₹{{ getPayNowAmount() | number:'1.0-0' }}, have ₹{{ walletObj.balance | number:'1.0-0' }}
+                            </p>
+                            <p class="text-[10px] text-amber-600 dark:text-amber-500 mt-0.5">
+                              Top up at least ₹{{ (getPayNowAmount() - (walletObj.balance || 0)) | number:'1.0-0' }} to proceed.
+                            </p>
+                          </div>
                         </div>
 
-                        <!-- Insufficient Balance Warning -->
-                        <div *ngIf="!hasSufficientWalletBalance(walletBalance$ | async)"
-                            class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-xl flex items-center gap-3">
-                            <lucide-icon name="alert-circle" [size]="16" class="text-red-500"></lucide-icon>
-                            <p class="text-[11px] font-bold text-red-600 dark:text-red-400">
-                                Insufficient balance to pay ₹{{ getPayNowAmount() | number:'1.0-0' }}.
-                                <a routerLink="/wallet" class="underline font-black hover:text-red-800 dark:hover:text-red-300">Top up now</a>
-                            </p>
+                        <!-- Top-up section -->
+                        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                          <h6 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                            <lucide-icon name="plus-circle" [size]="14" class="text-primary"></lucide-icon>
+                            Quick Top-Up
+                          </h6>
+
+                          <!-- Preset buttons -->
+                          <div class="grid grid-cols-4 gap-2 mb-3">
+                            <button *ngFor="let preset of topUpPresets"
+                              (click)="setTopUpAmount(preset)"
+                              [class.bg-primary]="topUpAmount === preset"
+                              [class.text-white]="topUpAmount === preset"
+                              [class.border-primary]="topUpAmount === preset"
+                              class="py-2 px-1 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary transition-all text-center">
+                              ₹{{ preset | number:'1.0-0' }}
+                            </button>
+                          </div>
+
+                          <!-- Custom amount input -->
+                          <div class="flex gap-2">
+                            <div class="relative flex-1">
+                              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">₹</span>
+                              <input type="number" [(ngModel)]="topUpAmount" name="topUpAmount"
+                                placeholder="Enter amount"
+                                min="1"
+                                class="w-full pl-8 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+                            </div>
+                            <button (click)="processTopUp()"
+                              [disabled]="topUpAmount <= 0 || isProcessingTopUp"
+                              class="px-5 py-2.5 bg-primary hover:bg-sky-600 disabled:bg-slate-300 text-white font-bold text-sm rounded-xl transition-all disabled:cursor-not-allowed flex items-center gap-2">
+                              <lucide-icon *ngIf="isProcessingTopUp" name="loader-2" [size]="14" class="animate-spin"></lucide-icon>
+                              {{ isProcessingTopUp ? 'Processing...' : 'Add Funds' }}
+                            </button>
+                          </div>
+
+                          <!-- Success message -->
+                          <div *ngIf="topUpSuccess"
+                            class="mt-3 p-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-center gap-2">
+                            <lucide-icon name="check-circle" [size]="14" class="text-emerald-500"></lucide-icon>
+                            <span class="text-xs font-bold text-emerald-600">Funds added successfully! Balance updated.</span>
+                          </div>
                         </div>
-                        <div *ngIf="hasSufficientWalletBalance(walletBalance$ | async)"
-                            class="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-xl flex items-center gap-3">
-                            <lucide-icon name="check-circle" [size]="16" class="text-emerald-500"></lucide-icon>
-                            <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                                Sufficient balance available for this booking.
-                            </p>
-                        </div>
+                      </div>
                     </div>
 
                     <div class="flex items-start gap-3 p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl">
@@ -508,16 +629,28 @@
                     <div class="mb-8">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Got a
                             coupon?</label>
-                        <div class="flex space-x-2">
+                        <div class="flex space-x-2" *ngIf="!couponApplied">
                             <div class="relative flex-grow">
                                 <lucide-icon name="ticket" [size]="18"
                                     class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></lucide-icon>
-                                <input type="text" placeholder="Enter coupon code"
+                                <input type="text" [(ngModel)]="couponCode" name="couponCode" placeholder="Enter coupon code"
                                     class="w-full pl-12 pr-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
                             </div>
-                            <button
-                                class="px-6 py-2.5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors">Apply</button>
+                            <button (click)="applyCoupon()" [disabled]="isValidatingCoupon || !couponCode.trim()"
+                                class="px-6 py-2.5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors disabled:opacity-50">
+                                {{ isValidatingCoupon ? 'Checking...' : 'Apply' }}
+                            </button>
                         </div>
+                        <!-- Applied coupon display -->
+                        <div *ngIf="couponApplied" class="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                            <div class="flex items-center gap-2">
+                                <lucide-icon name="check-circle" [size]="18" class="text-emerald-600"></lucide-icon>
+                                <span class="text-sm font-medium text-emerald-700 dark:text-emerald-400">{{ couponCode }} applied — &#8377;{{ couponDiscount }} off</span>
+                            </div>
+                            <button (click)="removeCoupon()" class="text-xs text-red-500 hover:underline font-medium">Remove</button>
+                        </div>
+                        <!-- Coupon validation message (errors) -->
+                        <p *ngIf="couponMessage && !couponApplied" class="mt-2 text-sm text-red-500">{{ couponMessage }}</p>
                     </div>
 
                     <div
@@ -553,9 +686,23 @@
                         </div>
                     </div>
 
-                    <button (click)="bookNow()" [disabled]="paymentOption === 0 || !hasSufficientWalletBalance((walletBalance$ | async)!)"
+                    <!-- Booking error message -->
+                    <div *ngIf="bookingError" class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2">
+                        <lucide-icon name="alert-circle" [size]="18" class="text-red-500 flex-shrink-0"></lucide-icon>
+                        <span class="text-sm text-red-600 dark:text-red-400">{{ bookingError }}</span>
+                    </div>
+
+                    <button (click)="bookNow()" [disabled]="paymentOption === 0 || isProcessingWallet || !hasSufficientWalletBalance((walletBalance$ | async))"
                         class="w-full py-4 bg-primary hover:bg-sky-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-bold text-lg rounded-xl shadow-lg shadow-sky-200 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none disabled:shadow-none">
-                        {{ paymentOption === 0 ? 'Select a Payment Option' : 'Book Now' }}
+                        <span *ngIf="isProcessingWallet" class="flex items-center justify-center gap-2">
+                            <lucide-icon name="loader-2" [size]="20" class="animate-spin"></lucide-icon>
+                            Creating Booking...
+                        </span>
+                        <ng-container *ngIf="!isProcessingWallet">
+                          <span *ngIf="paymentOption === 0">Select a Payment Option</span>
+                          <span *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance((walletBalance$ | async))">Insufficient Wallet Balance</span>
+                          <span *ngIf="paymentOption !== 0 && hasSufficientWalletBalance((walletBalance$ | async))">Book Now</span>
+                        </ng-container>
                     </button>
                 </div> <!-- Ends WalletObj Wrapper (line 237) -->
             </div> <!-- Ends Step 2 Container (line 224) -->
@@ -803,7 +950,7 @@
 
     <!-- Booking Confirmation Screen -->
     <div *ngIf="bookingConfirmed"
-        class="max-w-3xl mx-auto mt-4 mb-24 bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 p-8 text-center animate-in zoom-in duration-300">
+        class="booking-voucher-print max-w-3xl mx-auto mt-4 mb-24 bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 p-8 text-center animate-in zoom-in duration-300">
         <div
             class="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
             <lucide-icon name="check-circle" [size]="40" class="text-emerald-500"></lucide-icon>
@@ -856,13 +1003,25 @@
             </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <button routerLink="/bookings"
-                class="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">View
-                Bookings</button>
-            <button routerLink="/dashboard"
-                class="px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-sm hover:bg-sky-600 transition-colors">Book
-                Another Cab</button>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center no-print">
+          <button (click)="shareOnWhatsApp()"
+            class="px-6 py-3 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Share on WhatsApp
+          </button>
+          <button (click)="printVoucher()"
+            class="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
+            <lucide-icon name="printer" [size]="18"></lucide-icon>
+            Print Voucher
+          </button>
+          <button routerLink="/bookings"
+            class="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            View Bookings
+          </button>
+          <button routerLink="/dashboard"
+            class="px-6 py-3 bg-primary text-white font-bold rounded-lg shadow-sm hover:bg-sky-600 transition-colors">
+            Book Another Cab
+          </button>
         </div>
     </div>
 </main>

@@ -13,6 +13,7 @@ import { TripTypeService } from '../../core/services/trip-type.service';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { City, AvailabilityRequest } from '../../core/models';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
+import { BannerService, BannerImage } from '../../core/services/banner.service';
 
 type TabType = 'ONE_WAY' | 'ROUND_TRIP' | 'LOCAL' | 'AIRPORT';
 
@@ -32,8 +33,14 @@ export class DashboardComponent implements OnInit {
   private cityService = inject(CityService);
   private tripTypeService = inject(TripTypeService);
   private availabilityService = inject(AvailabilityService);
+  private bannerService = inject(BannerService);
 
   selectedTab: TabType = 'ONE_WAY';
+
+  // Banner images from API
+  bannerImages: BannerImage[] = [];
+  currentBannerIndex = 0;
+  private bannerInterval: ReturnType<typeof setInterval> | null = null;
   bookingForm!: FormGroup;
 
   // City autocomplete data
@@ -59,6 +66,42 @@ export class DashboardComponent implements OnInit {
   ngOnInit() {
     this.initForm();
     this.loadSourceCities();
+    this.loadBanners();
+  }
+
+  /** Load promotional banners from API */
+  private loadBanners() {
+    this.bannerService.getBanners().subscribe(banners => {
+      this.bannerImages = banners;
+      if (banners.length > 1) {
+        this.startBannerRotation();
+      }
+      this.cdr.markForCheck();
+    });
+  }
+
+  private startBannerRotation() {
+    if (this.bannerInterval) clearInterval(this.bannerInterval);
+    this.bannerInterval = setInterval(() => {
+      if (this.bannerImages.length > 0) {
+        this.currentBannerIndex = (this.currentBannerIndex + 1) % this.bannerImages.length;
+        this.cdr.markForCheck();
+      }
+    }, 5000); // Rotate every 5 seconds
+  }
+
+  nextBanner() {
+    if (this.bannerImages.length > 0) {
+      this.currentBannerIndex = (this.currentBannerIndex + 1) % this.bannerImages.length;
+      this.cdr.markForCheck();
+    }
+  }
+
+  prevBanner() {
+    if (this.bannerImages.length > 0) {
+      this.currentBannerIndex = (this.currentBannerIndex - 1 + this.bannerImages.length) % this.bannerImages.length;
+      this.cdr.markForCheck();
+    }
   }
 
   initForm() {
@@ -231,6 +274,12 @@ export class DashboardComponent implements OnInit {
     const toCityName = typeof toCityObj === 'object' && toCityObj?.name ? toCityObj.name : (toCityObj as string || 'Mysore');
     const toCityId = typeof toCityObj === 'object' && (toCityObj as City)?.id ? (toCityObj as City).id : 237;
 
+    // Resolve whether the destination city also appears in the source cities list.
+    // If yes, its source city ID is the same (same Savaari DB). If not (destination-only
+    // city like small towns), toCitySourceId stays undefined — locality suggestions
+    // won't be shown for the drop address and the user types free text instead.
+    const toCitySourceId = this.sourceCities.find(c => c.id === toCityId)?.id;
+
     // Parse pickupTime to hh:mm AM/PM string
     const timeDate: Date = val.pickupTime instanceof Date ? val.pickupTime : new Date();
     const hours = timeDate.getHours();
@@ -253,6 +302,7 @@ export class DashboardComponent implements OnInit {
       fromCityId: fromCityId,
       toCity: toCityName,
       toCityId: toCityId,
+      toCitySourceId: toCitySourceId,
       pickupDate: pickupDate,
       pickupTime: pickupTimeStr,
       tripType: tripType,
@@ -277,7 +327,7 @@ export class DashboardComponent implements OnInit {
       subTripType: apiParams.subTripType,
       pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
       ...((!isLocal && !isAirport) && { destinationCity: toCityId }),
-      ...(isRoundTrip && { duration: calculateDuration(pickupDate, returnDate) }),
+      duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
     };
 
     // Show loading, call availability API, then navigate

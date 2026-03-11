@@ -1,33 +1,106 @@
 /**
- * Booking models.
+ * Booking models — confirmed from live API (March 2026).
  *
- * POST /booking-create.php   -- create a confirmed booking
- * POST /booking-cancel.php   -- cancel a booking
- * GET  /booking-get.php      -- get booking details by ID
+ * POST /booking?token=<partnerJWT>  → api.savaari.com/partner_api/public/booking → 201
+ * POST /booking/update_invoice_payer_info?token=<partnerJWT> → 200
+ * GET  /booking-details → api23.savaari.com/booking-details (lists ALL bookings)
  */
 
+/**
+ * POST /booking request body (form-encoded).
+ *
+ * Confirmed fields extracted from b2bcab.in Angular 4 source.
+ * Token is passed as query param, NOT in the body.
+ */
 export interface CreateBookingRequest {
+  // Trip details
   sourceCity: number;
-  tripType: string;
-  subTripType: string;
-  destinationCity?: number;
-  pickupDateTime: string;       // DD-MM-YYYY HH:MM
-  duration?: number;            // Days for roundTrip
+  tripType: string;              // 'outstation' | 'local' | 'airport'
+  subTripType: string;           // 'oneWay' | 'roundTrip' | '880' etc.
+  destinationCity?: number;      // Required for outstation
+  pickupDateTime: string;        // DD-MM-YYYY HH:MM
+  duration?: number;             // Days (1 for oneWay)
+
+  // Address details
   pickupAddress: string;
-  localityId?: number;          // For airport transfers
+  customerLatLong?: string;      // "lat,lng"
+  dropAddress?: string;
+  dropLatLong?: string;          // "lat,lng"
+  dropLocality?: string;
+  selectPlaceId?: string;        // Google Place ID
+
+  // Airport-specific
+  localityId?: number;
+  terminalname?: string;
+  airport_id?: string;
+  airport_name?: string;
+  flight_no?: string;
+
+  // Customer details
+  customerTitle?: string;        // 'Mr' | 'Mrs' | 'Ms'
   customerName: string;
   customerEmail?: string;
-  customerMobile: string;       // 10-digit mobile number
-  carType: number;              // Car type ID from availability response
-  prePayment?: number;          // Amount already collected
+  customerMobile: string;        // 10-digit mobile number
+  countryCode?: string;          // '+91'
+  customerSecondaryEmail?: string; // Agent email
+
+  // Car details
+  carType: number;               // Car type ID from availability response
+  premiumFlag?: number;          // 0 or 1
+
+  // Payment
+  prePayment?: number;           // Amount paid upfront
   couponCode?: string;
+  fixed_amount?: number;
+
+  // Agent/source
+  agentId?: string;              // Base64-encoded agent ID
+  api_source?: string;           // 'b2b'
+  source?: string;               // Booking source
+  device?: string;               // Device type
+  affiliateId?: string;
+  Urgent_booking?: string;       // Urgent booking flag
+}
+
+/**
+ * POST /booking → 201 Created response.
+ *
+ * Confirmed shape from live Savaari Partner API (March 2026):
+ *   { "status": "success", "data": [{ "booking_id": "...", "reservation_id": "...", ... }] }
+ *
+ * The booking_id and reservation_id are nested inside data[0], NOT at the top level.
+ * Error responses (still 201) look like:
+ *   { "status": "success", "data": [{ "status_code": 402, "status_error": "..." }] }
+ */
+export interface CreateBookingResponseData {
+  booking_id?: string;
+  reservation_id?: string;
+  booking_key?: string;
+  // Error fields (present when booking fails despite 201)
+  status_code?: number;
+  status_description?: string;
+  status_error?: string;
+  [key: string]: unknown;
 }
 
 export interface CreateBookingResponse {
-  bookingId: string;
-  status: string;
+  status?: string;
+  data?: CreateBookingResponseData[];
+  // Legacy top-level fields (kept for safety, not present in real API)
+  booking_id?: string;
+  bookingId?: string;
+  reservation_id?: string;
   message?: string;
   [key: string]: unknown;
+}
+
+/** POST /booking/update_invoice_payer_info request body (form-encoded) */
+export interface UpdateInvoicePayerRequest {
+  booking_id: string;
+  reservation_id: string;
+  invoice_payer_name?: string;
+  invoice_payer_email?: string;
+  invoice_payer_phone?: string;
 }
 
 export interface CancelBookingRequest {

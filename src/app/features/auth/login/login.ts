@@ -1,10 +1,10 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { FooterComponent } from '../../../components/layout/footer/footer';
-
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -17,6 +17,7 @@ import { FooterComponent } from '../../../components/layout/footer/footer';
 export class LoginComponent {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private auth = inject(AuthService);
 
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -24,13 +25,32 @@ export class LoginComponent {
     rememberMe: [false]
   });
 
+  isLoading = signal(false);
+  errorMessage = signal('');
+
   onSubmit() {
-    if (this.loginForm.valid) {
-      console.log('Login credentials:', this.loginForm.value);
-      // Mock successful login redirection
-      this.router.navigate(['/dashboard']);
-    } else {
+    if (!this.loginForm.valid) {
       this.loginForm.markAllAsTouched();
+      return;
     }
+
+    const { email, password } = this.loginForm.value;
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+
+    this.auth.login(email!, password!).subscribe({
+      next: (user) => {
+        console.log('[Login] Success for', user.email);
+        this.isLoading.set(false);
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        console.error('[Login] Failed:', err);
+        this.isLoading.set(false);
+        this.errorMessage.set(
+          err?.error?.message || err?.message || 'Login failed. Please check your credentials.'
+        );
+      }
+    });
   }
 }

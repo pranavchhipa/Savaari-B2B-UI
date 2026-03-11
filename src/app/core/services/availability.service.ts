@@ -1,39 +1,38 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, map } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
+import { AuthService } from './auth.service';
 import { ErrorHandlerService } from './error-handler.service';
-import { AvailabilityRequest, AvailabilityResponse } from '../models';
+import { AvailabilityRequest, AvailabilityResponse, RawAvailabilityResponse, RawAvailableCar, AvailableCar } from '../models';
 import { environment } from '../../../environments/environment';
 import { MOCK_AVAILABILITY_RESPONSE } from '../mocks/mock-cars';
 
 /**
  * Checks cab availability for a given itinerary.
- * POST /availabilities.php
+ *
+ * GET /availabilities → api.savaari.com/partner_api/public/availabilities
+ *
+ * Raw API response: { status, data: { R1: { availableCars: [...] } } }
+ * Normalized to:    { status, cars: [...] }
  */
 @Injectable({ providedIn: 'root' })
 export class AvailabilityService {
 
   constructor(
     private api: ApiService,
+    private auth: AuthService,
     private errorHandler: ErrorHandlerService
   ) {}
 
-  /**
-   * Check available cabs for a trip.
-   *
-   * @param request  Must include sourceCity (integer ID), tripType,
-   *                 subTripType, pickupDateTime (DD-MM-YYYY HH:MM).
-   *                 destinationCity required for outstation.
-   *                 duration required for roundTrip.
-   *                 localityId required for airport.
-   */
   checkAvailability(request: AvailabilityRequest): Observable<AvailabilityResponse> {
     if (environment.useMockData) {
       return of(MOCK_AVAILABILITY_RESPONSE);
     }
 
-    return this.api.post<AvailabilityResponse>('availabilities.php', {
+    return this.api.partnerGet<RawAvailabilityResponse>('availabilities', {
+      rate_source: 'web',
+      rate_type: 'premium',
       sourceCity: request.sourceCity,
       tripType: request.tripType,
       subTripType: request.subTripType,
@@ -41,8 +40,51 @@ export class AvailabilityService {
       pickupDateTime: request.pickupDateTime,
       duration: request.duration,
       localityId: request.localityId,
+      token: this.auth.getPartnerToken(),
+      agentId: btoa(environment.agentId),
+      api_source: 'b2b',
     }).pipe(
+      map(raw => this.normalizeResponse(raw)),
       catchError(err => this.errorHandler.handleApiError(err, 'AvailabilityService'))
     );
+  }
+
+  private normalizeResponse(raw: RawAvailabilityResponse): AvailabilityResponse {
+    const cars: AvailableCar[] = [];
+    if (raw.data) {
+      for (const key of Object.keys(raw.data)) {
+        const group = raw.data[key];
+        if (group?.availableCars?.length) {
+          for (const rawCar of group.availableCars) {
+            if (!rawCar.soldoutFlag) {
+              cars.push(this.normalizeCar(rawCar));
+            }
+          }
+        }
+      }
+    }
+    console.log(`[AvailabilityService] ${cars.length} cars available`);
+    return { status: raw.status, cars };
+  }
+
+  private normalizeCar(raw: RawAvailableCar): AvailableCar {
+    return {
+      carId: String(raw.carId),
+      carTypeId: raw.carId,
+      carType: raw.carType,
+      carName: raw.carName,
+      fare: raw.rates?.discounted?.totalAmount ?? 0,
+      originalFare: raw.rates?.regular?.totalAmount,
+      kmsIncluded: raw.rates?.discounted?.packageKilometer,
+      extraKmRate: raw.rates?.discounted?.extraKilometer,
+      nightAllowance: raw.rates?.discounted?.nightCharge,
+      seatCapacity: raw.seatCapacity,
+      luggageCapacity: raw.lugguageCapacity,
+      inclusions: raw.inclusions?.map(i => i.text) ?? [],
+      exclusions: raw.exclusions?.map(e => e.text) ?? [],
+      carImage: raw.carImage,
+      carImageLarge: raw.carImageLarge,
+      tncData: raw.tnc_data,
+    };
   }
 }

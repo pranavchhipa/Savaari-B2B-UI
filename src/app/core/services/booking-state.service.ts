@@ -7,6 +7,7 @@ export interface Itinerary {
     fromCityId?: number;      // Savaari integer city ID for API calls
     toCity: string;
     toCityId?: number;        // Savaari integer city ID for API calls
+    toCitySourceId?: number;  // Source city ID for localities API (undefined if destination-only city)
     pickupDate: Date;
     pickupTime: string;
     tripType: string;         // UI label: 'One Way', 'Round Trip', 'Local', 'Airport'
@@ -26,7 +27,8 @@ export interface SelectedCar {
     name: string;
     image: string;
     price: number;
-    originalPrice?: number;
+    originalPrice?: number;   // Discounted fare from availability API (without markup)
+    regularPrice?: number;    // Regular (non-discounted) fare — used as prePayment basis to satisfy API 25% minimum
     kmsIncluded: string;
     seats: string;
     bags: string;

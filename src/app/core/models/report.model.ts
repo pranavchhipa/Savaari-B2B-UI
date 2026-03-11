@@ -1,17 +1,15 @@
 /**
- * Report models.
+ * Report models — confirmed from live API.
  *
- * All four report endpoints share the same request parameters:
- * GET /report-overview.php
- * GET /report-detailed.php
- * GET /report-cancellation.php
- * GET /report-financial.php
+ * GET /booking-details-report → api23.savaari.com/booking-details-report
+ *
+ * IMPORTANT: Dates are Unix timestamps (seconds), NOT DD-MM-YYYY!
+ * Status 204 = no records for the given period.
  */
 
 export interface ReportRequest {
-  fromDate: string;       // DD-MM-YYYY (format TBD from Savaari)
-  toDate: string;         // DD-MM-YYYY
-  filterType: string;     // 'booking_date' | 'travel_date'
+  fromDate: number;       // Unix timestamp in seconds (NOT DD-MM-YYYY!)
+  toDate: number;         // Unix timestamp in seconds
 }
 
 export interface ReportOverview {

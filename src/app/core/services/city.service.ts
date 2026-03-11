@@ -1,18 +1,21 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { tap, shareReplay, catchError } from 'rxjs/operators';
+import { tap, map, shareReplay, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { ErrorHandlerService } from './error-handler.service';
-import { City, Locality } from '../models';
+import { City, CityApiResponse, toCity, Locality } from '../models';
 import { environment } from '../../../environments/environment';
 import { MOCK_SOURCE_CITIES, MOCK_DESTINATION_CITIES, MOCK_LOCALITIES } from '../mocks/mock-cities';
 
 /**
  * Service for city and locality lookups.
  *
- * Caches results in memory to avoid redundant API calls --
- * city lists don't change during a session.
+ * Uses Partner API: GET /source-cities, GET /destination-cities
+ * Response wrapped in { "status": "success", "data": [...] }
+ * Token passed as query param.
+ *
+ * Caches results in memory — city lists don't change during a session.
  */
 @Injectable({ providedIn: 'root' })
 export class CityService {
@@ -28,7 +31,7 @@ export class CityService {
 
   /**
    * Get source cities for a given trip type.
-   * POST /source-cities.php
+   * GET /source-cities?tripType=...&subTripType=...&token=...
    */
   getSourceCities(tripType: string, subTripType: string): Observable<City[]> {
     if (environment.useMockData) {
@@ -40,10 +43,12 @@ export class CityService {
       return of(this.sourceCitiesCache.get(cacheKey)!);
     }
 
-    return this.api.post<City[]>('source-cities.php', {
+    return this.api.partnerGet<CityApiResponse>('source-cities', {
       tripType,
       subTripType,
+      token: this.auth.getPartnerToken(),
     }).pipe(
+      map(response => response.data.map(toCity)),
       tap(cities => this.sourceCitiesCache.set(cacheKey, cities)),
       shareReplay(1),
       catchError(err => this.errorHandler.handleApiError(err, 'CityService.getSourceCities'))
@@ -52,7 +57,7 @@ export class CityService {
 
   /**
    * Get destination cities for a given source city and trip type.
-   * POST /destination-cities.php
+   * GET /destination-cities?tripType=...&subTripType=...&sourceCity=...&token=...
    */
   getDestinationCities(tripType: string, subTripType: string, sourceCityId: number): Observable<City[]> {
     if (environment.useMockData) {
@@ -64,11 +69,13 @@ export class CityService {
       return of(this.destinationCitiesCache.get(cacheKey)!);
     }
 
-    return this.api.post<City[]>('destination-cities.php', {
+    return this.api.partnerGet<CityApiResponse>('destination-cities', {
       tripType,
       subTripType,
       sourceCity: sourceCityId,
+      token: this.auth.getPartnerToken(),
     }).pipe(
+      map(response => response.data.map(toCity)),
       tap(cities => this.destinationCitiesCache.set(cacheKey, cities)),
       shareReplay(1),
       catchError(err => this.errorHandler.handleApiError(err, 'CityService.getDestinationCities'))
@@ -77,7 +84,7 @@ export class CityService {
 
   /**
    * Get localities for airport transfers.
-   * GET /localities.php
+   * GET /localities (endpoint not yet confirmed on live site)
    */
   getLocalities(): Observable<Locality[]> {
     if (environment.useMockData) {
@@ -88,7 +95,9 @@ export class CityService {
       return of(this.localitiesCache);
     }
 
-    return this.api.get<Locality[]>('localities.php', {}).pipe(
+    return this.api.partnerGet<Locality[]>('localities', {
+      token: this.auth.getPartnerToken(),
+    }).pipe(
       tap(localities => this.localitiesCache = localities),
       shareReplay(1),
       catchError(err => this.errorHandler.handleApiError(err, 'CityService.getLocalities'))

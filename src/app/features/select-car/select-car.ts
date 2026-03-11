@@ -7,7 +7,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BookingStateService, Itinerary, SelectedCar } from '../../core/services/booking-state.service';
 import { MarkupService } from '../../core/services/markup.service';
 import { AvailableCar } from '../../core/models';
-import { CAR_IMAGE_MAP, CAR_DISPLAY_INFO } from '../../core/mocks/mock-cars';
 
 import { FooterComponent } from '../../components/layout/footer/footer';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -20,6 +19,7 @@ interface DisplayCar {
   subtitle: string;
   image: string;
   price: number;
+  regularFare?: number;     // Regular (non-discounted) fare — used as prePayment basis
   kmsIncluded: string;
   hoursIncluded?: string;
   seats: string;
@@ -115,31 +115,70 @@ export class SelectCarComponent implements OnInit {
 
   /** Convert an API AvailableCar to the DisplayCar format the template expects */
   private mapApiCarToDisplay(car: AvailableCar): DisplayCar {
-    const displayInfo = CAR_DISPLAY_INFO[car.carTypeId] || { seats: '4 Seater', bags: '2 Bags', ac: 'AC', type: 'SEDAN' };
-    const image = CAR_IMAGE_MAP[car.carTypeId] || CAR_IMAGE_MAP[4];
+    const typeId = car.carTypeId ?? 0;
+    const extraKm = car.extraKmRate ?? 0;
+    const nightAllow = car.nightAllowance ?? 0;
+    const kmsInc = car.kmsIncluded ?? 0;
+    const seats = car.seatCapacity ? `${car.seatCapacity} Seater` : '4 Seater';
+    const bags = car.luggageCapacity ? `${car.luggageCapacity} Bag${car.luggageCapacity > 1 ? 's' : ''}` : '2 Bags';
+
+    // Prefer local assets over API URLs for consistent branding
+    const image = this.getLocalCarImage(car.carName, typeId);
+
+    // Use real T&C from API if available, else generate sensible defaults
+    const tc = car.tncData?.length ? car.tncData : [
+      `Kms limit is ${kmsInc} km. Extra kms will be charged at \u20B9${extraKm}/km.`,
+      'Airport Entry/Parking charges extra at actuals.',
+      'One pick up and one drop only. Within city travel not included.',
+      'Cancellation is free up to 6 hours before pickup.'
+    ];
 
     return {
-      id: `car_${car.carTypeId}`,
-      carTypeId: car.carTypeId,
+      id: car.carId || `car_${typeId}`,
+      carTypeId: typeId,
       name: car.carName,
       subtitle: 'or equivalent',
       image: image,
       price: car.fare,
-      kmsIncluded: `${car.kmsIncluded} km`,
-      seats: displayInfo.seats,
-      bags: displayInfo.bags,
-      ac: displayInfo.ac,
-      type: displayInfo.type,
-      extraKmRate: car.extraKmRate,
-      nightAllowance: car.nightAllowance,
-      tc: [
-        `Kms limit is ${car.kmsIncluded} km. Extra kms will be charged at \u20B9${car.extraKmRate}/km.`,
-        'Airport Entry/Parking charges extra at actuals.',
-        'One pick up and one drop only. Within city travel not included.',
-        'AC may be switched off during hill climbs.',
-        'Cancellation is free up to 6 hours before pickup.'
-      ]
+      regularFare: car.originalFare,
+      kmsIncluded: `${kmsInc} km`,
+      seats,
+      bags,
+      ac: 'AC',
+      type: car.carType || 'SEDAN',
+      extraKmRate: extraKm,
+      nightAllowance: nightAllow,
+      tc
     };
+  }
+
+  /** Map car type ID and name to a local asset image, with keyword fallback */
+  private getLocalCarImage(carName: string, typeId: number): string {
+    const byId: Record<number, string> = {
+      4: 'assets/images/cars/etios.png',
+      5: 'assets/images/cars/etios.png',
+      7: 'assets/images/cars/ertiga.png',
+      43: 'assets/images/cars/etios.png',
+      44: 'assets/images/cars/etios.png',
+      45: 'assets/images/cars/etios.png',
+      46: 'assets/images/cars/wagonr.png',
+      49: 'assets/images/cars/wagonr.png',
+      52: 'assets/images/cars/innova.png',
+      53: 'assets/images/cars/crysta.png',
+      54: 'assets/images/cars/innova.png',
+      48: 'assets/images/cars/innova.png',
+      57: 'assets/images/cars/innova.png',
+      58: 'assets/images/cars/innova.png',
+    };
+    if (byId[typeId]) return byId[typeId];
+    const n = (carName || '').toLowerCase();
+    if (n.includes('crysta'))                          return 'assets/images/cars/crysta.png';
+    if (n.includes('innova'))                          return 'assets/images/cars/innova.png';
+    if (n.includes('tempo') || n.includes('traveller') || n.includes('minibus')) return 'assets/images/cars/innova.png';
+    if (n.includes('ertiga') || n.includes('6+1'))     return 'assets/images/cars/ertiga.png';
+    if (n.includes('wagon') || n.includes('hatchback')) return 'assets/images/cars/wagonr.png';
+    if (n.includes('suv') || n.includes('xuv') || n.includes('kia') || n.includes('creta')) return 'assets/images/cars/ertiga.png';
+    return 'assets/images/cars/etios.png'; // default sedan
   }
 
   private initializeTabs() {
@@ -215,8 +254,8 @@ export class SelectCarComponent implements OnInit {
     if (this.modifyForm.valid) {
       const formVal = this.modifyForm.value;
       // PrimeNG DatePicker returns Date objects — pass them directly to the itinerary
-      const pickupDate = formVal.pickupDate instanceof Date ? formVal.pickupDate : formVal.pickupDate;
-      const returnDate = formVal.returnDate instanceof Date ? formVal.returnDate : formVal.returnDate;
+      const pickupDate = formVal.pickupDate;
+      const returnDate = formVal.returnDate;
       const pickupTime = formVal.pickupTime instanceof Date ? this.formatTimeFromDate(formVal.pickupTime) : formVal.pickupTime;
 
       const updatedItinerary: Itinerary = {
@@ -309,6 +348,7 @@ export class SelectCarComponent implements OnInit {
       image: car.image,
       price: this.getCarPrice(car.price),
       originalPrice: car.price,
+      regularPrice: car.regularFare,
       kmsIncluded: this.getCarKms(car.kmsIncluded),
       seats: car.seats,
       bags: car.bags,

@@ -37,8 +37,8 @@ export class TripTypeService {
     }
 
     if (!this.tripTypesCache$) {
-      this.tripTypesCache$ = this.api.get<TripType[]>('trip-types.php', {
-        token: this.auth.getToken(),
+      this.tripTypesCache$ = this.api.partnerGet<TripType[]>('trip-types', {
+        token: this.auth.getPartnerToken(),
       }).pipe(
         shareReplay(1),
         catchError(err => this.errorHandler.handleApiError(err, 'TripTypeService.getTripTypes'))
@@ -54,8 +54,8 @@ export class TripTypeService {
     }
 
     if (!this.subTripTypesCache.has(tripType)) {
-      const obs$ = this.api.get<SubTripType[]>('sub-trip-types.php', {
-        token: this.auth.getToken(),
+      const obs$ = this.api.partnerGet<SubTripType[]>('sub-trip-types', {
+        token: this.auth.getPartnerToken(),
         tripType,
       }).pipe(
         shareReplay(1),
@@ -72,8 +72,8 @@ export class TripTypeService {
       return of(this.getMockSubTripTypes('local'));
     }
 
-    return this.api.get<SubTripType[]>('local-sub-trip-types.php', {
-      token: this.auth.getToken(),
+    return this.api.partnerGet<SubTripType[]>('local-sub-trip-types', {
+      token: this.auth.getPartnerToken(),
       sourceCity: sourceCityId,
     }).pipe(
       catchError(err => this.errorHandler.handleApiError(err, 'TripTypeService.getLocalSubTripTypes'))

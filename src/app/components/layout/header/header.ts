@@ -4,6 +4,7 @@ import { LucideAngularModule, Wallet } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 import { filter, Subscription, Observable } from 'rxjs';
 import { WalletService } from '../../../core/services/wallet.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -14,6 +15,7 @@ import { WalletService } from '../../../core/services/wallet.service';
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   isPublicRoute = false;
+  isLandingPage = false;
   isUserDropdownOpen = false;
   isScrolled = false;
   private routeSub!: Subscription;
@@ -23,7 +25,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private walletService: WalletService,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private authService: AuthService
   ) {
     this.balance$ = this.walletService.balance$;
 
@@ -47,7 +50,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   private checkRoute(url: string) {
     const path = url ? url.split('?')[0].split('#')[0] : ''; // Remove query params and hashes, safely
-    this.isPublicRoute = path === '/' || path === '' || path.startsWith('/login') || path.startsWith('/register');
+    this.isLandingPage = path === '/' || path === '';
+    this.isPublicRoute = this.isLandingPage || path.startsWith('/login') || path.startsWith('/register');
   }
 
   toggleDarkMode() {
@@ -67,5 +71,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   @HostListener('window:scroll', [])
   onWindowScroll() {
     this.isScrolled = window.scrollY > 10;
+  }
+
+  onLogout() {
+    this.isUserDropdownOpen = false;
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }

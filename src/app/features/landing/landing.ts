@@ -7,14 +7,17 @@ import { OverviewComponent } from './components/overview/overview';
 import { ValuePropsComponent } from './components/value-props/value-props';
 import { SolutionsComponent } from './components/solutions/solutions';
 import { FinalCTAComponent } from './components/final-cta/final-cta';
+import { GetStartedComponent } from './components/get-started/get-started';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
   imports: [
+    LandingNavbarComponent,
     LandingFooterComponent,
     HeroComponent,
     TrustedByComponent,
+    GetStartedComponent,
     OverviewComponent,
     ValuePropsComponent,
     SolutionsComponent,

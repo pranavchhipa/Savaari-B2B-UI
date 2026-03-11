@@ -21,7 +21,7 @@ import {
   ArrowDownLeft, ArrowUpRight, CreditCard, Loader2, Filter, AlertTriangle,
   ArrowLeft, Plus, Check,
   TrendingUp, Menu, LayoutDashboard, Headphones, CheckCircle2,
-  Crosshair, AlertCircle
+  Crosshair, AlertCircle, RefreshCw, Inbox
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -57,7 +57,7 @@ export const appConfig: ApplicationConfig = {
         ArrowDownLeft, ArrowUpRight, CreditCard, Loader2, Filter, AlertTriangle,
         ArrowLeft, Plus, Check,
         TrendingUp, Menu, LayoutDashboard, Headphones, CheckCircle2,
-        Crosshair, AlertCircle
+        Crosshair, AlertCircle, RefreshCw, Inbox
       })
     }
   ]

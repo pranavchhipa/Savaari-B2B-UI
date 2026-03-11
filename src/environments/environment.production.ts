@@ -2,14 +2,27 @@
  * Production environment configuration.
  *
  * useMockData is TRUE until staging credentials are configured.
- * Once you have credentials, set useMockData to false and inject
- * apiKey/appId via CI/CD environment variables.
+ * Credentials should be injected via CI/CD environment variables.
  */
 export const environment = {
   production: true,
   useMockData: true,
-  apiBaseUrl: 'https://api.betasavaari.com/partner_client',
-  apiKey: '',   // Injected at build time via CI/CD
-  appId: '',    // Injected at build time via CI/CD
+
+  /** Partner API: cities, availability */
+  partnerApiBaseUrl: 'https://api.savaari.com/partner_api/public',
+
+  /** B2B API: bookings, reports, commission */
+  b2bApiBaseUrl: 'https://api23.savaari.com',
+
+  /** Partner API credentials — injected at build time via CI/CD */
+  apiKey: '',
+  appId: '',
+
+  /** Agent ID */
+  agentId: '',
+
+  /** User email — set after login */
+  userEmail: '',
+
   tokenRefreshBufferMs: 60_000,
 };

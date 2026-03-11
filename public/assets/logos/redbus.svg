@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 50">
+  <defs>
+    <linearGradient id="rb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D84E55"/>
+      <stop offset="100%" stop-color="#C0392B"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="12" width="32" height="22" rx="5" fill="url(#rb)"/>
+  <circle cx="10" cy="36" r="3" fill="#D84E55"/>
+  <circle cx="26" cy="36" r="3" fill="#D84E55"/>
+  <rect x="6" y="16" width="8" height="6" rx="1" fill="white" opacity="0.9"/>
+  <rect x="16" y="16" width="8" height="6" rx="1" fill="white" opacity="0.9"/>
+  <text x="40" y="28" font-family="Arial, sans-serif" font-size="18" fill="#D84E55" letter-spacing="0.3">red</text>
+  <text x="72" y="28" font-family="Arial, sans-serif" font-size="18" font-weight="800" fill="#D84E55" letter-spacing="0.3">Bus</text>
+</svg>

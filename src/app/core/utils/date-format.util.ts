@@ -47,11 +47,20 @@ export function calculateDuration(pickupDate: Date, returnDate: Date): number {
 }
 
 /**
- * Formats a Date to DD-MM-YYYY (for report endpoints).
+ * Formats a Date to DD-MM-YYYY.
+ * Used by availability endpoint (pickupDateTime: DD-MM-YYYY HH:MM).
  */
 export function toSavaariDate(date: Date): string {
   const dd = String(date.getDate()).padStart(2, '0');
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const yyyy = date.getFullYear();
   return `${dd}-${mm}-${yyyy}`;
+}
+
+/**
+ * Converts a Date to Unix timestamp in seconds.
+ * Used by the B2B report endpoint (fromDate/toDate params).
+ */
+export function toUnixTimestamp(date: Date): number {
+  return Math.floor(date.getTime() / 1000);
 }

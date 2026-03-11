@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50">
+  <defs>
+    <linearGradient id="emt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#42A5F5"/>
+    </linearGradient>
+  </defs>
+  <circle cx="16" cy="25" r="13" fill="url(#emt)"/>
+  <path d="M10 20 L22 20 M10 25 L18 25 M10 30 L22 30" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <text x="35" y="33" font-family="Arial, sans-serif" font-size="21" font-weight="800" fill="#1565C0" letter-spacing="-0.3">EaseMyTrip</text>
+</svg>

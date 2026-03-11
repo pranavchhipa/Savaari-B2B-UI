@@ -2,64 +2,137 @@ import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef }
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { WalletService, WalletTransaction } from '../../core/services/wallet.service';
+import { WalletService, WalletTransaction, WalletStatus } from '../../core/services/wallet.service';
 import { Observable } from 'rxjs';
 import { FooterComponent } from '../../components/layout/footer/footer';
-@Component({
-    selector: 'app-wallet-dashboard',
-    standalone: true,
-    imports: [CommonModule, FormsModule, LucideAngularModule, FooterComponent],
 
-    templateUrl: './wallet-dashboard.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+@Component({
+  selector: 'app-wallet-dashboard',
+  standalone: true,
+  imports: [CommonModule, FormsModule, LucideAngularModule, FooterComponent],
+  templateUrl: './wallet-dashboard.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WalletDashboardComponent implements OnInit {
-    private walletService = inject(WalletService);
-    private location = inject(Location);
-    private cdr = inject(ChangeDetectorRef);
+  private walletService = inject(WalletService);
+  private location = inject(Location);
+  private cdr = inject(ChangeDetectorRef);
 
-    balance$: Observable<number> = this.walletService.balance$;
-    transactions$: Observable<WalletTransaction[]> = this.walletService.transactions$;
+  // Observables bound to template via async pipe
+  balance$: Observable<number> = this.walletService.balance$;
+  transactions$: Observable<WalletTransaction[]> = this.walletService.transactions$;
+  walletStatus$: Observable<WalletStatus | null> = this.walletService.walletStatus$;
 
-    showTopUpModal = false;
-    topUpAmount = 10000;
-    isProcessing = true; // This is for initial loading state
+  // UI state: separate initial load vs top-up processing
+  isLoadingWallet = true;   // Shows table skeleton on first load
+  isProcessing = false;      // Shows spinner inside top-up modal only
+  showTopUpModal = false;
+  topUpAmount = 10000;
+  topUpError = '';
 
-    constructor() { }
+  ngOnInit(): void {
+    // Trigger API calls — they update balance$ and transactions$ via BehaviorSubjects
+    this.walletService.loadBalance();
+    this.walletService.loadHistory();
 
-    ngOnInit(): void {
-        // Mock loading delay to show skeleton
+    // Hide skeleton after brief loading window
+    setTimeout(() => {
+      this.isLoadingWallet = false;
+      this.cdr.markForCheck();
+    }, 1200);
+  }
+
+  openTopUpModal(): void {
+    this.showTopUpModal = true;
+    this.topUpAmount = 10000;
+    this.topUpError = '';
+  }
+
+  closeTopUpModal(): void {
+    if (this.isProcessing) return;
+    this.showTopUpModal = false;
+    this.topUpError = '';
+  }
+
+  /**
+   * Initiate a wallet top-up.
+   *
+   * Real flow (when wallet API is live):
+   *   1. POST /wallet/topup/initiate → Razorpay order details
+   *   2. Open Razorpay SDK → user completes payment
+   *   3. POST /wallet/topup/verify → balance updated via API
+   *
+   * Current flow (wallet API under development):
+   *   - initiateTopUp() returns a mock order_id
+   *   - Simulates a 1.5s Razorpay payment delay
+   *   - addTopUp() credits the in-memory balance directly
+   *
+   * TODO: Replace the setTimeout block below with Razorpay SDK when APIs go live.
+   */
+  processTopUp(): void {
+    if (this.topUpAmount < 100) return;
+
+    this.isProcessing = true;
+    this.topUpError = '';
+    this.cdr.markForCheck();
+
+    this.walletService.initiateTopUp(this.topUpAmount).subscribe({
+      next: (orderDetails) => {
+        if (!orderDetails?.orderId) {
+          // API not live yet — fall back to direct mock credit
+          const refId = 'RZP_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+          this.walletService.addTopUp(this.topUpAmount, refId);
+          this.isProcessing = false;
+          this.showTopUpModal = false;
+          this.cdr.markForCheck();
+          return;
+        }
+
+        console.log('[WALLET-UI] Razorpay order initiated:', orderDetails.orderId);
+
+        // ── Uncomment when wallet APIs go live ────────────────────────────────
+        // const rzp = new (window as any).Razorpay({
+        //   key: orderDetails.razorpayKeyId,
+        //   amount: orderDetails.amount,   // in paise
+        //   currency: orderDetails.currency,
+        //   order_id: orderDetails.orderId,
+        //   name: 'B2Bcab Wallet',
+        //   description: 'Wallet Top-Up',
+        //   handler: (response: any) => {
+        //     this.walletService.verifyTopUp(
+        //       response.razorpay_order_id,
+        //       response.razorpay_payment_id,
+        //       response.razorpay_signature,
+        //       this.topUpAmount
+        //     ).subscribe(success => {
+        //       this.isProcessing = false;
+        //       if (success) { this.showTopUpModal = false; }
+        //       else { this.topUpError = 'Payment verification failed. Please contact support.'; }
+        //       this.cdr.markForCheck();
+        //     });
+        //   },
+        //   modal: { ondismiss: () => { this.isProcessing = false; this.cdr.markForCheck(); } }
+        // });
+        // rzp.open();
+        // ─────────────────────────────────────────────────────────────────────
+
+        // Simulate 1.5s Razorpay payment (dev/mock mode)
         setTimeout(() => {
-            this.isProcessing = false;
-            this.cdr.markForCheck();
-        }, 1000);
-    }
-
-    openTopUpModal(): void {
-        this.showTopUpModal = true;
-        this.topUpAmount = 10000;
-    }
-
-    closeTopUpModal(): void {
-        if (this.isProcessing) return;
-        this.showTopUpModal = false;
-    }
-
-    processTopUp(): void {
-        if (this.topUpAmount < 1000) return;
-
-        this.isProcessing = true;
-
-        // Simulate Razorpay Gateway Delay
-        setTimeout(() => {
-            const refId = 'RZP_' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            this.walletService.addTopUp(this.topUpAmount, refId);
-            this.isProcessing = false;
-            this.showTopUpModal = false;
+          this.walletService.addTopUp(this.topUpAmount, orderDetails.orderId);
+          this.isProcessing = false;
+          this.showTopUpModal = false;
+          this.cdr.markForCheck();
         }, 1500);
-    }
+      },
+      error: () => {
+        this.isProcessing = false;
+        this.topUpError = 'Failed to initiate top-up. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
 
-    goBack() {
-        this.location.back();
-    }
+  goBack(): void {
+    this.location.back();
+  }
 }

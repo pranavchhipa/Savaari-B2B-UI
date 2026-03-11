@@ -100,11 +100,7 @@
               <button (click)="viewReports()" [disabled]="isLoading"
                 class="w-full sm:w-auto px-8 py-2.5 text-sm font-bold text-white bg-primary hover:bg-sky-600 disabled:opacity-70 rounded-lg shadow-lg shadow-primary/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap">
                 <span *ngIf="!isLoading">VIEW</span>
-                <svg *ngIf="isLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                  viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
+                <lucide-icon *ngIf="isLoading" name="loader-2" [size]="16" class="animate-spin"></lucide-icon>
                 <span *ngIf="isLoading">Loading...</span>
               </button>
             </div>

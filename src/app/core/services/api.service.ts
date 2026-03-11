@@ -1,46 +1,73 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 /**
- * Base API service for all Savaari Partner API calls.
+ * Base API service for all Savaari API calls.
  *
- * Handles the critical detail that the Savaari API uses
- * application/x-www-form-urlencoded encoding (NOT JSON).
+ * ARCHITECTURE: All Savaari endpoints use GET with query params.
+ * Two separate API domains:
+ *   - Partner API (partnerApiBaseUrl): cities, availability
+ *   - B2B API (b2bApiBaseUrl): bookings, reports, commission
  */
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly baseUrl = environment.apiBaseUrl;
-
-  private readonly formHeaders = new HttpHeaders({
-    'Content-Type': 'application/x-www-form-urlencoded',
-  });
 
   constructor(private http: HttpClient) {}
 
   /**
-   * POST with x-www-form-urlencoded body.
-   * Used by: authenticate, availabilities, booking-create, booking-cancel,
-   *          coupon-code, source-cities, destination-cities
+   * GET from the Partner API (api.savaari.com/partner_api/public/).
+   * Used for: source-cities, destination-cities, availabilities
    */
-  post<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
-    const body = new HttpParams({ fromObject: this.cleanParams(params) });
-    return this.http.post<T>(
-      `${this.baseUrl}/${endpoint}`,
-      body.toString(),
-      { headers: this.formHeaders }
-    );
+  partnerGet<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const httpParams = new HttpParams({ fromObject: this.cleanParams(params) });
+    return this.http.get<T>(`${environment.partnerApiBaseUrl}/${endpoint}`, { params: httpParams });
   }
 
   /**
-   * GET with query parameters.
-   * Used by: booking-get, car-types, localities, trip-types,
-   *          sub-trip-types, local-sub-trip-types, all report endpoints
+   * GET from the B2B API (api23.savaari.com/).
+   * Used for: booking-details, booking-details-report, user/get-commission
    */
-  get<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+  b2bGet<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
     const httpParams = new HttpParams({ fromObject: this.cleanParams(params) });
-    return this.http.get<T>(`${this.baseUrl}/${endpoint}`, { params: httpParams });
+    return this.http.get<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, { params: httpParams });
+  }
+
+  /**
+   * POST to the B2B API with JSON body.
+   * Used for: user/login
+   */
+  b2bPost<T>(endpoint: string, body: unknown): Observable<T> {
+    return this.http.post<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, body);
+  }
+
+  /**
+   * GET from the Partner API with no params.
+   * Used for: auth/webtoken (no auth required)
+   */
+  partnerGetNoParams<T>(endpoint: string): Observable<T> {
+    return this.http.get<T>(`${environment.partnerApiBaseUrl}/${endpoint}`);
+  }
+
+  /**
+   * POST to the Partner API with form-encoded body and token as query param.
+   * Used for: booking (create), booking/update_invoice_payer_info
+   *
+   * Confirmed from live site (March 2026):
+   *   POST /booking?token=<partnerJWT> → 201 Created
+   *   Body: application/x-www-form-urlencoded
+   */
+  partnerPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>, queryParams?: Record<string, string>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    let url = `${environment.partnerApiBaseUrl}/${endpoint}`;
+    if (queryParams) {
+      const qp = new HttpParams({ fromObject: queryParams });
+      url += `?${qp.toString()}`;
+    }
+    return this.http.post<T>(url, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
   }
 
   /**

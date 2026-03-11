@@ -1,95 +1,160 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
-import { tap, map, shareReplay, finalize, catchError } from 'rxjs/operators';
+import { Injectable, inject } from '@angular/core';
+import { Observable, of, tap, switchMap, map, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthResponse } from '../models';
+import { ApiService } from './api.service';
+import { LoginRequest, LoginResponse, UserProfile, WebTokenResponse } from '../models/auth.model';
 
 /**
- * Manages authentication with the Savaari Partner API.
+ * Manages authentication for the Savaari B2B portal.
  *
- * - Calls POST /authenticate.php with apiKey + appId
- * - Caches the Bearer token in memory
- * - Tracks token expiry and refreshes proactively
- * - Used by the auth interceptor -- other services never touch this directly
+ * Login flow (matches live b2bcab.in):
+ *  1. POST /user/login → B2B RSA token + user profile
+ *  2. GET  /auth/webtoken → Partner HMAC token (no auth required)
+ *  3. Both tokens stored in localStorage and used as ?token= query params
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private token: string | null = null;
-  private tokenExpiry = 0;
-  private refreshInProgress$: Observable<string> | null = null;
+  private api = inject(ApiService);
 
-  // Default token lifetime if the API doesn't return expiresIn (1 hour)
-  private readonly DEFAULT_TOKEN_LIFETIME_S = 3600;
+  private static readonly STORAGE_B2B_TOKEN = 'loginUserToken';
+  private static readonly STORAGE_PARTNER_TOKEN = 'SavaariToken';
+  private static readonly STORAGE_USER = 'loggedUserDetail';
 
-  constructor(private http: HttpClient) {}
+  // In-memory cache (populated from localStorage on init)
+  private b2bToken: string | null = null;
+  private partnerToken: string | null = null;
+  private user: UserProfile | null = null;
 
-  /**
-   * Authenticate with the Savaari API and obtain a Bearer token.
-   * If a request is already in flight, returns the same observable
-   * (prevents concurrent duplicate auth requests).
-   */
-  authenticate(): Observable<string> {
+  constructor() {
+    this.loadFromStorage();
+  }
+
+  /** Full login: calls login API then fetches partner token. */
+  login(email: string, password: string): Observable<UserProfile> {
     if (environment.useMockData) {
-      this.token = 'MOCK_TOKEN_FOR_DEVELOPMENT';
-      this.tokenExpiry = Date.now() + this.DEFAULT_TOKEN_LIFETIME_S * 1000;
-      return of(this.token);
+      const mockUser: UserProfile = {
+        user_id: 983680, email: 'mock@savaari.com', firstname: 'Mock', lastname: 'User',
+        phone: '1234567890', mobileno: '911234567890', companyname: 'Mock Corp',
+        is_agent: 1, user_type: 2, user_subtype: 1, travel_partner_type: 1,
+        user_active: 1, billingaddress: 'Mock', city: 'Bangalore', title: 'Mr.'
+      };
+      this.b2bToken = 'MOCK_B2B_TOKEN';
+      this.partnerToken = 'MOCK_PARTNER_TOKEN';
+      this.user = mockUser;
+      return of(mockUser);
     }
 
-    if (this.refreshInProgress$) {
-      return this.refreshInProgress$;
-    }
+    const body: LoginRequest = { userEmail: email, password, isAgent: true };
 
-    const body = new HttpParams()
-      .set('apiKey', environment.apiKey)
-      .set('appId', environment.appId);
-
-    this.refreshInProgress$ = this.http.post<AuthResponse>(
-      `${environment.apiBaseUrl}/authenticate.php`,
-      body.toString(),
-      {
-        headers: new HttpHeaders({
-          'Content-Type': 'application/x-www-form-urlencoded',
-        }),
-      }
-    ).pipe(
-      tap(response => {
-        this.token = response.token;
-        const lifetimeS = response.expiresIn ?? this.DEFAULT_TOKEN_LIFETIME_S;
-        this.tokenExpiry = Date.now() + lifetimeS * 1000;
-        console.log('[SAVAARI-AUTH] Token obtained, expires in', lifetimeS, 'seconds');
+    return this.api.b2bPost<LoginResponse>('user/login', body).pipe(
+      tap(resp => {
+        if (resp.statusCode !== 200) throw new Error(resp.message || 'Login failed');
+        this.b2bToken = resp.token;
+        this.user = resp.user;
+        localStorage.setItem(AuthService.STORAGE_B2B_TOKEN, resp.token);
+        localStorage.setItem(AuthService.STORAGE_USER, JSON.stringify(resp.user));
+        console.log('[AUTH] B2B token obtained for', resp.user.email);
       }),
-      map(response => response.token),
-      shareReplay(1),
-      finalize(() => {
-        this.refreshInProgress$ = null;
-      }),
-      catchError(err => {
-        console.error('[SAVAARI-AUTH] Authentication failed:', err);
-        this.refreshInProgress$ = null;
-        return throwError(() => err);
-      })
-    );
-
-    return this.refreshInProgress$;
-  }
-
-  /** Get the current cached token (may be null if not yet authenticated). */
-  getToken(): string | null {
-    return this.token;
-  }
-
-  /** Check if the token is valid and not about to expire. */
-  isTokenValid(): boolean {
-    return (
-      !!this.token &&
-      Date.now() < this.tokenExpiry - environment.tokenRefreshBufferMs
+      switchMap(() => this.fetchPartnerToken()),
+      map(() => this.user!)
     );
   }
 
-  /** Clear the cached token (e.g. on logout). */
-  clearToken(): void {
-    this.token = null;
-    this.tokenExpiry = 0;
+  /** Fetch the Partner HMAC token (GET /auth/webtoken, no auth required). */
+  fetchPartnerToken(): Observable<string> {
+    if (environment.useMockData) return of('MOCK_PARTNER_TOKEN');
+
+    return this.api.partnerGetNoParams<WebTokenResponse>('auth/webtoken').pipe(
+      tap(resp => {
+        this.partnerToken = resp.data.token;
+        localStorage.setItem(AuthService.STORAGE_PARTNER_TOKEN, resp.data.token);
+        console.log('[AUTH] Partner token obtained');
+      }),
+      map(resp => resp.data.token)
+    );
+  }
+
+  /** Clear all auth state and localStorage. */
+  logout(): void {
+    this.b2bToken = null;
+    this.partnerToken = null;
+    this.user = null;
+    localStorage.removeItem(AuthService.STORAGE_B2B_TOKEN);
+    localStorage.removeItem(AuthService.STORAGE_PARTNER_TOKEN);
+    localStorage.removeItem(AuthService.STORAGE_USER);
+    localStorage.removeItem('commission');
+    localStorage.removeItem('commission_amt');
+    console.log('[AUTH] Logged out');
+  }
+
+  /** Get the partner API token (HMAC HS512). */
+  getPartnerToken(): string | null {
+    if (environment.useMockData) return 'MOCK_PARTNER_TOKEN';
+    return this.partnerToken;
+  }
+
+  /** Get the B2B API token (RSA RS256). */
+  getB2bToken(): string | null {
+    if (environment.useMockData) return 'MOCK_B2B_TOKEN';
+    return this.b2bToken;
+  }
+
+  /** Get the logged-in user's email. */
+  getUserEmail(): string {
+    if (environment.useMockData) return 'mock@savaari.com';
+    return this.user?.email ?? '';
+  }
+
+  /** Get the logged-in user's profile. */
+  getUserProfile(): UserProfile | null {
+    return this.user;
+  }
+
+  /** Get the agent ID (numeric user_id). */
+  getAgentId(): string {
+    if (environment.useMockData) return '983680';
+    return String(this.user?.user_id ?? '');
+  }
+
+  /** Check if the user is authenticated (has both tokens). */
+  isAuthenticated(): boolean {
+    if (environment.useMockData) return true;
+    return !!this.b2bToken && !!this.partnerToken;
+  }
+
+  // Legacy compatibility
+  getToken(): string | null { return this.getPartnerToken(); }
+  isTokenValid(): boolean { return !!this.getPartnerToken(); }
+  clearToken(): void { this.logout(); }
+  clearTokens(): void { this.logout(); }
+
+  setPartnerToken(token: string): void {
+    this.partnerToken = token;
+    localStorage.setItem(AuthService.STORAGE_PARTNER_TOKEN, token);
+  }
+
+  setB2bToken(token: string, email: string): void {
+    this.b2bToken = token;
+    localStorage.setItem(AuthService.STORAGE_B2B_TOKEN, token);
+  }
+
+  authenticate(): Observable<string> {
+    if (environment.useMockData) return of('MOCK_PARTNER_TOKEN');
+    if (this.partnerToken) return of(this.partnerToken);
+    return this.fetchPartnerToken();
+  }
+
+  /** Load persisted tokens from localStorage on startup. */
+  private loadFromStorage(): void {
+    if (environment.useMockData) return;
+    try {
+      this.b2bToken = localStorage.getItem(AuthService.STORAGE_B2B_TOKEN);
+      this.partnerToken = localStorage.getItem(AuthService.STORAGE_PARTNER_TOKEN);
+      const userJson = localStorage.getItem(AuthService.STORAGE_USER);
+      if (userJson) this.user = JSON.parse(userJson);
+      if (this.b2bToken) console.log('[AUTH] Restored session for', this.user?.email);
+    } catch {
+      console.warn('[AUTH] Failed to restore session from localStorage');
+    }
   }
 }

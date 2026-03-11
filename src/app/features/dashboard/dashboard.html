@@ -89,6 +89,12 @@
                   inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium !shadow-none"
                   panelStyleClass="!bg-white dark:!bg-slate-900"
                   appendTo="body">
+                  <ng-template pTemplate="item" let-city>
+                    <div class="flex items-center gap-2 px-2 py-1.5">
+                      <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
+                      <span class="text-sm text-slate-700 dark:text-slate-300">{{ city.name }}</span>
+                    </div>
+                  </ng-template>
               </p-autoComplete>
               </div>
             </div>
@@ -109,6 +115,12 @@
                   inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium !shadow-none"
                   panelStyleClass="!bg-white dark:!bg-slate-900"
                   appendTo="body">
+                  <ng-template pTemplate="item" let-city>
+                    <div class="flex items-center gap-2 px-2 py-1.5">
+                      <lucide-icon name="map-pin" [size]="14" class="text-rose-500 shrink-0"></lucide-icon>
+                      <span class="text-sm text-slate-700 dark:text-slate-300">{{ city.name }}</span>
+                    </div>
+                  </ng-template>
                 </p-autoComplete>
               </div>
               <!-- Subtle Add City Link for Round Trip -->
@@ -143,6 +155,12 @@
                   inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium !shadow-none"
                   panelStyleClass="!bg-white dark:!bg-slate-900"
                   appendTo="body">
+                  <ng-template pTemplate="item" let-city>
+                    <div class="flex items-center gap-2 px-2 py-1.5">
+                      <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
+                      <span class="text-sm text-slate-700 dark:text-slate-300">{{ city.name }}</span>
+                    </div>
+                  </ng-template>
               </p-autoComplete>
               </div>
             </div>
@@ -294,12 +312,52 @@
         <div class="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 w-full flex justify-center">
           <button (click)="onExploreCabs()"
             class="bg-gradient-to-r from-primary to-[#1C8CBA] hover:from-[#1C8CBA] hover:to-sky-500 text-white px-12 py-4 rounded-xl font-bold shadow-xl shadow-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-primary/50 mt-8 tracking-widest text-sm active:scale-95 flex items-center justify-center min-w-[240px] border border-white/10">
-              EXPLORE CABS
-              <lucide-icon name="arrow-right" [size]="18"
-                class="ml-2 group-hover:translate-x-1 transition-transform"></lucide-icon>
+                EXPLORE CABS
+                <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Promotional Banner Carousel (from API) -->
+<div *ngIf="bannerImages.length > 0" class="bg-slate-50 dark:bg-slate-900 py-10">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="relative overflow-hidden rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+      <!-- Banner images -->
+      <div class="relative aspect-[3/1] min-h-[160px] max-h-[320px]">
+        <ng-container *ngFor="let banner of bannerImages; let i = index">
+          <a [href]="banner.linkUrl || '#'" target="_blank" rel="noopener"
+            [ngClass]="{'opacity-100 scale-100': i === currentBannerIndex, 'opacity-0 scale-105': i !== currentBannerIndex}"
+            class="absolute inset-0 transition-all duration-700 ease-out">
+            <img [src]="banner.imageUrl" [alt]="banner.altText"
+              class="w-full h-full object-cover"
+              loading="lazy" />
+          </a>
+        </ng-container>
+      </div>
+
+      <!-- Navigation arrows (only if multiple banners) -->
+      <ng-container *ngIf="bannerImages.length > 1">
+        <button (click)="prevBanner()"
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition-all z-10">
+          <lucide-icon name="chevron-left" [size]="18"></lucide-icon>
+        </button>
+        <button (click)="nextBanner()"
+          class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition-all z-10">
+          <lucide-icon name="chevron-right" [size]="18"></lucide-icon>
+        </button>
+
+        <!-- Dots indicator -->
+        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          <button *ngFor="let banner of bannerImages; let i = index"
+            (click)="currentBannerIndex = i"
+            [ngClass]="i === currentBannerIndex ? 'bg-primary w-6' : 'bg-white/60 w-2 hover:bg-white/80'"
+            class="h-2 rounded-full transition-all duration-300">
+          </button>
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>

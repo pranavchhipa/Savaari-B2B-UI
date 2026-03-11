@@ -1,4 +1,4 @@
-<nav [ngClass]="{
+<nav *ngIf="!isLandingPage" [ngClass]="{
     'sticky top-0 z-50 border-b transition-all duration-300': true,
     'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-slate-200/50 dark:border-slate-800/50 shadow-sm': isScrolled,
     'bg-white dark:bg-surface-dark border-transparent': !isScrolled
@@ -13,12 +13,15 @@
           </div>
         </div>
 
-        <!-- Customer Care 24x7 - shown on all routes -->
-        <div
-          class="hidden lg:flex items-center text-slate-500 dark:text-slate-400 text-[12px] font-medium whitespace-nowrap">
-          <lucide-icon name="headset" [size]="14" class="mr-1.5"></lucide-icon>
-          Customer Care 24x7: 0 90 4545 0000
-        </div>
+        <!-- Customer Care 24x7 pill -->
+        <a href="tel:09045450000"
+          class="hidden lg:inline-flex items-center bg-primary hover:bg-primary-dark text-white rounded-full pl-1 pr-4 py-1 gap-0 shadow-sm transition-colors cursor-pointer whitespace-nowrap">
+          <span class="inline-flex items-center bg-white/20 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-wide mr-2">
+            <lucide-icon name="phone" [size]="12" class="mr-1"></lucide-icon>
+            24x7
+          </span>
+          <span class="text-[13px] font-semibold tracking-wide">090 4545 0000</span>
+        </a>
 
       </div>
       <div class="flex items-center space-x-2 md:space-x-4">
@@ -133,7 +136,7 @@
                   </span>
                 </button>
                 <div class="h-px bg-slate-100 dark:bg-slate-700/80 my-1"></div>
-                <a routerLink="/" (click)="isUserDropdownOpen = false"
+                <a (click)="onLogout()"
                   class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer">
                   <lucide-icon name="log-out" [size]="16" class="text-red-500"></lucide-icon>
                   Log Out

@@ -4,21 +4,33 @@
  * SAFETY:  useMockData defaults to TRUE so the app never hits
  *          a real API unless you explicitly flip this flag.
  *
- * USAGE:   Set useMockData to false AND add your staging apiKey/appId
- *          to start calling the real Savaari staging API.
+ * ARCHITECTURE: The Savaari B2B portal uses TWO API domains:
+ *   1. Partner API (api.savaari.com) — cities, availability
+ *   2. B2B API (api23.savaari.com) — bookings, reports, commission
+ *
+ * Both are proxied in development via proxy.conf.json.
  */
 export const environment = {
   production: false,
 
-  /** Master safety switch -- true = all services return mock data */
-  useMockData: true,
+  /** Master safety switch — true = all services return mock data */
+  useMockData: false,
 
-  /** Proxied via proxy.conf.json to api.betasavaari.com/partner_client */
-  apiBaseUrl: '/api',
+  /** Partner API: cities, availability (proxied to api.savaari.com/partner_api/public) */
+  partnerApiBaseUrl: '/partner-api',
 
-  /** Staging credentials -- obtain from Savaari tech team */
-  apiKey: '',
-  appId: '',
+  /** B2B API: bookings, reports, commission (proxied to api23.savaari.com) */
+  b2bApiBaseUrl: '/b2b-api',
+
+  /** Partner API credentials (from JWT payload) */
+  apiKey: '576a6783ea54f',
+  appId: '576a67842fc3b',
+
+  /** Agent ID — sent as base64 encoded in availability requests */
+  agentId: '983680',
+
+  /** User email — set after login, used for B2B API calls */
+  userEmail: '',
 
   /** Re-authenticate this many ms before token expiry */
   tokenRefreshBufferMs: 60_000,

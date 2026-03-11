@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 50">
+  <defs>
+    <linearGradient id="pp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6C3AB5"/>
+      <stop offset="100%" stop-color="#5F259F"/>
+    </linearGradient>
+  </defs>
+  <circle cx="18" cy="25" r="15" fill="url(#pp)"/>
+  <path d="M12 20 L18 20 L24 30 M18 20 L18 33" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="40" y="34" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#5F259F" letter-spacing="-0.3">PhonePe</text>
+</svg>

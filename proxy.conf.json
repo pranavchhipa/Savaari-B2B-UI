@@ -1,9 +1,16 @@
 {
-  "/api": {
-    "target": "https://api.betasavaari.com/partner_client",
+  "/partner-api": {
+    "target": "https://api.savaari.com/partner_api/public",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/api": "" },
+    "pathRewrite": { "^/partner-api": "" },
+    "logLevel": "debug"
+  },
+  "/b2b-api": {
+    "target": "https://api23.savaari.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/b2b-api": "" },
     "logLevel": "debug"
   }
 }

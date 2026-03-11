@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50">
+  <defs>
+    <linearGradient id="pt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00BAF2"/>
+      <stop offset="100%" stop-color="#0097D4"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="8" width="34" height="34" rx="8" fill="url(#pt)"/>
+  <text x="8" y="32" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">P</text>
+  <text x="25" y="28" font-family="Arial, sans-serif" font-size="10" fill="white">tm</text>
+  <text x="42" y="34" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#002970" letter-spacing="-0.5">Paytm</text>
+</svg>

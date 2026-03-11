@@ -34,6 +34,8 @@
                                 [ngClass]="activeTab === 'upcoming' ? 'text-primary' : 'text-slate-400 group-hover:text-primary'"
                                 class="mr-3 transition-colors"></lucide-icon>
                             Upcoming
+                            <span *ngIf="upcomingCount > 0"
+                                class="ml-auto bg-primary text-white py-0.5 px-2 rounded-full text-xs">{{ upcomingCount }}</span>
                         </a>
 
                         <!-- Cancelled Tab -->
@@ -44,6 +46,8 @@
                                 [ngClass]="activeTab === 'cancelled' ? 'text-primary' : 'text-slate-400 group-hover:text-primary'"
                                 class="mr-3 transition-colors"></lucide-icon>
                             Cancelled
+                            <span *ngIf="cancelledCount > 0"
+                                class="ml-auto bg-red-500 text-white py-0.5 px-2 rounded-full text-xs">{{ cancelledCount }}</span>
                         </a>
 
                         <!-- Completed Tab -->
@@ -54,8 +58,8 @@
                                 [ngClass]="activeTab === 'completed' ? 'text-primary' : 'text-slate-400 group-hover:text-primary'"
                                 class="mr-3 transition-colors"></lucide-icon>
                             Completed
-                            <span *ngIf="activeTab === 'completed'"
-                                class="ml-auto opacity-0 bg-primary text-white py-0.5 px-2 rounded-full text-xs transition-opacity duration-300">0</span>
+                            <span *ngIf="completedCount > 0"
+                                class="ml-auto bg-green-500 text-white py-0.5 px-2 rounded-full text-xs">{{ completedCount }}</span>
                         </a>
                     </nav>
                 </div>
@@ -80,9 +84,8 @@
             <!-- Main Booking List Area -->
             <div class="flex-1 min-h-[500px]" *ngIf="!isLoading">
 
-                <!-- UPCOMING VIEW -->
-                <!-- UPCOMING VIEW -->
-                <div *ngIf="activeTab === 'upcoming'">
+                <!-- Unified Booking View -->
+                <div>
                     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
                             <button (click)="goBack()"
@@ -90,146 +93,107 @@
                                 <lucide-icon name="arrow-left" [size]="18"
                                     class="group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
                             </button>
-                            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Upcoming Bookings</h1>
+                            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ tabTitle }}</h1>
                         </div>
                         <div class="flex space-x-2">
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <lucide-icon name="search" [size]="16" class="text-slate-400"></lucide-icon>
                                 </div>
-                                <input
+                                <input [(ngModel)]="searchQuery"
                                     class="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:ring-primary focus:border-primary w-full md:w-64"
                                     placeholder="Search Trip ID..." type="text" />
                             </div>
+                            <button (click)="refreshBookings()"
+                                class="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                                <lucide-icon name="refresh-cw" [size]="16" class="text-slate-500"></lucide-icon>
+                            </button>
                         </div>
                     </div>
 
+                    <!-- Empty state -->
+                    <div *ngIf="filteredBookings.length === 0" class="text-center py-16">
+                        <lucide-icon name="inbox" [size]="48" class="mx-auto text-slate-300 dark:text-slate-600 mb-4"></lucide-icon>
+                        <h3 class="text-lg font-semibold text-slate-600 dark:text-slate-400">No {{ activeTab }} bookings</h3>
+                        <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Bookings you make will appear here.</p>
+                    </div>
+
+                    <!-- Dynamic booking cards -->
                     <div class="space-y-4">
-                        <!-- Upcoming Booking Card 1 -->
-                        <div
+                        <div *ngFor="let booking of filteredBookings"
                             class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
                             <div
                                 class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
-                                <span
-                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">15</span>
-                                <span
-                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Jan
-                                    2026</span>
+                                <span class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">
+                                    {{ booking.pickupDate ? (booking.pickupDate | date:'dd') : '--' }}
+                                </span>
+                                <span class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                    {{ booking.pickupDate ? (booking.pickupDate | date:'MMM yyyy') : '' }}
+                                </span>
+                                <span *ngIf="booking.pickupTime" class="text-xs text-slate-400 dark:text-slate-500 mt-1 font-mono">
+                                    {{ booking.pickupTime }}
+                                </span>
                             </div>
                             <div class="flex-1 p-5">
                                 <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
                                     <div class="space-y-2">
                                         <div class="flex items-center gap-2">
-                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Mumbai,
-                                                Maharashtra</h3>
-                                            <span
-                                                class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">Confirmed</span>
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ booking.sourceCity }}</h3>
+                                            <span class="px-2 py-0.5 rounded text-xs font-medium border" [ngClass]="getStatusClass(booking.status)">
+                                                {{ getStatusLabel(booking.status) }}
+                                            </span>
                                         </div>
                                         <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
                                             <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
-                                            Airport Drop (Sedan)
+                                            {{ booking.usageName || booking.tripType }}
                                         </div>
-                                        <div
+                                        <div *ngIf="booking.pickupAddress"
                                             class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
                                             <div class="flex items-start gap-2">
-                                                <lucide-icon name="map-pin" [size]="16"
-                                                    class="text-green-600 mt-0.5"></lucide-icon>
+                                                <lucide-icon name="map-pin" [size]="16" class="text-green-600 mt-0.5"></lucide-icon>
                                                 <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                                                    <span
-                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
-                                                    Andheri West, Mumbai, Maharashtra 400053
+                                                    <span class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
+                                                    {{ booking.pickupAddress }}
                                                 </p>
                                             </div>
                                         </div>
+                                        <!-- Driver info for assigned bookings -->
+                                        <div *ngIf="booking.driverName" class="flex items-center gap-2 text-sm text-slate-500 mt-2">
+                                            <lucide-icon name="user" [size]="14" class="text-primary"></lucide-icon>
+                                            <span>{{ booking.driverName }}</span>
+                                            <span *ngIf="booking.carNumber" class="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">{{ booking.carNumber }}</span>
+                                        </div>
                                     </div>
                                     <div class="flex flex-col lg:items-end gap-2">
-                                        <div
-                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
+                                        <div class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
                                             <span class="text-xs">TRIP ID</span>
                                             <div class="flex flex-col sm:flex-row items-end sm:items-center">
-                                                <span class="font-bold text-primary">S0126-7892341</span>
-                                                <button
-                                                    class="text-slate-400 hover:text-primary transition-colors ml-1 mt-1 sm:mt-0"
-                                                    title="Copy ID">
-                                                    <lucide-icon name="copy" [size]="14"></lucide-icon>
-                                                </button>
+                                                <span class="font-bold text-primary">{{ booking.bookingId }}</span>
                                             </div>
                                         </div>
-                                        <button
-                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
-                                            View Details
-                                            <lucide-icon name="arrow-right" [size]="14" class="ml-1"></lucide-icon>
+                                        <div *ngIf="booking.fare" class="text-lg font-bold text-slate-900 dark:text-white">
+                                            &#8377;{{ booking.fare | number }}
+                                        </div>
+                                        <!-- Cancel button for upcoming bookings -->
+                                        <button *ngIf="activeTab === 'upcoming'" (click)="cancelBooking(booking.bookingId)"
+                                            class="mt-1 text-sm text-red-500 hover:text-red-600 hover:underline font-medium flex items-center">
+                                            Cancel Booking
+                                            <lucide-icon name="x" [size]="14" class="ml-1"></lucide-icon>
+                                        </button>
+                                        <!-- Share via WhatsApp -->
+                                        <button (click)="shareOnWhatsApp(booking)"
+                                          class="mt-1 text-sm text-[#25D366] hover:text-[#20BD5A] font-medium flex items-center gap-1">
+                                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                          Share
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Upcoming Booking Card 2 -->
-                        <div
-                            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
-                            <div
-                                class="md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-slate-700/50 transition-colors">
-                                <span
-                                    class="text-4xl font-bold text-slate-800 dark:text-slate-200 tracking-tighter">18</span>
-                                <span
-                                    class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Jan
-                                    2026</span>
-                            </div>
-                            <div class="flex-1 p-5">
-                                <div class="flex flex-col lg:flex-row justify-between lg:items-start gap-4">
-                                    <div class="space-y-2">
-                                        <div class="flex items-center gap-2">
-                                            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Pune,
-                                                Maharashtra</h3>
-                                            <span
-                                                class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">Confirmed</span>
-                                        </div>
-                                        <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
-                                            <lucide-icon name="car" [size]="16" class="mr-1 text-primary"></lucide-icon>
-                                            Outstation (Round Trip)
-                                        </div>
-                                        <div
-                                            class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 border-dashed">
-                                            <div class="flex items-start gap-2">
-                                                <lucide-icon name="map-pin" [size]="16"
-                                                    class="text-green-600 mt-0.5"></lucide-icon>
-                                                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                                                    <span
-                                                        class="font-medium text-slate-800 dark:text-slate-200">Pickup:</span>
-                                                    Koregaon Park, Pune, Maharashtra 411001
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col lg:items-end gap-2">
-                                        <div
-                                            class="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-mono font-medium">
-                                            <span class="text-xs">TRIP ID</span>
-                                            <div class="flex flex-col sm:flex-row items-end sm:items-center">
-                                                <span class="font-bold text-primary">S0126-7892342</span>
-                                                <button
-                                                    class="text-slate-400 hover:text-primary transition-colors ml-1 mt-1 sm:mt-0"
-                                                    title="Copy ID">
-                                                    <lucide-icon name="copy" [size]="14"></lucide-icon>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <button
-                                            class="mt-2 text-sm text-primary hover:text-sky-600 hover:underline font-medium flex items-center">
-                                            View Details
-                                            <lucide-icon name="arrow-right" [size]="14" class="ml-1"></lucide-icon>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
 
-                <!-- CANCELLED VIEW -->
-                <div *ngIf="activeTab === 'cancelled'">
+                <div *ngIf="false">
                     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
                             <button (click)="goBack()"
@@ -563,9 +527,7 @@
                     </div>
                 </div>
 
-                <!-- COMPLETED VIEW -->
-                <!-- COMPLETED VIEW -->
-                <div *ngIf="activeTab === 'completed'">
+                <div *ngIf="false && activeTab === 'completed'">
                     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
                             <button (click)="goBack()"

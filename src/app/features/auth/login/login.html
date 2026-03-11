@@ -81,20 +81,30 @@
           </div>
         </div>
 
+        <!-- Error Message -->
+        @if (errorMessage()) {
+          <div class="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-200 dark:border-red-800">
+            <div class="flex items-center">
+              <lucide-icon name="alert-circle" [size]="18" class="text-red-500 mr-2 flex-shrink-0"></lucide-icon>
+              <p class="text-sm text-red-700 dark:text-red-400">{{ errorMessage() }}</p>
+            </div>
+          </div>
+        }
+
         <!-- Buttons: Register (gray) + Sign In (blue) -->
         <div class="flex gap-3">
           <a routerLink="/register"
             class="flex-1 flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-500 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all">
             Register
           </a>
-          <button type="submit"
-            class="flex-1 flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all shadow-primary/40 group relative overflow-hidden">
-            <div
-              class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]">
-            </div>
-            <span class="flex items-center justify-center w-full">
+          <button type="submit" [disabled]="isLoading()"
+            class="flex-1 flex justify-center items-center py-3 px-4 border-0 rounded-lg text-sm font-bold text-white bg-amber hover:bg-amber-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber transition-all shadow-amber disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
+            @if (isLoading()) {
+              <lucide-icon name="loader-2" [size]="18" class="mr-2 animate-spin"></lucide-icon>
+              Signing in...
+            } @else {
               Login <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
-            </span>
+            }
           </button>
         </div>
       </form>
