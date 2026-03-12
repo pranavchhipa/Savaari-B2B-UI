@@ -12,7 +12,7 @@ import {
   BookingDetails,
 } from '../models';
 import { environment } from '../../../environments/environment';
-import { MOCK_BOOKING_DETAILS } from '../mocks/mock-bookings';
+import { MOCK_BOOKING_DETAILS, MOCK_BOOKINGS_LIST } from '../mocks/mock-bookings';
 
 /**
  * Handles booking operations with the Savaari API.
@@ -206,7 +206,7 @@ export class BookingApiService {
    */
   getAllBookings(): Observable<BookingDetails[]> {
     if (environment.useMockData) {
-      return of([MOCK_BOOKING_DETAILS]);
+      return of(MOCK_BOOKINGS_LIST);
     }
 
     return this.api.b2bGet<any>('booking-details', {

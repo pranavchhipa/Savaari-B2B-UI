@@ -52,6 +52,9 @@ export class BookingsComponent implements OnInit {
     // Search
     searchQuery = '';
 
+    // Expanded booking detail view
+    expandedBookingId: string | null = null;
+
     ngOnInit() {
         this.loadBookings();
     }
@@ -147,9 +150,12 @@ export class BookingsComponent implements OnInit {
     private toBookingCard(b: any): BookingCard {
         let pickupDate: Date | null = null;
         // API returns start_date_time in "YYYY-MM-DD HH:MM:SS" format
+        // Mock data uses pickupDateTime in the same format
         const dateStr = b.start_date_time || b.pickupDateTime;
         if (dateStr) {
-            pickupDate = new Date(dateStr);
+            // Handle "YYYY-MM-DD HH:MM:SS" by replacing space with T for reliable parsing
+            const normalized = dateStr.toString().replace(' ', 'T');
+            pickupDate = new Date(normalized);
             if (isNaN(pickupDate.getTime())) pickupDate = null;
         }
 
@@ -244,6 +250,11 @@ export class BookingsComponent implements OnInit {
     setActiveTab(tab: BookingTab) {
         if (this.activeTab === tab) return;
         this.activeTab = tab;
+        this.cdr.markForCheck();
+    }
+
+    toggleDetails(bookingId: string) {
+        this.expandedBookingId = this.expandedBookingId === bookingId ? null : bookingId;
         this.cdr.markForCheck();
     }
 
