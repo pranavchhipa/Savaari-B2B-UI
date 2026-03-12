@@ -41,7 +41,7 @@ export class AvailabilityService {
       duration: request.duration,
       localityId: request.localityId,
       token: this.auth.getPartnerToken(),
-      agentId: btoa(environment.agentId),
+      agentId: btoa(this.auth.getAgentId()),
       api_source: 'b2b',
     }).pipe(
       map(raw => this.normalizeResponse(raw)),

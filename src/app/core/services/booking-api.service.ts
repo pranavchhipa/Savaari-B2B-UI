@@ -73,7 +73,7 @@ export class BookingApiService {
       destinationCity: request.destinationCity,
       prePayment: request.prePayment,
       couponCode: request.couponCode,
-      agentId: btoa(environment.agentId),
+      agentId: btoa(this.auth.getAgentId()),
       api_source: 'b2b',
       source: request.source || 'b2b',
       device: request.device || 'web',
@@ -183,7 +183,7 @@ export class BookingApiService {
     return this.api.partnerPostForm<CancelBookingResponse>('booking/cancel', {
       bookingId,
       reason,
-      agentId: btoa(environment.agentId),
+      agentId: btoa(this.auth.getAgentId()),
     }, { token }).pipe(
       catchError(err => this.errorHandler.handleApiError(err, 'BookingApiService.cancelBooking'))
     );
