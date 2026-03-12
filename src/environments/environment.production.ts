@@ -1,24 +1,24 @@
 /**
  * Production environment configuration.
  *
- * Points to Beta Savaari APIs (betasavaari.com) for safe testing.
- * No live/production APIs are used.
+ * useMockData is TRUE until beta/staging APIs are available.
+ * Beta servers (betasavaari.com) are currently unreachable.
  */
 export const environment = {
   production: true,
-  useMockData: false,
+  useMockData: true,
 
-  /** Partner API: cities, availability (Beta Savaari) */
-  partnerApiBaseUrl: 'https://api.betasavaari.com/partner_api/public',
+  /** Partner API: cities, availability */
+  partnerApiBaseUrl: 'https://api.savaari.com/partner_api/public',
 
-  /** B2B API: bookings, reports, commission (Beta Savaari) */
-  b2bApiBaseUrl: 'https://api23.betasavaari.com',
+  /** B2B API: bookings, reports, commission */
+  b2bApiBaseUrl: 'https://api23.savaari.com',
 
-  /** Partner API credentials (from beta B2B repo) */
-  apiKey: 'f645dbc7cd4ba17caf4fac8abc53dc02a01231dde7ec1c31124895aa0fd24166',
-  appId: 'MjAxN3Nhdm1vYmlsZXdlYnNpdGU=',
+  /** Partner API credentials — injected at build time via CI/CD */
+  apiKey: '',
+  appId: '',
 
-  /** Agent ID — set dynamically after login from user_id */
+  /** Agent ID */
   agentId: '',
 
   /** User email — set after login */
