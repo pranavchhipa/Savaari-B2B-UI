@@ -15,7 +15,7 @@ export const authGuard: CanActivateFn = () => {
 
   if (auth.isAuthenticated()) return true;
 
-  console.warn('[AuthGuard] Not authenticated, redirecting to /login');
-  router.navigate(['/login']);
+  console.warn('[AuthGuard] Not authenticated, redirecting to /');
+  router.navigate(['/'], { replaceUrl: true });
   return false;
 };

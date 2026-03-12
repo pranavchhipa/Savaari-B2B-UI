@@ -50,8 +50,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   private checkRoute(url: string) {
     const path = url ? url.split('?')[0].split('#')[0] : ''; // Remove query params and hashes, safely
-    this.isLandingPage = path === '/' || path === '';
-    this.isPublicRoute = this.isLandingPage || path.startsWith('/login') || path.startsWith('/register');
+    this.isLandingPage = path === '/' || path === '' || path.startsWith('/login') || path.startsWith('/register');
+    this.isPublicRoute = this.isLandingPage;
   }
 
   toggleDarkMode() {
@@ -76,6 +76,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   onLogout() {
     this.isUserDropdownOpen = false;
     this.authService.logout();
-    this.router.navigate(['/login'], { replaceUrl: true });
+    this.router.navigate(['/'], { replaceUrl: true });
   }
 }
