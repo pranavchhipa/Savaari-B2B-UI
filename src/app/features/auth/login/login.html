@@ -1,9 +1,9 @@
-<div class="min-h-screen bg-slate-900 flex flex-col pt-12 pb-12 sm:px-6 lg:px-8 relative overflow-hidden">
+<div class="flex-1 bg-slate-900 flex flex-col pt-12 pb-12 sm:px-6 lg:px-8 relative overflow-hidden">
   <!-- Dynamic Background elements (matching landing page aesthetic) -->
   <div class="absolute inset-0">
-    <img alt="Premium Chauffeur Driven Car" class="w-full h-full object-cover opacity-20"
-      src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=2000" />
-    <div class="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-900/50"></div>
+    <img alt="Premium Chauffeur Driven Car" class="w-full h-full object-cover opacity-80"
+      src="assets/images/login-bg.png" />
+    <div class="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-slate-900/80"></div>
   </div>
 
   <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
@@ -22,7 +22,7 @@
     </div>
   </div>
 
-  <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10 mb-[64px]">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
     <div
       class="bg-surface-light dark:bg-surface-dark py-8 px-4 shadow-2xl rounded-2xl sm:px-10 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
       <form class="space-y-6" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
@@ -53,10 +53,14 @@
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <lucide-icon name="lock" [size]="18" class="text-slate-400"></lucide-icon>
             </div>
-            <input formControlName="password" id="password" type="password" autocomplete="current-password"
+            <input formControlName="password" id="password" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password"
               placeholder="••••••••"
-              class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
+              class="pl-10 pr-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
               [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': loginForm.get('password')?.invalid && loginForm.get('password')?.touched}" />
+            <button type="button" (click)="showPassword.set(!showPassword())"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer bg-transparent border-0">
+              <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18" class="text-slate-400 hover:text-slate-600"></lucide-icon>
+            </button>
           </div>
           <p *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
             class="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -100,7 +104,6 @@
           <button type="submit" [disabled]="isLoading()"
             class="flex-1 flex justify-center items-center py-3 px-4 border-0 rounded-lg text-sm font-bold text-white bg-amber hover:bg-amber-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber transition-all shadow-amber disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
             @if (isLoading()) {
-              <lucide-icon name="loader-2" [size]="18" class="mr-2 animate-spin"></lucide-icon>
               Signing in...
             } @else {
               Login <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>

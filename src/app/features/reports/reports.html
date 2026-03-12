@@ -154,7 +154,7 @@
             class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div *ngIf="hasViewed" class="space-y-6">
               <!-- Report Header -->
-              <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-5 pt-5">
                 <div>
                   <h2 class="text-xl font-bold text-slate-800 dark:text-white">Trip Reports Summary</h2>
                   <p class="text-sm text-slate-500">{{startDateStr | date:'dd MMM yyyy'}} to {{endDateStr | date:'dd MMM
@@ -168,18 +168,15 @@
               </div>
 
               <!-- Loading State -->
-              <div *ngIf="isLoading"
-                class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div class="p-6 space-y-4">
-                  <div class="grid grid-cols-4 gap-4 mb-8">
-                    <div *ngFor="let i of [1,2,3,4]" class="h-20 skeleton rounded-xl"></div>
-                  </div>
-                  <div *ngFor="let i of [1,2,3,4,5]" class="h-10 w-full skeleton"></div>
+              <div *ngIf="isLoading" class="p-6 space-y-4">
+                <div class="grid grid-cols-4 gap-4 mb-8">
+                  <div *ngFor="let i of [1,2,3,4]" class="h-20 skeleton rounded-xl"></div>
                 </div>
+                <div *ngFor="let i of [1,2,3,4,5]" class="h-10 w-full skeleton"></div>
               </div>
 
-              <!-- Stats Cards -->
-              <div *ngIf="!isLoading" class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+              <!-- Data Table (desktop) -->
+              <div *ngIf="!isLoading" class="hidden md:block overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">

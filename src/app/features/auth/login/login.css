@@ -1,0 +1,10 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background-color: #0f172a; /* slate-900 — fills any gap between bg image and footer */
+}
+
+:host ::ng-deep app-footer footer {
+  margin-top: 0;
+}

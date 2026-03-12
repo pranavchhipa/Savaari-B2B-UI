@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
@@ -20,7 +20,7 @@ type TabType = 'ONE_WAY' | 'ROUND_TRIP' | 'LOCAL' | 'AIRPORT';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, DatePickerModule, SelectModule, AutoCompleteModule, FooterComponent],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, DatePickerModule, SelectModule, AutoCompleteModule, FooterComponent, RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -51,6 +51,22 @@ export class DashboardComponent implements OnInit {
 
   // Loading state for Explore Cabs button
   isSearching = false;
+
+  // Mock business stats (replace with real API data later)
+  mockStats = {
+    bookingsThisMonth: 47,
+    revenue: '\u20B93,24,500',
+    commissionEarned: '\u20B948,675',
+    pendingBookings: 3
+  };
+
+  mockRecentBookings = [
+    { id: '10243689', route: 'Bangalore \u2192 Mysore', date: '12 Mar 2026', status: 'Completed', amount: '\u20B94,250' },
+    { id: '10243578', route: 'Chennai \u2192 Pondicherry', date: '11 Mar 2026', status: 'Completed', amount: '\u20B93,800' },
+    { id: '10243492', route: 'Delhi \u2192 Agra', date: '10 Mar 2026', status: 'In Progress', amount: '\u20B95,100' },
+    { id: '10243401', route: 'Mumbai \u2192 Pune', date: '09 Mar 2026', status: 'Upcoming', amount: '\u20B93,200' },
+    { id: '10243266', route: 'Hyderabad \u2192 Warangal', date: '08 Mar 2026', status: 'Completed', amount: '\u20B94,600' },
+  ];
 
   tripTypes = [
     { label: 'Drop to Airport', value: 'drop' },
@@ -195,20 +211,32 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /** PrimeNG AutoComplete: filter source cities */
+  /** PrimeNG AutoComplete: filter source cities (prefix matches first) */
   filterSourceCities(event: AutoCompleteCompleteEvent) {
-    const query = (event.query || '').toLowerCase();
-    this.filteredSourceCities = this.sourceCities.filter(c =>
-      c.name.toLowerCase().includes(query)
-    );
+    this.filteredSourceCities = this.filterCitiesRanked(this.sourceCities, event.query);
   }
 
-  /** PrimeNG AutoComplete: filter destination cities */
+  /** PrimeNG AutoComplete: filter destination cities (prefix matches first) */
   filterDestinationCities(event: AutoCompleteCompleteEvent) {
-    const query = (event.query || '').toLowerCase();
-    this.filteredDestinationCities = this.destinationCities.filter(c =>
-      c.name.toLowerCase().includes(query)
-    );
+    this.filteredDestinationCities = this.filterCitiesRanked(this.destinationCities, event.query);
+  }
+
+  /** Filter cities: prefix matches on cityOnly first, then substring matches */
+  private filterCitiesRanked(cities: City[], query: string): City[] {
+    const q = (query || '').toLowerCase();
+    if (!q) return cities;
+    const prefix: City[] = [];
+    const substring: City[] = [];
+    for (const c of cities) {
+      const name = c.name.toLowerCase();
+      const cityOnly = (c.cityOnly || '').toLowerCase();
+      if (cityOnly.startsWith(q) || name.startsWith(q)) {
+        prefix.push(c);
+      } else if (name.includes(q)) {
+        substring.push(c);
+      }
+    }
+    return [...prefix, ...substring];
   }
 
   /** When source city is selected, load destinations */
@@ -348,5 +376,14 @@ export class DashboardComponent implements OnInit {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  /** CSS classes for booking status badges */
+  getStatusClasses(status: string): Record<string, boolean> {
+    return {
+      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': status === 'Completed',
+      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': status === 'Upcoming',
+      'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': status === 'In Progress',
+    };
   }
 }

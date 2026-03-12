@@ -65,13 +65,20 @@ export const MOCK_AVAILABILITY_RESPONSE: AvailabilityResponse = {
  * These are placeholder URLs; replace with actual asset paths.
  */
 export const CAR_IMAGE_MAP: Record<number, string> = {
-  4:  'assets/images/cars/etios.png',
-  5:  'assets/images/cars/etios.png',
-  7:  'assets/images/cars/ertiga.png',
-  49: 'assets/images/cars/wagonr.png',
+  4:  'assets/images/cars/sedan.png',
+  5:  'assets/images/cars/sedan.png',
+  7:  'assets/images/cars/suv.png',
+  43: 'assets/images/cars/sedan.png',
+  44: 'assets/images/cars/sedan.png',
+  45: 'assets/images/cars/sedan.png',
+  46: 'assets/images/cars/hatchback.png',
+  49: 'assets/images/cars/hatchback.png',
   52: 'assets/images/cars/innova.png',
   53: 'assets/images/cars/crysta.png',
-  48: 'assets/images/cars/innova.png',
+  54: 'assets/images/cars/innova.png',
+  48: 'assets/images/cars/tempo.png',
+  57: 'assets/images/cars/tempo.png',
+  58: 'assets/images/cars/minibus.png',
 };
 
 /**

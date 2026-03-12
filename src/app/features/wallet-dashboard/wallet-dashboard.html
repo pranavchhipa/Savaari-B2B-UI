@@ -25,44 +25,22 @@
             </button>
         </div>
 
-        <!-- Overview Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            <!-- Current Balance Card -->
-            <div
-                class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 relative overflow-hidden group">
-                <div
-                    class="absolute -right-6 -bottom-6 text-sky-500/10 group-hover:scale-110 transition-transform duration-500">
-                    <lucide-icon name="wallet" [size]="140"></lucide-icon>
-                </div>
-                <div class="relative relative z-10">
-                    <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                        Available Balance</h3>
-                    <div class="text-4xl font-extrabold text-slate-800 dark:text-slate-100 flex items-baseline">
-                        <span class="text-2xl mr-1 font-medium text-slate-400">₹</span>
-                        {{ (balance$ | async) | number:'1.0-0' }}
-                    </div>
-                    <div
-                        class="mt-4 inline-flex items-center text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2.5 py-1 rounded-full">
-                        <lucide-icon name="check-circle-2" [size]="14" class="mr-1.5"></lucide-icon>
-                        Status: Active
-                    </div>
-                </div>
+        <!-- Balance Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 relative overflow-hidden group max-w-md">
+            <div class="absolute -right-6 -bottom-6 text-sky-500/10 group-hover:scale-110 transition-transform duration-500">
+                <lucide-icon name="wallet" [size]="140"></lucide-icon>
             </div>
-
-            <!-- Quick Actions -->
-            <div
-                class="bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl shadow-md p-6 text-white flex flex-col justify-between">
-                <div>
-                    <h3 class="font-semibold text-sky-100 mb-1">Instant Top-Up</h3>
-                    <p class="text-sm text-sky-200 leading-relaxed">Ensure you have sufficient balance for 100%
-                        Wallet-Paid bookings to unlock exclusive corporate rates.</p>
+            <div class="relative z-10">
+                <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                    Available Balance</h3>
+                <div class="text-4xl font-extrabold text-slate-800 dark:text-slate-100 flex items-baseline">
+                    <span class="text-2xl mr-1 font-medium text-slate-400">₹</span>
+                    {{ (balance$ | async) | number:'1.0-0' }}
                 </div>
-                <button (click)="openTopUpModal()"
-                    class="mt-4 bg-white/20 hover:bg-white/30 text-white font-medium px-4 py-2 rounded-lg transition-colors flex items-center w-max backdrop-blur-sm">
-                    Add Funds via Razorpay
-                    <lucide-icon name="arrow-right" [size]="16" class="ml-2"></lucide-icon>
-                </button>
+                <div class="mt-4 inline-flex items-center text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2.5 py-1 rounded-full">
+                    <lucide-icon name="check-circle-2" [size]="14" class="mr-1.5"></lucide-icon>
+                    Status: Active
+                </div>
             </div>
         </div>
 
@@ -74,13 +52,26 @@
                 <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Transaction History</h2>
 
                 <div class="flex items-center space-x-2">
-                    <button
-                        class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center">
-                        <lucide-icon name="filter" [size]="14" class="mr-1.5"></lucide-icon>
-                        Filter
-                    </button>
-                    <button
-                        class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center">
+                    <!-- Filter Dropdown -->
+                    <div class="relative">
+                        <button (click)="showFilterDropdown = !showFilterDropdown"
+                            class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center cursor-pointer"
+                            [ngClass]="{'ring-2 ring-primary bg-primary/10 text-primary': activeFilter !== 'ALL'}">
+                            <lucide-icon name="filter" [size]="14" class="mr-1.5"></lucide-icon>
+                            {{ activeFilter === 'ALL' ? 'Filter' : activeFilter === 'TOPUP' ? 'Credits' : activeFilter === 'BOOKING_PAYMENT' ? 'Debits' : 'Refunds' }}
+                        </button>
+                        <div *ngIf="showFilterDropdown"
+                            class="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-20">
+                            <button *ngFor="let f of filterOptions" (click)="applyFilter(f.value)"
+                                class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                [ngClass]="{'text-primary font-semibold': activeFilter === f.value, 'text-slate-600 dark:text-slate-300': activeFilter !== f.value}">
+                                {{ f.label }}
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Export CSV -->
+                    <button (click)="exportCSV()"
+                        class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center cursor-pointer">
                         <lucide-icon name="download" [size]="14" class="mr-1.5"></lucide-icon>
                         Export
                     </button>
@@ -108,7 +99,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                        <tr *ngFor="let tx of transactions$ | async"
+                        <tr *ngFor="let tx of filteredTransactions"
                             class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
                                 <div class="font-medium text-slate-800 dark:text-slate-200">{{ tx.date | date:'dd MMM
@@ -157,9 +148,9 @@
                             </td>
                         </tr>
 
-                        <tr *ngIf="(transactions$ | async)?.length === 0">
+                        <tr *ngIf="filteredTransactions.length === 0">
                             <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                                <lucide-icon name="receipt" [size]="48"
+                                <lucide-icon name="indian-rupee" [size]="48"
                                     class="mx-auto text-slate-300 mb-3"></lucide-icon>
                                 <p>No transactions found.</p>
                             </td>

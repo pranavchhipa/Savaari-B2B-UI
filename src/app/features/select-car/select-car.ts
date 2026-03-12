@@ -155,36 +155,37 @@ export class SelectCarComponent implements OnInit {
   /** Map car type ID and name to a local asset image, with keyword fallback */
   private getLocalCarImage(carName: string, typeId: number): string {
     const byId: Record<number, string> = {
-      4: 'assets/images/cars/etios.png',
-      5: 'assets/images/cars/etios.png',
-      7: 'assets/images/cars/ertiga.png',
-      43: 'assets/images/cars/etios.png',
-      44: 'assets/images/cars/etios.png',
-      45: 'assets/images/cars/etios.png',
-      46: 'assets/images/cars/wagonr.png',
-      49: 'assets/images/cars/wagonr.png',
+      4: 'assets/images/cars/sedan.png',
+      5: 'assets/images/cars/sedan.png',
+      7: 'assets/images/cars/suv.png',
+      43: 'assets/images/cars/sedan.png',
+      44: 'assets/images/cars/sedan.png',
+      45: 'assets/images/cars/sedan.png',
+      46: 'assets/images/cars/hatchback.png',
+      49: 'assets/images/cars/hatchback.png',
       52: 'assets/images/cars/innova.png',
       53: 'assets/images/cars/crysta.png',
       54: 'assets/images/cars/innova.png',
-      48: 'assets/images/cars/innova.png',
-      57: 'assets/images/cars/innova.png',
-      58: 'assets/images/cars/innova.png',
+      48: 'assets/images/cars/tempo.png',
+      57: 'assets/images/cars/tempo.png',
+      58: 'assets/images/cars/minibus.png',
     };
     if (byId[typeId]) return byId[typeId];
     const n = (carName || '').toLowerCase();
     if (n.includes('crysta'))                          return 'assets/images/cars/crysta.png';
     if (n.includes('innova'))                          return 'assets/images/cars/innova.png';
-    if (n.includes('tempo') || n.includes('traveller') || n.includes('minibus')) return 'assets/images/cars/innova.png';
-    if (n.includes('ertiga') || n.includes('6+1'))     return 'assets/images/cars/ertiga.png';
-    if (n.includes('wagon') || n.includes('hatchback')) return 'assets/images/cars/wagonr.png';
-    if (n.includes('suv') || n.includes('xuv') || n.includes('kia') || n.includes('creta')) return 'assets/images/cars/ertiga.png';
-    return 'assets/images/cars/etios.png'; // default sedan
+    if (n.includes('tempo') || n.includes('traveller')) return 'assets/images/cars/tempo.png';
+    if (n.includes('minibus') || n.includes('mini bus') || n.includes('coach')) return 'assets/images/cars/minibus.png';
+    if (n.includes('ertiga') || n.includes('6+1'))     return 'assets/images/cars/suv.png';
+    if (n.includes('wagon') || n.includes('hatchback')) return 'assets/images/cars/hatchback.png';
+    if (n.includes('suv') || n.includes('xuv') || n.includes('kia') || n.includes('creta')) return 'assets/images/cars/suv.png';
+    return 'assets/images/cars/sedan.png'; // default sedan
   }
 
   private initializeTabs() {
-    // Tabs start collapsed — user clicks to expand
+    // Inclusions tab open by default for all cars
     this.availableCars.forEach(car => {
-      this.activeTab[car.id] = '';
+      this.activeTab[car.id] = 'inclusions';
     });
   }
 

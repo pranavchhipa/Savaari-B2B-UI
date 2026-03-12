@@ -27,6 +27,7 @@ export class LoginComponent {
 
   isLoading = signal(false);
   errorMessage = signal('');
+  showPassword = signal(false);
 
   onSubmit() {
     if (!this.loginForm.valid) {

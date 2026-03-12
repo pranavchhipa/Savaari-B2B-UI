@@ -19,9 +19,11 @@ import {
   KeyRound, Copy, TrainFront, Receipt, BadgeCheck, CalendarClock, Ticket, Star,
   ParkingCircle, Gauge, Users, Briefcase, Snowflake, Fuel, Banknote,
   ArrowDownLeft, ArrowUpRight, CreditCard, Loader2, Filter, AlertTriangle,
-  ArrowLeft, Plus, Check,
+  ArrowLeft, Plus, Check, Eye, EyeOff,
   TrendingUp, Menu, LayoutDashboard, Headphones, CheckCircle2,
-  Crosshair, AlertCircle, RefreshCw, Inbox
+  Crosshair, AlertCircle, RefreshCw, Inbox,
+  CalendarCheck, BarChart3, Percent, ChevronLeft,
+  Printer, List
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -55,9 +57,11 @@ export const appConfig: ApplicationConfig = {
         KeyRound, Copy, TrainFront, Receipt, BadgeCheck, CalendarClock, Ticket, Star,
         ParkingCircle, Gauge, Users, Briefcase, Snowflake, Fuel, Banknote,
         ArrowDownLeft, ArrowUpRight, CreditCard, Loader2, Filter, AlertTriangle,
-        ArrowLeft, Plus, Check,
+        ArrowLeft, Plus, Check, Eye, EyeOff,
         TrendingUp, Menu, LayoutDashboard, Headphones, CheckCircle2,
-        Crosshair, AlertCircle, RefreshCw, Inbox
+        Crosshair, AlertCircle, RefreshCw, Inbox,
+        CalendarCheck, BarChart3, Percent, ChevronLeft,
+        Printer, List
       })
     }
   ]

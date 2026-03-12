@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, HostListener } from '@angular/core';
+import { Component, OnInit, AfterViewChecked, inject, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -28,7 +28,7 @@ import { FooterComponent } from '../../components/layout/footer/footer';
   styleUrl: './booking.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BookingComponent implements OnInit {
+export class BookingComponent implements OnInit, AfterViewChecked {
   public router = inject(Router);
   private auth = inject(AuthService);
   private bookingState = inject(BookingStateService);
@@ -97,6 +97,10 @@ export class BookingComponent implements OnInit {
   walletBalance$!: Observable<number>;
   private walletService = inject(WalletService);
   private localityService = inject(LocalityService);
+
+  // Confetti canvas
+  @ViewChild('confettiCanvas') confettiCanvas!: ElementRef<HTMLCanvasElement>;
+  private confettiFired = false;
 
   // Locality autocomplete suggestions (string arrays for direct ngModel binding)
   pickupSuggestions: string[] = [];
@@ -625,6 +629,85 @@ export class BookingComponent implements OnInit {
         this.cdr.markForCheck();
       }, 3000);
     }, 2000);
+  }
+
+  ngAfterViewChecked() {
+    if (this.bookingConfirmed && this.confettiCanvas && !this.confettiFired) {
+      this.confettiFired = true;
+      this.launchConfetti();
+    }
+  }
+
+  /** Canvas confetti burst — no external library needed */
+  private launchConfetti() {
+    const canvas = this.confettiCanvas.nativeElement;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+
+    const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+    const PARTICLE_COUNT = 120;
+    const GRAVITY = 0.12;
+    const DRAG = 0.98;
+
+    const particles: { x: number; y: number; vx: number; vy: number; w: number; h: number; color: string; rotation: number; rotSpeed: number; opacity: number; }[] = [];
+
+    // Burst from two points — left and right top
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const fromLeft = i % 2 === 0;
+      particles.push({
+        x: fromLeft ? W * 0.15 : W * 0.85,
+        y: H * 0.2,
+        vx: (fromLeft ? 1 : -1) * (Math.random() * 8 + 4),
+        vy: -(Math.random() * 12 + 4),
+        w: Math.random() * 8 + 4,
+        h: Math.random() * 6 + 2,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        rotation: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 12,
+        opacity: 1,
+      });
+    }
+
+    let frame = 0;
+    const MAX_FRAMES = 180; // ~3 seconds at 60fps
+
+    const animate = () => {
+      frame++;
+      ctx.clearRect(0, 0, W, H);
+
+      for (const p of particles) {
+        p.vy += GRAVITY;
+        p.vx *= DRAG;
+        p.vy *= DRAG;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.rotSpeed;
+
+        // Fade out in last 60 frames
+        if (frame > MAX_FRAMES - 60) {
+          p.opacity = Math.max(0, p.opacity - 0.018);
+        }
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.globalAlpha = p.opacity;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+
+      if (frame < MAX_FRAMES) {
+        requestAnimationFrame(animate);
+      } else {
+        ctx.clearRect(0, 0, W, H);
+      }
+    };
+
+    requestAnimationFrame(animate);
   }
 
   /** Share booking details via WhatsApp */

@@ -14,8 +14,8 @@ module.exports = {
         },
         extend: {
             fontFamily: {
-                sans: ["Outfit", "Inter", "system-ui", "sans-serif"],
-                display: ["Plus Jakarta Sans", "Outfit", "system-ui", "sans-serif"],
+                sans: ["Inter", "system-ui", "sans-serif"],
+                display: ["Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"],
             },
             colors: {
                 border: "hsl(var(--border))",

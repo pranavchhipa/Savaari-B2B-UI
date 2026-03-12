@@ -67,11 +67,10 @@
 
               <!-- Wallet Display -->
               <a routerLink="/wallet"
-                routerLinkActive="ring-2 ring-sky-300 dark:ring-sky-600 bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300"
-                class="hidden md:flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-600 px-3 py-1.5 rounded-full text-[13px] font-bold mr-1 shadow-sm transition-all cursor-pointer group">
+                class="hidden md:flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 px-3 py-1.5 rounded-lg text-[13px] font-bold mr-1 shadow-sm transition-all cursor-pointer group">
                 <div
-                  class="bg-gradient-to-br from-sky-400 to-blue-500 text-white rounded-full p-1 mr-2 shadow-sm group-hover:scale-110 transition-transform">
-                  <lucide-icon name="wallet" [size]="14"></lucide-icon>
+                  class="bg-primary text-white rounded-md p-2 mr-2 shadow-sm group-hover:scale-110 transition-transform">
+                  <lucide-icon name="wallet" [size]="18"></lucide-icon>
                 </div>
                 ₹ {{ (balance$ | async) | number:'1.0-0' }}
               </a>
@@ -81,9 +80,9 @@
             <div
               class="relative ml-2 md:ml-4 flex items-center border-l border-slate-200 dark:border-slate-700 pl-2 md:pl-4">
               <button (click)="isUserDropdownOpen = !isUserDropdownOpen"
-                class="flex items-center gap-2 outline-none p-1 pr-2 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700 relative z-50 cursor-pointer">
+                class="flex items-center gap-2 outline-none p-1 pr-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700 relative z-50 cursor-pointer">
                 <div
-                  class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-primary to-sky-600 text-white flex items-center justify-center font-bold text-[13px] md:text-[15px] shadow-inner uppercase tracking-wider">
+                  class="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 text-white flex items-center justify-center font-bold text-[13px] md:text-[15px] shadow-inner uppercase tracking-wider">
                   P
                 </div>
                 <div class="hidden md:flex flex-col items-start px-1 text-left">
@@ -121,6 +120,11 @@
                   class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
                   <lucide-icon name="percent-circle" [size]="16" class="text-slate-400"></lucide-icon>
                   Mark-ups
+                </a>
+                <a routerLink="/wallet" (click)="isUserDropdownOpen = false"
+                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
+                  <lucide-icon name="wallet" [size]="16" class="text-slate-400"></lucide-icon>
+                  Wallet
                 </a>
                 <div class="h-px bg-slate-100 dark:bg-slate-700/80 my-1"></div>
                 <button (click)="toggleDarkMode(); isUserDropdownOpen = false"

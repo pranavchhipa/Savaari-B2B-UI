@@ -30,10 +30,29 @@ export class WalletDashboardComponent implements OnInit {
   topUpAmount = 10000;
   topUpError = '';
 
+  // Filter state
+  showFilterDropdown = false;
+  activeFilter: 'ALL' | 'TOPUP' | 'BOOKING_PAYMENT' | 'REFUND' = 'ALL';
+  filteredTransactions: WalletTransaction[] = [];
+  private allTransactions: WalletTransaction[] = [];
+
+  filterOptions = [
+    { label: 'All', value: 'ALL' as const },
+    { label: 'Credits', value: 'TOPUP' as const },
+    { label: 'Debits', value: 'BOOKING_PAYMENT' as const },
+    { label: 'Refunds', value: 'REFUND' as const },
+  ];
+
   ngOnInit(): void {
     // Trigger API calls — they update balance$ and transactions$ via BehaviorSubjects
     this.walletService.loadBalance();
     this.walletService.loadHistory();
+
+    // Subscribe to transactions to keep local filtered list in sync
+    this.transactions$.subscribe(txs => {
+      this.allTransactions = txs;
+      this.applyFilter(this.activeFilter);
+    });
 
     // Hide skeleton after brief loading window
     setTimeout(() => {
@@ -130,6 +149,41 @@ export class WalletDashboardComponent implements OnInit {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  applyFilter(filter: 'ALL' | 'TOPUP' | 'BOOKING_PAYMENT' | 'REFUND'): void {
+    this.activeFilter = filter;
+    this.showFilterDropdown = false;
+    if (filter === 'ALL') {
+      this.filteredTransactions = [...this.allTransactions];
+    } else {
+      this.filteredTransactions = this.allTransactions.filter(tx => tx.type === filter);
+    }
+    this.cdr.markForCheck();
+  }
+
+  exportCSV(): void {
+    const txs = this.filteredTransactions;
+    if (txs.length === 0) return;
+
+    const headers = ['Date', 'Description', 'Type', 'Reference ID', 'Amount', 'Balance After'];
+    const rows = txs.map(tx => [
+      new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      `"${tx.description}"`,
+      tx.type,
+      tx.referenceId || 'N/A',
+      tx.amount.toString(),
+      tx.balanceAfter.toString()
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wallet-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   goBack(): void {

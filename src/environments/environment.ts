@@ -14,7 +14,7 @@ export const environment = {
   production: false,
 
   /** Master safety switch — true = all services return mock data */
-  useMockData: false,
+  useMockData: true,
 
   /** Partner API: cities, availability (proxied to api.savaari.com/partner_api/public) */
   partnerApiBaseUrl: '/partner-api',
@@ -23,8 +23,8 @@ export const environment = {
   b2bApiBaseUrl: '/b2b-api',
 
   /** Partner API credentials (from JWT payload) */
-  apiKey: '576a6783ea54f',
-  appId: '576a67842fc3b',
+  apiKey: 'f645dbc7cd4ba17caf4fac8abc53dc02a01231dde7ec1c31124895aa0fd24166',
+  appId: 'MjAxN3Nhdm1vYmlsZXdlYnNpdGU=',
 
   /** Agent ID — set dynamically after login from user_id */
   agentId: '983680',

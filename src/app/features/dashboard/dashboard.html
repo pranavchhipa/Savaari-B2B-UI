@@ -33,7 +33,7 @@
     </div>
   </div>
 
-  <div class="relative z-20 w-full max-w-6xl px-4 mt-8">
+  <div class="relative z-20 w-full max-w-7xl px-4 mt-8">
     <div
       class="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md shadow-2xl rounded-3xl overflow-visible border border-slate-200/50 dark:border-slate-700/50 transition-all duration-500 hover:shadow-cyan/20">
 
@@ -42,30 +42,30 @@
         class="flex border-b border-slate-100 dark:border-slate-800 relative z-30 bg-white dark:bg-slate-900 rounded-t-2xl overflow-hidden">
         <button (click)="selectTab('ONE_WAY')"
           [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'ONE_WAY', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'ONE_WAY'}"
-          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all duration-300 tracking-widest focus:outline-none">
+          class="flex-1 py-6 text-sm font-bold border-b-4 transition-all duration-300 tracking-[0.05em] focus:outline-none">
           ONE WAY
         </button>
         <button (click)="selectTab('ROUND_TRIP')"
           [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'ROUND_TRIP', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'ROUND_TRIP'}"
-          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all duration-300 tracking-widest focus:outline-none">
+          class="flex-1 py-6 text-sm font-bold border-b-4 transition-all duration-300 tracking-[0.05em] focus:outline-none">
           ROUND TRIP
         </button>
         <button (click)="selectTab('LOCAL')"
           [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'LOCAL', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'LOCAL'}"
-          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all duration-300 tracking-widest focus:outline-none">
+          class="flex-1 py-6 text-sm font-bold border-b-4 transition-all duration-300 tracking-[0.05em] focus:outline-none">
           LOCAL
         </button>
         <button (click)="selectTab('AIRPORT')"
           [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'AIRPORT', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'AIRPORT'}"
-          class="flex-1 py-5 text-sm font-bold border-b-4 transition-all duration-300 tracking-widest focus:outline-none">
+          class="flex-1 py-6 text-sm font-bold border-b-4 transition-all duration-300 tracking-[0.05em] focus:outline-none">
           AIRPORT
         </button>
       </div>
 
       <!-- Dynamic Form Content Area -->
-      <div class="p-8 pb-12 relative">
-        <form [formGroup]="bookingForm" class="grid grid-cols-1 gap-6 items-end"
-          [ngClass]="{ 'md:grid-cols-6': selectedTab === 'ROUND_TRIP', 'md:grid-cols-5': selectedTab !== 'ROUND_TRIP' }">
+      <div class="p-10 pb-14 relative">
+        <form [formGroup]="bookingForm" class="grid grid-cols-1 items-end"
+          [ngClass]="{ 'md:grid-cols-6 gap-5': selectedTab === 'ROUND_TRIP', 'md:grid-cols-4 gap-8': selectedTab !== 'ROUND_TRIP' }">
 
           <!-- ============================ -->
           <!-- TAB: ONE WAY & ROUND TRIP (Shared From/To) -->
@@ -74,7 +74,7 @@
             <div [hidden]="selectedTab !== 'ONE_WAY' && selectedTab !== 'ROUND_TRIP'"
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
               <label
-                class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">From
+                class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">From
                 <span class="text-red-500">*</span></label>
               <div class="relative">
                 <p-autoComplete formControlName="fromCity"
@@ -86,7 +86,7 @@
                   [minLength]="1"
                   placeholder="City - e.g. Bangalore"
                   styleClass="w-full"
-                  inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium !shadow-none"
+                  inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal !shadow-none"
                   panelStyleClass="!bg-white dark:!bg-slate-900"
                   appendTo="body">
                   <ng-template pTemplate="item" let-city>
@@ -101,7 +101,7 @@
 
             <div [hidden]="selectedTab !== 'ONE_WAY' && selectedTab !== 'ROUND_TRIP'"
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors relative">
-              <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">To
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">To
                 <span class="text-red-500">*</span></label>
               <div class="relative flex items-center">
                 <p-autoComplete formControlName="toCity"
@@ -112,7 +112,7 @@
                   [minLength]="1"
                   placeholder="City - e.g. Mysore"
                   styleClass="w-full"
-                  inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium !shadow-none"
+                  inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal !shadow-none"
                   panelStyleClass="!bg-white dark:!bg-slate-900"
                   appendTo="body">
                   <ng-template pTemplate="item" let-city>
@@ -140,7 +140,7 @@
             <div [hidden]="selectedTab !== 'LOCAL'"
               class="md:col-span-2 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
               <label
-                class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">City
+                class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">City
                 <span class="text-red-500">*</span></label>
               <div class="relative">
                 <p-autoComplete formControlName="fromCity"
@@ -152,7 +152,7 @@
                   [minLength]="1"
                   placeholder="City - e.g. Bangalore"
                   styleClass="w-full"
-                  inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium !shadow-none"
+                  inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal !shadow-none"
                   panelStyleClass="!bg-white dark:!bg-slate-900"
                   appendTo="body">
                   <ng-template pTemplate="item" let-city>
@@ -174,7 +174,7 @@
             <div [hidden]="selectedTab !== 'AIRPORT'"
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
               <label
-                class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Trip
+                class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">Trip
                 <span class="text-red-500">*</span></label>
               <p-select formControlName="tripType" [options]="tripTypes" optionLabel="label" optionValue="value"
                 placeholder="Select Trip Type" styleClass="w-full !border-none !bg-transparent !shadow-none !p-0"
@@ -185,7 +185,7 @@
             <!-- FIELD 1 (Col 2) -->
             <div [hidden]="selectedTab !== 'AIRPORT'"
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
-              <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">
                 {{ airportLabel1 }}
               </label>
               <div class="relative flex items-center">
@@ -193,10 +193,10 @@
                   class="text-slate-400 mr-2"></lucide-icon>
                 <input [hidden]="bookingForm.get('tripType')?.value !== 'pickup' && bookingForm.get('tripType')?.value"
                   formControlName="dropAirport"
-                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium outline-none"
+                  class="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal outline-none"
                   placeholder="Start typing city - e.g. Bangalore" type="text" />
                 <input [hidden]="bookingForm.get('tripType')?.value !== 'drop'" formControlName="pickupAddress"
-                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium outline-none"
+                  class="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal outline-none"
                   placeholder="Start typing your address" type="text" />
               </div>
             </div>
@@ -204,17 +204,17 @@
             <!-- FIELD 2 (Col 3) - Only if Trip Type is selected -->
             <div [hidden]="selectedTab !== 'AIRPORT' || !bookingForm.get('tripType')?.value"
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
-              <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">
                 {{ airportLabel2 }}
               </label>
               <div class="relative flex items-center">
                 <lucide-icon [hidden]="bookingForm.get('tripType')?.value !== 'pickup'" name="crosshair" [size]="14"
                   class="text-slate-400 mr-2"></lucide-icon>
                 <input [hidden]="bookingForm.get('tripType')?.value !== 'pickup'" formControlName="pickupAddress"
-                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium outline-none"
+                  class="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal outline-none"
                   placeholder="Start typing your address" type="text" />
                 <input [hidden]="bookingForm.get('tripType')?.value !== 'drop'" formControlName="dropAirport"
-                  class="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-600 dark:text-slate-400 placeholder-slate-400 italic font-medium outline-none"
+                  class="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal outline-none"
                   placeholder="Start typing city - e.g. Bangalore" type="text" />
               </div>
             </div>
@@ -227,13 +227,13 @@
           <!-- Pick Up Date (Used in ALL tabs) -->
           <div
             class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-0.5 focus-within:border-primary transition-colors">
-            <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Pick
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">Pick
               Up</label>
             <div class="relative flex justify-between items-center">
               <p-datepicker #pickupDate formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy"
                 [minDate]="minPickupDate"
                 appendTo="body" styleClass="w-full border-none bg-transparent"
-                inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-medium !shadow-none">
+                inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-normal !shadow-none">
               </p-datepicker>
               <lucide-icon name="calendar" [size]="14"
                 class="text-slate-400 ml-2 cursor-pointer hover:text-primary transition-colors"
@@ -246,13 +246,13 @@
             <div [hidden]="selectedTab !== 'ROUND_TRIP'"
               class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-0.5 focus-within:border-primary transition-colors">
               <label
-                class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Return
+                class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">Return
                 <span class="text-red-500">*</span></label>
               <div class="relative flex justify-between items-center">
                 <p-datepicker #returnDate formControlName="returnDate" [showIcon]="false" dateFormat="dd-mm-yy"
                   [minDate]="minReturnDate"
                   appendTo="body" styleClass="w-full border-none bg-transparent"
-                  inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-medium !shadow-none">
+                  inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-normal !shadow-none">
                 </p-datepicker>
                 <lucide-icon name="calendar" [size]="14"
                   class="text-slate-400 ml-2 cursor-pointer hover:text-primary transition-colors"
@@ -261,18 +261,15 @@
             </div>
           </ng-container>
 
-          <!-- Pick Up Time (Used in ALL tabs, positioned differently based on grid) -->
+          <!-- Pick Up Time (Used in ALL tabs) -->
           <div
-            class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors"
-            [ngClass]="{
-              'md:col-start-4': selectedTab === 'LOCAL' || selectedTab === 'ONE_WAY' || (selectedTab === 'AIRPORT' && !bookingForm.get('tripType')?.value)
-            }">
-            <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">Pick
+            class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">Pick
               Up At</label>
             <div class="relative flex justify-between items-center">
               <p-datepicker #pickupTime formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
                 appendTo="body" styleClass="w-full border-none bg-transparent"
-                inputStyleClass="w-full bg-transparent border-none text-[13px] focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-medium !shadow-none">
+                inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-normal !shadow-none">
               </p-datepicker>
               <lucide-icon name="clock" [size]="14"
                 class="text-slate-400 ml-2 cursor-pointer hover:text-primary transition-colors"
@@ -283,20 +280,20 @@
           <!-- Drop Time (Auto-calculated, ROUND TRIP only) -->
           <div [hidden]="selectedTab !== 'ROUND_TRIP'"
             class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 transition-colors relative group">
-            <label class="block text-xs font-bold text-slate-800 dark:text-slate-300 mb-1 uppercase tracking-wider">
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">
               Drop Time
             </label>
             <div class="relative flex justify-between items-center">
-              <span class="text-[22px] font-extrabold text-slate-400 dark:text-slate-500 tracking-tight">
+              <span class="text-base text-slate-400 dark:text-slate-500 font-normal">
                 {{ getDropTime() }}
               </span>
               <lucide-icon name="clock" [size]="14" class="text-slate-300 ml-2"></lucide-icon>
             </div>
             <!-- Tooltip on hover -->
             <div
-              class="absolute -bottom-12 left-0 right-0 z-50 hidden group-hover:block bg-emerald-600 text-white text-[10px] font-semibold rounded-lg px-3 py-2 shadow-lg text-center whitespace-nowrap">
+              class="absolute -bottom-9 right-0 z-50 hidden group-hover:block bg-slate-800 text-white text-[10px] font-medium rounded-md px-3 py-1.5 shadow-lg max-w-[220px]">
               {{ getDropTimeMessage() }}
-              <div class="absolute -top-1 left-6 w-2 h-2 bg-emerald-600 rotate-45"></div>
+              <div class="absolute -top-1 right-4 w-2 h-2 bg-slate-800 rotate-45"></div>
             </div>
           </div>
         </form>
@@ -311,7 +308,7 @@
         <!-- Centered Floating Explore Button -->
         <div class="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 w-full flex justify-center">
           <button (click)="onExploreCabs()"
-            class="bg-gradient-to-r from-primary to-[#1C8CBA] hover:from-[#1C8CBA] hover:to-sky-500 text-white px-12 py-4 rounded-xl font-bold shadow-xl shadow-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-primary/50 mt-8 tracking-widest text-sm active:scale-95 flex items-center justify-center min-w-[240px] border border-white/10">
+            class="bg-amber hover:bg-amber-hover text-white px-14 py-4 rounded-xl font-bold shadow-xl shadow-amber/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-amber/50 mt-8 tracking-[0.05em] text-sm active:scale-95 flex items-center justify-center min-w-[260px] border border-white/10">
                 EXPLORE CABS
                 <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
           </button>
@@ -362,90 +359,168 @@
   </div>
 </div>
 
-<!-- WHAT SETS SAVAARI APART Section -->
-<div class="bg-white dark:bg-slate-950 py-24 pb-32 overflow-hidden">
-  <div class="max-w-7xl mx-auto px-4 text-center">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-16 mb-24 relative">
-      <!-- Air Travel -->
-      <div class="group flex flex-col items-center">
-        <div class="mb-6 animate-flight">
-          <lucide-icon name="plane" [size]="56"
-            class="text-primary/20 group-hover:text-primary transition-colors"></lucide-icon>
+<!-- ======================================== -->
+<!-- BUSINESS DASHBOARD: Stats + Bookings + Quick Actions -->
+<!-- ======================================== -->
+<div class="bg-slate-50 dark:bg-slate-900 py-12 pb-16">
+  <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+
+    <!-- Section: Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <!-- Bookings This Month -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex">
+        <div class="w-1.5 bg-primary shrink-0"></div>
+        <div class="p-5 flex-1">
+          <div class="flex items-center gap-2 mb-2">
+            <lucide-icon name="calendar-check" [size]="16" class="text-primary"></lucide-icon>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Bookings This Month</span>
+          </div>
+          <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ mockStats.bookingsThisMonth }}</p>
         </div>
-        <h3 class="text-primary text-2xl font-bold mb-2">Air Travel?</h3>
-        <p class="text-slate-500 dark:text-slate-400 italic text-sm">Expensive & Shared spaces</p>
       </div>
-      <!-- Train -->
-      <div class="group flex flex-col items-center">
-        <div class="mb-6 animate-track">
-          <lucide-icon name="train" [size]="56"
-            class="text-primary/20 group-hover:text-primary transition-colors"></lucide-icon>
+      <!-- Revenue -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex">
+        <div class="w-1.5 bg-emerald-500 shrink-0"></div>
+        <div class="p-5 flex-1">
+          <div class="flex items-center gap-2 mb-2">
+            <lucide-icon name="indian-rupee" [size]="16" class="text-emerald-500"></lucide-icon>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Revenue</span>
+          </div>
+          <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ mockStats.revenue }}</p>
         </div>
-        <h3 class="text-primary text-2xl font-bold mb-2">Taking a Train?</h3>
-        <p class="text-slate-500 dark:text-slate-400 italic text-sm">Question marks over Hygiene</p>
       </div>
-      <!-- On-demand Cabs -->
-      <div class="group flex flex-col items-center">
-        <div class="mb-6 animate-car">
-          <lucide-icon name="car" [size]="56"
-            class="text-primary/20 group-hover:text-primary transition-colors"></lucide-icon>
+      <!-- Commission -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex">
+        <div class="w-1.5 bg-amber shrink-0"></div>
+        <div class="p-5 flex-1">
+          <div class="flex items-center gap-2 mb-2">
+            <lucide-icon name="trending-up" [size]="16" class="text-amber"></lucide-icon>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Commission Earned</span>
+          </div>
+          <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ mockStats.commissionEarned }}</p>
         </div>
-        <h3 class="text-primary text-2xl font-bold mb-2">On-demand Cabs?</h3>
-        <p class="text-slate-500 dark:text-slate-400 italic text-sm">Risks due to Multiple rides</p>
+      </div>
+      <!-- Pending -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex">
+        <div class="w-1.5 bg-orange-500 shrink-0"></div>
+        <div class="p-5 flex-1">
+          <div class="flex items-center gap-2 mb-2">
+            <lucide-icon name="clock" [size]="16" class="text-orange-500"></lucide-icon>
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pending Bookings</span>
+          </div>
+          <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ mockStats.pendingBookings }}</p>
+        </div>
       </div>
     </div>
 
-    <!-- Value Prop Bar -->
-    <h2 class="text-primary text-3xl font-extrabold mb-12 tracking-tight uppercase">WHAT SETS SAVAARI APART?</h2>
+    <!-- Section: Recent Bookings -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Recent Bookings</h3>
+        <a routerLink="/bookings" class="text-xs font-semibold text-primary hover:text-primary-dark transition-colors flex items-center gap-1">
+          View All <lucide-icon name="arrow-right" [size]="12"></lucide-icon>
+        </a>
+      </div>
 
-    <div class="bg-primary rounded-[3rem] p-6 lg:p-10 shadow-2xl shadow-primary/40">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-4 items-center">
-        <!-- Clean Car -->
-        <div
-          class="flex items-center gap-4 text-left px-4 group glow-on-hover py-2 rounded-2xl transition-all cursor-default">
-          <div
-            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
-            <lucide-icon name="sparkles" [size]="32" class="text-primary"></lucide-icon>
+      <!-- Desktop Table -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-700">
+              <th class="px-6 py-3 font-semibold">Booking ID</th>
+              <th class="px-6 py-3 font-semibold">Route</th>
+              <th class="px-6 py-3 font-semibold">Date</th>
+              <th class="px-6 py-3 font-semibold">Status</th>
+              <th class="px-6 py-3 font-semibold text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of mockRecentBookings" class="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+              <td class="px-6 py-3.5 font-mono text-xs text-slate-600 dark:text-slate-300">#{{ b.id }}</td>
+              <td class="px-6 py-3.5 text-slate-700 dark:text-slate-200">{{ b.route }}</td>
+              <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400">{{ b.date }}</td>
+              <td class="px-6 py-3.5">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+                  [ngClass]="getStatusClasses(b.status)">
+                  {{ b.status }}
+                </span>
+              </td>
+              <td class="px-6 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-200">{{ b.amount }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards -->
+      <div class="md:hidden divide-y divide-slate-100 dark:divide-slate-700">
+        <div *ngFor="let b of mockRecentBookings" class="px-5 py-4 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="font-mono text-xs text-slate-500">#{{ b.id }}</span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+              [ngClass]="getStatusClasses(b.status)">
+              {{ b.status }}
+            </span>
           </div>
-          <div>
-            <span class="block text-white font-extrabold text-lg leading-tight">Clean and<br />Hygienic Car</span>
-          </div>
-        </div>
-        <!-- Transparent Billing -->
-        <div
-          class="flex items-center gap-4 text-left px-4 group glow-on-hover py-2 rounded-2xl transition-all cursor-default">
-          <div
-            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
-            <lucide-icon name="receipt-text" [size]="32" class="text-primary"></lucide-icon>
-          </div>
-          <div>
-            <span class="block text-white font-extrabold text-lg leading-tight">Transparent<br />Billing</span>
-          </div>
-        </div>
-        <!-- Expert Chauffeurs -->
-        <div
-          class="flex items-center gap-4 text-left px-4 group glow-on-hover py-2 rounded-2xl transition-all cursor-default">
-          <div
-            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
-            <lucide-icon name="user-check" [size]="32" class="text-primary"></lucide-icon>
-          </div>
-          <div>
-            <span class="block text-white font-extrabold text-lg leading-tight">Expert<br />Chauffeurs</span>
-          </div>
-        </div>
-        <!-- 2000+ Cities -->
-        <div
-          class="flex items-center gap-4 text-left px-4 group glow-on-hover py-2 rounded-2xl transition-all cursor-default">
-          <div
-            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform">
-            <lucide-icon name="globe" [size]="32" class="text-primary"></lucide-icon>
-          </div>
-          <div>
-            <span class="block text-white font-extrabold text-lg leading-tight">2000+<br />cities</span>
+          <p class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ b.route }}</p>
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>{{ b.date }}</span>
+            <span class="font-semibold text-slate-700 dark:text-slate-200">{{ b.amount }}</span>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Section: Quick Actions -->
+    <div>
+      <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide mb-4">Quick Actions</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Reports -->
+        <a routerLink="/reports"
+          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer">
+          <div class="w-11 h-11 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-sm shadow-blue-200 dark:shadow-blue-900/30 shrink-0">
+            <lucide-icon name="bar-chart-3" [size]="20" class="text-white"></lucide-icon>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 block">Reports</span>
+            <span class="text-[11px] text-slate-400 dark:text-slate-500">View trip reports</span>
+          </div>
+        </a>
+        <!-- Markup -->
+        <a routerLink="/markup-settings"
+          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer">
+          <div class="w-11 h-11 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-sm shadow-orange-200 dark:shadow-orange-900/30 shrink-0">
+            <lucide-icon name="percent" [size]="20" class="text-white"></lucide-icon>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 block">Markup</span>
+            <span class="text-[11px] text-slate-400 dark:text-slate-500">Set commission rates</span>
+          </div>
+        </a>
+        <!-- Account Settings -->
+        <a routerLink="/account-settings"
+          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer">
+          <div class="w-11 h-11 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-sm shadow-blue-200 dark:shadow-blue-900/30 shrink-0">
+            <lucide-icon name="settings" [size]="20" class="text-white"></lucide-icon>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 block">Settings</span>
+            <span class="text-[11px] text-slate-400 dark:text-slate-500">Account & profile</span>
+          </div>
+        </a>
+        <!-- Wallet -->
+        <a routerLink="/wallet"
+          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer">
+          <div class="w-11 h-11 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-sm shadow-orange-200 dark:shadow-orange-900/30 shrink-0">
+            <lucide-icon name="wallet" [size]="20" class="text-white"></lucide-icon>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 block">Wallet</span>
+            <span class="text-[11px] text-slate-400 dark:text-slate-500">Balance & transactions</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
   </div>
 </div>
 
