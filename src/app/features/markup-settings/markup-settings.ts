@@ -64,15 +64,6 @@ export class MarkupSettingsComponent implements OnInit {
       iconBg: 'bg-purple-100 dark:bg-purple-900/50',
       iconColor: 'text-purple-600',
       markup: { type: 'percent', percentValue: 10, fixedValue: null }
-    },
-    {
-      key: 'oneway',
-      label: 'One Way',
-      description: 'Point-to-point outstation trips',
-      icon: 'arrow-right',
-      iconBg: 'bg-orange-100 dark:bg-orange-900/50',
-      iconColor: 'text-orange-500',
-      markup: { type: 'percent', percentValue: 0, fixedValue: null }
     }
   ];
 

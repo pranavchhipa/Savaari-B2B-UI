@@ -18,8 +18,28 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isLandingPage = false;
   isUserDropdownOpen = false;
   isScrolled = false;
+  showLogoutConfirm = false;
   private routeSub!: Subscription;
   balance$!: Observable<number>;
+
+  get userName(): string {
+    const u = this.authService.getUserProfile() as any;
+    return u?.firstname || u?.companyname || 'Agent';
+  }
+  get userFullName(): string {
+    const u = this.authService.getUserProfile() as any;
+    const full = [u?.firstname, u?.lastname].filter(Boolean).join(' ');
+    return full || u?.companyname || 'Agent';
+  }
+  get userEmail(): string {
+    return this.authService.getUserEmail() || '';
+  }
+  get userInitial(): string {
+    return this.userName.charAt(0).toUpperCase();
+  }
+  get agentLogo(): string | null {
+    return localStorage.getItem('agentLogo');
+  }
 
   constructor(
     private router: Router,
@@ -34,12 +54,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
       filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd)
     ).subscribe((event: NavigationEnd) => {
       this.checkRoute(event.urlAfterRedirects);
+      // Reload wallet balance when navigating to authenticated routes
+      // This catches the post-login case where token wasn't available during ngOnInit
+      if (!this.isPublicRoute && this.authService.getB2bToken()) {
+        this.walletService.loadBalance();
+      }
       this.cdr.detectChanges();
     });
   }
 
   ngOnInit() {
     this.checkRoute(this.router.url);
+    // Load wallet balance on startup if user is logged in
+    if (this.authService.getB2bToken()) {
+      this.walletService.loadBalance();
+    }
   }
 
   ngOnDestroy() {
@@ -75,7 +104,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   onLogout() {
     this.isUserDropdownOpen = false;
+    this.showLogoutConfirm = true;
+  }
+
+  confirmLogout() {
+    this.showLogoutConfirm = false;
     this.authService.logout();
     this.router.navigate(['/'], { replaceUrl: true });
+  }
+
+  cancelLogout() {
+    this.showLogoutConfirm = false;
   }
 }

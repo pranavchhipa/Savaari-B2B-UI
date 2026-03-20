@@ -4,25 +4,31 @@
     'bg-white dark:bg-surface-dark border-transparent': !isScrolled
   }">
   <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-16">
+    <div class="flex justify-between items-center h-16 relative">
       <div class="flex items-center gap-4 md:gap-8">
         <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer group"
           [routerLink]="isPublicRoute ? '/' : '/dashboard'">
-          <div class="bg-primary text-white font-bold px-2 py-0.5 md:px-3 md:py-1 rounded skew-x-[-10deg] shadow-lg">
+          <!-- Agent uploaded logo -->
+          <img *ngIf="agentLogo" [src]="agentLogo" alt="Company Logo"
+            class="h-9 max-w-[140px] object-contain rounded" />
+          <!-- Default B2B CAB logo (shown when no agent logo) -->
+          <div *ngIf="!agentLogo" class="bg-primary text-white font-bold px-2 py-0.5 md:px-3 md:py-1 rounded skew-x-[-10deg] shadow-lg">
             <span class="skew-x-[10deg] inline-block tracking-wide text-xs md:text-xl">B2B CAB</span>
           </div>
         </div>
 
-        <!-- Customer Care 24x7 pill -->
+      </div>
+
+      <!-- Customer Care 24x7 pill — centered -->
+      <div class="hidden lg:flex absolute left-1/2 -translate-x-1/2">
         <a href="tel:09045450000"
-          class="hidden lg:inline-flex items-center bg-primary hover:bg-primary-dark text-white rounded-full pl-1 pr-4 py-1 gap-0 shadow-sm transition-colors cursor-pointer whitespace-nowrap">
-          <span class="inline-flex items-center bg-white/20 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-wide mr-2">
-            <lucide-icon name="phone" [size]="12" class="mr-1"></lucide-icon>
+          class="inline-flex items-center text-primary hover:text-primary-dark border-2 border-primary rounded-md pl-3 pr-5 py-1.5 transition-all cursor-pointer whitespace-nowrap bg-transparent">
+          <span class="inline-flex items-center text-sm font-bold tracking-wide mr-3 border-r-2 border-primary pr-3">
+            <lucide-icon name="phone" [size]="14" class="mr-1.5"></lucide-icon>
             24x7
           </span>
-          <span class="text-[13px] font-semibold tracking-wide">090 4545 0000</span>
+          <span class="text-base font-bold tracking-wider">090 4545 0000</span>
         </a>
-
       </div>
       <div class="flex items-center space-x-2 md:space-x-4">
 
@@ -35,7 +41,7 @@
             </a>
             <a href="/#value-props"
               class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
-              Why Savaari
+              Why B2B CAB
             </a>
             <a href="/#overview"
               class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
@@ -83,10 +89,10 @@
                 class="flex items-center gap-2 outline-none p-1 pr-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700 relative z-50 cursor-pointer">
                 <div
                   class="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 text-white flex items-center justify-center font-bold text-[13px] md:text-[15px] shadow-inner uppercase tracking-wider">
-                  P
+                  {{ userInitial }}
                 </div>
                 <div class="hidden md:flex flex-col items-start px-1 text-left">
-                  <span class="text-[13px] font-bold text-slate-800 dark:text-slate-200 leading-tight">Pranav</span>
+                  <span class="text-[13px] font-bold text-slate-800 dark:text-slate-200 leading-tight">{{ userName }}</span>
                   <span class="text-[10px] text-slate-500 font-medium leading-none">Travel Agent</span>
                 </div>
                 <lucide-icon name="chevron-down" [size]="14"
@@ -97,9 +103,9 @@
               <div *ngIf="isUserDropdownOpen"
                 class="absolute top-full right-0 mt-3 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden py-2 z-50 animate-in fade-in slide-in-from-top-2 origin-top-right">
                 <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700/80 mb-1">
-                  <p class="text-sm font-bold text-slate-900 dark:text-white">Pranav Chhipa</p>
-                  <p class="text-[11px] text-slate-500 truncate mt-0.5" title="pranav@savaari.in">
-                    pranav@savaari.in</p>
+                  <p class="text-sm font-bold text-slate-900 dark:text-white">{{ userFullName }}</p>
+                  <p class="text-[11px] text-slate-500 truncate mt-0.5" [title]="userEmail">
+                    {{ userEmail }}</p>
                 </div>
                 <a routerLink="/account-settings" (click)="isUserDropdownOpen = false"
                   class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
@@ -154,3 +160,26 @@
     </div>
   </div>
 </nav>
+
+<!-- Logout Confirmation Modal -->
+<div *ngIf="showLogoutConfirm" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-sm mx-4 animate-in fade-in zoom-in-95">
+    <div class="flex flex-col items-center text-center">
+      <div class="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center mb-4">
+        <lucide-icon name="log-out" [size]="28" class="text-red-500"></lucide-icon>
+      </div>
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Logout?</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Are you sure you want to log out of your account?</p>
+      <div class="flex gap-3 w-full">
+        <button (click)="cancelLogout()"
+          class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer">
+          Cancel
+        </button>
+        <button (click)="confirmLogout()"
+          class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm cursor-pointer">
+          Log Out
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

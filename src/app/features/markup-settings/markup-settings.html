@@ -33,22 +33,6 @@
                 Mark-up Settings
               </button>
             </li>
-            <li>
-              <button (click)="activeSection = 'commission'"
-                [ngClass]="activeSection === 'commission' ? 'text-primary bg-blue-50/80 dark:bg-blue-900/20 border-l-4 border-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-l-4 border-transparent'"
-                class="w-full flex items-center px-4 py-3 text-sm transition-all">
-                <lucide-icon name="file-text" [size]="18" class="mr-3 flex-shrink-0"></lucide-icon>
-                Commission Reports
-              </button>
-            </li>
-            <li>
-              <button (click)="activeSection = 'preferences'"
-                [ngClass]="activeSection === 'preferences' ? 'text-primary bg-blue-50/80 dark:bg-blue-900/20 border-l-4 border-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-l-4 border-transparent'"
-                class="w-full flex items-center px-4 py-3 text-sm transition-all">
-                <lucide-icon name="settings" [size]="18" class="mr-3 flex-shrink-0"></lucide-icon>
-                General Preferences
-              </button>
-            </li>
           </ul>
         </div>
 
@@ -169,8 +153,8 @@
           </div>
         </div>
 
-        <!-- COMMISSION PANEL -->
-        <div *ngIf="activeSection === 'commission'"
+        <!-- COMMISSION PANEL (hidden - not on real website) -->
+        <div *ngIf="false"
           class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
 
           <!-- Loading state -->
@@ -194,7 +178,7 @@
           <div *ngIf="!commissionLoading && !commissionError && commissionData">
             <div class="mb-8">
               <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Commission Details</h1>
-              <p class="text-slate-500 dark:text-slate-400">Your commission rates and fare adjustments as configured by Savaari.</p>
+              <p class="text-slate-500 dark:text-slate-400">Your commission rates and fare adjustments as configured by B2B CAB.</p>
             </div>
 
             <!-- Commission Rates Table -->
@@ -330,34 +314,34 @@
               <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
                 <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Invoice Payer</div>
                 <div class="font-semibold text-slate-800 dark:text-slate-200 text-sm">
-                  {{ commissionData.invoice_payer === 'pay_by_agent' ? 'Agent Pays' : 'Customer Pays' }}
+                  {{ commissionData?.invoice_payer === 'pay_by_agent' ? 'Agent Pays' : 'Customer Pays' }}
                 </div>
               </div>
               <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
                 <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Wallet Status</div>
-                <div class="font-semibold text-sm" [ngClass]="commissionData.wallet_user === '1' ? 'text-green-600' : 'text-slate-800 dark:text-slate-200'">
-                  {{ commissionData.wallet_user === '1' ? 'Wallet Enabled' : 'Not a Wallet User' }}
+                <div class="font-semibold text-sm" [ngClass]="commissionData?.wallet_user === '1' ? 'text-green-600' : 'text-slate-800 dark:text-slate-200'">
+                  {{ commissionData?.wallet_user === '1' ? 'Wallet Enabled' : 'Not a Wallet User' }}
                 </div>
               </div>
               <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
                 <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Agent GST</div>
                 <div class="font-semibold text-slate-800 dark:text-slate-200 text-sm">
-                  {{ commissionData.agent_gst || 'Not Set' }}
+                  {{ commissionData?.agent_gst || 'Not Set' }}
                 </div>
               </div>
             </div>
 
             <!-- Note about commission changes -->
-            <div *ngIf="commissionData.disable_commission_update === '1'"
+            <div *ngIf="commissionData?.disable_commission_update === '1'"
               class="mt-6 flex items-start gap-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg p-4">
               <lucide-icon name="info" [size]="18" class="text-amber-500 flex-shrink-0 mt-0.5"></lucide-icon>
-              <p class="text-sm text-amber-700 dark:text-amber-400">Commission rates are managed by Savaari and cannot be modified from this portal. Contact your account manager for changes.</p>
+              <p class="text-sm text-amber-700 dark:text-amber-400">Commission rates are managed by B2B CAB and cannot be modified from this portal. Contact your account manager for changes.</p>
             </div>
           </div>
         </div>
 
-        <!-- GENERAL PREFERENCES placeholder -->
-        <div *ngIf="activeSection === 'preferences'"
+        <!-- GENERAL PREFERENCES (hidden - not on real website) -->
+        <div *ngIf="false"
           class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-center flex flex-col items-center gap-4 min-h-[400px] justify-center">
           <div class="bg-purple-50 dark:bg-slate-700 p-4 rounded-full">
             <lucide-icon name="settings-2" [size]="48" class="text-purple-500 opacity-70"></lucide-icon>

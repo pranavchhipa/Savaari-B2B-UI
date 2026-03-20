@@ -17,36 +17,54 @@ export class ErrorHandlerService {
   handleApiError(error: HttpErrorResponse, context: string): Observable<never> {
     let message: string;
 
+    // Extract the most specific error message from the Savaari API response
+    const body = error.error;
+    const extractedMsg = this.extractApiMessage(body);
+
     if (error.status === 0) {
-      message = 'Cannot reach the Savaari servers. Please check your internet connection.';
+      message = 'Cannot reach the servers. Please check your internet connection.';
     } else if (error.status === 401) {
-      message = 'Authentication failed. Please try again.';
+      message = extractedMsg || 'Authentication failed. Please try again.';
     } else if (error.status === 400) {
-      const body = error.error;
-      message = body?.message || body?.error || body?.msg || body?.error_message
-        || (typeof body === 'string' ? body : null)
-        || 'Invalid request. Please check your inputs.';
+      message = extractedMsg || 'Invalid request. Please check your inputs.';
     } else if (error.status === 402) {
-      const body = error.error;
-      message = body?.message || body?.error || 'Payment required. Please check your inputs.';
+      message = extractedMsg || 'Payment required. Please check your inputs.';
     } else if (error.status === 404) {
-      // Savaari API sometimes returns 404 with a JSON error body (e.g. "Invalid pre payment")
-      const body = error.error;
-      const savaariError = body?.errors?.[0]?.internalMessage || body?.errors?.[0]?.errroMessage
-        || body?.message || body?.error;
-      message = savaariError || 'Service temporarily unavailable. Please try again.';
+      message = extractedMsg || 'Service temporarily unavailable. Please try again.';
     } else if (error.status >= 500) {
-      message = 'Savaari server error. Please try again later.';
+      message = extractedMsg || 'Server error. Please try again later.';
     } else {
-      message = error.error?.message || 'An unexpected error occurred.';
+      message = extractedMsg || 'An unexpected error occurred.';
     }
 
-    console.error(`[SAVAARI-API] [${context}] Error ${error.status}:`, error.message, error.error);
+    // Always log full details for debugging
+    console.error(`[SAVAARI-API] [${context}] HTTP ${error.status}:`, message);
+    console.error(`[SAVAARI-API] [${context}] Full response body:`, JSON.stringify(body, null, 2));
 
     return throwError(() => ({
       status: error.status,
       message,
       originalError: error,
     }));
+  }
+
+  /**
+   * Extract the most specific error message from Savaari API response body.
+   * Handles multiple response shapes (JSON object, array, string, nested errors).
+   */
+  private extractApiMessage(body: any): string | null {
+    if (!body) return null;
+    if (typeof body === 'string') return body;
+
+    // Savaari nested errors array: { errors: [{ internalMessage, errroMessage, ... }] }
+    const nestedErr = body?.errors?.[0];
+    if (nestedErr) {
+      const msg = nestedErr.internalMessage || nestedErr.errroMessage || nestedErr.message || nestedErr.error;
+      if (msg) return msg;
+    }
+
+    // Direct message fields
+    return body.message || body.error || body.msg || body.error_message
+      || body.errorMessage || body.error_description || null;
   }
 }

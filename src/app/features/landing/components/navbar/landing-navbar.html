@@ -9,7 +9,7 @@
     <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan/40 to-transparent"></div>
 
     <!-- Main nav bar -->
-    <div class="container mx-auto flex items-center justify-between h-14 px-4 lg:px-8">
+    <div class="container mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
 
         <!-- Left: Logo -->
         <a href="#" class="flex items-center group flex-shrink-0">
@@ -20,31 +20,25 @@
         </a>
 
         <!-- Center: Phone pill (desktop) -->
-        <div class="hidden md:flex items-center justify-center">
+        <div class="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2">
             <a href="tel:09045450000"
-                class="inline-flex items-center bg-primary/90 hover:bg-primary text-white rounded-full pl-1.5 pr-5 py-1 shadow-md shadow-primary/20 hover:shadow-primary/40 transition-all cursor-pointer whitespace-nowrap">
-                <span
-                    class="inline-flex items-center bg-white/20 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide mr-2">
-                    <lucide-icon name="phone" class="w-3.5 h-3.5 mr-1"></lucide-icon>
+                class="inline-flex items-center text-white hover:text-white/90 bg-white/10 hover:bg-white/15 backdrop-blur-sm border border-white/15 rounded-full pl-3.5 pr-5 py-2 transition-all cursor-pointer whitespace-nowrap">
+                <span class="inline-flex items-center text-xs font-bold tracking-wide mr-3 text-cyan-400">
+                    <lucide-icon name="phone" class="w-3.5 h-3.5 mr-1.5"></lucide-icon>
                     24x7
                 </span>
-                <span class="text-[14px] font-semibold tracking-wide">090 4545 0000</span>
+                <span class="text-sm font-bold tracking-wider">090 4545 0000</span>
             </a>
         </div>
 
-        <!-- Right: Nav links + Login / Register (desktop) -->
-        <div class="hidden md:flex items-center gap-1">
-            <a *ngFor="let link of navLinks" [href]="link.href"
-                class="text-[13px] font-medium text-slate-300 hover:text-white px-2.5 py-1.5 rounded-md hover:bg-white/8 transition-all cursor-pointer">
-                {{ link.label }}
-            </a>
-            <span class="w-px h-4 bg-white/15 mx-2"></span>
+        <!-- Right: Login + Register buttons (desktop) -->
+        <div class="hidden md:flex items-center gap-3">
             <a routerLink="/login"
-                class="text-[13px] font-semibold text-slate-200 hover:text-white px-2.5 py-1.5 rounded-md hover:bg-white/8 transition-all cursor-pointer">
+                class="inline-flex items-center justify-center text-sm font-bold text-white bg-amber hover:bg-amber-hover rounded-md px-5 py-2 transition-all cursor-pointer shadow-md shadow-amber/20">
                 Login
             </a>
             <a routerLink="/register"
-                class="text-[13px] font-semibold text-slate-200 hover:text-white px-2.5 py-1.5 rounded-md hover:bg-white/8 transition-all cursor-pointer">
+                class="inline-flex items-center justify-center text-sm font-bold text-white bg-primary hover:bg-primary-dark rounded-md px-5 py-2 transition-all cursor-pointer shadow-md shadow-primary/20">
                 Register
             </a>
         </div>
@@ -69,15 +63,13 @@
     <div *ngIf="mobileOpen"
         class="md:hidden overflow-hidden bg-slate-900 border-t border-white/5 animate-in slide-in-from-top-2 duration-200">
         <div class="px-4 py-4 flex flex-col gap-3">
-            <a *ngFor="let link of navLinks" [href]="link.href" (click)="toggleMobile()"
-                class="text-sm font-medium text-slate-300 hover:text-white py-2 cursor-pointer transition-colors">
-                {{ link.label }}
-            </a>
-            <div class="flex gap-4 pt-2 border-t border-white/10">
-                <a routerLink="/login" class="text-sm font-semibold text-slate-200 hover:text-white py-2 cursor-pointer transition-colors">
+            <div class="flex gap-3 pt-2">
+                <a routerLink="/login" (click)="toggleMobile()"
+                    class="flex-1 text-center text-sm font-bold text-white border border-white/20 rounded-md px-4 py-2.5 cursor-pointer transition-colors hover:bg-white/10">
                     Login
                 </a>
-                <a routerLink="/register" class="text-sm font-semibold text-slate-200 hover:text-white py-2 cursor-pointer transition-colors">
+                <a routerLink="/register" (click)="toggleMobile()"
+                    class="flex-1 text-center text-sm font-bold text-white bg-primary rounded-md px-4 py-2.5 cursor-pointer transition-colors hover:bg-primary-dark">
                     Register
                 </a>
             </div>

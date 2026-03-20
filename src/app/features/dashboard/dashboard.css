@@ -1,1 +1,11 @@
 /* Dashboard component specific styles */
+
+/* Italic, smaller placeholders for all form inputs */
+:host ::ng-deep .p-autocomplete input::placeholder,
+:host ::ng-deep .p-datepicker input::placeholder,
+:host ::ng-deep .p-select .p-placeholder,
+:host input::placeholder {
+  font-style: italic;
+  font-size: 0.8rem;
+  opacity: 0.55;
+}

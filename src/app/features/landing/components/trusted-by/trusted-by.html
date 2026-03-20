@@ -7,12 +7,12 @@
     <div class="relative">
         <div class="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-white to-transparent z-10"></div>
         <div class="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-white to-transparent z-10"></div>
-        <div class="flex items-center animate-marquee">
+        <div class="flex items-center w-max animate-marquee">
             <div *ngFor="let item of allLogos"
                 class="flex-shrink-0 mx-12 flex items-center justify-center hover:scale-110 transition-transform duration-300 cursor-default">
                 <img [src]="item.src"
                      [alt]="item.name"
-                     class="h-10 w-auto object-contain"
+                     class="h-10 w-auto object-contain transition-transform duration-300"
                      loading="lazy" />
             </div>
         </div>

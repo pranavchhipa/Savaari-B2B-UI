@@ -57,7 +57,7 @@ export class BannerService {
         return banners.map((b: any) => ({
           imageUrl: b.image_url || b.imageUrl || b.banner_image || b.url || '',
           linkUrl: b.link_url || b.linkUrl || b.redirect_url || '',
-          altText: b.alt_text || b.altText || b.title || 'Savaari Offer',
+          altText: b.alt_text || b.altText || b.title || 'B2B CAB Offer',
           title: b.title || b.banner_title || '',
         })).filter((b: BannerImage) => !!b.imageUrl);
       }),

@@ -6,6 +6,7 @@ import { LucideAngularModule, Fuel, UserCheck, Moon, Receipt, FileText, Banknote
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BookingStateService, Itinerary, SelectedCar } from '../../core/services/booking-state.service';
 import { MarkupService } from '../../core/services/markup.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { AvailableCar } from '../../core/models';
 
 import { FooterComponent } from '../../components/layout/footer/footer';
@@ -54,6 +55,7 @@ export class SelectCarComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
   private location = inject(Location);
+  private analytics = inject(AnalyticsService);
 
   itinerary: Itinerary | null = null;
   modifyForm!: FormGroup;
@@ -84,6 +86,14 @@ export class SelectCarComponent implements OnInit {
     // Load cars from availability response
     this.loadCarsFromAvailability();
     this.initializeTabs();
+
+    // Track page-load (mirrors savaari.com select-car page behaviour, 2s delay)
+    setTimeout(() => {
+      this.analytics.trackPageLoad(
+        this.itinerary?.fromCity ?? '',
+        this.itinerary?.toCity ?? ''
+      );
+    }, 2000);
 
     // Show loading briefly then reveal
     setTimeout(() => {
@@ -152,34 +162,53 @@ export class SelectCarComponent implements OnInit {
     };
   }
 
-  /** Map car type ID and name to a local asset image, with keyword fallback */
+  /** Map car name to studio-quality car photo, with type ID fallback */
   private getLocalCarImage(carName: string, typeId: number): string {
+    const base = 'assets/cars/';
+    const n = (carName || '').toLowerCase();
+
+    // Exact car model matching (studio photos)
+    if (n.includes('dzire'))                             return base + 'dzire.png';
+    if (n.includes('etios'))                             return base + 'etios.png';
+    if (n.includes('wagon'))                             return base + 'wagon-r.png';
+    if (n.includes('swift'))                             return base + 'swift.png';
+    if (n.includes('crysta'))                            return base + 'innova-crysta.png';
+    if (n.includes('innova'))                            return base + 'innova.png';
+    if (n.includes('ertiga'))                            return base + 'ertiga.png';
+    if (n.includes('marazzo'))                           return base + 'marazzo.png';
+    if (n.includes('carens') || n.includes('kia'))       return base + 'carens.png';
+    if (n.includes('honda') || n.includes('city'))       return base + 'city.png';
+    if (n.includes('verna'))                             return base + 'verna.png';
+    if (n.includes('ciaz'))                              return base + 'ciaz.png';
+    if (n.includes('xcent'))                             return base + 'xcent.png';
+    if (n.includes('camry'))                             return base + 'camry.png';
+    if (n.includes('mercedes') || n.includes('e-class') || n.includes('e class')) return base + 'e-class.png';
+    if (n.includes('bmw'))                               return base + 'bmw-5.png';
+    if (n.includes('xuv'))                               return base + 'xuv500.png';
+    if ((n.includes('tempo') || n.includes('traveller')) && n.includes('26')) return base + 'tempo-26.png';
+    if ((n.includes('tempo') || n.includes('traveller')) && n.includes('17')) return base + 'tempo-17.png';
+    if (n.includes('tempo') || n.includes('traveller'))  return base + 'tempo-12.png';
+
+    // Fallback by car type ID
     const byId: Record<number, string> = {
-      4: 'assets/images/cars/sedan.png',
-      5: 'assets/images/cars/sedan.png',
-      7: 'assets/images/cars/suv.png',
-      43: 'assets/images/cars/sedan.png',
-      44: 'assets/images/cars/sedan.png',
-      45: 'assets/images/cars/sedan.png',
-      46: 'assets/images/cars/hatchback.png',
-      49: 'assets/images/cars/hatchback.png',
-      52: 'assets/images/cars/innova.png',
-      53: 'assets/images/cars/crysta.png',
-      54: 'assets/images/cars/innova.png',
-      48: 'assets/images/cars/tempo.png',
-      57: 'assets/images/cars/tempo.png',
-      58: 'assets/images/cars/minibus.png',
+      4: base + 'dzire.png',        // Sedan
+      5: base + 'etios.png',        // Sedan
+      7: base + 'xuv500.png',       // SUV
+      43: base + 'dzire.png',
+      44: base + 'etios.png',
+      45: base + 'ciaz.png',
+      46: base + 'wagon-r.png',     // Hatchback
+      49: base + 'swift.png',       // Hatchback
+      52: base + 'innova.png',
+      53: base + 'innova-crysta.png',
+      54: base + 'innova.png',
+      48: base + 'tempo-12.png',
+      57: base + 'tempo-17.png',
+      58: base + 'tempo-26.png',
     };
     if (byId[typeId]) return byId[typeId];
-    const n = (carName || '').toLowerCase();
-    if (n.includes('crysta'))                          return 'assets/images/cars/crysta.png';
-    if (n.includes('innova'))                          return 'assets/images/cars/innova.png';
-    if (n.includes('tempo') || n.includes('traveller')) return 'assets/images/cars/tempo.png';
-    if (n.includes('minibus') || n.includes('mini bus') || n.includes('coach')) return 'assets/images/cars/minibus.png';
-    if (n.includes('ertiga') || n.includes('6+1'))     return 'assets/images/cars/suv.png';
-    if (n.includes('wagon') || n.includes('hatchback')) return 'assets/images/cars/hatchback.png';
-    if (n.includes('suv') || n.includes('xuv') || n.includes('kia') || n.includes('creta')) return 'assets/images/cars/suv.png';
-    return 'assets/images/cars/sedan.png'; // default sedan
+
+    return base + 'dzire.png'; // default
   }
 
   private initializeTabs() {
@@ -363,7 +392,7 @@ export class SelectCarComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/dashboard']);
+    this.location.back();
   }
 
 }

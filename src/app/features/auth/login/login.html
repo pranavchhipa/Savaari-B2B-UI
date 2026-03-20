@@ -12,11 +12,18 @@
         class="inline-flex justify-center items-center bg-primary text-white font-bold px-4 py-2 rounded skew-x-[-10deg] shadow-lg mb-6">
         <span class="skew-x-[10deg] inline-block tracking-wide text-2xl">B2B CAB</span>
       </div>
+      <!-- Trusted badge -->
+      <div class="flex justify-center mb-5">
+        <div class="inline-flex items-center gap-2.5 bg-slate-800/80 backdrop-blur-md border border-white/15 rounded-full px-5 py-2.5 shadow-lg">
+          <lucide-icon name="badge-check" [size]="22" class="text-white"></lucide-icon>
+          <span class="text-xs text-white font-extrabold uppercase tracking-widest">Trusted by 5,000+ Agents</span>
+        </div>
+      </div>
       <h2 class="text-3xl font-display font-bold text-white tracking-tight">Sign in to your account</h2>
       <p class="mt-2 text-sm text-slate-300">
         Or
         <a routerLink="/register" class="font-medium text-primary hover:text-primary-light transition-colors">
-          create a new corporate account
+          create a new agent account
         </a>
       </p>
     </div>

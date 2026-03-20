@@ -12,5 +12,19 @@
     "changeOrigin": true,
     "pathRewrite": { "^/b2b-api": "" },
     "logLevel": "debug"
+  },
+  "/wallet-api": {
+    "target": "https://apiext.alphasavaari.com/wallet/public",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/wallet-api": "" },
+    "logLevel": "debug"
+  },
+  "/analytics-api": {
+    "target": "https://apiext.savaari.com/partner_api/public",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/analytics-api": "" },
+    "logLevel": "debug"
   }
 }

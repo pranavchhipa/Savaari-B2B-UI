@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { FooterComponent } from '../../../components/layout/footer/footer';
 import { AuthService } from '../../../core/services/auth.service';
+import { WalletService } from '../../../core/services/wallet.service';
 
 @Component({
   selector: 'app-login',
@@ -18,6 +19,7 @@ export class LoginComponent {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private auth = inject(AuthService);
+  private walletService = inject(WalletService);
 
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -43,6 +45,8 @@ export class LoginComponent {
       next: (user) => {
         console.log('[Login] Success for', user.email);
         this.isLoading.set(false);
+        // Load wallet balance immediately after login so header shows correct amount
+        this.walletService.loadBalance();
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {

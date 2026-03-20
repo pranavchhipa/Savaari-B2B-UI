@@ -27,8 +27,10 @@
                     {{ sol.description }}
                 </p>
                 <ul class="space-y-2.5 mb-6">
-                    <li *ngFor="let f of sol.features" class="flex items-center gap-2.5 text-sm text-foreground">
-                        <lucide-icon name="check-circle-2" class="w-4 h-4 text-success flex-shrink-0"></lucide-icon>
+                    <li *ngFor="let f of sol.features" class="flex items-center gap-3 text-sm text-foreground">
+                        <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                            <lucide-icon name="check" class="w-4 h-4 text-emerald-600"></lucide-icon>
+                        </div>
                         {{ f }}
                     </li>
                 </ul>

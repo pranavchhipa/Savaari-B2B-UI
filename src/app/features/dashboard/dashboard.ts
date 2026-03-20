@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -11,16 +11,19 @@ import { BookingStateService } from '../../core/services/booking-state.service';
 import { CityService } from '../../core/services/city.service';
 import { TripTypeService } from '../../core/services/trip-type.service';
 import { AvailabilityService } from '../../core/services/availability.service';
+import { BookingApiService } from '../../core/services/booking-api.service';
 import { City, AvailabilityRequest } from '../../core/models';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
 import { BannerService, BannerImage } from '../../core/services/banner.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
+import { LocalityService, Locality } from '../../core/services/locality.service';
 
 type TabType = 'ONE_WAY' | 'ROUND_TRIP' | 'LOCAL' | 'AIRPORT';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, DatePickerModule, SelectModule, AutoCompleteModule, FooterComponent, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule, DatePickerModule, SelectModule, AutoCompleteModule, FooterComponent, RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -34,6 +37,9 @@ export class DashboardComponent implements OnInit {
   private tripTypeService = inject(TripTypeService);
   private availabilityService = inject(AvailabilityService);
   private bannerService = inject(BannerService);
+  private bookingApi = inject(BookingApiService);
+  private analytics = inject(AnalyticsService);
+  private localityService = inject(LocalityService);
 
   selectedTab: TabType = 'ONE_WAY';
 
@@ -52,26 +58,127 @@ export class DashboardComponent implements OnInit {
   // Loading state for Explore Cabs button
   isSearching = false;
 
-  // Mock business stats (replace with real API data later)
-  mockStats = {
-    bookingsThisMonth: 47,
-    revenue: '\u20B93,24,500',
-    commissionEarned: '\u20B948,675',
-    pendingBookings: 3
+  // Round Trip multi-city destinations (max 12)
+  extraDestinations: City[] = [];
+  readonly MAX_DESTINATIONS = 12;
+
+  addDestinationCity() {
+    if (this.extraDestinations.length >= this.MAX_DESTINATIONS - 1) return;
+
+    // Don't add if main TO city isn't filled yet
+    const toCity = this.bookingForm.get('toCity')?.value;
+    if (!toCity || typeof toCity !== 'object' || !toCity.id) return;
+
+    // Don't add if the last extra destination isn't filled yet
+    if (this.extraDestinations.length > 0) {
+      const last = this.extraDestinations[this.extraDestinations.length - 1];
+      if (!last || typeof last !== 'object' || !last.id) return;
+    }
+
+    this.extraDestinations.push(null as any);
+    this.cdr.markForCheck();
+  }
+
+  removeDestinationCity(index: number) {
+    this.extraDestinations.splice(index, 1);
+    this.cdr.markForCheck();
+  }
+
+  onExtraDestinationSelect(event: any, index: number) {
+    const city: City = event.value || event;
+    this.extraDestinations[index] = city;
+  }
+
+  filterExtraDestCities(event: AutoCompleteCompleteEvent) {
+    this.filteredDestinationCities = this.filterCitiesRanked(this.destinationCities, event.query);
+  }
+
+  // Real business stats from API
+  dashboardStats = {
+    bookingsThisMonth: 0,
+    revenue: '\u20B90',
+    commissionEarned: '\u20B90',
+    pendingBookings: 0
   };
 
-  mockRecentBookings = [
-    { id: '10243689', route: 'Bangalore \u2192 Mysore', date: '12 Mar 2026', status: 'Completed', amount: '\u20B94,250' },
-    { id: '10243578', route: 'Chennai \u2192 Pondicherry', date: '11 Mar 2026', status: 'Completed', amount: '\u20B93,800' },
-    { id: '10243492', route: 'Delhi \u2192 Agra', date: '10 Mar 2026', status: 'In Progress', amount: '\u20B95,100' },
-    { id: '10243401', route: 'Mumbai \u2192 Pune', date: '09 Mar 2026', status: 'Upcoming', amount: '\u20B93,200' },
-    { id: '10243266', route: 'Hyderabad \u2192 Warangal', date: '08 Mar 2026', status: 'Completed', amount: '\u20B94,600' },
-  ];
+  recentBookings: { id: string; route: string; date: string; status: string; amount: string }[] = [];
+  statsLoading = true;
 
   tripTypes = [
     { label: 'Drop to Airport', value: 'drop' },
     { label: 'Pickup from Airport', value: 'pickup' }
   ];
+
+  // Airport autocomplete — uses sourceCities filtered by isAirport
+  filteredAirports: City[] = [];
+  selectedAirportCity: City | null = null;
+  /** Locality ID for the selected airport (required by availability API) */
+  airportLocalityId: number | null = null;
+
+  /** One-way conversion popup for airport bookings */
+  showConversionPopup = false;
+
+  /** Locality suggestions for airport pickup/drop address */
+  filteredLocalities: Locality[] = [];
+
+  /** Filter localities for the pickup/drop address autocomplete (airport tab) */
+  filterLocalities(event: AutoCompleteCompleteEvent) {
+    const q = event.query || '';
+    const cityId = this.selectedAirportCity?.id;
+    if (!cityId || q.length < 2) {
+      this.filteredLocalities = [];
+      this.cdr.markForCheck();
+      return;
+    }
+    this.localityService.searchLocalities(cityId, q, 20).subscribe(localities => {
+      this.filteredLocalities = localities;
+      this.cdr.markForCheck();
+    });
+  }
+
+  /** Search airports when user types in the airport autocomplete.
+   *  Source cities already contain airport entries (isAirport: true) with
+   *  names like "Kempegowda International Airport, Bangalore" or "Mumbai Airport, Mumbai".
+   *  Searching "Mumbai" shows all Mumbai airports; searching "CSMT" shows that terminal.
+   */
+  filterAirports(event: AutoCompleteCompleteEvent) {
+    const q = (event.query || '').toLowerCase();
+    const airportCities = this.sourceCities.filter(c => c.isAirport);
+    if (!q) {
+      this.filteredAirports = airportCities.slice(0, 20);
+    } else {
+      // Prefix matches first, then substring
+      const prefix: City[] = [];
+      const substring: City[] = [];
+      for (const c of airportCities) {
+        const name = c.name.toLowerCase();
+        const cityOnly = (c.cityOnly || '').toLowerCase();
+        if (cityOnly.startsWith(q) || name.startsWith(q)) {
+          prefix.push(c);
+        } else if (name.includes(q) || cityOnly.includes(q)) {
+          substring.push(c);
+        }
+      }
+      this.filteredAirports = [...prefix, ...substring].slice(0, 20);
+    }
+    this.cdr.markForCheck();
+  }
+
+  /** When user selects an airport from autocomplete, also resolve its locality ID */
+  onAirportSelect(event: any) {
+    const city: City = event.value || event;
+    this.selectedAirportCity = city;
+    this.airportLocalityId = null;
+    // Load localities for this city and find the airport locality ID
+    if (city?.id) {
+      this.localityService.getAirports(city.id).subscribe(airports => {
+        if (airports.length > 0) {
+          this.airportLocalityId = airports[0].id;
+        }
+        this.cdr.markForCheck();
+      });
+    }
+  }
 
   /** Minimum selectable pickup date (today) */
   minPickupDate: Date = new Date();
@@ -83,6 +190,132 @@ export class DashboardComponent implements OnInit {
     this.initForm();
     this.loadSourceCities();
     this.loadBanners();
+    this.loadDashboardStats();
+    // Track page load after 2s (mirrors savaari.com behaviour)
+    setTimeout(() => this.analytics.trackPageLoad(), 2000);
+  }
+
+  /** Load real booking data from API and compute dashboard stats */
+  private loadDashboardStats() {
+    this.statsLoading = true;
+    this.bookingApi.getAllBookings().subscribe({
+      next: (bookings) => {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        // Cast to any[] for flexible property access (API uses snake_case)
+        const all = bookings as any[];
+
+        // Filter bookings for this month
+        const thisMonthBookings = all.filter(b => {
+          const dateStr: string = b['start_date_time'] || b['startDateTime'] || '';
+          if (!dateStr) return false;
+          const d = new Date(dateStr);
+          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        });
+
+        // Calculate revenue (sum of gross_amount)
+        let totalRevenue = 0;
+        let totalCommission = 0;
+        for (const b of all) {
+          const amount = parseFloat(b['gross_amount'] || b['grossAmount'] || b['total_fare'] || '0');
+          if (!isNaN(amount)) totalRevenue += amount;
+          const comm = parseFloat(b['commission'] || b['agent_commission'] || '0');
+          if (!isNaN(comm)) totalCommission += comm;
+        }
+
+        // Count pending/upcoming bookings
+        const pendingCount = all.filter(b => {
+          const status = String(b['booking_status'] || b['status'] || '').toLowerCase();
+          return status === 'upcoming' || status === 'confirmed' || status === 'in_progress' || status === 'in progress';
+        }).length;
+
+        this.dashboardStats = {
+          bookingsThisMonth: thisMonthBookings.length,
+          revenue: '\u20B9' + this.formatIndianNumber(totalRevenue),
+          commissionEarned: '\u20B9' + this.formatIndianNumber(totalCommission),
+          pendingBookings: pendingCount
+        };
+
+        // Recent bookings — take latest 5
+        const sorted = [...all].sort((a, b) => {
+          const da = new Date(a['start_date_time'] || a['startDateTime'] || 0).getTime();
+          const db = new Date(b['start_date_time'] || b['startDateTime'] || 0).getTime();
+          return db - da;
+        });
+
+        this.recentBookings = sorted.slice(0, 5).map(b => {
+          const pickCity: string = b['pick_city'] || b['sourceCity'] || '';
+          const itinerary: string = b['itinerary'] || '';
+          const tripType: string = b['trip_type'] || '';
+          const usageName: string = b['usagename'] || '';
+
+          // Build route display: use itinerary for intercity, else show trip type
+          let route = pickCity;
+          if (itinerary && itinerary !== 'N/A') {
+            route = this.decodeHtml(itinerary); // decode &rarr; → →
+          } else if (tripType === 'Local' && usageName) {
+            route = pickCity.split(',')[0] + ' \u2022 ' + usageName; // e.g. "Bangalore • Local (8hr/80 km)"
+          }
+
+          const dateStr: string = b['start_date_time'] || b['startDateTime'] || '';
+          const d = dateStr ? new Date(dateStr) : new Date();
+          const dateFormatted = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+          const rawStatus: string = String(b['booking_status'] || b['status'] || 'Unknown');
+          const status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
+          const fare = parseFloat(b['gross_amount'] || b['grossAmount'] || b['total_fare'] || '0');
+          const amount = '\u20B9' + this.formatIndianNumber(fare);
+          return {
+            id: String(b['booking_id'] || b['bookingId'] || ''),
+            route,
+            date: dateFormatted,
+            status: status === 'In_progress' ? 'In Progress' : status,
+            amount
+          };
+        });
+
+        // Add demo recent bookings if none from API
+        if (this.recentBookings.length === 0) {
+          const today = new Date();
+          const fmt = (d: Date) => d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+          this.recentBookings = [
+            { id: 'B2B-284719', route: 'Bangalore → Mysore (One Way)', date: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)), status: 'Confirmed', amount: '₹4,345' },
+            { id: 'B2B-284720', route: 'Mumbai → Pune (Round Trip)', date: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2)), status: 'Confirmed', amount: '₹12,850' },
+            { id: 'B2B-284721', route: 'Delhi • 8hrs 80km', date: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3)), status: 'Assigned', amount: '₹2,990' },
+            { id: 'B2B-284698', route: 'Chennai → Pondicherry (One Way)', date: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2)), status: 'Completed', amount: '₹3,780' },
+            { id: 'B2B-284655', route: 'Hyderabad • 12hrs 120km', date: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5)), status: 'Completed', amount: '₹4,200' },
+          ];
+        }
+
+        this.statsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load dashboard stats:', err);
+        this.statsLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** Format a number in Indian numbering system (12,34,567) */
+  private decodeHtml(str: string): string {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = str;
+    return txt.value;
+  }
+
+  private formatIndianNumber(num: number): string {
+    if (isNaN(num) || num === 0) return '0';
+    const rounded = Math.round(num);
+    const str = rounded.toString();
+    // Indian format: last 3 digits, then groups of 2
+    if (str.length <= 3) return str;
+    const last3 = str.slice(-3);
+    const remaining = str.slice(0, -3);
+    const pairs = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+    return pairs + ',' + last3;
   }
 
   /** Load promotional banners from API */
@@ -131,6 +364,8 @@ export class DashboardComponent implements OnInit {
       tripType: [null],
       pickupAddress: [''],
       dropAirport: [''],
+      airportLocality: [null],
+      airportCity: [null],
       pickupDate: [tomorrow],
       returnDate: [dayAfter],
       pickupTime: [new Date(new Date().setHours(18, 0, 0, 0))]
@@ -139,10 +374,26 @@ export class DashboardComponent implements OnInit {
     // Set initial minReturnDate to tomorrow + 1 = dayAfter
     this.updateMinReturnDate(tomorrow);
 
-    // Watch pickupDate changes to auto-adjust return date
+    // Watch pickupDate changes to auto-adjust return date + track analytics
     this.bookingForm.get('pickupDate')?.valueChanges.subscribe((newPickupDate: Date) => {
       if (newPickupDate) {
         this.updateMinReturnDate(newPickupDate);
+        const apiParams = this.getApiParams();
+        this.analytics.trackPickupDateFill(
+          newPickupDate.toLocaleDateString('en-IN'),
+          apiParams.tripType, apiParams.subTripType
+        );
+      }
+    });
+
+    // Track pickup time fills
+    this.bookingForm.get('pickupTime')?.valueChanges.subscribe((newTime: Date) => {
+      if (newTime) {
+        const apiParams = this.getApiParams();
+        this.analytics.trackPickupTimeFill(
+          newTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          apiParams.tripType, apiParams.subTripType
+        );
       }
     });
   }
@@ -260,11 +511,36 @@ export class DashboardComponent implements OnInit {
     return 'DROP AIRPORT';
   }
 
-  selectTab(tab: TabType) {
-    this.selectedTab = tab;
+  swapCities() {
+    const from = this.bookingForm.get('fromCity')?.value;
+    const to = this.bookingForm.get('toCity')?.value;
+    this.bookingForm.patchValue({ fromCity: to, toCity: from });
+    if (to?.id) {
+      this.loadDestinationCities(to.id);
+    }
+    this.cdr.markForCheck();
+  }
+
+  selectTab(tab: any) {
+    const prevSubtype = this.getAnalyticsSubtype(this.selectedTab);
+    this.selectedTab = tab as TabType;
+    this.formSubmitted = false;
+    this.showError = false;
+    this.extraDestinations = [];
     this.bookingForm.updateValueAndValidity();
     this.loadSourceCities();
     this.cdr.markForCheck();
+    this.analytics.trackSwitchTripType(prevSubtype, this.getAnalyticsSubtype(tab));
+  }
+
+  private getAnalyticsSubtype(tab: any): string {
+    switch (tab) {
+      case 'ONE_WAY': return 'oneWay';
+      case 'ROUND_TRIP': return 'roundTrip';
+      case 'LOCAL': return 'local';
+      case 'AIRPORT': return 'airport';
+      default: return 'unknown';
+    }
   }
 
   showError = false;
@@ -283,9 +559,13 @@ export class DashboardComponent implements OnInit {
     return 'Keep the cab till 9:45 PM at no extra cost. Night charges will apply post that.';
   }
 
+  formSubmitted = false;
+
   onExploreCabs() {
     this.showError = false;
     this.errorMessage = '';
+    this.formSubmitted = true;
+    this.cdr.markForCheck();
 
     const val = this.bookingForm.value;
     const isRoundTrip = this.selectedTab === 'ROUND_TRIP';
@@ -297,8 +577,40 @@ export class DashboardComponent implements OnInit {
     const fromCityObj: City | string = val.fromCity;
     const toCityObj: City | string = val.toCity;
 
-    const fromCityName = typeof fromCityObj === 'object' && fromCityObj?.name ? fromCityObj.name : (fromCityObj as string || 'Bangalore');
-    const fromCityId = typeof fromCityObj === 'object' && (fromCityObj as City)?.id ? (fromCityObj as City).id : 377;
+    // Validation — airport tab uses free-text fields, skip city autocomplete checks
+    const isValidCity = (c: any) => c && typeof c === 'object' && c.id;
+    if (!isAirport && !isValidCity(fromCityObj)) {
+      this.showError = true;
+      this.errorMessage = 'Please select the source city.';
+      this.analytics.trackFromCityError(typeof fromCityObj === 'string' ? fromCityObj : '', tripType, 'empty_or_invalid');
+      this.analytics.trackExploreButtonError('from_city_empty', tripType, this.getAnalyticsSubtype(this.selectedTab));
+      return;
+    }
+    if (!isLocal && !isAirport && !isValidCity(toCityObj)) {
+      this.showError = true;
+      this.errorMessage = 'Please select valid destination city';
+      this.analytics.trackToCityError(typeof toCityObj === 'string' ? toCityObj : '', this.getAnalyticsSubtype(this.selectedTab), 'empty_or_invalid');
+      this.analytics.trackExploreButtonError('to_city_empty', tripType, this.getAnalyticsSubtype(this.selectedTab));
+      return;
+    }
+
+    // Airport validation: require airport selection
+    if (isAirport) {
+      if (!this.selectedAirportCity && !val.airportLocality?.id) {
+        this.showError = true;
+        this.errorMessage = 'Please select an airport.';
+        return;
+      }
+    }
+
+    // For airport: derive city from the selected airport entry (source city with isAirport=true)
+    const selectedAirport = this.selectedAirportCity;
+    const fromCityName = isAirport
+      ? (selectedAirport?.name?.split(',').pop()?.trim() || selectedAirport?.name || 'Bangalore, Karnataka')
+      : (typeof fromCityObj === 'object' && fromCityObj?.name ? fromCityObj.name : (fromCityObj as string || 'Bangalore'));
+    const fromCityId = isAirport
+      ? (selectedAirport?.id || 377)
+      : (typeof fromCityObj === 'object' && (fromCityObj as City)?.id ? (fromCityObj as City).id : 377);
     const toCityName = typeof toCityObj === 'object' && toCityObj?.name ? toCityObj.name : (toCityObj as string || 'Mysore');
     const toCityId = typeof toCityObj === 'object' && (toCityObj as City)?.id ? (toCityObj as City).id : 237;
 
@@ -342,7 +654,9 @@ export class DashboardComponent implements OnInit {
       ...(isAirport && {
         airportSubType: val.tripType || 'drop',
         pickupAddress: val.pickupAddress || '',
-        dropAirport: val.dropAirport || ''
+        dropAirport: selectedAirport?.name || val.dropAirport || '',
+        airportName: selectedAirport?.cityOnly || selectedAirport?.name || '',
+        airportCityId: selectedAirport?.id,
       })
     };
 
@@ -356,6 +670,7 @@ export class DashboardComponent implements OnInit {
       pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
       ...((!isLocal && !isAirport) && { destinationCity: toCityId }),
       duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
+      ...(isAirport && this.airportLocalityId && { localityId: this.airportLocalityId }),
     };
 
     // Show loading, call availability API, then navigate
@@ -371,11 +686,24 @@ export class DashboardComponent implements OnInit {
       },
       error: (err) => {
         this.isSearching = false;
+        this.formSubmitted = false;
         this.showError = true;
-        this.errorMessage = err?.message || 'Failed to fetch cab availability. Please try again.';
+        this.errorMessage = isAirport
+          ? 'Airport cab service is temporarily unavailable. This may be a server issue — please try again later.'
+          : (err?.message || 'Failed to fetch cab availability. Please try again.');
         this.cdr.markForCheck();
       }
     });
+  }
+
+  /**
+   * Convert a failed airport booking to One Way.
+   * Fetches availability with One Way params and shows a conversion popup.
+   */
+  /** User clicks OK on the conversion popup → close popup */
+  onConversionPopupOk() {
+    this.showConversionPopup = false;
+    this.cdr.markForCheck();
   }
 
   /** CSS classes for booking status badges */

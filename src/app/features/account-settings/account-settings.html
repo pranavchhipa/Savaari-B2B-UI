@@ -137,44 +137,15 @@
                 </div>
               </div>
 
-              <!-- GST Number -->
+              <!-- GST Number — read-only, managed by Savaari admin -->
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                   GST Number
+                  <span *ngIf="profile.gstNumber" class="ml-1 text-xs text-slate-400 font-normal">(Contact support to change)</span>
                 </label>
-                <!-- GST Success Banner -->
-                <div *ngIf="gstSuccess"
-                  class="mb-2 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
-                  <lucide-icon name="check-circle" [size]="14"></lucide-icon>
-                  GST updated successfully!
-                </div>
-                <!-- GST Error Banner -->
-                <div *ngIf="gstError"
-                  class="mb-2 flex items-center gap-2 text-red-500 text-xs font-medium">
-                  <lucide-icon name="alert-circle" [size]="14"></lucide-icon>
-                  {{ gstError }}
-                </div>
-                <div class="flex gap-2">
-                  <input type="text" [(ngModel)]="profile.gstNumber" [disabled]="!isEditingGst"
-                    placeholder="Enter GST number (e.g. 29ABCDE1234F1Z5)"
-                    [ngClass]="isEditingGst ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-500'"
-                    class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg transition" />
-                  <button *ngIf="!isEditingGst" (click)="isEditingGst = true"
-                    class="px-3 py-2 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors whitespace-nowrap flex items-center gap-1">
-                    <lucide-icon name="pencil" [size]="12"></lucide-icon>
-                    Edit
-                  </button>
-                  <button *ngIf="isEditingGst" (click)="updateGst()" [disabled]="gstSaving"
-                    class="px-3 py-2 text-xs font-medium text-white bg-primary hover:bg-sky-600 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50">
-                    <lucide-icon [name]="gstSaving ? 'loader-2' : 'check'" [size]="12"
-                      [ngClass]="{'animate-spin': gstSaving}"></lucide-icon>
-                    {{ gstSaving ? 'Saving...' : 'Save GST' }}
-                  </button>
-                  <button *ngIf="isEditingGst" (click)="isEditingGst = false; gstError = ''"
-                    class="px-3 py-2 text-xs font-medium text-slate-500 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap">
-                    Cancel
-                  </button>
-                </div>
+                <input type="text" [ngModel]="profile.gstNumber" disabled
+                  placeholder="Not set"
+                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-500 cursor-not-allowed opacity-70" />
               </div>
 
               <!-- City -->
@@ -185,23 +156,28 @@
                   class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
               </div>
 
-              <!-- Mobile Phone -->
+              <!-- Mobile Phone — read-only, set at registration -->
               <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Mobile Phone <span
-                    class="text-red-500">*</span></label>
-                <div class="flex">
-                  <span
-                    class="inline-flex items-center px-3 text-sm text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 border border-r-0 border-slate-300 dark:border-slate-600 rounded-l-lg font-medium">+91</span>
-                  <input type="tel" [(ngModel)]="profile.mobile"
-                    class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-r-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Mobile Phone
+                  <span class="ml-1 text-xs text-slate-400 font-normal">(Contact support to change)</span>
+                </label>
+                <div class="flex opacity-70 cursor-not-allowed">
+                  <span class="inline-flex items-center px-3 text-sm text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 border border-r-0 border-slate-300 dark:border-slate-600 rounded-l-lg font-medium">+91</span>
+                  <input type="tel" [ngModel]="profile.mobile" disabled
+                    class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-r-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-500 cursor-not-allowed" />
                 </div>
               </div>
 
-              <!-- PAN Number -->
+              <!-- PAN Number — read-only, managed by Savaari admin -->
               <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">PAN Number</label>
-                <input type="text" [(ngModel)]="profile.panNumber"
-                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  PAN Number
+                  <span *ngIf="profile.panNumber" class="ml-1 text-xs text-slate-400 font-normal">(Contact support to change)</span>
+                </label>
+                <input type="text" [ngModel]="profile.panNumber" disabled
+                  placeholder="Not set"
+                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-500 cursor-not-allowed opacity-70" />
               </div>
 
             </div>
@@ -218,15 +194,20 @@
                     class="text-slate-300 dark:text-slate-500"></lucide-icon>
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Company Logo <span
-                      class="text-slate-400 font-normal">(Optional)</span></p>
-                  <p class="text-xs text-slate-400 mt-0.5">Recommended size: 150×50px, Max 1MB. (JPG, PNG)</p>
-                  <label
-                    class="mt-3 inline-flex items-center gap-2 px-4 py-2 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 cursor-pointer transition">
-                    <lucide-icon name="upload-cloud" [size]="14"></lucide-icon>
-                    Select File
-                    <input type="file" accept="image/jpeg,image/png" class="hidden" (change)="onLogoSelect($event)" />
-                  </label>
+                  <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Company Logo <span class="text-slate-400 font-normal">(Optional)</span></p>
+                  <p class="text-xs text-slate-400 mt-0.5">This logo replaces "B2B CAB" in the navbar. Recommended: 150×50px, Max 1MB. (JPG, PNG)</p>
+                  <div class="mt-3 flex items-center gap-2">
+                    <label class="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 cursor-pointer transition">
+                      <lucide-icon name="upload-cloud" [size]="14"></lucide-icon>
+                      {{ logoPreview ? 'Change Logo' : 'Select File' }}
+                      <input type="file" accept="image/jpeg,image/png" class="hidden" (change)="onLogoSelect($event)" />
+                    </label>
+                    <button *ngIf="logoPreview" type="button" (click)="removeLogo()"
+                      class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                      <lucide-icon name="trash-2" [size]="13"></lucide-icon>
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

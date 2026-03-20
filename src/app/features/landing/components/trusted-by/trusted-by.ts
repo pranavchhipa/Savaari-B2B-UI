@@ -14,16 +14,12 @@ interface LogoEntry {
 })
 export class TrustedByComponent {
     logos: LogoEntry[] = [
-        { name: 'MakeMyTrip', src: 'assets/logos/makemytrip.svg' },
-        { name: 'Goibibo', src: 'assets/logos/goibibo.svg' },
-        { name: 'ixigo', src: 'assets/logos/ixigo.svg' },
-        { name: 'Yatra', src: 'assets/logos/yatra.svg' },
         { name: 'EaseMyTrip', src: 'assets/logos/easemytrip.svg' },
-        { name: 'Cleartrip', src: 'assets/logos/cleartrip.svg' },
-        { name: 'Paytm', src: 'assets/logos/paytm.svg' },
-        { name: 'PhonePe', src: 'assets/logos/phonepe.svg' },
+        { name: 'Goibibo', src: 'assets/logos/goibibo.png' },
+        { name: 'ixigo', src: 'assets/logos/ixigo.png' },
+        { name: 'Yatra', src: 'assets/logos/yatra.png' },
+        { name: 'Paytm', src: 'assets/logos/paytm.png' },
         { name: 'Razorpay', src: 'assets/logos/razorpay.svg' },
-        { name: 'redBus', src: 'assets/logos/redbus.svg' },
     ];
 
     // duplicate for continuous marquee

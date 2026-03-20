@@ -177,6 +177,8 @@
 
         /* Savaari Cyan Blue */
         --primary: 195 100% 45%;
+        --primary-dark: hsl(195, 100%, 35%);
+        --primary-light: hsl(195, 100%, 55%);
         --primary-foreground: 0 0% 100%;
 
         --secondary: 195 20% 96%;
@@ -226,6 +228,8 @@
         --popover: 200 30% 10%;
         --popover-foreground: 0 0% 95%;
         --primary: 195 100% 45%;
+        --primary-dark: hsl(195, 100%, 35%);
+        --primary-light: hsl(195, 100%, 55%);
         --primary-foreground: 0 0% 100%;
         --secondary: 200 25% 15%;
         --secondary-foreground: 0 0% 95%;

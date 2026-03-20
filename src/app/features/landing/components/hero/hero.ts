@@ -13,6 +13,6 @@ export class HeroComponent {
     stats = [
         { icon: 'map-pin', label: "2,000+ Cities", sub: "Pan-India coverage" },
         { icon: 'shield', label: "Zero Cancellations", sub: "Guaranteed rides" },
-        { icon: 'clock', label: "17+ Years", sub: "Industry expertise" },
+        { icon: 'clock', label: "20+ Years", sub: "Industry expertise" },
     ];
 }

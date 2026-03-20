@@ -1,7 +1,7 @@
 <section class="relative min-h-screen flex items-center overflow-hidden py-10">
     <!-- Background image -->
     <div class="absolute inset-0">
-        <img src="/hero-bg-ertiga.jpg" alt="Savaari B2B Car" class="w-full h-full object-cover origin-center"
+        <img src="/hero-bg-innova.jpg" alt="Savaari B2B Car" class="w-full h-full object-cover object-bottom opacity-95"
             loading="eager" fetchpriority="high" />
         <div class="absolute inset-0 bg-gradient-to-r from-slate-900/85 via-slate-900/35 to-transparent"></div>
     </div>
@@ -9,24 +9,28 @@
     <div class="container mx-auto px-4 lg:px-8 relative z-10">
         <div class="max-w-3xl">
 
+            <div class="inline-flex items-center gap-3 bg-slate-800/80 backdrop-blur-md border border-white/15 rounded-full px-7 py-3 mb-7 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75 fill-mode-forwards shadow-lg">
+                <lucide-icon name="badge-check" [size]="26" class="text-amber-400"></lucide-icon>
+                <span class="text-base text-white font-extrabold uppercase tracking-widest">Trusted by 5,000+ Agents</span>
+            </div>
+
             <h1
-                class="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold text-primary-foreground leading-[1.1] tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-forwards">
-                Your <span class="text-gradient-cyan">Bookings.</span> Our Fleet.
-                <br class="hidden sm:block" /><span class="text-amber">Maximum Earnings.</span>
+                class="font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold text-primary-foreground leading-[1.1] tracking-tight mb-7 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-forwards">
+                Your <span class="text-gradient-cyan">Bookings.</span>
+                <br />Our Cab.
+                <br /><span class="text-amber">Maximum Earnings.</span>
             </h1>
 
             <p
-                class="text-lg sm:text-xl text-primary-foreground/70 leading-relaxed mb-8 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-forwards">
-                India's largest vetted fleet across 2,000+ cities. Zero cancellations,
-                GST-ready billing, and top commissions — grow your travel business
-                with one powerful dashboard.
+                class="text-lg sm:text-xl text-white font-semibold leading-relaxed mb-9 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-forwards">
+                Book one-way, round-trip, airport, and local cabs across 2,000+ cities. Enjoy confirmed rides, GST invoices, and the best prices.
             </p>
 
             <div
                 class="flex flex-col sm:flex-row gap-4 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-forwards">
                 <button routerLink="/register"
                     class="inline-flex items-center justify-center rounded-md gradient-cyan text-primary-foreground font-bold text-base shadow-cyan hover:opacity-90 transition-opacity border-0 h-13 py-3 px-8 cursor-pointer">
-                    Partner With Us
+                    Sign Up
                     <lucide-icon name="arrow-right" class="ml-2 h-5 w-5"></lucide-icon>
                 </button>
                 <button routerLink="/login"
@@ -40,13 +44,13 @@
             <div
                 class="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible sm:flex-wrap animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500 fill-mode-forwards">
                 <div *ngFor="let stat of stats"
-                    class="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-4 py-3 hover:bg-white/15 transition-colors flex-shrink-0">
-                    <div class="w-10 h-10 rounded-lg bg-primary/30 flex items-center justify-center flex-shrink-0">
+                    class="flex items-center gap-3 bg-slate-900/70 backdrop-blur-md border border-white/20 rounded-xl px-5 py-3.5 hover:bg-slate-900/80 transition-colors flex-shrink-0">
+                    <div class="w-10 h-10 rounded-lg bg-cyan/20 flex items-center justify-center flex-shrink-0">
                         <lucide-icon [name]="stat.icon" class="w-5 h-5 text-cyan"></lucide-icon>
                     </div>
                     <div>
-                        <p class="font-bold text-primary-foreground text-sm leading-tight whitespace-nowrap">{{ stat.label }}</p>
-                        <p class="text-[11px] text-primary-foreground/50 whitespace-nowrap">{{ stat.sub }}</p>
+                        <p class="font-bold text-white text-sm leading-tight whitespace-nowrap">{{ stat.label }}</p>
+                        <p class="text-[11px] text-white/60 whitespace-nowrap">{{ stat.sub }}</p>
                     </div>
                 </div>
             </div>

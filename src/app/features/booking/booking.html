@@ -6,7 +6,7 @@
                 <lucide-icon name="arrow-left" [size]="18"
                     class="group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
             </a>
-            <span class="text-sm font-medium text-slate-500">Back to Select Car</span>
+            <span class="text-sm font-medium text-slate-500">{{ step1Complete ? 'Back to Pickup Details' : 'Back to Select Car' }}</span>
         </div>
 
         <!-- High-Contrast Trust Badges -->
@@ -289,436 +289,489 @@
             </div>
 
             <!-- STEP 2: Payment Details -->
-            <div [hidden]="!step1Complete"
-                class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8">
-                <div class="flex items-center justify-between mb-8">
-                    <h2 class="text-xl font-bold flex items-center">
-                        <lucide-icon name="wallet" [size]="24" class="mr-2 text-primary"></lucide-icon>
-                        Choose Payment Option
-                    </h2>
+            <div [hidden]="!step1Complete" *ngIf="{ balance: walletBalance$ | async } as walletObj">
+
+                <!-- Back Button -->
+                <div class="flex items-center justify-between mb-5">
                     <button (click)="step1Complete = false"
-                        class="text-sm font-medium text-primary hover:underline flex items-center">
-                        <lucide-icon name="arrow-left" [size]="16" class="mr-1"></lucide-icon> Back to Pickup
+                        class="text-sm font-semibold text-primary hover:text-sky-700 flex items-center gap-1.5 cursor-pointer transition-colors">
+                        <lucide-icon name="arrow-left" [size]="16"></lucide-icon> Edit Pickup Details
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 mb-4" *ngIf="{ balance: walletBalance$ | async } as walletObj">
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- TRIP FARE SUMMARY CARD                         -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 mb-4 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">Trip Fare</p>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                {{ itinerary?.fromCity || 'Source' }}
+                                <ng-container *ngIf="itinerary?.toCity"> → {{ itinerary?.toCity }}</ng-container>
+                                <ng-container *ngIf="itinerary?.tripType === 'Round Trip'"> → {{ itinerary?.fromCity }}</ng-container>
+                                · {{ selectedCar?.name || 'Sedan' }}
+                            </p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+                                {{ itinerary?.tripType }}
+                                <ng-container *ngIf="itinerary?.tripType === 'Local'"> ({{ itinerary?.localPackage || '8hr/80km' }})</ng-container>
+                                · {{ itinerary?.pickupDate | date:'dd MMM' }} · {{ itinerary?.pickupTime }}
+                            </p>
+                        </div>
+                        <div class="text-right pl-4">
+                            <p class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">All inclusive</p>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- 48-HOUR TIMING BANNER                          -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <div class="flex items-start gap-3 p-4 mb-5 rounded-xl border"
+                    [ngClass]="isBookingUrgent()
+                        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                        : 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800'">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                        [ngClass]="isBookingUrgent() ? 'bg-amber-100 dark:bg-amber-800/40' : 'bg-sky-100 dark:bg-sky-800/40'">
+                        <lucide-icon [name]="isBookingUrgent() ? 'alert-triangle' : 'clock'" [size]="16"
+                            [ngClass]="isBookingUrgent() ? 'text-amber-600' : 'text-sky-600'"></lucide-icon>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold mb-0.5"
+                            [ngClass]="isBookingUrgent() ? 'text-amber-800 dark:text-amber-300' : 'text-sky-800 dark:text-sky-300'">
+                            {{ isBookingUrgent() ? 'Urgent Booking' : 'Advance Booking' }}
+                        </p>
+                        <p class="text-[11px] leading-relaxed"
+                            [ngClass]="isBookingUrgent() ? 'text-amber-700 dark:text-amber-400' : 'text-sky-700 dark:text-sky-400'">
+                            <ng-container *ngIf="!isBookingUrgent()">
+                                Trip is more than 48 hours away. Pay a minimum of 25% now — the rest is auto-deducted from your wallet before the trip.
+                            </ng-container>
+                            <ng-container *ngIf="isBookingUrgent()">
+                                Trip is within 48 hours. Full payment is required upfront — no deferred deductions available.
+                            </ng-container>
+                        </p>
+                    </div>
+                </div>
 
-                    <div class="grid grid-cols-1 gap-4 mb-4">
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- PAYMENT OPTIONS HEADING                        -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <div class="flex items-center gap-2 mb-4">
+                    <lucide-icon name="credit-card" [size]="16" class="text-primary"></lucide-icon>
+                    <p class="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Choose Payment Plan</p>
+                </div>
 
-                        <!-- ============================================ -->
-                        <!-- OPTION 1: Flexible Agent Payment (Slider)    -->
-                        <!-- ============================================ -->
-                        <div (click)="setPaymentOption(1)" [class.border-primary]="paymentOption === 1"
-                            [class.bg-primary/5]="paymentOption === 1"
-                            class="relative flex flex-col p-6 bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-100 dark:border-slate-800 cursor-pointer hover:border-primary/50 transition-all group">
+                <div class="space-y-3 mb-5">
 
-                            <!-- Top Row: Icon + Description + Pay Now + Radio -->
-                            <div class="flex items-center w-full">
-                                <div class="flex items-center flex-1 gap-6">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-xl font-bold text-slate-400 group-hover:text-primary transition-colors">
-                                        1
-                                    </div>
-                                    <div class="flex-1">
-                                        <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                            Flexible Agent Payment
-                                        </h4>
-                                        <p class="text-[11px] text-slate-500 mt-1 max-w-sm">
-                                            Choose how much to pay via Wallet (min 25%). Remaining amount + extras paid directly to Driver by Customer.
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-8 ml-4">
-                                    <div class="text-right">
-                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pay Now</div>
-                                        <div class="text-lg font-black text-primary">₹{{ getPayNowAmount(1) | number:'1.0-0' }}</div>
-                                    </div>
-                                    <div class="w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center shrink-0"
-                                        [class.border-primary]="paymentOption === 1"
-                                        [class.bg-primary]="paymentOption === 1">
-                                        <div class="w-2.5 h-2.5 rounded-full bg-white shadow-sm"
-                                            *ngIf="paymentOption === 1"></div>
-                                    </div>
-                                </div>
+                    <!-- ════════════════════════════════════════════ -->
+                    <!-- OPTION 1: Part Payment (Slider)             -->
+                    <!-- ════════════════════════════════════════════ -->
+                    <div (click)="setPaymentOption(1)"
+                        class="relative rounded-2xl border-2 cursor-pointer transition-all"
+                        [ngClass]="paymentOption === 1
+                            ? 'border-primary bg-white dark:bg-slate-900 shadow-lg shadow-primary/10'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
+
+                        <div class="flex items-center p-4 gap-4">
+                            <!-- Radio -->
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
+                                [ngClass]="paymentOption === 1 ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'">
+                                <div class="w-2 h-2 rounded-full bg-white" *ngIf="paymentOption === 1"></div>
                             </div>
+                            <!-- Text -->
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Pay any amount now</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Pay {{ option1SliderPercent }}% now (₹{{ getPayNowAmount(1) | number:'1.0-0' }}). Customer pays the rest in cash to the driver.
+                                </p>
+                            </div>
+                            <!-- Amount badge -->
+                            <div class="text-right shrink-0">
+                                <p class="text-lg font-black text-slate-900 dark:text-white">₹{{ getPayNowAmount(1) | number:'1.0-0' }}</p>
+                                <p class="text-[10px] text-slate-400">{{ option1SliderPercent }}% of fare</p>
+                            </div>
+                        </div>
 
-                            <!-- Slider Panel (expanded when Option 1 is selected) -->
-                            <div *ngIf="paymentOption === 1"
-                                class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 w-full"
-                                (click)="$event.stopPropagation()">
+                        <!-- Expanded Slider Panel -->
+                        <div *ngIf="paymentOption === 1"
+                            class="px-5 pb-5 pt-0" (click)="$event.stopPropagation()">
 
-                                <!-- Slider Label Row -->
-                                <div class="flex items-center justify-between mb-3">
-                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400">
-                                        Agent Pays: {{ option1SliderPercent }}%
-                                    </span>
-                                    <span class="text-xs font-bold text-slate-500">
-                                        Driver Collects: {{ 100 - option1SliderPercent }}%
-                                    </span>
+                            <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+                                <!-- Slider -->
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">Adjust your payment</p>
+                                    <span class="text-sm font-black text-primary bg-primary/10 px-3 py-1 rounded-full">{{ option1SliderPercent }}%</span>
                                 </div>
 
-                                <!-- Range Slider -->
                                 <input type="range"
-                                    [min]="SLIDER_MIN"
-                                    [max]="SLIDER_MAX"
-                                    [step]="SLIDER_STEP"
+                                    [min]="SLIDER_MIN" [max]="SLIDER_MAX" [step]="SLIDER_STEP"
                                     [value]="option1SliderPercent"
                                     (input)="onSliderChange($event)"
                                     [style.--slider-fill]="((option1SliderPercent - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN) * 100) + '%'"
-                                    class="payment-slider w-full h-2 rounded-full appearance-none cursor-pointer"
-                                />
+                                    class="payment-slider w-full h-2 rounded-full appearance-none cursor-pointer" />
 
-                                <!-- Min/Max Labels -->
-                                <div class="flex justify-between mt-1">
-                                    <span class="text-[10px] text-slate-400">25%</span>
-                                    <span class="text-[10px] text-slate-400">100%</span>
+                                <div class="flex justify-between mt-1.5 mb-4">
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-500">Min 25%</span>
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-500">Max 100%</span>
                                 </div>
 
-                                <!-- Breakdown Row -->
-                                <div class="flex justify-between items-center mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                                    <div class="text-center flex-1">
-                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">You Pay (Wallet)</div>
-                                        <div class="text-sm font-black text-primary">₹{{ getPayNowAmount(1) | number:'1.0-0' }}</div>
+                                <!-- Breakdown -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl p-3.5 text-center">
+                                        <lucide-icon name="wallet" [size]="16" class="text-emerald-500 mx-auto mb-1.5"></lucide-icon>
+                                        <p class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">You pay now</p>
+                                        <p class="text-xl font-black text-emerald-700 dark:text-emerald-300">₹{{ getPayNowAmount(1) | number:'1.0-0' }}</p>
+                                        <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">From wallet</p>
                                     </div>
-                                    <div class="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
-                                    <div class="text-center flex-1">
-                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Driver Collects</div>
-                                        <div class="text-sm font-black text-slate-700 dark:text-slate-300">₹{{ getDriverCollectsAmount() | number:'1.0-0' }}</div>
+                                    <div class="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-3.5 text-center">
+                                        <lucide-icon name="banknote" [size]="16" class="text-slate-400 mx-auto mb-1.5"></lucide-icon>
+                                        <p class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Customer pays driver</p>
+                                        <p class="text-xl font-black text-slate-700 dark:text-slate-300">₹{{ getDriverCollectsAmount() | number:'1.0-0' }}</p>
+                                        <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">Cash after trip</p>
+                                    </div>
+                                </div>
+
+                                <!-- Line items -->
+                                <div class="mt-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-slate-500 dark:text-slate-400">Trip fare</span>
+                                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Wallet debit now ({{ option1SliderPercent }}%)</span>
+                                        <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">- ₹{{ getPayNowAmount(1) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div class="h-px bg-slate-200 dark:bg-slate-700"></div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Customer pays driver</span>
+                                        <span class="text-[11px] font-black text-slate-900 dark:text-white">₹{{ getDriverCollectsAmount() | number:'1.0-0' }}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- ============================================ -->
-                        <!-- OPTION 2: Full Agent Payment (25/75)         -->
-                        <!-- ============================================ -->
-                        <div (click)="setPaymentOption(2)" [class.border-primary]="paymentOption === 2"
-                            [class.bg-primary/5]="paymentOption === 2"
-                            class="relative flex items-center p-6 bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-100 dark:border-slate-800 cursor-pointer hover:border-primary/50 transition-all group">
-                            <div class="flex items-center flex-1 gap-6">
-                                <div
-                                    class="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-xl font-bold text-slate-400 group-hover:text-primary transition-colors">
-                                    2
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                        <ng-container *ngIf="!isBookingUrgent()">
-                                            Full Agent Payment (25% Now | 75% 48h Before)
-                                        </ng-container>
-                                        <ng-container *ngIf="isBookingUrgent()">
-                                            Full Agent Payment (100% Now)
-                                            <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[9px] font-black uppercase rounded-full">Urgent</span>
-                                        </ng-container>
-                                    </h4>
-                                    <p class="text-[11px] text-slate-500 mt-1 max-w-sm">
-                                        <ng-container *ngIf="!isBookingUrgent()">
-                                            Pay 25% now via Wallet. Remaining 75% (₹{{ getDeferredAmount(2) | number:'1.0-0' }})
-                                            auto-deducted 48h before trip. Extras collected from Customer.
-                                            <span class="text-red-500 font-semibold">Booking auto-cancels if funds unavailable.</span>
-                                        </ng-container>
-                                        <ng-container *ngIf="isBookingUrgent()">
-                                            Trip is within 48 hours. Full 100% fare required now via Wallet. Extras collected from Customer.
-                                        </ng-container>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-8 ml-4">
-                                <div class="text-right">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pay Now</div>
-                                    <div class="text-lg font-black text-primary">₹{{ getPayNowAmount(2) | number:'1.0-0' }}</div>
-                                    <!-- Show deferred amount when NOT urgent -->
-                                    <div *ngIf="!isBookingUrgent()" class="text-[9px] text-slate-400 mt-0.5">
-                                        + ₹{{ getDeferredAmount(2) | number:'1.0-0' }} in 48h
-                                    </div>
-                                </div>
-                                <div class="w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center shrink-0"
-                                    [class.border-primary]="paymentOption === 2"
-                                    [class.bg-primary]="paymentOption === 2">
-                                    <div class="w-2.5 h-2.5 rounded-full bg-white shadow-sm"
-                                        *ngIf="paymentOption === 2"></div>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- ════════════════════════════════════════════ -->
+                    <!-- OPTION 2: Split Pay (25/75)                 -->
+                    <!-- ════════════════════════════════════════════ -->
+                    <div (click)="setPaymentOption(2)"
+                        class="relative rounded-2xl border-2 cursor-pointer transition-all"
+                        [ngClass]="paymentOption === 2
+                            ? 'border-primary bg-white dark:bg-slate-900 shadow-lg shadow-primary/10'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
 
-                        <!-- ============================================ -->
-                        <!-- OPTION 3: Full Agent + 20% Buffer (RECOMMENDED) -->
-                        <!-- ============================================ -->
-                        <div (click)="setPaymentOption(3)" [class.border-primary]="paymentOption === 3"
-                            [class.bg-sky-50/50]="paymentOption === 3" [class.dark:bg-sky-950/20]="paymentOption === 3"
-                            [class.ring-2]="paymentOption === 3" [class.ring-primary/20]="paymentOption === 3"
-                            [class.shadow-xl]="paymentOption === 3" [class.scale-[1.02]]="paymentOption === 3"
-                            class="relative flex items-center p-7 bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-100 dark:border-slate-800 cursor-pointer hover:border-primary/50 transition-all group overflow-hidden">
-
-                            <!-- Recommended Badge -->
-                            <div class="absolute top-0 right-0">
-                                <div class="bg-primary text-white text-[9px] font-black px-4 py-1 rounded-bl-xl uppercase tracking-widest shadow-sm">
-                                    Recommended
-                                </div>
+                        <div class="flex items-center p-4 gap-4">
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
+                                [ngClass]="paymentOption === 2 ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'">
+                                <div class="w-2 h-2 rounded-full bg-white" *ngIf="paymentOption === 2"></div>
                             </div>
-
-                            <div class="flex items-center flex-1 gap-6">
-                                <div
-                                    class="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
-                                    <lucide-icon name="wallet" [size]="28"></lucide-icon>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-3 mb-1">
-                                        <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-tight">
-                                            <ng-container *ngIf="!isBookingUrgent()">
-                                                100% Wallet + 20% Buffer
-                                            </ng-container>
-                                            <ng-container *ngIf="isBookingUrgent()">
-                                                (100% + 20%) Payment Now (Fare + Buffer)
-                                            </ng-container>
-                                        </h4>
-                                        <span
-                                            class="px-3 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-full shadow-md shrink-0 tracking-wider">B2B
-                                            Preferred</span>
-                                    </div>
-                                    <p class="text-xs text-slate-500 max-w-sm leading-relaxed">
-                                        <ng-container *ngIf="!isBookingUrgent()">
-                                            25% now. 75% + 20% buffer (₹{{ getDeferredAmount(3) | number:'1.0-0' }})
-                                            auto-deducted 48h before trip.
-                                            <span class="text-primary font-bold">Zero cash handling for customer.</span>
-                                        </ng-container>
-                                        <ng-container *ngIf="isBookingUrgent()">
-                                            Trip within 48h. Full fare + 20% buffer
-                                            (₹{{ getPayNowAmount(3) | number:'1.0-0' }}) required now.
-                                            <span class="text-primary font-bold">Zero cash handling for customer.</span>
-                                        </ng-container>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-8 ml-4">
-                                <div class="text-right">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pay Now</div>
-                                    <div class="text-2xl font-black text-primary">₹{{ getPayNowAmount(3) | number:'1.0-0' }}</div>
-                                    <!-- Show deferred amount when NOT urgent -->
-                                    <div *ngIf="!isBookingUrgent()" class="text-[9px] text-slate-400 mt-0.5">
-                                        + ₹{{ getDeferredAmount(3) | number:'1.0-0' }} in 48h
-                                    </div>
-                                </div>
-                                <div class="w-7 h-7 rounded-full border-2 border-slate-200 flex items-center justify-center shrink-0 transition-all"
-                                    [class.border-primary]="paymentOption === 3"
-                                    [class.bg-primary]="paymentOption === 3">
-                                    <div class="w-2.5 h-2.5 rounded-full bg-white shadow-sm"
-                                        *ngIf="paymentOption === 3"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Urgent Booking Warning -->
-                        <div *ngIf="isBookingUrgent()"
-                            class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl flex items-start gap-3">
-                            <lucide-icon name="alert-triangle" [size]="18" class="text-amber-600 mt-0.5"></lucide-icon>
-                            <div>
-                                <h5 class="text-sm font-bold text-amber-800 dark:text-amber-400">Urgent Booking — Less than 48 Hours to Pickup</h5>
-                                <p class="text-[11px] text-amber-700 dark:text-amber-500/70">
-                                    Since the 48-hour deferred payment deadline has passed:
-                                    <strong>Option 2</strong> requires 100% now;
-                                    <strong>Option 3</strong> requires (100% + 20%) now (fare + buffer).
-                                    Option 1 (Flexible) is unaffected.
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">
+                                    <ng-container *ngIf="!isBookingUrgent()">Pay 25% now, rest auto-deducted</ng-container>
+                                    <ng-container *ngIf="isBookingUrgent()">Pay 25% now, rest auto-deducted</ng-container>
+                                </h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    <ng-container *ngIf="!isBookingUrgent()">
+                                        Pay 25% now (₹{{ getPayNowAmount(2) | number:'1.0-0' }}). Remaining ₹{{ getDeferredAmount(2) | number:'1.0-0' }} auto-deducted 48h before trip.
+                                    </ng-container>
+                                    <ng-container *ngIf="isBookingUrgent()">
+                                        Full fare ₹{{ getPayNowAmount(2) | number:'1.0-0' }} required now. Trip is within 48 hours.
+                                    </ng-container>
                                 </p>
                             </div>
+                            <div class="text-right shrink-0">
+                                <p class="text-lg font-black text-slate-900 dark:text-white">₹{{ getPayNowAmount(2) | number:'1.0-0' }}</p>
+                                <p class="text-[10px] text-slate-400">now</p>
+                            </div>
+                        </div>
+
+                        <!-- Expanded Details -->
+                        <div *ngIf="paymentOption === 2"
+                            class="px-5 pb-5 pt-0" (click)="$event.stopPropagation()">
+                            <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+                                <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-slate-500 dark:text-slate-400">Trip fare</span>
+                                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                            {{ isBookingUrgent() ? 'Wallet debit now (100%)' : 'Wallet debit now (25%)' }}
+                                        </span>
+                                        <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">- ₹{{ getPayNowAmount(2) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div *ngIf="!isBookingUrgent()" class="flex items-center justify-between">
+                                        <span class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                                            <lucide-icon name="clock" [size]="11"></lucide-icon>
+                                            Auto-deducted 48h before trip (75%)
+                                        </span>
+                                        <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400">- ₹{{ getDeferredAmount(2) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div class="h-px bg-slate-200 dark:bg-slate-700"></div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Customer pays driver</span>
+                                        <span class="text-[11px] font-black text-slate-900 dark:text-white">₹0</span>
+                                    </div>
+                                </div>
+
+                                <!-- Auto-cancel warning -->
+                                <div *ngIf="!isBookingUrgent()"
+                                    class="mt-3 flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/15 border border-amber-100 dark:border-amber-800/50 rounded-xl">
+                                    <lucide-icon name="alert-triangle" [size]="14" class="text-amber-500 shrink-0 mt-0.5"></lucide-icon>
+                                    <p class="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                                        If wallet balance is insufficient at the time of auto-deduction, the booking will be <strong>auto-cancelled</strong>.
+                                        Ensure your wallet has ₹{{ getDeferredAmount(2) | number:'1.0-0' }} before the deduction date.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Wallet Balance + Inline Top-Up -->
-                    <div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800">
-                      <div class="flex items-center justify-between mb-4">
+                    <!-- ════════════════════════════════════════════ -->
+                    <!-- OPTION 3: Cashless Ride (Full Wallet)       -->
+                    <!-- ════════════════════════════════════════════ -->
+                    <div (click)="setPaymentOption(3)"
+                        class="relative rounded-2xl border-2 cursor-pointer transition-all"
+                        [ngClass]="paymentOption === 3
+                            ? 'border-primary bg-white dark:bg-slate-900 shadow-lg shadow-primary/10'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
+
+                        <!-- Recommended + Best Value ribbon -->
+                        <div class="absolute -top-px -right-px flex gap-0 z-10">
+                            <span class="px-2.5 py-1 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-wider rounded-bl-lg rounded-tr-xl">Recommended</span>
+                            <span class="px-2.5 py-1 bg-amber-500 text-white text-[8px] font-black uppercase tracking-wider rounded-tr-xl">Best Value</span>
+                        </div>
+
+                        <div class="flex items-center p-4 gap-4">
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
+                                [ngClass]="paymentOption === 3 ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'">
+                                <div class="w-2 h-2 rounded-full bg-white" *ngIf="paymentOption === 3"></div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Zero cash — full wallet</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    <ng-container *ngIf="!isBookingUrgent()">
+                                        Pay 25% now. Full fare + 20% buffer auto-deducted before trip. Customer carries zero cash.
+                                    </ng-container>
+                                    <ng-container *ngIf="isBookingUrgent()">
+                                        Full fare + 20% buffer (₹{{ getPayNowAmount(3) | number:'1.0-0' }}) now. Customer carries zero cash.
+                                    </ng-container>
+                                </p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <p class="text-lg font-black text-slate-900 dark:text-white">₹{{ getPayNowAmount(3) | number:'1.0-0' }}</p>
+                                <p class="text-[10px] text-slate-400">now</p>
+                            </div>
+                        </div>
+
+                        <!-- Expanded Details -->
+                        <div *ngIf="paymentOption === 3"
+                            class="px-5 pb-5 pt-0" (click)="$event.stopPropagation()">
+                            <div class="border-t border-slate-100 dark:border-slate-800 pt-4">
+                                <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-slate-500 dark:text-slate-400">Trip fare</span>
+                                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-slate-500 dark:text-slate-400">20% buffer (extra KM/toll/parking)</span>
+                                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">₹{{ getOption3BufferAmount() | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div class="h-px bg-slate-200 dark:bg-slate-700"></div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Total wallet commitment</span>
+                                        <span class="text-[11px] font-black text-slate-900 dark:text-white">₹{{ getTotalAgentCommitment(3) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div class="h-px bg-slate-200 dark:bg-slate-700"></div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                            {{ isBookingUrgent() ? 'Wallet debit now' : 'Wallet debit now (25%)' }}
+                                        </span>
+                                        <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">- ₹{{ getPayNowAmount(3) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div *ngIf="!isBookingUrgent()" class="flex items-center justify-between">
+                                        <span class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                                            <lucide-icon name="clock" [size]="11"></lucide-icon>
+                                            Auto-deducted 48h before trip
+                                        </span>
+                                        <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400">- ₹{{ getDeferredAmount(3) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <div class="h-px bg-slate-200 dark:bg-slate-700"></div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Customer pays driver</span>
+                                        <span class="text-[11px] font-black text-emerald-600 dark:text-emerald-400">₹0 — Cashless!</span>
+                                    </div>
+                                </div>
+
+                                <!-- Refund note -->
+                                <div class="mt-3 flex items-start gap-2 p-3 bg-sky-50 dark:bg-sky-900/15 border border-sky-100 dark:border-sky-800/50 rounded-xl">
+                                    <lucide-icon name="info" [size]="14" class="text-sky-500 shrink-0 mt-0.5"></lucide-icon>
+                                    <p class="text-[10px] text-sky-700 dark:text-sky-400 leading-relaxed">
+                                        The 20% buffer covers extra KMs, tolls, and parking. Any unused buffer is <strong>refunded to your wallet</strong> after the trip ends.
+                                    </p>
+                                </div>
+
+                                <!-- Auto-cancel warning -->
+                                <div *ngIf="!isBookingUrgent()"
+                                    class="mt-2 flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/15 border border-amber-100 dark:border-amber-800/50 rounded-xl">
+                                    <lucide-icon name="alert-triangle" [size]="14" class="text-amber-500 shrink-0 mt-0.5"></lucide-icon>
+                                    <p class="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                                        If wallet balance is insufficient at auto-deduction time, this booking will be <strong>auto-cancelled</strong>.
+                                        Ensure ₹{{ getDeferredAmount(3) | number:'1.0-0' }} is available before the deduction date.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- WALLET BALANCE BAR                             -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 mb-4 shadow-sm" id="topUpSection">
+                    <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <lucide-icon name="wallet" [size]="20" class="text-primary"></lucide-icon>
-                          </div>
-                          <div>
-                            <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Your Wallet Balance</h5>
-                            <div class="text-xl font-black text-slate-800 dark:text-slate-100">
-                              ₹{{ walletObj.balance | number:'1.0-0' }}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Sufficient balance indicator -->
-                      <div *ngIf="paymentOption !== 0 && hasSufficientWalletBalance(walletObj.balance)"
-                        class="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-xl flex items-center gap-3">
-                        <lucide-icon name="check-circle" [size]="16" class="text-emerald-500"></lucide-icon>
-                        <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                          Sufficient balance for this booking.
-                        </p>
-                      </div>
-
-                      <!-- No payment selected yet -->
-                      <div *ngIf="paymentOption === 0"
-                        class="p-3 bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl flex items-center gap-3">
-                        <lucide-icon name="info" [size]="16" class="text-slate-400"></lucide-icon>
-                        <p class="text-[11px] font-medium text-slate-500">
-                          Select a payment option to check wallet balance.
-                        </p>
-                      </div>
-
-                      <!-- Insufficient balance — show top-up -->
-                      <div *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance(walletObj.balance)">
-                        <!-- Warning banner -->
-                        <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl flex items-center gap-3 mb-4">
-                          <lucide-icon name="alert-triangle" [size]="16" class="text-amber-500"></lucide-icon>
-                          <div>
-                            <p class="text-xs font-bold text-amber-700 dark:text-amber-400">
-                              Insufficient Balance — Need ₹{{ getPayNowAmount() | number:'1.0-0' }}, have ₹{{ walletObj.balance | number:'1.0-0' }}
-                            </p>
-                            <p class="text-[10px] text-amber-600 dark:text-amber-500 mt-0.5">
-                              Top up at least ₹{{ (getPayNowAmount() - (walletObj.balance || 0)) | number:'1.0-0' }} to proceed.
-                            </p>
-                          </div>
-                        </div>
-
-                        <!-- Top-up section -->
-                        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                          <h6 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                            <lucide-icon name="plus-circle" [size]="14" class="text-primary"></lucide-icon>
-                            Quick Top-Up
-                          </h6>
-
-                          <!-- Preset buttons -->
-                          <div class="grid grid-cols-4 gap-2 mb-3">
-                            <button *ngFor="let preset of topUpPresets"
-                              (click)="setTopUpAmount(preset)"
-                              [class.bg-primary]="topUpAmount === preset"
-                              [class.text-white]="topUpAmount === preset"
-                              [class.border-primary]="topUpAmount === preset"
-                              class="py-2 px-1 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary transition-all text-center">
-                              ₹{{ preset | number:'1.0-0' }}
-                            </button>
-                          </div>
-
-                          <!-- Custom amount input -->
-                          <div class="flex gap-2">
-                            <div class="relative flex-1">
-                              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">₹</span>
-                              <input type="number" [(ngModel)]="topUpAmount" name="topUpAmount"
-                                placeholder="Enter amount"
-                                min="1"
-                                class="w-full pl-8 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
-                            </div>
-                            <button (click)="processTopUp()"
-                              [disabled]="topUpAmount <= 0 || isProcessingTopUp"
-                              class="px-5 py-2.5 bg-primary hover:bg-sky-600 disabled:bg-slate-300 text-white font-bold text-sm rounded-xl transition-all disabled:cursor-not-allowed flex items-center gap-2">
-                              <lucide-icon *ngIf="isProcessingTopUp" name="loader-2" [size]="14" class="animate-spin"></lucide-icon>
-                              {{ isProcessingTopUp ? 'Processing...' : 'Add Funds' }}
-                            </button>
-                          </div>
-
-                          <!-- Success message -->
-                          <div *ngIf="topUpSuccess"
-                            class="mt-3 p-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-center gap-2">
-                            <lucide-icon name="check-circle" [size]="14" class="text-emerald-500"></lucide-icon>
-                            <span class="text-xs font-bold text-emerald-600">Funds added successfully! Balance updated.</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="flex items-start gap-3 p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl">
-                        <lucide-icon name="info" [size]="18" class="text-slate-400 mt-0.5"></lucide-icon>
-                        <p class="text-[11px] text-slate-500 leading-relaxed">
-                            All payments are strictly processed via your Agent Wallet. For partial payments, the
-                            remaining balance will be automatically deducted 48 hours before pickup. Failing to maintain
-                            balance will result in automatic cancellation.
-                        </p>
-                    </div>
-
-                    <div class="mb-8">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Got a
-                            coupon?</label>
-                        <div class="flex space-x-2" *ngIf="!couponApplied">
-                            <div class="relative flex-grow">
-                                <lucide-icon name="ticket" [size]="18"
-                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></lucide-icon>
-                                <input type="text" [(ngModel)]="couponCode" name="couponCode" placeholder="Enter coupon code"
-                                    class="w-full pl-12 pr-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
-                            </div>
-                            <button (click)="applyCoupon()" [disabled]="isValidatingCoupon || !couponCode.trim()"
-                                class="px-6 py-2.5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors disabled:opacity-50">
-                                {{ isValidatingCoupon ? 'Checking...' : 'Apply' }}
-                            </button>
-                        </div>
-                        <!-- Applied coupon display -->
-                        <div *ngIf="couponApplied" class="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
-                            <div class="flex items-center gap-2">
-                                <lucide-icon name="check-circle" [size]="18" class="text-emerald-600"></lucide-icon>
-                                <span class="text-sm font-medium text-emerald-700 dark:text-emerald-400">{{ couponCode }} applied — &#8377;{{ couponDiscount }} off</span>
-                            </div>
-                            <button (click)="removeCoupon()" class="text-xs text-red-500 hover:underline font-medium">Remove</button>
-                        </div>
-                        <!-- Coupon validation message (errors) -->
-                        <p *ngIf="couponMessage && !couponApplied" class="mt-2 text-sm text-red-500">{{ couponMessage }}</p>
-                    </div>
-
-                    <div
-                        class="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-800 rounded-xl mb-8 shadow-sm">
-                        <div class="flex items-center space-x-3">
-                            <div class="bg-sky-100 dark:bg-sky-900/50 p-2 rounded-full hidden sm:block">
-                                <lucide-icon name="briefcase" [size]="20" class="text-primary"></lucide-icon>
+                            <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                                <lucide-icon name="wallet" [size]="20" class="text-primary"></lucide-icon>
                             </div>
                             <div>
-                                <h4 class="font-bold text-slate-900 dark:text-white text-sm">Value Added Services (VAS)
-                                </h4>
-                                <p class="text-xs text-slate-500 mt-0.5">Luggage carrier, prefer driver, etc.</p>
+                                <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Wallet Balance</p>
+                                <p class="text-xl font-black text-slate-900 dark:text-white">₹{{ walletObj.balance | number:'1.0-0' }}</p>
                             </div>
                         </div>
-                        <div>
-                            <button (click)="openVASModal()"
-                                class="text-sm font-bold text-primary hover:underline flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-sm">
-                                <lucide-icon name="plus" [size]="14" class="mr-1"></lucide-icon> Add Services
-                            </button>
+                        <div *ngIf="paymentOption !== 0">
+                            <div *ngIf="hasSufficientWalletBalance(walletObj.balance)"
+                                class="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                                <lucide-icon name="check-circle" [size]="16" class="text-emerald-500"></lucide-icon>
+                                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Sufficient</span>
+                            </div>
+                            <div *ngIf="!hasSufficientWalletBalance(walletObj.balance)"
+                                class="flex items-center gap-1.5 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                                <lucide-icon name="alert-circle" [size]="16" class="text-red-500"></lucide-icon>
+                                <span class="text-xs font-bold text-red-600 dark:text-red-400">Need ₹{{ (getPayNowAmount() - (walletObj.balance || 0)) | number:'1.0-0' }} more</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Active VAS Display -->
-                    <div class="flex gap-2 mb-8" *ngIf="vasLuggageCarrier || vasLanguageDriver">
-                        <div *ngIf="vasLuggageCarrier"
-                            class="bg-blue-50 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center">
-                            <lucide-icon name="briefcase" [size]="12" class="mr-1.5"></lucide-icon> Luggage Carrier
-                            Added
+                    <!-- Progress bar showing how much balance covers -->
+                    <div *ngIf="paymentOption !== 0" class="mt-3">
+                        <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-500"
+                                [ngClass]="hasSufficientWalletBalance(walletObj.balance) ? 'bg-emerald-500' : 'bg-amber-500'"
+                                [style.width.%]="Math.min(100, ((walletObj.balance || 0) / getPayNowAmount()) * 100)">
+                            </div>
                         </div>
-                        <div *ngIf="vasLanguageDriver"
-                            class="bg-blue-50 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center">
-                            <lucide-icon name="users" [size]="12" class="mr-1.5"></lucide-icon> Preferred Driver Added
+                        <div class="flex justify-between mt-1">
+                            <span class="text-[9px] text-slate-400 dark:text-slate-500">₹0</span>
+                            <span class="text-[9px] font-bold text-slate-500 dark:text-slate-400">Required: ₹{{ getPayNowAmount() | number:'1.0-0' }}</span>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Booking error message -->
-                    <div *ngIf="bookingError" class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2">
-                        <lucide-icon name="alert-circle" [size]="18" class="text-red-500 flex-shrink-0"></lucide-icon>
-                        <span class="text-sm text-red-600 dark:text-red-400">{{ bookingError }}</span>
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- TOP-UP SECTION (only when insufficient)        -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <div *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance(walletObj.balance)"
+                    class="bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-700 p-5 mb-4">
+                    <h6 class="text-sm font-bold text-slate-800 dark:text-white mb-1 flex items-center gap-2">
+                        <lucide-icon name="plus-circle" [size]="18" class="text-primary"></lucide-icon>
+                        Top Up Your Wallet
+                    </h6>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+                        You need ₹{{ (getPayNowAmount() - (walletObj.balance || 0)) | number:'1.0-0' }} more to proceed with this booking.
+                    </p>
+
+                    <!-- Preset amounts -->
+                    <div class="grid grid-cols-4 gap-2 mb-3">
+                        <button *ngFor="let preset of topUpPresets"
+                            (click)="setTopUpAmount(preset)"
+                            class="py-2.5 text-xs font-bold rounded-xl border-2 transition-all text-center cursor-pointer"
+                            [ngClass]="topUpAmount === preset
+                                ? 'border-primary bg-primary/10 dark:bg-primary/20 text-primary'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-300'">
+                            ₹{{ preset | number:'1.0-0' }}
+                        </button>
                     </div>
 
-                    <button (click)="bookNow()" [disabled]="paymentOption === 0 || isProcessingWallet || !hasSufficientWalletBalance((walletBalance$ | async))"
-                        class="w-full py-4 bg-primary hover:bg-sky-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-bold text-lg rounded-xl shadow-lg shadow-sky-200 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none disabled:shadow-none">
-                        <span *ngIf="isProcessingWallet" class="flex items-center justify-center gap-2">
-                            <lucide-icon name="loader-2" [size]="20" class="animate-spin"></lucide-icon>
-                            Creating Booking...
+                    <!-- Custom amount + Add button -->
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-bold">₹</span>
+                            <input type="number" [(ngModel)]="topUpAmount" name="topUpAmount"
+                                placeholder="Custom amount" min="1"
+                                class="w-full pl-9 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-slate-900 dark:text-white" />
+                        </div>
+                        <button (click)="processTopUp()"
+                            [disabled]="topUpAmount <= 0 || isProcessingTopUp"
+                            style="background-color: #0096c7;"
+                            class="px-6 py-3 hover:opacity-90 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-bold text-sm rounded-xl transition-all disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer shadow-lg shadow-primary/20">
+                            <lucide-icon *ngIf="isProcessingTopUp" name="loader-2" [size]="14" class="animate-spin"></lucide-icon>
+                            <lucide-icon *ngIf="!isProcessingTopUp" name="credit-card" [size]="14"></lucide-icon>
+                            {{ isProcessingTopUp ? 'Processing...' : 'Add Funds' }}
+                        </button>
+                    </div>
+
+                    <!-- Success message -->
+                    <div *ngIf="topUpSuccess"
+                        class="mt-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2">
+                        <lucide-icon name="check-circle" [size]="16" class="text-emerald-500"></lucide-icon>
+                        <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Funds added successfully! Your balance has been updated.</span>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- ERROR MESSAGE                                  -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <div *ngIf="bookingError" class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+                    <lucide-icon name="alert-circle" [size]="18" class="text-red-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                    <span class="text-sm text-red-600 dark:text-red-400 leading-relaxed">{{ bookingError }}</span>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- CONFIRM & BOOK BUTTON                          -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <button (click)="bookNow()" [disabled]="paymentOption === 0 || isProcessingWallet || !hasSufficientWalletBalance(walletObj.balance)"
+                    class="w-full py-4 rounded-2xl font-bold text-base shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none disabled:shadow-none cursor-pointer disabled:cursor-not-allowed"
+                    [ngClass]="paymentOption !== 0 && hasSufficientWalletBalance(walletObj.balance)
+                        ? 'bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-600 hover:to-cyan-600 text-white shadow-primary/25'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500'">
+                    <span *ngIf="isProcessingWallet" class="flex items-center justify-center gap-2">
+                        <lucide-icon name="loader-2" [size]="20" class="animate-spin"></lucide-icon>
+                        Creating Your Booking...
+                    </span>
+                    <ng-container *ngIf="!isProcessingWallet">
+                        <span *ngIf="paymentOption === 0" class="flex items-center justify-center gap-2">
+                            <lucide-icon name="crosshair" [size]="18"></lucide-icon>
+                            Select a Payment Plan Above
                         </span>
-                        <ng-container *ngIf="!isProcessingWallet">
-                          <span *ngIf="paymentOption === 0">Select a Payment Option</span>
-                          <span *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance((walletBalance$ | async))">Insufficient Wallet Balance</span>
-                          <span *ngIf="paymentOption !== 0 && hasSufficientWalletBalance((walletBalance$ | async))">Book Now</span>
-                        </ng-container>
-                    </button>
-                </div> <!-- Ends WalletObj Wrapper (line 237) -->
-            </div> <!-- Ends Step 2 Container (line 224) -->
-        </div> <!-- Ends Left Column (line 40/64) -->
+                        <span *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance(walletObj.balance)" class="flex items-center justify-center gap-2">
+                            <lucide-icon name="wallet" [size]="18"></lucide-icon>
+                            Top Up Wallet to Continue
+                        </span>
+                        <span *ngIf="paymentOption !== 0 && hasSufficientWalletBalance(walletObj.balance)" class="flex items-center justify-center gap-2">
+                            <lucide-icon name="check-circle" [size]="18"></lucide-icon>
+                            Confirm Booking — Pay ₹{{ getPayNowAmount() | number:'1.0-0' }}
+                        </span>
+                    </ng-container>
+                </button>
+
+                <!-- Security note -->
+                <div class="flex items-center justify-center gap-2 mt-3 mb-1">
+                    <lucide-icon name="shield-check" [size]="12" class="text-slate-400"></lucide-icon>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500">Secure wallet transaction · GST invoice included</p>
+                </div>
+
+            </div> <!-- Ends Step 2 -->
+        </div> <!-- Ends Left Column -->
 
 
         <!-- RIGHT SIDEBAR -->
         <div class="lg:col-span-4 space-y-6">
 
             <!-- Booking Summary Sticky Card -->
-            <div
-                class="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden sticky top-6 mt-14">
-                <div class="bg-slate-900 dark:bg-slate-800 px-5 py-3">
+            <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden sticky top-6 mt-14">
+                <div class="bg-slate-900 px-5 py-3">
                     <h3 class="text-white font-semibold flex items-center gap-2 text-sm">
                         <lucide-icon name="indian-rupee" [size]="16" class="text-primary"></lucide-icon>
                         Booking Summary
@@ -733,33 +786,25 @@
                         <!-- LOCAL: Pickup City + Trip Type -->
                         <ng-container *ngIf="itinerary?.tripType === 'Local'">
                             <div class="flex justify-between items-center mt-2">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup
-                                    City</span>
-                                <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">{{itinerary?.fromCity
-                                    || 'Bangalore'}}</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup City</span>
+                                <span class="text-sm text-slate-800 font-bold">{{itinerary?.fromCity || 'Bangalore'}}</span>
                             </div>
                             <div class="flex justify-between items-center mt-1">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trip
-                                    Type</span>
-                                <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">Local
-                                    ({{itinerary?.localPackage || '8hr/80km'}})</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trip Type</span>
+                                <span class="text-sm text-slate-800 font-bold">Local ({{itinerary?.localPackage || '8hr/80km'}})</span>
                             </div>
                         </ng-container>
 
-                        <!-- AIRPORT: Pickup City + Trip Type: Transfer -->
+                        <!-- AIRPORT -->
                         <ng-container *ngIf="itinerary?.tripType === 'Airport'">
                             <div class="flex justify-between items-center mt-2">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup
-                                    City</span>
-                                <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">{{itinerary?.fromCity
-                                    || 'Bangalore'}}</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup City</span>
+                                <span class="text-sm text-slate-800 font-bold">{{itinerary?.fromCity || 'Bangalore'}}</span>
                             </div>
                             <div class="flex justify-between items-center mt-1">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trip
-                                    Type</span>
-                                <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">
-                                    Transfer ({{itinerary?.airportSubType === 'pickup' ? 'Pickup From Airport' : 'Drop
-                                    To Airport'}})
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trip Type</span>
+                                <span class="text-sm text-slate-800 font-bold">
+                                    Transfer ({{itinerary?.airportSubType === 'pickup' ? 'Pickup From Airport' : 'Drop To Airport'}})
                                 </span>
                             </div>
                         </ng-container>
@@ -767,21 +812,18 @@
                         <!-- ONE WAY / ROUND TRIP -->
                         <ng-container *ngIf="itinerary?.tripType !== 'Local' && itinerary?.tripType !== 'Airport'">
                             <div class="flex flex-col gap-1 mt-1">
-                                <div
-                                    class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-[14px]">
+                                <div class="flex items-center gap-2 text-slate-900 font-bold text-[14px]">
                                     <lucide-icon name="map-pin" [size]="12" class="text-primary"></lucide-icon>
                                     <span>{{itinerary?.fromCity || 'Bangalore'}}</span>
                                 </div>
-                                <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 ml-[5px]"></div>
-                                <div
-                                    class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-[14px]">
+                                <div class="h-4 w-px bg-slate-200 ml-[5px]"></div>
+                                <div class="flex items-center gap-2 text-slate-900 font-bold text-[14px]">
                                     <lucide-icon name="map-pin" [size]="12" class="text-rose-500"></lucide-icon>
                                     <span>{{itinerary?.toCity || 'Mysore'}}</span>
                                 </div>
                                 <ng-container *ngIf="itinerary?.tripType === 'Round Trip'">
-                                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 ml-[5px]"></div>
-                                    <div
-                                        class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-[14px]">
+                                    <div class="h-4 w-px bg-slate-200 ml-[5px]"></div>
+                                    <div class="flex items-center gap-2 text-slate-900 font-bold text-[14px]">
                                         <lucide-icon name="map-pin" [size]="12" class="text-emerald-500"></lucide-icon>
                                         <span>{{itinerary?.fromCity || 'Bangalore'}}</span>
                                     </div>
@@ -790,164 +832,105 @@
                         </ng-container>
                     </div>
 
-
                     <!-- Pickup Date/Time -->
                     <div class="grid grid-cols-2 gap-2">
                         <div class="flex flex-col gap-1">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup
-                                Date</span>
-                            <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">
-                                {{itinerary?.pickupDate ? (itinerary?.pickupDate | date:'dd MMM yyyy') :
-                                'Tomorrow'}}
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup Date</span>
+                            <span class="text-sm text-slate-800 font-bold">
+                                {{itinerary?.pickupDate ? (itinerary?.pickupDate | date:'dd MMM yyyy') : 'Tomorrow'}}
                             </span>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup
-                                Time</span>
-                            <span class="text-xs text-slate-800 dark:text-slate-200 font-bold">
-                                {{itinerary?.pickupTime || '09:30 PM'}}
-                            </span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup Time</span>
+                            <span class="text-xs text-slate-800 font-bold">{{itinerary?.pickupTime || '09:30 PM'}}</span>
                         </div>
                     </div>
 
-                    <!-- Return Date + Drop Time (Round Trip only) -->
+                    <!-- Return Date (Round Trip) -->
                     <div class="grid grid-cols-2 gap-2" *ngIf="itinerary?.tripType === 'Round Trip'">
                         <div class="flex flex-col gap-1">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Return
-                                Date</span>
-                            <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">
-                                {{itinerary?.returnDate ? (itinerary?.returnDate | date:'dd MMM yyyy') :
-                                (itinerary?.pickupDate | date:'dd MMM yyyy')}}
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Return Date</span>
+                            <span class="text-sm text-slate-800 font-bold">
+                                {{itinerary?.returnDate ? (itinerary?.returnDate | date:'dd MMM yyyy') : (itinerary?.pickupDate | date:'dd MMM yyyy')}}
                             </span>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Drop
-                                Time</span>
-                            <span class="text-xs text-slate-800 dark:text-slate-200 font-bold">
-                                09:45 PM
-                            </span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Drop Time</span>
+                            <span class="text-xs text-slate-800 font-bold">09:45 PM</span>
                         </div>
                     </div>
 
                     <!-- Selected Car -->
-                    <div class="flex justify-between items-center py-3 border-y border-slate-100 dark:border-slate-800">
+                    <div class="flex justify-between items-center py-3 border-y border-slate-100">
                         <div class="flex items-center gap-2">
                             <lucide-icon name="car" [size]="20" class="text-slate-400"></lucide-icon>
-                            <span class="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                {{selectedCar?.name || 'Wagon R or Equivalent'}}
-                            </span>
+                            <span class="text-sm font-bold text-slate-700">{{selectedCar?.name || 'Wagon R or Equivalent'}}</span>
                         </div>
-                        <span
-                            class="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-600 dark:text-slate-400 font-black uppercase tracking-tighter">
+                        <span class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-600 font-black uppercase tracking-tighter">
                             {{selectedCar?.type || 'SEDAN'}}
                         </span>
                     </div>
 
-                    <!-- Fare Details -->
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-slate-500">KMs Included</span>
-                            <span class="text-sm font-bold text-slate-900 dark:text-white">
-                                {{selectedCar?.kmsIncluded || '145 km'}}
-                            </span>
-                        </div>
+                    <!-- KMs + Fare -->
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-slate-500">KMs Included</span>
+                        <span class="text-sm font-bold text-slate-900">{{selectedCar?.kmsIncluded || '145 km'}}</span>
+                    </div>
 
-                        <!-- Total Fare -->
-                        <div
-                            class="pt-3 mt-1 border-t border-slate-100 dark:border-slate-800 flex justify-between items-end">
-                            <div>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                    Estimated
-                                    Total Fare</p>
-                                <p class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                                    ₹ {{(selectedCar?.price || 2196) | number:'1.0-0'}}
-                                </p>
-                            </div>
-                            <span
-                                class="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-black uppercase tracking-tighter">
-                                ALL INCLUSIVE
-                            </span>
+                    <div class="pt-3 mt-1 border-t border-slate-100 flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Estimated Total Fare</p>
+                            <p class="text-lg font-bold text-slate-900 tracking-tight">₹ {{(selectedCar?.price || 0) | number:'1.0-0'}}</p>
                         </div>
+                        <span class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full font-black uppercase tracking-tighter">ALL INCLUSIVE</span>
+                    </div>
 
-                        <!-- Dynamic Pay Now (Visible during Payment Selection) -->
-                        <div *ngIf="step1Complete"
-                            class="pt-3 mt-3 border-t-2 border-dashed border-primary/30 flex flex-col gap-2 bg-sky-50 dark:bg-sky-900/40 p-4 rounded-xl">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <p class="text-[12px] font-bold text-primary uppercase tracking-widest mb-1">Amount to Pay Now</p>
-                                    <p *ngIf="paymentOption === 0" class="text-sm font-semibold text-slate-400 italic">
-                                        Select a payment option
-                                    </p>
-                                    <p *ngIf="paymentOption !== 0" class="text-2xl font-black text-primary tracking-tight">
-                                        ₹ {{ getPayNowAmount() | number:'1.0-0' }}
-                                    </p>
-                                </div>
-                            </div>
-                            <!-- Deferred amount info for Options 2 & 3 -->
-                            <div *ngIf="getDeferredAmount() > 0"
-                                class="flex justify-between items-center text-xs pt-2 border-t border-primary/10">
-                                <span class="text-slate-500">Auto-deducted 48h before trip</span>
-                                <span class="font-bold text-slate-700 dark:text-slate-300">
-                                    ₹ {{ getDeferredAmount() | number:'1.0-0' }}
-                                </span>
-                            </div>
-                            <!-- Driver collection info for Option 1 -->
-                            <div *ngIf="paymentOption === 1 && getDriverCollectsAmount() > 0"
-                                class="flex justify-between items-center text-xs pt-2 border-t border-primary/10">
-                                <span class="text-slate-500">Driver collects from customer</span>
-                                <span class="font-bold text-slate-700 dark:text-slate-300">
-                                    ₹ {{ getDriverCollectsAmount() | number:'1.0-0' }}
-                                </span>
-                            </div>
+                    <!-- Dynamic Pay Now Section -->
+                    <div *ngIf="step1Complete"
+                        class="pt-3 mt-3 border-t-2 border-dashed border-primary/30 flex flex-col gap-2 bg-sky-50 p-4 rounded-xl">
+                        <div>
+                            <p class="text-[12px] font-bold text-primary uppercase tracking-widest mb-1">Amount to Pay Now</p>
+                            <p *ngIf="paymentOption === 0" class="text-sm font-semibold text-slate-400 italic">Select a payment plan</p>
+                            <p *ngIf="paymentOption !== 0" class="text-2xl font-black text-primary tracking-tight">₹ {{ getPayNowAmount() | number:'1.0-0' }}</p>
+                        </div>
+                        <div *ngIf="getDeferredAmount() > 0" class="flex justify-between items-center text-xs pt-2 border-t border-primary/10">
+                            <span class="text-slate-500">Auto-deducted 48h before trip</span>
+                            <span class="font-bold text-amber-600">₹ {{ getDeferredAmount() | number:'1.0-0' }}</span>
+                        </div>
+                        <div *ngIf="paymentOption === 1 && getDriverCollectsAmount() > 0" class="flex justify-between items-center text-xs pt-2 border-t border-primary/10">
+                            <span class="text-slate-500">Customer pays driver</span>
+                            <span class="font-bold text-slate-700">₹ {{ getDriverCollectsAmount() | number:'1.0-0' }}</span>
+                        </div>
+                        <div *ngIf="paymentOption !== 0" class="flex justify-between items-center text-[10px] pt-2 border-t border-primary/10">
+                            <span class="text-slate-400">Payment plan</span>
+                            <span class="font-semibold text-slate-600">
+                                {{ paymentOption === 1 ? 'Pay any amount now' : paymentOption === 2 ? 'Pay 25% now, auto-deducted' : 'Zero cash — full wallet' }}
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Footer Note inside Card -->
-                <div
-                    class="bg-slate-50 dark:bg-slate-800/50 px-4 py-2.5 border-t border-slate-100 dark:border-slate-800">
+                <!-- Sidebar Book Now Button -->
+                <div class="p-4 pt-0" *ngIf="step1Complete && { balance: walletBalance$ | async } as sidebarWallet">
+                    <button (click)="handleBookOrTopUp()"
+                        [disabled]="paymentOption === 0 || isProcessingWallet"
+                        class="w-full py-3 bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-600 hover:to-cyan-600 disabled:from-slate-300 disabled:to-slate-300 text-white font-bold text-sm rounded-xl shadow-lg shadow-primary/20 transition-all cursor-pointer disabled:cursor-not-allowed disabled:shadow-none">
+                        <span *ngIf="paymentOption === 0">Select Payment Option</span>
+                        <span *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance(sidebarWallet.balance)">Top Up Wallet</span>
+                        <span *ngIf="paymentOption !== 0 && hasSufficientWalletBalance(sidebarWallet.balance)">Book Now — ₹{{ getPayNowAmount() | number:'1.0-0' }}</span>
+                    </button>
+                </div>
+
+                <!-- Footer Note -->
+                <div class="bg-slate-50 px-4 py-2.5 border-t border-slate-100">
                     <div class="flex items-start gap-2 text-[10px] text-slate-500 leading-tight">
-                        <lucide-icon name="shield-check" [size]="14"
-                            class="mt-0.5 flex-shrink-0 text-emerald-500"></lucide-icon>
-                        <p>Price includes fuel, driver allowance, and basic toll. Parking and extra KMs billed as
-                            actuals.</p>
+                        <lucide-icon name="shield-check" [size]="14" class="mt-0.5 flex-shrink-0 text-emerald-500"></lucide-icon>
+                        <p>Price includes fuel, driver allowance, and basic toll. Parking and extra KMs billed as actuals.</p>
                     </div>
                 </div>
             </div>
-
-            <!-- Mobile Value Props (Hidden on desktop) -->
-            <div
-                class="md:hidden bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
-                <h3 class="text-slate-900 dark:text-white font-bold mb-6 text-center uppercase tracking-wider text-xs">
-                    Our Promise of Quality</h3>
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="text-center">
-                        <div
-                            class="w-12 h-12 mx-auto mb-3 rounded-full bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center border-2 border-dashed border-primary/30">
-                            <lucide-icon name="check-circle" [size]="20" class="text-primary"></lucide-icon>
-                        </div>
-                        <p class="text-[8px] font-semibold text-slate-500 uppercase">Since 2006</p>
-                    </div>
-                    <div class="text-center">
-                        <div
-                            class="w-12 h-12 mx-auto mb-3 rounded-full bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center border-2 border-dashed border-primary/30">
-                            <lucide-icon name="user-check" [size]="20" class="text-primary"></lucide-icon>
-                        </div>
-                        <p class="text-[8px] font-semibold text-slate-500 uppercase">Expert Staff</p>
-                    </div>
-                    <div class="text-center">
-                        <div
-                            class="w-12 h-12 mx-auto mb-3 rounded-full bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center border-2 border-dashed border-primary/30">
-                            <lucide-icon name="star" [size]="20" class="text-primary"></lucide-icon>
-                        </div>
-                        <p class="text-[8px] font-semibold text-slate-500 uppercase">9.5/10 Rated</p>
-                    </div>
-                </div>
-            </div>
-        </div> <!-- Ends Sidebar (line 464) -->
-    </div> <!-- Ends Main Grid (line 63) -->
-
-
+        </div> <!-- Ends Sidebar -->
+    </div> <!-- Ends Main Grid -->
 
 
 
@@ -1082,7 +1065,7 @@
 <!-- Full Screen Processing Overlay -->
 <div *ngIf="isProcessingWallet"
     class="fixed inset-0 z-[110] bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm flex items-center justify-center flex-col animate-fade-in">
-    <lucide-icon name="loader-2" [size]="48" class="text-primary animate-spin mb-4"></lucide-icon>
+    <div class="w-12 h-12 border-4 border-slate-200 border-t-primary rounded-full animate-spin mb-4"></div>
     <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Processing Payment</h2>
     <p class="text-slate-500 animate-pulse text-sm">Please do not refresh or close this page...</p>
 </div>

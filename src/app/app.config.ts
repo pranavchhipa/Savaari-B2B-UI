@@ -20,10 +20,10 @@ import {
   ParkingCircle, Gauge, Users, Briefcase, Snowflake, Fuel, Banknote,
   ArrowDownLeft, ArrowUpRight, CreditCard, Loader2, Filter, AlertTriangle,
   ArrowLeft, Plus, Check, Eye, EyeOff,
-  TrendingUp, Menu, LayoutDashboard, Headphones, CheckCircle2,
+  TrendingUp, TrendingDown, Menu, LayoutDashboard, Headphones, CheckCircle2,
   Crosshair, AlertCircle, RefreshCw, Inbox,
   CalendarCheck, BarChart3, Percent, ChevronLeft,
-  Printer, List
+  Printer, List, MinusCircle, ArrowLeftRight, Navigation
 } from 'lucide-angular';
 
 import { routes } from './app.routes';
@@ -58,10 +58,10 @@ export const appConfig: ApplicationConfig = {
         ParkingCircle, Gauge, Users, Briefcase, Snowflake, Fuel, Banknote,
         ArrowDownLeft, ArrowUpRight, CreditCard, Loader2, Filter, AlertTriangle,
         ArrowLeft, Plus, Check, Eye, EyeOff,
-        TrendingUp, Menu, LayoutDashboard, Headphones, CheckCircle2,
+        TrendingUp, TrendingDown, Menu, LayoutDashboard, Headphones, CheckCircle2,
         Crosshair, AlertCircle, RefreshCw, Inbox,
         CalendarCheck, BarChart3, Percent, ChevronLeft,
-        Printer, List
+        Printer, List, MinusCircle, ArrowLeftRight, Navigation
       })
     }
   ]

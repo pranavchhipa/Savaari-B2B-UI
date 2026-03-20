@@ -71,6 +71,28 @@ export class ApiService {
   }
 
   /**
+   * POST to the B2B API with form-encoded body.
+   * Used for: user/update-profile (confirmed from beta site — sends form data, not JSON)
+   */
+  b2bPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+  }
+
+  /**
+   * POST to the Wallet API (apiext.betasavaari.com/wallet/public/).
+   * Token goes in Authorization: Bearer header per wallet TRD.
+   * Used for: wallet/balance, wallet/create, wallet/history, wallet/topup/*, wallet/pay-booking, wallet/refund
+   */
+  walletPost<T>(endpoint: string, body: unknown, token: string): Observable<T> {
+    return this.http.post<T>(`${environment.walletApiBaseUrl}/${endpoint}`, body, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
+
+  /**
    * Strip undefined/null/empty values and convert everything to strings.
    * HttpParams requires all values to be strings.
    */

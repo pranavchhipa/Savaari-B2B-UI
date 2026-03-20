@@ -235,11 +235,23 @@ export class BookingApiService {
       return of({ ...MOCK_BOOKING_DETAILS, bookingId });
     }
 
-    return this.api.b2bGet<BookingDetails>('booking-details', {
+    return this.api.b2bGet<any>('booking-details', {
       userEmail: this.auth.getUserEmail(),
       token: this.auth.getB2bToken(),
       bookingId,
     }).pipe(
+      map(response => {
+        // Same wrapped structure as getAllBookings: { bookingDetails: { bookingUpcoming, bookingCompleted, bookingCancelled } }
+        const details = response?.bookingDetails;
+        if (!details) return response as BookingDetails;
+        const all = [
+          ...(details.bookingUpcoming || []),
+          ...(details.bookingCompleted || []),
+          ...(details.bookingCancelled || []),
+        ];
+        // Find the specific booking or fall back to first result
+        return (all.find((b: any) => String(b.booking_id) === String(bookingId)) || all[0] || response) as BookingDetails;
+      }),
       catchError(err => this.errorHandler.handleApiError(err, 'BookingApiService.getBookingDetails'))
     );
   }

@@ -90,6 +90,34 @@ export class LocalityService {
     );
   }
 
+  /**
+   * Search ONLY airport localities for a given city.
+   * Filters localities where isAirport === true.
+   * Used in the Airport tab to show only airport/terminal options.
+   */
+  searchAirports(cityId: number, query: string, maxResults = 10): Observable<Locality[]> {
+    return this.getLocalities(cityId).pipe(
+      map(localities => {
+        const airports = localities.filter(l => l.isAirport);
+        // Most cities have very few airports (1-3), so always show all.
+        // If query matches, prioritize those; otherwise show all airports anyway.
+        if (!query || query.length < 1) return airports.slice(0, maxResults);
+        const q = query.toLowerCase();
+        const matched = airports.filter(l => l.name.toLowerCase().includes(q));
+        return matched.length > 0 ? matched.slice(0, maxResults) : airports.slice(0, maxResults);
+      })
+    );
+  }
+
+  /**
+   * Get all airport localities for a city (no search filter).
+   */
+  getAirports(cityId: number): Observable<Locality[]> {
+    return this.getLocalities(cityId).pipe(
+      map(localities => localities.filter(l => l.isAirport))
+    );
+  }
+
   clearCache(): void {
     this.cache.clear();
   }

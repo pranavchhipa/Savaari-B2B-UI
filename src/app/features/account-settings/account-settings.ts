@@ -1,7 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { FooterComponent } from '../../components/layout/footer/footer';
 import { AuthService } from '../../core/services/auth.service';
@@ -19,6 +19,7 @@ type AccountSection = 'personal' | 'password';
 })
 export class AccountSettingsComponent implements OnInit {
   activeSection: AccountSection = 'personal';
+  private router = inject(Router);
   private location = inject(Location);
   private auth = inject(AuthService);
   private api = inject(ApiService);
@@ -66,6 +67,7 @@ export class AccountSettingsComponent implements OnInit {
 
   ngOnInit() {
     this.loadProfileFromAuth();
+    this.logoPreview = localStorage.getItem('agentLogo');
   }
 
   private loadProfileFromAuth() {
@@ -98,10 +100,21 @@ export class AccountSettingsComponent implements OnInit {
       const reader = new FileReader();
       reader.onload = e => {
         this.logoPreview = e.target?.result as string;
+        // Save to localStorage so navbar can show agent's logo
+        if (this.logoPreview) {
+          localStorage.setItem('agentLogo', this.logoPreview);
+        }
         this.cdr.markForCheck();
       };
       reader.readAsDataURL(input.files[0]);
     }
+  }
+
+  removeLogo() {
+    this.logoPreview = null;
+    this.profile.logoFile = null;
+    localStorage.removeItem('agentLogo');
+    this.cdr.markForCheck();
   }
 
   updateProfile() {
@@ -110,25 +123,23 @@ export class AccountSettingsComponent implements OnInit {
     this.isSaving = true;
     this.cdr.markForCheck();
 
-    // POST /user/update-profile to update profile (per workflow doc)
+    // POST /user/update-profile with form data (confirmed from beta site)
     const payload = {
+      userName: this.profile.fullName,
       userEmail: this.profile.email,
+      userPhone: this.profile.phone,
+      agentCompanyName: this.profile.companyName,
+      agentCompanyAddress: this.profile.companyAddress,
+      agentCity: this.profile.city,
+      agentState: '',
+      agentcityId: 0,
+      agentPAN: this.profile.panNumber,
+      agentGST: this.profile.gstNumber,
       token: this.auth.getB2bToken(),
-      title: this.profile.title,
-      firstname: this.profile.fullName,
-      lastname: this.profile.lastName,
-      companyname: this.profile.companyName,
-      billingaddress: this.profile.companyAddress,
-      city: this.profile.city,
-      phone: this.profile.phone,
-      mobileno: this.profile.mobile,
-      pan_number: this.profile.panNumber,
-      websiteaddress: this.profile.websiteAddress,
-      other_emails: this.profile.otherEmails,
-      other_phone: this.profile.otherPhone,
+      isAgent: true,
     };
 
-    this.api.b2bPost<any>('user/update-profile', payload).subscribe({
+    this.api.b2bPostForm<any>('user/update-profile', payload).subscribe({
       next: (response) => {
         this.isSaving = false;
         if (response?.statusCode === 200) {

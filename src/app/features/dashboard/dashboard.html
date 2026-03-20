@@ -35,284 +35,400 @@
 
   <div class="relative z-20 w-full max-w-7xl px-4 mt-8">
     <div
-      class="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md shadow-2xl rounded-3xl overflow-visible border border-slate-200/50 dark:border-slate-700/50 transition-all duration-500 hover:shadow-cyan/20">
+      class="bg-white dark:bg-slate-900 shadow-2xl rounded-3xl overflow-visible border border-slate-200 dark:border-slate-700 transition-all duration-500">
 
       <!-- Top Navigation Tabs -->
-      <div
-        class="flex border-b border-slate-100 dark:border-slate-800 relative z-30 bg-white dark:bg-slate-900 rounded-t-2xl overflow-hidden">
-        <button (click)="selectTab('ONE_WAY')"
-          [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'ONE_WAY', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'ONE_WAY'}"
-          class="flex-1 py-6 text-sm font-bold border-b-4 transition-all duration-300 tracking-[0.05em] focus:outline-none">
-          ONE WAY
-        </button>
-        <button (click)="selectTab('ROUND_TRIP')"
-          [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'ROUND_TRIP', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'ROUND_TRIP'}"
-          class="flex-1 py-6 text-sm font-bold border-b-4 transition-all duration-300 tracking-[0.05em] focus:outline-none">
-          ROUND TRIP
-        </button>
-        <button (click)="selectTab('LOCAL')"
-          [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'LOCAL', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'LOCAL'}"
-          class="flex-1 py-6 text-sm font-bold border-b-4 transition-all duration-300 tracking-[0.05em] focus:outline-none">
-          LOCAL
-        </button>
-        <button (click)="selectTab('AIRPORT')"
-          [ngClass]="{'border-primary text-primary bg-primary/10 shadow-inner': selectedTab === 'AIRPORT', 'border-transparent hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-500': selectedTab !== 'AIRPORT'}"
-          class="flex-1 py-6 text-sm font-bold border-b-4 transition-all duration-300 tracking-[0.05em] focus:outline-none">
-          AIRPORT
+      <div class="flex border-b-2 border-slate-100 dark:border-slate-800 relative z-30 bg-white dark:bg-slate-900 rounded-t-3xl">
+        <button *ngFor="let tab of [{id: 'ONE_WAY', label: 'ONE WAY', icon: 'arrow-right'}, {id: 'ROUND_TRIP', label: 'ROUND TRIP', icon: 'refresh-cw'}, {id: 'LOCAL', label: 'LOCAL', icon: 'map-pin'}, {id: 'AIRPORT', label: 'AIRPORT', icon: 'plane'}]"
+          (click)="selectTab(tab.id)"
+          [ngClass]="{'border-primary text-primary font-extrabold': selectedTab === tab.id, 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-bold': selectedTab !== tab.id}"
+          class="flex-1 flex items-center justify-center gap-2.5 py-5 text-[13px] border-b-[3px] transition-all duration-300 tracking-widest outline-none focus:outline-none focus-visible:outline-none cursor-pointer bg-transparent">
+          <lucide-icon [name]="tab.icon" [size]="17"></lucide-icon>
+          {{ tab.label }}
         </button>
       </div>
 
       <!-- Dynamic Form Content Area -->
-      <div class="p-10 pb-14 relative">
-        <form [formGroup]="bookingForm" class="grid grid-cols-1 items-end"
-          [ngClass]="{ 'md:grid-cols-6 gap-5': selectedTab === 'ROUND_TRIP', 'md:grid-cols-4 gap-8': selectedTab !== 'ROUND_TRIP' }">
+      <div class="px-6 lg:px-8 pt-6 pb-12 relative" [formGroup]="bookingForm">
 
-          <!-- ============================ -->
-          <!-- TAB: ONE WAY & ROUND TRIP (Shared From/To) -->
-          <!-- ============================ -->
-          <ng-container>
-            <div [hidden]="selectedTab !== 'ONE_WAY' && selectedTab !== 'ROUND_TRIP'"
-              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
-              <label
-                class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">From
-                <span class="text-red-500">*</span></label>
-              <div class="relative">
-                <p-autoComplete formControlName="fromCity"
-                  [suggestions]="filteredSourceCities"
-                  (completeMethod)="filterSourceCities($event)"
-                  (onSelect)="onSourceCitySelect($event)"
-                  field="name"
-                  optionLabel="name"
-                  [minLength]="1"
-                  placeholder="City - e.g. Bangalore"
-                  styleClass="w-full"
-                  inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal !shadow-none"
-                  panelStyleClass="!bg-white dark:!bg-slate-900"
-                  appendTo="body">
-                  <ng-template pTemplate="item" let-city>
-                    <div class="flex items-center gap-2 px-2 py-1.5">
-                      <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">{{ city.name }}</span>
-                    </div>
-                  </ng-template>
-              </p-autoComplete>
+        <!-- ============================================ -->
+        <!-- ONE WAY: From | Swap | To | Pickup | Time   -->
+        <!-- ============================================ -->
+        <div [hidden]="selectedTab !== 'ONE_WAY'" class="flex items-end gap-4 flex-wrap">
+          <!-- FROM -->
+          <div class="flex-1 min-w-[180px]" [ngClass]="{'[&_input]:!border-red-400': formSubmitted && !bookingForm.get('fromCity')?.value?.id}">
+            <label class="block text-[10px] font-bold text-primary uppercase tracking-[0.12em] mb-1.5">FROM</label>
+            <p-autoComplete formControlName="fromCity" [suggestions]="filteredSourceCities"
+              (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
+              field="name" optionLabel="name" [minLength]="1" placeholder="Enter source city"
+              styleClass="w-full"
+              inputStyleClass="w-full bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:border-primary px-3 py-2.5 text-slate-900 placeholder-slate-400 !shadow-none transition-all"
+              panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+              <ng-template pTemplate="item" let-city>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
+                  <span class="text-sm text-slate-700">{{ city.name }}</span>
+                </div>
+              </ng-template>
+            </p-autoComplete>
+            <span *ngIf="formSubmitted && !bookingForm.get('fromCity')?.value?.id" class="text-red-500 text-[11px] font-medium mt-1 block">Select source city</span>
+          </div>
+
+          <!-- SWAP -->
+          <div class="pb-1">
+            <button type="button" (click)="swapCities()"
+              class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center transition-all hover:bg-primary/90 active:scale-95 cursor-pointer">
+              <lucide-icon name="arrow-left-right" [size]="15" class="text-white"></lucide-icon>
+            </button>
+          </div>
+
+          <!-- TO -->
+          <div class="flex-1 min-w-[180px]" [ngClass]="{'[&_input]:!border-red-400': formSubmitted && !bookingForm.get('toCity')?.value?.id}">
+            <label class="block text-[10px] font-bold text-rose-500 uppercase tracking-[0.12em] mb-1.5">TO</label>
+            <p-autoComplete formControlName="toCity" [suggestions]="filteredDestinationCities"
+              (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="1"
+              placeholder="Enter destination city" styleClass="w-full"
+              inputStyleClass="w-full bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:border-primary px-3 py-2.5 text-slate-900 placeholder-slate-400 !shadow-none transition-all"
+              panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+              <ng-template pTemplate="item" let-city>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <lucide-icon name="map-pin" [size]="14" class="text-rose-500 shrink-0"></lucide-icon>
+                  <span class="text-sm text-slate-700">{{ city.name }}</span>
+                </div>
+              </ng-template>
+            </p-autoComplete>
+            <span *ngIf="formSubmitted && !bookingForm.get('toCity')?.value?.id" class="text-red-500 text-[11px] font-medium mt-1 block">Select destination city</span>
+          </div>
+
+          <!-- PICKUP DATE -->
+          <div class="w-[185px]">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">PICK UP</label>
+            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 transition-all focus-within:border-primary cursor-pointer" (click)="pickupDate1.showOverlay()">
+              <div class="flex items-center gap-2 flex-1">
+                <lucide-icon name="calendar" [size]="15" class="text-primary shrink-0"></lucide-icon>
+                <p-datepicker #pickupDate1 formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy"
+                  [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent"
+                  inputStyleClass="w-full bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 text-slate-700 !shadow-none cursor-pointer">
+                </p-datepicker>
               </div>
             </div>
+          </div>
 
-            <div [hidden]="selectedTab !== 'ONE_WAY' && selectedTab !== 'ROUND_TRIP'"
-              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors relative">
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">To
-                <span class="text-red-500">*</span></label>
-              <div class="relative flex items-center">
-                <p-autoComplete formControlName="toCity"
-                  [suggestions]="filteredDestinationCities"
-                  (completeMethod)="filterDestinationCities($event)"
-                  field="name"
-                  optionLabel="name"
-                  [minLength]="1"
-                  placeholder="City - e.g. Mysore"
-                  styleClass="w-full"
-                  inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal !shadow-none"
-                  panelStyleClass="!bg-white dark:!bg-slate-900"
-                  appendTo="body">
-                  <ng-template pTemplate="item" let-city>
-                    <div class="flex items-center gap-2 px-2 py-1.5">
-                      <lucide-icon name="map-pin" [size]="14" class="text-rose-500 shrink-0"></lucide-icon>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">{{ city.name }}</span>
-                    </div>
-                  </ng-template>
-                </p-autoComplete>
+          <!-- PICKUP TIME -->
+          <div class="w-[185px]">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">PICK UP AT</label>
+            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 transition-all focus-within:border-primary cursor-pointer" (click)="pickupTime1.showOverlay()">
+              <div class="flex items-center gap-2 flex-1">
+                <lucide-icon name="clock" [size]="15" class="text-primary shrink-0"></lucide-icon>
+                <p-datepicker #pickupTime1 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
+                  appendTo="body" styleClass="w-full border-none bg-transparent"
+                  inputStyleClass="w-full bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 text-slate-700 !shadow-none cursor-pointer">
+                </p-datepicker>
               </div>
-              <!-- Subtle Add City Link for Round Trip -->
-              <button [hidden]="selectedTab !== 'ROUND_TRIP'"
-                class="absolute -bottom-6 left-0 flex items-center gap-1 text-primary hover:text-[#1C8CBA] transition-colors group">
-                <lucide-icon name="plus-circle" [size]="12"
-                  class="group-hover:scale-110 transition-transform"></lucide-icon>
-                <span class="text-[10px] font-bold uppercase tracking-wider">Add City</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- ROUND TRIP: Row 1: Cities | Row 2: Dates aligned             -->
+        <!-- ============================================================ -->
+        <div [hidden]="selectedTab !== 'ROUND_TRIP'">
+          <!-- Row 1: FROM / SWAP / TO -->
+          <div class="flex items-end gap-4 mb-4">
+            <!-- FROM -->
+            <div class="flex-1" [ngClass]="{'[&_input]:!border-red-400': formSubmitted && !bookingForm.get('fromCity')?.value?.id}">
+              <label class="block text-[10px] font-bold text-primary uppercase tracking-[0.12em] mb-1.5">FROM</label>
+              <p-autoComplete formControlName="fromCity" [suggestions]="filteredSourceCities"
+                (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
+                field="name" optionLabel="name" [minLength]="1" placeholder="Source city"
+                styleClass="w-full"
+                inputStyleClass="w-full bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:border-primary px-3 py-2.5 text-slate-900 placeholder-slate-400 !shadow-none transition-all"
+                panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                <ng-template pTemplate="item" let-city>
+                  <div class="flex items-center gap-2 px-2 py-1.5">
+                    <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
+                    <span class="text-sm text-slate-700">{{ city.name }}</span>
+                  </div>
+                </ng-template>
+              </p-autoComplete>
+              <span *ngIf="formSubmitted && !bookingForm.get('fromCity')?.value?.id" class="text-red-500 text-[11px] font-medium mt-1 block">Select source city</span>
+            </div>
+
+            <!-- SWAP -->
+            <div class="pb-1">
+              <button type="button" (click)="swapCities()"
+                class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center transition-all hover:bg-primary/90 active:scale-95 cursor-pointer">
+                <lucide-icon name="arrow-left-right" [size]="15" class="text-white"></lucide-icon>
               </button>
             </div>
-          </ng-container>
 
-          <!-- ============================ -->
-          <!-- TAB: LOCAL (City Only) -->
-          <!-- ============================ -->
-          <ng-container>
-            <div [hidden]="selectedTab !== 'LOCAL'"
-              class="md:col-span-2 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
-              <label
-                class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">City
-                <span class="text-red-500">*</span></label>
-              <div class="relative">
-                <p-autoComplete formControlName="fromCity"
-                  [suggestions]="filteredSourceCities"
-                  (completeMethod)="filterSourceCities($event)"
-                  (onSelect)="onSourceCitySelect($event)"
-                  field="name"
-                  optionLabel="name"
-                  [minLength]="1"
-                  placeholder="City - e.g. Bangalore"
-                  styleClass="w-full"
-                  inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal !shadow-none"
-                  panelStyleClass="!bg-white dark:!bg-slate-900"
-                  appendTo="body">
-                  <ng-template pTemplate="item" let-city>
-                    <div class="flex items-center gap-2 px-2 py-1.5">
-                      <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">{{ city.name }}</span>
-                    </div>
-                  </ng-template>
-              </p-autoComplete>
+            <!-- TO -->
+            <div class="flex-1" [ngClass]="{'[&_input]:!border-red-400': formSubmitted && !bookingForm.get('toCity')?.value?.id}">
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-[10px] font-bold text-rose-500 uppercase tracking-[0.12em]">TO</label>
+                <button *ngIf="extraDestinations.length < MAX_DESTINATIONS - 1"
+                  type="button" (click)="addDestinationCity()"
+                  class="px-2 py-0.5 text-white text-[9px] font-bold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap bg-orange-500 hover:bg-orange-600 cursor-pointer shadow-sm">
+                  + ADD CITY
+                </button>
               </div>
-            </div>
-          </ng-container>
-
-          <!-- ============================ -->
-          <!-- TAB: AIRPORT -->
-          <!-- ============================ -->
-          <ng-container>
-            <!-- TRIP TYPE (Col 1) -->
-            <div [hidden]="selectedTab !== 'AIRPORT'"
-              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
-              <label
-                class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">Trip
-                <span class="text-red-500">*</span></label>
-              <p-select formControlName="tripType" [options]="tripTypes" optionLabel="label" optionValue="value"
-                placeholder="Select Trip Type" styleClass="w-full !border-none !bg-transparent !shadow-none !p-0"
+              <p-autoComplete formControlName="toCity" [suggestions]="filteredDestinationCities"
+                (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="1"
+                placeholder="Destination city" styleClass="w-full"
+                inputStyleClass="w-full bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:border-primary px-3 py-2.5 text-slate-900 placeholder-slate-400 !shadow-none transition-all"
                 panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
-              </p-select>
-            </div>
-
-            <!-- FIELD 1 (Col 2) -->
-            <div [hidden]="selectedTab !== 'AIRPORT'"
-              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">
-                {{ airportLabel1 }}
-              </label>
-              <div class="relative flex items-center">
-                <lucide-icon [hidden]="bookingForm.get('tripType')?.value !== 'drop'" name="crosshair" [size]="14"
-                  class="text-slate-400 mr-2"></lucide-icon>
-                <input [hidden]="bookingForm.get('tripType')?.value !== 'pickup' && bookingForm.get('tripType')?.value"
-                  formControlName="dropAirport"
-                  class="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal outline-none"
-                  placeholder="Start typing city - e.g. Bangalore" type="text" />
-                <input [hidden]="bookingForm.get('tripType')?.value !== 'drop'" formControlName="pickupAddress"
-                  class="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal outline-none"
-                  placeholder="Start typing your address" type="text" />
-              </div>
-            </div>
-
-            <!-- FIELD 2 (Col 3) - Only if Trip Type is selected -->
-            <div [hidden]="selectedTab !== 'AIRPORT' || !bookingForm.get('tripType')?.value"
-              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">
-                {{ airportLabel2 }}
-              </label>
-              <div class="relative flex items-center">
-                <lucide-icon [hidden]="bookingForm.get('tripType')?.value !== 'pickup'" name="crosshair" [size]="14"
-                  class="text-slate-400 mr-2"></lucide-icon>
-                <input [hidden]="bookingForm.get('tripType')?.value !== 'pickup'" formControlName="pickupAddress"
-                  class="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal outline-none"
-                  placeholder="Start typing your address" type="text" />
-                <input [hidden]="bookingForm.get('tripType')?.value !== 'drop'" formControlName="dropAirport"
-                  class="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-700 dark:text-slate-300 placeholder-slate-400 font-normal outline-none"
-                  placeholder="Start typing city - e.g. Bangalore" type="text" />
-              </div>
-            </div>
-          </ng-container>
-
-          <!-- ============================ -->
-          <!-- SHARED DATE/TIME FIELDS -->
-          <!-- ============================ -->
-
-          <!-- Pick Up Date (Used in ALL tabs) -->
-          <div
-            class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-0.5 focus-within:border-primary transition-colors">
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">Pick
-              Up</label>
-            <div class="relative flex justify-between items-center">
-              <p-datepicker #pickupDate formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy"
-                [minDate]="minPickupDate"
-                appendTo="body" styleClass="w-full border-none bg-transparent"
-                inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-normal !shadow-none">
-              </p-datepicker>
-              <lucide-icon name="calendar" [size]="14"
-                class="text-slate-400 ml-2 cursor-pointer hover:text-primary transition-colors"
-                (click)="pickupDate.toggle()"></lucide-icon>
+                <ng-template pTemplate="item" let-city>
+                  <div class="flex items-center gap-2 px-2 py-1.5">
+                    <lucide-icon name="map-pin" [size]="14" class="text-rose-500 shrink-0"></lucide-icon>
+                    <span class="text-sm text-slate-700">{{ city.name }}</span>
+                  </div>
+                </ng-template>
+              </p-autoComplete>
+              <span *ngIf="formSubmitted && !bookingForm.get('toCity')?.value?.id" class="text-red-500 text-[11px] font-medium mt-1 block">Select destination city</span>
             </div>
           </div>
 
-          <!-- Return Date (Used ONLY in ROUND TRIP) -->
-          <ng-container>
-            <div [hidden]="selectedTab !== 'ROUND_TRIP'"
-              class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-0.5 focus-within:border-primary transition-colors">
-              <label
-                class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">Return
-                <span class="text-red-500">*</span></label>
-              <div class="relative flex justify-between items-center">
-                <p-datepicker #returnDate formControlName="returnDate" [showIcon]="false" dateFormat="dd-mm-yy"
-                  [minDate]="minReturnDate"
-                  appendTo="body" styleClass="w-full border-none bg-transparent"
-                  inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-normal !shadow-none">
+          <!-- Extra Destinations (Round Trip multi-city) — between cities and dates -->
+          <div *ngIf="extraDestinations.length > 0" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div *ngFor="let dest of extraDestinations; let i = index">
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-[10px] font-bold text-rose-500 uppercase tracking-[0.12em]">TO</label>
+                <button type="button" (click)="removeDestinationCity(i)" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                  <lucide-icon name="x" [size]="14"></lucide-icon>
+                </button>
+              </div>
+              <p-autoComplete [ngModel]="extraDestinations[i]" [ngModelOptions]="{standalone: true}"
+                [suggestions]="filteredDestinationCities" (completeMethod)="filterExtraDestCities($event)"
+                (onSelect)="onExtraDestinationSelect($event, i)" field="name" optionLabel="name" [minLength]="1"
+                placeholder="Enter city" styleClass="w-full"
+                inputStyleClass="w-full bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:border-primary px-3 py-2.5 text-slate-900 placeholder-slate-400 !shadow-none transition-all"
+                panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                <ng-template pTemplate="item" let-city>
+                  <div class="flex items-center gap-2 px-2 py-1.5">
+                    <lucide-icon name="map-pin" [size]="14" class="text-rose-500 shrink-0"></lucide-icon>
+                    <span class="text-sm">{{ city.name }}</span>
+                  </div>
+                </ng-template>
+              </p-autoComplete>
+            </div>
+          </div>
+
+          <!-- Row 2: PICKUP | PICKUP AT | RETURN | DROP TIME — all same width, evenly spaced -->
+          <div class="grid grid-cols-4 gap-4">
+            <!-- PICKUP DATE -->
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">PICK UP</label>
+              <div class="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 transition-all focus-within:border-primary cursor-pointer" (click)="pickupDate2.showOverlay()">
+                <div class="flex items-center gap-2 flex-1">
+                  <lucide-icon name="calendar" [size]="15" class="text-primary shrink-0"></lucide-icon>
+                  <p-datepicker #pickupDate2 formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy"
+                    [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent"
+                    inputStyleClass="w-full bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 text-slate-700 !shadow-none cursor-pointer">
+                  </p-datepicker>
+                </div>
+                </div>
+            </div>
+
+            <!-- PICKUP TIME -->
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">PICK UP AT</label>
+              <div class="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 transition-all focus-within:border-primary cursor-pointer" (click)="pickupTime2.showOverlay()">
+                <div class="flex items-center gap-2 flex-1">
+                  <lucide-icon name="clock" [size]="15" class="text-primary shrink-0"></lucide-icon>
+                  <p-datepicker #pickupTime2 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
+                    appendTo="body" styleClass="w-full border-none bg-transparent"
+                    inputStyleClass="w-full bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 text-slate-700 !shadow-none cursor-pointer">
+                  </p-datepicker>
+                </div>
+                </div>
+            </div>
+
+            <!-- RETURN DATE -->
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">RETURN <span class="text-red-500">*</span></label>
+              <div class="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 transition-all focus-within:border-primary cursor-pointer" (click)="returnDate2.showOverlay()">
+                <div class="flex items-center gap-2 flex-1">
+                  <lucide-icon name="calendar" [size]="15" class="text-primary shrink-0"></lucide-icon>
+                  <p-datepicker #returnDate2 formControlName="returnDate" [showIcon]="false" dateFormat="dd-mm-yy"
+                    [minDate]="minReturnDate" appendTo="body" styleClass="w-full border-none bg-transparent"
+                    inputStyleClass="w-full bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 text-slate-700 !shadow-none cursor-pointer">
+                  </p-datepicker>
+                </div>
+                </div>
+            </div>
+
+            <!-- DROP TIME -->
+            <div class="relative group">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">DROP TIME</label>
+              <div class="flex items-center justify-between bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5">
+                <div class="flex items-center gap-2">
+                  <lucide-icon name="clock" [size]="15" class="text-slate-400 shrink-0"></lucide-icon>
+                  <span class="text-sm text-slate-500 font-semibold">{{ getDropTime() }}</span>
+                </div>
+                <lucide-icon name="info" [size]="12" class="text-slate-300 shrink-0 ml-2"></lucide-icon>
+              </div>
+              <div class="absolute -bottom-9 right-0 z-50 hidden group-hover:block bg-slate-800 text-white text-[10px] font-medium rounded-md px-3 py-1.5 shadow-lg max-w-[220px]">
+                {{ getDropTimeMessage() }}
+                <div class="absolute -top-1 right-4 w-2 h-2 bg-slate-800 rotate-45"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================= -->
+        <!-- LOCAL: City | Pickup | Time       -->
+        <!-- ================================= -->
+        <div [hidden]="selectedTab !== 'LOCAL'" class="flex items-end gap-4 flex-wrap">
+          <!-- CITY -->
+          <div class="flex-1 min-w-[220px]">
+            <label class="block text-[10px] font-bold text-primary uppercase tracking-[0.12em] mb-1.5">CITY</label>
+            <p-autoComplete formControlName="fromCity" [suggestions]="filteredSourceCities"
+              (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
+              field="name" optionLabel="name" [minLength]="1" placeholder="Enter city — e.g. Bangalore"
+              styleClass="w-full"
+              inputStyleClass="w-full bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:border-primary px-3 py-2.5 text-slate-900 placeholder-slate-400 !shadow-none transition-all"
+              panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+              <ng-template pTemplate="item" let-city>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
+                  <span class="text-sm">{{ city.name }}</span>
+                </div>
+              </ng-template>
+            </p-autoComplete>
+          </div>
+
+          <!-- PICKUP DATE -->
+          <div class="w-[185px]">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">PICK UP</label>
+            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 transition-all focus-within:border-primary cursor-pointer" (click)="pickupDate3.showOverlay()">
+              <div class="flex items-center gap-2 flex-1">
+                <lucide-icon name="calendar" [size]="15" class="text-primary shrink-0"></lucide-icon>
+                <p-datepicker #pickupDate3 formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy"
+                  [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent"
+                  inputStyleClass="w-full bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 text-slate-700 !shadow-none cursor-pointer">
                 </p-datepicker>
-                <lucide-icon name="calendar" [size]="14"
-                  class="text-slate-400 ml-2 cursor-pointer hover:text-primary transition-colors"
-                  (click)="returnDate.toggle()"></lucide-icon>
               </div>
             </div>
-          </ng-container>
-
-          <!-- Pick Up Time (Used in ALL tabs) -->
-          <div
-            class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 focus-within:border-primary transition-colors">
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">Pick
-              Up At</label>
-            <div class="relative flex justify-between items-center">
-              <p-datepicker #pickupTime formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
-                appendTo="body" styleClass="w-full border-none bg-transparent"
-                inputStyleClass="w-full bg-transparent border-none text-base focus:ring-0 p-0 text-slate-800 dark:text-slate-200 font-normal !shadow-none">
-              </p-datepicker>
-              <lucide-icon name="clock" [size]="14"
-                class="text-slate-400 ml-2 cursor-pointer hover:text-primary transition-colors"
-                (click)="pickupTime.toggle()"></lucide-icon>
-            </div>
           </div>
 
-          <!-- Drop Time (Auto-calculated, ROUND TRIP only) -->
-          <div [hidden]="selectedTab !== 'ROUND_TRIP'"
-            class="md:col-span-1 border-b border-slate-300 dark:border-slate-600 pb-2 transition-colors relative group">
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-[0.05em]">
-              Drop Time
+          <!-- PICKUP TIME -->
+          <div class="w-[185px]">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">PICK UP AT</label>
+            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 transition-all focus-within:border-primary cursor-pointer" (click)="pickupTime3.showOverlay()">
+              <div class="flex items-center gap-2 flex-1">
+                <lucide-icon name="clock" [size]="15" class="text-primary shrink-0"></lucide-icon>
+                <p-datepicker #pickupTime3 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
+                  appendTo="body" styleClass="w-full border-none bg-transparent"
+                  inputStyleClass="w-full bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 text-slate-700 !shadow-none cursor-pointer">
+                </p-datepicker>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================ -->
+        <!-- AIRPORT: Trip | Airport | Address | Pickup | Time -->
+        <!-- ================================================ -->
+        <div [hidden]="selectedTab !== 'AIRPORT'" class="flex items-end gap-4 flex-wrap">
+          <!-- Trip Type -->
+          <div class="w-[180px]">
+            <label class="block text-[10px] font-bold text-primary uppercase tracking-[0.12em] mb-1.5">TRIP <span class="text-red-500">*</span></label>
+            <p-select formControlName="tripType" [options]="tripTypes" optionLabel="label" optionValue="value"
+              placeholder="Select type"
+              [style]="{'width':'100%','background':'white','border':'1px solid #cbd5e1','border-radius':'8px','padding':'10px 12px','font-size':'14px','font-weight':'600','color':'#0f172a','box-shadow':'none'}"
+              panelStyleClass="!bg-white !border !border-slate-300 !rounded-lg !shadow-xl !-mt-1 !p-1"
+              appendTo="body"></p-select>
+          </div>
+          <!-- Airport -->
+          <div class="flex-1 min-w-[180px]">
+            <label class="block text-[10px] font-bold text-primary uppercase tracking-[0.12em] mb-1.5">
+              {{ bookingForm.get('tripType')?.value === 'pickup' ? 'PICKUP AIRPORT' : 'DROP AIRPORT' }} <span class="text-red-500">*</span>
             </label>
-            <div class="relative flex justify-between items-center">
-              <span class="text-base text-slate-400 dark:text-slate-500 font-normal">
-                {{ getDropTime() }}
-              </span>
-              <lucide-icon name="clock" [size]="14" class="text-slate-300 ml-2"></lucide-icon>
-            </div>
-            <!-- Tooltip on hover -->
-            <div
-              class="absolute -bottom-9 right-0 z-50 hidden group-hover:block bg-slate-800 text-white text-[10px] font-medium rounded-md px-3 py-1.5 shadow-lg max-w-[220px]">
-              {{ getDropTimeMessage() }}
-              <div class="absolute -top-1 right-4 w-2 h-2 bg-slate-800 rotate-45"></div>
+            <p-autoComplete formControlName="airportLocality" [suggestions]="filteredAirports"
+              (completeMethod)="filterAirports($event)" (onSelect)="onAirportSelect($event)"
+              field="name" optionLabel="name" [minLength]="0" placeholder="Search airport"
+              styleClass="w-full"
+              inputStyleClass="w-full bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:border-primary px-3 py-2.5 text-slate-900 placeholder-slate-400 !shadow-none transition-all"
+              panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+              <ng-template pTemplate="item" let-airport>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <lucide-icon name="plane" [size]="14" class="text-primary shrink-0"></lucide-icon>
+                  <span class="text-sm">{{ airport.name }}</span>
+                </div>
+              </ng-template>
+            </p-autoComplete>
+          </div>
+          <!-- Address -->
+          <div class="flex-1 min-w-[180px]" [hidden]="!bookingForm.get('tripType')?.value">
+            <label class="block text-[10px] font-bold text-primary uppercase tracking-[0.12em] mb-1.5">
+              {{ bookingForm.get('tripType')?.value === 'pickup' ? 'DROP ADDRESS' : 'PICKUP ADDRESS' }}
+            </label>
+            <p-autoComplete formControlName="pickupAddress" [suggestions]="filteredLocalities"
+              (completeMethod)="filterLocalities($event)" field="name" optionLabel="name" [minLength]="2"
+              placeholder="Start typing address" styleClass="w-full"
+              inputStyleClass="w-full bg-white border border-slate-300 rounded-lg text-sm font-semibold focus:border-primary px-3 py-2.5 text-slate-900 placeholder-slate-400 !shadow-none transition-all"
+              panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+              <ng-template pTemplate="item" let-loc>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <lucide-icon [name]="loc.isAirport ? 'plane' : 'map-pin'" [size]="14"
+                    [class]="loc.isAirport ? 'text-primary shrink-0' : 'text-slate-400 shrink-0'"></lucide-icon>
+                  <span class="text-sm">{{ loc.name }}</span>
+                </div>
+              </ng-template>
+            </p-autoComplete>
+          </div>
+
+          <!-- PICKUP DATE -->
+          <div class="w-[185px]">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">PICK UP</label>
+            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 transition-all focus-within:border-primary cursor-pointer" (click)="pickupDate4.showOverlay()">
+              <div class="flex items-center gap-2 flex-1">
+                <lucide-icon name="calendar" [size]="15" class="text-primary shrink-0"></lucide-icon>
+                <p-datepicker #pickupDate4 formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy"
+                  [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent"
+                  inputStyleClass="w-full bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 text-slate-700 !shadow-none cursor-pointer">
+                </p-datepicker>
+              </div>
             </div>
           </div>
-        </form>
+
+          <!-- PICKUP TIME -->
+          <div class="w-[185px]">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">PICK UP AT</label>
+            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 transition-all focus-within:border-primary cursor-pointer" (click)="pickupTime4.showOverlay()">
+              <div class="flex items-center gap-2 flex-1">
+                <lucide-icon name="clock" [size]="15" class="text-primary shrink-0"></lucide-icon>
+                <p-datepicker #pickupTime4 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
+                  appendTo="body" styleClass="w-full border-none bg-transparent"
+                  inputStyleClass="w-full bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 text-slate-700 !shadow-none cursor-pointer">
+                </p-datepicker>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Error Banner -->
-        <div *ngIf="showError"
-          class="mt-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-600 dark:text-red-400 text-sm animate-fade-in">
+        <div *ngIf="showError && !formSubmitted"
+          class="mt-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
           <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
           <span>{{ errorMessage }}</span>
         </div>
 
-        <!-- Centered Floating Explore Button -->
-        <div class="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 w-full flex justify-center">
-          <button (click)="onExploreCabs()"
-            class="bg-amber hover:bg-amber-hover text-white px-14 py-4 rounded-xl font-bold shadow-xl shadow-amber/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-amber/50 mt-8 tracking-[0.05em] text-sm active:scale-95 flex items-center justify-center min-w-[260px] border border-white/10">
-                EXPLORE CABS
-                <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
-          </button>
-        </div>
+      </div>
+
+      <!-- Explore Cabs Button — sits on the bottom border of the card -->
+      <div class="flex justify-center -mb-7 relative z-30">
+        <button (click)="onExploreCabs()" [disabled]="isSearching"
+          class="bg-orange-500 hover:bg-orange-600 text-white px-16 py-4 rounded-xl font-extrabold shadow-xl shadow-orange-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-orange-500/50 tracking-wide text-base active:scale-[0.98] flex items-center justify-center min-w-[280px] border-0 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer">
+          <ng-container *ngIf="!isSearching">
+            EXPLORE CABS
+            <lucide-icon name="arrow-right" [size]="20" class="ml-2"></lucide-icon>
+          </ng-container>
+          <ng-container *ngIf="isSearching">
+            <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+            SEARCHING...
+          </ng-container>
+        </button>
       </div>
     </div>
   </div>
@@ -365,54 +481,6 @@
 <div class="bg-slate-50 dark:bg-slate-900 py-12 pb-16">
   <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
 
-    <!-- Section: Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <!-- Bookings This Month -->
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex">
-        <div class="w-1.5 bg-primary shrink-0"></div>
-        <div class="p-5 flex-1">
-          <div class="flex items-center gap-2 mb-2">
-            <lucide-icon name="calendar-check" [size]="16" class="text-primary"></lucide-icon>
-            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Bookings This Month</span>
-          </div>
-          <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ mockStats.bookingsThisMonth }}</p>
-        </div>
-      </div>
-      <!-- Revenue -->
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex">
-        <div class="w-1.5 bg-emerald-500 shrink-0"></div>
-        <div class="p-5 flex-1">
-          <div class="flex items-center gap-2 mb-2">
-            <lucide-icon name="indian-rupee" [size]="16" class="text-emerald-500"></lucide-icon>
-            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Revenue</span>
-          </div>
-          <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ mockStats.revenue }}</p>
-        </div>
-      </div>
-      <!-- Commission -->
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex">
-        <div class="w-1.5 bg-amber shrink-0"></div>
-        <div class="p-5 flex-1">
-          <div class="flex items-center gap-2 mb-2">
-            <lucide-icon name="trending-up" [size]="16" class="text-amber"></lucide-icon>
-            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Commission Earned</span>
-          </div>
-          <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ mockStats.commissionEarned }}</p>
-        </div>
-      </div>
-      <!-- Pending -->
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex">
-        <div class="w-1.5 bg-orange-500 shrink-0"></div>
-        <div class="p-5 flex-1">
-          <div class="flex items-center gap-2 mb-2">
-            <lucide-icon name="clock" [size]="16" class="text-orange-500"></lucide-icon>
-            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Pending Bookings</span>
-          </div>
-          <p class="text-2xl font-bold text-slate-800 dark:text-white">{{ mockStats.pendingBookings }}</p>
-        </div>
-      </div>
-    </div>
-
     <!-- Section: Recent Bookings -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
@@ -435,7 +503,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let b of mockRecentBookings" class="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+            <tr *ngFor="let b of recentBookings" class="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
               <td class="px-6 py-3.5 font-mono text-xs text-slate-600 dark:text-slate-300">#{{ b.id }}</td>
               <td class="px-6 py-3.5 text-slate-700 dark:text-slate-200">{{ b.route }}</td>
               <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400">{{ b.date }}</td>
@@ -453,7 +521,7 @@
 
       <!-- Mobile Cards -->
       <div class="md:hidden divide-y divide-slate-100 dark:divide-slate-700">
-        <div *ngFor="let b of mockRecentBookings" class="px-5 py-4 space-y-1.5">
+        <div *ngFor="let b of recentBookings" class="px-5 py-4 space-y-1.5">
           <div class="flex items-center justify-between">
             <span class="font-mono text-xs text-slate-500">#{{ b.id }}</span>
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
@@ -521,6 +589,36 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- One-Way Conversion Popup (shown when airport booking auto-converts) -->
+<div *ngIf="showConversionPopup"
+  class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-[90%] max-w-md mx-4 overflow-hidden">
+    <!-- Header -->
+    <div class="bg-primary/10 dark:bg-primary/20 px-6 py-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+        <lucide-icon name="info" [size]="20" class="text-primary"></lucide-icon>
+      </div>
+      <h3 class="text-base font-bold text-slate-800 dark:text-white">Trip Updated</h3>
+    </div>
+    <!-- Body -->
+    <div class="px-6 py-5">
+      <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+        Based on your pickup and drop details, your trip has been updated to <strong class="text-primary">One Way</strong> service.
+      </p>
+      <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">
+        Click OK to view available cabs for your one-way trip.
+      </p>
+    </div>
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+      <button (click)="onConversionPopupOk()"
+        class="bg-primary hover:bg-primary-dark text-white px-8 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md active:scale-95">
+        OK
+      </button>
+    </div>
   </div>
 </div>
 

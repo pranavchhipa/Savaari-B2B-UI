@@ -1,5 +1,5 @@
-import { Component, OnInit, AfterViewChecked, inject, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, HostListener, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, AfterViewChecked, inject, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, HostListener, ViewChild, ElementRef } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
@@ -14,10 +14,12 @@ import { TripTypeService } from '../../core/services/trip-type.service';
 import { WalletService } from '../../core/services/wallet.service';
 import { CountryCodeService, CountryCodeEntry } from '../../core/services/country-code.service';
 import { LocalityService } from '../../core/services/locality.service';
+import { AvailabilityService } from '../../core/services/availability.service';
 import { CreateBookingRequest, CouponValidationResponse } from '../../core/models';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
 import { Observable } from 'rxjs';
 import { FooterComponent } from '../../components/layout/footer/footer';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-booking',
@@ -28,8 +30,9 @@ import { FooterComponent } from '../../components/layout/footer/footer';
   styleUrl: './booking.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BookingComponent implements OnInit, AfterViewChecked {
+export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   public router = inject(Router);
+  private location = inject(Location);
   private auth = inject(AuthService);
   private bookingState = inject(BookingStateService);
   private bookingApi = inject(BookingApiService);
@@ -40,6 +43,7 @@ export class BookingComponent implements OnInit, AfterViewChecked {
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
 
+  Math = Math; // expose for template
   itinerary: Itinerary | null = null;
   selectedCar: SelectedCar | null = null;
 
@@ -67,6 +71,9 @@ export class BookingComponent implements OnInit, AfterViewChecked {
   // 0 = no selection, 1/2/3 = B2B payment choices
   paymentOption = 0;
 
+  // Info tooltip toggle (0 = none, 1/2/3 = which payment option's info is shown)
+  showInfo: number = 0;
+
   // --- Option 1: Flexible Agent Payment Slider ---
   option1SliderPercent: number = 25;   // Agent-chosen percentage (25% to 100%)
   readonly SLIDER_MIN = 25;
@@ -93,14 +100,26 @@ export class BookingComponent implements OnInit, AfterViewChecked {
   isProcessingTopUp = false;
   topUpSuccess = false;
   topUpPresets = [5000, 10000, 25000, 50000];
+  showTopUpConfirm = false;
+
+  // Fare recalculation (One Way drop address)
+  showFareChangePopup = false;
+  fareChangeAmount = 0;
+  previousFare = 0;
+  isRecalculatingFare = false;
+  private dropAddressProcessed = '';
 
   walletBalance$!: Observable<number>;
   private walletService = inject(WalletService);
   private localityService = inject(LocalityService);
+  private availabilityService = inject(AvailabilityService);
 
   // Confetti canvas
   @ViewChild('confettiCanvas') confettiCanvas!: ElementRef<HTMLCanvasElement>;
   private confettiFired = false;
+
+  // Browser back button interception
+  private locationSub: any;
 
   // Locality autocomplete suggestions (string arrays for direct ngModel binding)
   pickupSuggestions: string[] = [];
@@ -151,6 +170,23 @@ export class BookingComponent implements OnInit, AfterViewChecked {
           this.cdr.markForCheck();
         }
       });
+
+    // Intercept browser back button: if on payment step, go back to passenger details instead of leaving
+    this.locationSub = this.location.subscribe((event) => {
+      if (event.type === 'popstate' && this.step1Complete && !this.bookingConfirmed) {
+        // Push state back so we stay on this page
+        this.location.go(this.router.url);
+        this.step1Complete = false;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.locationSub) {
+      this.locationSub.unsubscribe();
+    }
   }
 
   proceedToPayment() {
@@ -162,6 +198,8 @@ export class BookingComponent implements OnInit, AfterViewChecked {
     }
 
     this.step1Complete = true;
+    // Push history state so browser back button can be intercepted
+    history.pushState({ step: 'payment' }, '', this.router.url);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     this.cdr.markForCheck();
   }
@@ -218,8 +256,99 @@ export class BookingComponent implements OnInit, AfterViewChecked {
     });
   }
 
+  /** Triggered when user selects a drop address from autocomplete (One Way) */
+  onDropAddressSelected(_event: any): void {
+    this.recalculateFareForDrop();
+  }
+
+  /** Triggered when drop address field loses focus (One Way) — catches free-text entry */
+  onDropAddressBlur(): void {
+    const addr = (typeof this.dropAddress === 'string' ? this.dropAddress : String(this.dropAddress || '')).trim();
+    if (addr.length >= 3 && addr !== this.dropAddressProcessed) {
+      this.recalculateFareForDrop();
+    }
+  }
+
+  /**
+   * Recalculate fare based on drop address for One Way trips.
+   * Uses the availability API to get updated pricing with the drop location.
+   * If the API returns a different fare, shows a popup to inform the user.
+   */
+  private recalculateFareForDrop(): void {
+    if (!this.selectedCar || !this.itinerary || this.itinerary.tripType !== 'One Way') return;
+    const addr = (typeof this.dropAddress === 'string' ? this.dropAddress : String(this.dropAddress || '')).trim();
+    if (addr.length < 3 || addr === this.dropAddressProcessed) return;
+
+    this.dropAddressProcessed = addr;
+    this.isRecalculatingFare = true;
+    this.previousFare = this.selectedCar.price;
+    this.cdr.markForCheck();
+
+    // Re-check availability with the same parameters to get updated fare
+    const apiParams = this.tripTypeService.mapUiTabToApiParams(this.itinerary.tripType, {
+      localPackage: this.itinerary.localPackage,
+      airportSubType: this.itinerary.airportSubType,
+    });
+
+    this.availabilityService.checkAvailability({
+      sourceCity: this.itinerary.fromCityId || 377,
+      tripType: apiParams.tripType,
+      subTripType: apiParams.subTripType,
+      destinationCity: this.itinerary.toCityId,
+      pickupDateTime: toSavaariDateTime(
+        new Date(this.itinerary.pickupDate),
+        this.itinerary.pickupTime
+      ),
+      duration: this.itinerary.duration || 1,
+    }).subscribe({
+      next: (response) => {
+        this.isRecalculatingFare = false;
+        // Find the same car type in the response
+        const updatedCar = response.cars.find(c => String(c.carId) === String(this.selectedCar!.id) || c.carTypeId === this.selectedCar!.carTypeId);
+        if (updatedCar && updatedCar.fare !== this.previousFare) {
+          const oldPrice = this.previousFare;
+          // Update the selectedCar price
+          this.selectedCar!.price = updatedCar.fare;
+          this.selectedCar!.originalPrice = updatedCar.fare;
+          if (updatedCar.originalFare) {
+            this.selectedCar!.regularPrice = updatedCar.originalFare;
+          }
+          // Update booking state
+          this.bookingState.setSelectedCar(this.selectedCar!);
+
+          // Show fare change popup
+          this.fareChangeAmount = updatedCar.fare - oldPrice;
+          this.showFareChangePopup = true;
+          // Re-calculate wallet top-up shortfall
+          this.autoFillTopUpShortfall();
+        } else {
+          // Fare unchanged — show brief confirmation
+          this.fareChangeAmount = 0;
+          this.showFareChangePopup = true;
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.isRecalculatingFare = false;
+        // Silently continue with existing fare if recalculation fails
+        console.warn('[BOOKING] Fare recalculation failed, keeping original fare');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** Dismiss the fare change popup */
+  dismissFareChangePopup(): void {
+    this.showFareChangePopup = false;
+    this.cdr.markForCheck();
+  }
+
   /** Check if all mandatory pickup fields are filled */
   isPickupDetailsValid(): boolean {
+    // For One Way trips, drop address is also required
+    if (this.itinerary?.tripType === 'One Way') {
+      return this.isGuestNameValid() && this.isPhoneValid() && this.isPickupAddressValid() && this.isDropAddressValid();
+    }
     return this.isGuestNameValid() && this.isPhoneValid() && this.isPickupAddressValid();
   }
 
@@ -236,12 +365,24 @@ export class BookingComponent implements OnInit, AfterViewChecked {
     return (typeof this.pickupAddress === 'string' ? this.pickupAddress : String(this.pickupAddress || '')).trim().length >= 3;
   }
 
+  isDropAddressValid(): boolean {
+    return (typeof this.dropAddress === 'string' ? this.dropAddress : String(this.dropAddress || '')).trim().length >= 3;
+  }
+
   setPaymentOption(option: number) {
+    // Toggle: clicking the same option again deselects it
+    if (this.paymentOption === option) {
+      this.paymentOption = 0;
+      return;
+    }
     this.paymentOption = option;
     // Reset slider to minimum when switching to Option 1
     if (option === 1) {
       this.option1SliderPercent = 25;
     }
+    // Auto-fill top-up amount with shortfall (required - available balance)
+    this.autoFillTopUpShortfall();
+    this.showTopUpConfirm = false;
     this.cdr.markForCheck();
   }
 
@@ -252,7 +393,16 @@ export class BookingComponent implements OnInit, AfterViewChecked {
     if (val < this.SLIDER_MIN) val = this.SLIDER_MIN;
     if (val > this.SLIDER_MAX) val = this.SLIDER_MAX;
     this.option1SliderPercent = val;
+    this.autoFillTopUpShortfall();
     this.cdr.markForCheck();
+  }
+
+  /** Auto-fill topUpAmount with the shortfall between required amount and current balance */
+  autoFillTopUpShortfall(): void {
+    const payNow = this.getPayNowAmount();
+    const balance = this.walletService.getCurrentBalance();
+    const shortfall = payNow - balance;
+    this.topUpAmount = shortfall > 0 ? shortfall : 0;
   }
 
   // Timing Validations
@@ -460,9 +610,22 @@ export class BookingComponent implements OnInit, AfterViewChecked {
       return;
     }
 
-    // TODO: Re-enable wallet balance check once wallet APIs are deployed.
-    // Wallet APIs currently return 404, so balance is always ₹0.
-    // Bypassing for demo — booking goes through with prePayment=0.
+    // Check wallet balance before proceeding
+    const payNow = this.getPayNowAmount();
+    const currentBalance = this.walletService.getCurrentBalance();
+
+    if (this.paymentOption === 0) {
+      this.bookingError = 'Please select a payment method.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (payNow > 0 && currentBalance < payNow) {
+      this.bookingError = `Insufficient wallet balance. You need ₹${payNow.toLocaleString('en-IN')} but have ₹${currentBalance.toLocaleString('en-IN')}. Please top up your wallet first.`;
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.processBooking();
   }
 
@@ -549,11 +712,62 @@ export class BookingComponent implements OnInit, AfterViewChecked {
         const bkId = response.bookingId || response.booking_id || '';
         this.bookingId = bkId;
 
-        // Register booking ID for the bookings history page
+        // Register booking ID + full data for the bookings history page
         this.bookingRegistry.addBookingId(bkId);
+        this.bookingRegistry.storeBookingData(bkId, {
+          ...response,
+          // Fields used by toBookingCard via toBookingDetails
+          pick_city: this.itinerary?.fromCity || '',
+          drop_city: this.itinerary?.toCity || '',
+          source_city: this.itinerary?.fromCity || '',
+          destination_city: this.itinerary?.toCity || '',
+          pickup_address: this.pickupAddress || this.itinerary?.pickupAddress || '',
+          drop_address: this.dropAddress || '',
+          // Convert DD-MM-YYYY HH:MM to YYYY-MM-DDTHH:MM for JS Date parsing
+          start_date_time: (() => {
+            const dt = request.pickupDateTime || '';
+            const match = dt.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}:\d{2})$/);
+            return match ? `${match[3]}-${match[2]}-${match[1]}T${match[4]}` : dt;
+          })(),
+          pickupDateTime: request.pickupDateTime || '',
+          trip_type: request.tripType || '',
+          usage_name: request.subTripType || '',
+          booking_status: 'CONFIRMED',
+          car_name: this.selectedCar?.name || '',
+          gross_amount: this.selectedCar?.price || 0,
+          total_amount: this.selectedCar?.price || 0,
+          customer_name: this.guestName || '',
+          customer_mobile: this.phone || '',
+          customer_email: this.guestEmail || '',
+          itinerary: (this.itinerary?.fromCity || '') + ' → ' + (this.itinerary?.toCity || ''),
+          prePayment: prePaymentAmount,
+          cashToCollect: (this.selectedCar?.price || 0) - prePaymentAmount,
+          carType: this.selectedCar?.carTypeId || request.carType || 0,
+          // Store payment option so bookings page shows correct label
+          paymentOption: this.paymentOption,
+        });
 
-        // TODO: Re-enable wallet deduction once wallet APIs are deployed.
-        // this.walletService.deductForBooking(prePaymentAmount, bkId);
+        // Deduct wallet balance for booking payment
+        if (bkId && prePaymentAmount > 0) {
+          this.walletService.payForBooking(bkId, prePaymentAmount, this.paymentOption as 1 | 2 | 3).subscribe({
+            next: (success) => {
+              if (success) {
+                console.log(`[BOOKING] Wallet deducted ₹${prePaymentAmount} for booking #${bkId}`);
+              } else {
+                console.warn(`[BOOKING] Wallet deduction failed for booking #${bkId}`);
+              }
+              // Always refresh wallet balance after booking attempt
+              this.walletService.loadBalance();
+            },
+            error: (err) => {
+              console.warn('[BOOKING] Wallet deduction error:', err);
+              this.walletService.loadBalance();
+            }
+          });
+        } else {
+          // Even if no payment, refresh wallet to stay in sync
+          this.walletService.loadBalance();
+        }
 
         // Update VAS (Value Added Services) if any were selected
         if (bkId && (this.vasLuggageCarrier || this.vasLanguageDriver)) {
@@ -567,13 +781,39 @@ export class BookingComponent implements OnInit, AfterViewChecked {
         this.bookingConfirmed = true;
         window.scrollTo({ top: 0, behavior: 'smooth' });
         this.cdr.markForCheck();
+
+        // Redirect to bookings page after 3 seconds so user sees confirmation briefly
+        // This prevents state loss on page refresh
+        setTimeout(() => {
+          this.router.navigate(['/bookings']);
+        }, 3000);
       },
       error: (err) => {
         this.isProcessingWallet = false;
         this.bookingError = err?.message || 'Booking failed. Please try again.';
+        console.error('[BOOKING] Failed with status:', err?.status, '| Message:', err?.message);
+        console.error('[BOOKING] Full error:', JSON.stringify(err, null, 2));
         this.cdr.markForCheck();
       }
     });
+  }
+
+  /** Navigate back: payment → passenger details → select-car → dashboard */
+  goBackFromBooking() {
+    if (this.step1Complete) {
+      // On payment step → go back to passenger details
+      this.step1Complete = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.markForCheck();
+    } else {
+      // On passenger details step → go back to select-car or dashboard
+      const itinerary = this.bookingState.getItinerary();
+      if (itinerary?.fromCityId) {
+        this.router.navigate(['/select-car']);
+      } else {
+        this.router.navigate(['/dashboard']);
+      }
+    }
   }
 
   closeModal() {
@@ -601,6 +841,29 @@ export class BookingComponent implements OnInit, AfterViewChecked {
     this.cdr.markForCheck();
   }
 
+  /** Sidebar button handler: scroll to top-up if balance is low, otherwise book */
+  handleBookOrTopUp() {
+    const balance = this.walletService.getCurrentBalance();
+    if (this.paymentOption !== 0 && !this.hasSufficientWalletBalance(balance)) {
+      this.scrollToTopUp();
+    } else {
+      this.bookNow();
+    }
+  }
+
+  /** Scroll to the top-up section in the left panel */
+  scrollToTopUp() {
+    const el = document.getElementById('topUpSection');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Flash highlight to draw attention
+      el.classList.add('ring-2', 'ring-orange-400', 'ring-offset-2', 'rounded-xl');
+      setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-orange-400', 'ring-offset-2', 'rounded-xl');
+      }, 2000);
+    }
+  }
+
   /** Set top-up amount from preset button */
   setTopUpAmount(amount: number) {
     this.topUpAmount = amount;
@@ -608,27 +871,87 @@ export class BookingComponent implements OnInit, AfterViewChecked {
     this.cdr.markForCheck();
   }
 
-  /** Process mock wallet top-up */
+  /** Process real wallet top-up via Razorpay */
   processTopUp() {
     if (this.topUpAmount <= 0) return;
     this.isProcessingTopUp = true;
     this.topUpSuccess = false;
+    this.bookingError = '';
     this.cdr.markForCheck();
 
-    // Simulate 2-second payment processing
-    setTimeout(() => {
-      this.walletService.addTopUp(this.topUpAmount, 'topup_' + Date.now());
-      this.isProcessingTopUp = false;
-      this.topUpSuccess = true;
-      this.topUpAmount = 0;
-      this.cdr.markForCheck();
+    // Step 1: Initiate top-up order on backend
+    this.walletService.initiateTopUp(this.topUpAmount).subscribe({
+      next: (order) => {
+        if (!order || !order.orderId) {
+          this.isProcessingTopUp = false;
+          this.bookingError = 'Failed to create top-up order. Please try again.';
+          this.cdr.markForCheck();
+          return;
+        }
 
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        this.topUpSuccess = false;
+        // Step 2: Open Razorpay checkout
+        const razorpayKey = order.razorpayKeyId || environment.razorpayKeyId;
+        const amountInPaise = order.amount; // Backend returns paise
+        const savedAmount = this.topUpAmount; // Save before clearing
+
+        const options: any = {
+          key: razorpayKey,
+          amount: amountInPaise,
+          currency: order.currency || 'INR',
+          name: 'B2B CAB Wallet',
+          description: `Wallet Top-up ₹${savedAmount}`,
+          order_id: order.orderId,
+          handler: (response: any) => {
+            // Step 3: Verify payment on backend
+            this.walletService.verifyTopUp(
+              response.razorpay_order_id,
+              response.razorpay_payment_id,
+              response.razorpay_signature,
+              savedAmount
+            ).subscribe({
+              next: (success) => {
+                this.isProcessingTopUp = false;
+                if (success) {
+                  this.topUpSuccess = true;
+                  this.topUpAmount = 0;
+                  this.showTopUpConfirm = false;
+                  setTimeout(() => {
+                    this.topUpSuccess = false;
+                    this.cdr.markForCheck();
+                  }, 3000);
+                } else {
+                  this.bookingError = 'Payment verification failed. Contact support if money was deducted.';
+                }
+                this.cdr.markForCheck();
+              },
+              error: () => {
+                this.isProcessingTopUp = false;
+                this.bookingError = 'Payment verification failed. Contact support if money was deducted.';
+                this.cdr.markForCheck();
+              }
+            });
+          },
+          modal: {
+            ondismiss: () => {
+              this.isProcessingTopUp = false;
+              this.cdr.markForCheck();
+            }
+          },
+          prefill: {
+            email: this.auth.getUserEmail(),
+          },
+          theme: { color: '#f97316' },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      },
+      error: () => {
+        this.isProcessingTopUp = false;
+        this.bookingError = 'Failed to initiate top-up. Please try again.';
         this.cdr.markForCheck();
-      }, 3000);
-    }, 2000);
+      }
+    });
   }
 
   ngAfterViewChecked() {
@@ -730,7 +1053,7 @@ export class BookingComponent implements OnInit, AfterViewChecked {
     }
 
     const lines = [
-      `*Booking Confirmation - Savaari*`,
+      `*Booking Confirmation - B2B CAB*`,
       ``,
       `Booking ID: ${this.bookingId}`,
       `Trip: ${itineraryText}`,
@@ -739,7 +1062,7 @@ export class BookingComponent implements OnInit, AfterViewChecked {
       `Car: ${this.selectedCar.name || 'Sedan'}`,
       `Fare: ₹${(this.selectedCar.price || 0).toLocaleString('en-IN')}`,
       ``,
-      `_Powered by Savaari - India's #1 Cab Service since 2006_`,
+      `_Powered by B2B CAB - India's #1 Cab Service since 2006_`,
     ].filter(l => l !== undefined && l !== '');
 
     const text = encodeURIComponent(lines.join('\n'));

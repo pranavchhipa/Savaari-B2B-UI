@@ -16,7 +16,7 @@ export class LandingNavbarComponent {
 
     navLinks = [
         { label: "Solutions", href: "#solutions" },
-        { label: "Why Savaari", href: "#value-props" },
+        { label: "Why B2B CAB", href: "#value-props" },
         { label: "About", href: "#overview" },
         { label: "Contact", href: "#cta" },
     ];
