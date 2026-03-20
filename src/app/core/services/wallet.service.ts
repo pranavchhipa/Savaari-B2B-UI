@@ -192,6 +192,16 @@ export class WalletService {
    * Use the returned orderId to open the Razorpay JS SDK.
    */
   initiateTopUp(amount: number): Observable<TopUpInitiateResponse | null> {
+    if (environment.useMockData) {
+      const mockOrderId = 'order_mock_' + Math.random().toString(36).substring(2, 10);
+      return of({
+        orderId: mockOrderId,
+        amount: amount * 100,
+        currency: 'INR',
+        razorpayKeyId: 'rzp_test_mock',
+      } as TopUpInitiateResponse);
+    }
+
     return this.api.walletPost<any>('topup/initiate', this.buildPayload({ amount }), this.getWalletToken()).pipe(
       map(response => {
         if (response?.statusCode === 200 || response?.status === 'success') {

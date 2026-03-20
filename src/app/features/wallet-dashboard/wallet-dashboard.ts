@@ -95,6 +95,19 @@ export class WalletDashboardComponent implements OnInit {
     this.topUpError = '';
     this.cdr.markForCheck();
 
+    // In mock mode, skip Razorpay entirely and credit wallet directly
+    if (environment.useMockData) {
+      this.walletService.verifyTopUp(
+        'order_mock', 'pay_mock', 'sig_mock', this.topUpAmount
+      ).subscribe(success => {
+        this.isProcessing = false;
+        if (success) { this.showTopUpModal = false; }
+        else { this.topUpError = 'Mock payment failed.'; }
+        this.cdr.markForCheck();
+      });
+      return;
+    }
+
     this.walletService.initiateTopUp(this.topUpAmount).subscribe({
       next: (orderDetails) => {
         if (!orderDetails?.orderId) {
