@@ -141,10 +141,20 @@
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                   GST Number
+                  <span *ngIf="gstLocked" class="text-xs text-slate-400 font-normal ml-1">(Contact support to change)</span>
                 </label>
-                <input type="text" [(ngModel)]="profile.gstNumber" (input)="onGstNumberInput()" maxlength="15"
+
+                <!-- Locked: GST already saved — read-only display -->
+                <div *ngIf="gstLocked" class="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono flex items-center justify-between">
+                  <span>{{ profile.gstNumber }}</span>
+                  <lucide-icon name="lock" [size]="14" class="text-slate-400"></lucide-icon>
+                </div>
+
+                <!-- Unlocked: GST not yet saved — editable -->
+                <input *ngIf="!gstLocked" type="text" [(ngModel)]="profile.gstNumber" (input)="onGstNumberInput()" maxlength="15"
                   placeholder="Enter 15-digit GSTIN"
                   class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition uppercase tracking-wider font-mono" />
+
                 <!-- Decoded info -->
                 <div *ngIf="gstDecodedInfo?.isValidFormat" class="mt-2 p-2.5 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
                   <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-sky-700 dark:text-sky-300">
@@ -154,7 +164,7 @@
                     <span>&bull; Initial: {{ gstDecodedInfo!.nameInitial }}</span>
                   </div>
                 </div>
-                <p *ngIf="profile.gstNumber?.length === 15 && gstDecodedInfo && !gstDecodedInfo.isValidFormat"
+                <p *ngIf="!gstLocked && profile.gstNumber?.length === 15 && gstDecodedInfo && !gstDecodedInfo.isValidFormat"
                   class="mt-1 text-xs text-red-500">Invalid GSTIN format</p>
               </div>
 

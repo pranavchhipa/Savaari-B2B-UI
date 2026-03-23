@@ -64,6 +64,8 @@ export class AccountSettingsComponent implements OnInit {
   isEditingGst = false;
   gstSaving = false;
   gstSuccess = false;
+  /** True when GST was already saved in profile — cannot be changed by agent */
+  gstLocked = false;
   gstError = '';
   gstDecodedInfo: GSTINDecodeResult | null = null;
 
@@ -94,7 +96,7 @@ export class AccountSettingsComponent implements OnInit {
         companyName: (user as any).companyname || '',
         email: user.email || '',
         companyAddress: (user as any).billingaddress || '',
-        gstNumber: '', // GST comes from commission API, not user profile
+        gstNumber: (user as any).gst_number || this.auth.getGstNumber() || '',
         city: (user as any).city || '',
         mobile: (user as any).mobileno || '',
         phone: user.phone || '',
@@ -104,6 +106,11 @@ export class AccountSettingsComponent implements OnInit {
         otherPhone: (user as any).other_phone || '',
         logoFile: null,
       };
+      // Lock GST field if already saved — agent must contact support to change
+      this.gstLocked = !!this.profile.gstNumber;
+      if (this.gstLocked) {
+        this.gstDecodedInfo = decodeGSTIN(this.profile.gstNumber);
+      }
     }
   }
 
