@@ -7,7 +7,6 @@ import { ValuePropsComponent } from './components/value-props/value-props';
 import { SolutionsComponent } from './components/solutions/solutions';
 import { FinalCTAComponent } from './components/final-cta/final-cta';
 import { GetStartedComponent } from './components/get-started/get-started';
-import { TrustedByComponent } from './components/trusted-by/trusted-by';
 
 @Component({
   selector: 'app-landing',
@@ -16,7 +15,6 @@ import { TrustedByComponent } from './components/trusted-by/trusted-by';
     LandingNavbarComponent,
     LandingFooterComponent,
     HeroComponent,
-    TrustedByComponent,
     GetStartedComponent,
     OverviewComponent,
     ValuePropsComponent,
