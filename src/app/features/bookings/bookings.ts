@@ -93,6 +93,10 @@ export class BookingsComponent implements OnInit {
     settleConfirmStep = false;
     settleProcessing = false;
 
+    /** Map of bookingId → settled amount, persisted in localStorage */
+    private settledPayments: Record<string, number> = {};
+    private readonly SETTLED_STORAGE_KEY = 'b2b_settled_payments';
+
     // Pagination
     currentPage = 1;
     readonly pageSize = 10;
@@ -130,9 +134,37 @@ export class BookingsComponent implements OnInit {
     readonly monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     ngOnInit() {
+        this.loadSettledPayments();
         this.buildCalendarStrip();
         this.loadWalletBalance();
         this.loadBookings();
+    }
+
+    /** Load settled payments map from localStorage */
+    private loadSettledPayments() {
+        try {
+            const raw = localStorage.getItem(this.SETTLED_STORAGE_KEY);
+            this.settledPayments = raw ? JSON.parse(raw) : {};
+        } catch { this.settledPayments = {}; }
+    }
+
+    /** Save settled payments map to localStorage */
+    private saveSettledPayment(bookingId: string, amount: number) {
+        this.settledPayments[bookingId] = (this.settledPayments[bookingId] || 0) + amount;
+        try { localStorage.setItem(this.SETTLED_STORAGE_KEY, JSON.stringify(this.settledPayments)); } catch {}
+    }
+
+    /** Apply persisted settlements to booking cards after API data loads */
+    private applySettledPayments(cards: BookingCard[]) {
+        for (const card of cards) {
+            const settled = this.settledPayments[card.bookingId];
+            if (settled && settled > 0) {
+                card.prePayment = Math.max(card.prePayment || 0, settled);
+                if (card.prePayment >= (card.fare || 0)) {
+                    card.cashToCollect = 0;
+                }
+            }
+        }
     }
 
     private loadWalletBalance() {
@@ -384,6 +416,9 @@ export class BookingsComponent implements OnInit {
 
         const cards = unique.map(b => this.toBookingCard(b));
 
+        // Apply any locally-persisted settlements before categorizing
+        this.applySettledPayments(cards);
+
         this.upcomingBookings = cards.filter(c =>
             c.status === 'confirmed' || c.status === 'assigned' || c.status === 'pending'
         );
@@ -458,9 +493,9 @@ export class BookingsComponent implements OnInit {
 
         let itinerary = b.itinerary || '';
         if (itinerary && typeof document !== 'undefined') {
-            const txt = document.createElement('textarea');
-            txt.innerHTML = itinerary;
-            itinerary = txt.value;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(itinerary, 'text/html');
+            itinerary = doc.body.textContent || itinerary;
         }
 
         const paymentOpt = b.payment_option || b.paymentOption || b.prePaymentType || '';
@@ -717,6 +752,7 @@ export class BookingsComponent implements OnInit {
         const onSuccess = () => {
             booking.prePayment = (booking.prePayment || 0) + amount;
             booking.cashToCollect = 0;
+            this.saveSettledPayment(booking.bookingId, booking.prePayment);
             this.settleProcessing = false;
             this.settleBookingId = null;
             this.settledBookingId = booking.bookingId;
@@ -734,6 +770,7 @@ export class BookingsComponent implements OnInit {
         // Flexible (option 1) — guest pays driver, just mark settled with a brief delay for UX
         if (booking.paymentOption === 1) {
             booking.prePayment = booking.fare;
+            this.saveSettledPayment(booking.bookingId, booking.fare);
             setTimeout(() => onSuccess(), 1500);
             return;
         }

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, of, tap, switchMap, map, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiService } from './api.service';
-import { LoginRequest, LoginResponse, UserProfile, WebTokenResponse } from '../models/auth.model';
+import { LoginRequest, LoginResponse, UserProfile, UserGst, WebTokenResponse } from '../models/auth.model';
 
 /**
  * Manages authentication for the Savaari B2B portal.
@@ -19,11 +19,13 @@ export class AuthService {
   private static readonly STORAGE_B2B_TOKEN = 'loginUserToken';
   private static readonly STORAGE_PARTNER_TOKEN = 'SavaariToken';
   private static readonly STORAGE_USER = 'loggedUserDetail';
+  private static readonly STORAGE_GST = 'userGst';
 
   // In-memory cache (populated from localStorage on init)
   private b2bToken: string | null = null;
   private partnerToken: string | null = null;
   private user: UserProfile | null = null;
+  private userGst: UserGst | null = null;
 
   constructor() {
     this.loadFromStorage();
@@ -41,6 +43,7 @@ export class AuthService {
       this.b2bToken = 'MOCK_B2B_TOKEN';
       this.partnerToken = 'MOCK_PARTNER_TOKEN';
       this.user = mockUser;
+      this.userGst = { user_id: '983680', gst_number: '27AABCU9603R1ZM', pan_number: 'AABCU9603R', company_logo: '', is_agent: '1' };
       return of(mockUser);
     }
 
@@ -51,9 +54,11 @@ export class AuthService {
         if (resp.statusCode !== 200) throw new Error(resp.message || 'Login failed');
         this.b2bToken = resp.token;
         this.user = resp.user;
+        this.userGst = resp.userGst || null;
         localStorage.setItem(AuthService.STORAGE_B2B_TOKEN, resp.token);
         localStorage.setItem(AuthService.STORAGE_USER, JSON.stringify(resp.user));
-        console.log('[AUTH] B2B token obtained for', resp.user.email);
+        if (resp.userGst) localStorage.setItem(AuthService.STORAGE_GST, JSON.stringify(resp.userGst));
+        if (!environment.production) console.log('[AUTH] B2B token obtained for', resp.user.email);
       }),
       switchMap(() => this.fetchPartnerToken()),
       map(() => this.user!)
@@ -79,9 +84,11 @@ export class AuthService {
     this.b2bToken = null;
     this.partnerToken = null;
     this.user = null;
+    this.userGst = null;
     localStorage.removeItem(AuthService.STORAGE_B2B_TOKEN);
     localStorage.removeItem(AuthService.STORAGE_PARTNER_TOKEN);
     localStorage.removeItem(AuthService.STORAGE_USER);
+    localStorage.removeItem(AuthService.STORAGE_GST);
     localStorage.removeItem('commission');
     localStorage.removeItem('commission_amt');
     console.log('[AUTH] Logged out');
@@ -114,6 +121,26 @@ export class AuthService {
   getAgentId(): string {
     if (environment.useMockData) return '983680';
     return String(this.user?.user_id ?? '');
+  }
+
+  /** Get the agent's GST details (from login response). */
+  getUserGst(): UserGst | null {
+    return this.userGst;
+  }
+
+  /** Get the agent's GST number (empty string if not set). */
+  getGstNumber(): string {
+    return this.userGst?.gst_number || '';
+  }
+
+  /** Update the cached GST number (after profile save). */
+  setGstNumber(gst: string): void {
+    if (!this.userGst) {
+      this.userGst = { user_id: String(this.user?.user_id ?? ''), gst_number: gst, pan_number: '', company_logo: '', is_agent: '1' };
+    } else {
+      this.userGst.gst_number = gst;
+    }
+    localStorage.setItem(AuthService.STORAGE_GST, JSON.stringify(this.userGst));
   }
 
   /** Check if the user is authenticated (has both tokens). */
@@ -152,7 +179,9 @@ export class AuthService {
       this.partnerToken = localStorage.getItem(AuthService.STORAGE_PARTNER_TOKEN);
       const userJson = localStorage.getItem(AuthService.STORAGE_USER);
       if (userJson) this.user = JSON.parse(userJson);
-      if (this.b2bToken) console.log('[AUTH] Restored session for', this.user?.email);
+      const gstJson = localStorage.getItem(AuthService.STORAGE_GST);
+      if (gstJson) this.userGst = JSON.parse(gstJson);
+      if (this.b2bToken && !environment.production) console.log('[AUTH] Restored session for', this.user?.email);
     } catch {
       console.warn('[AUTH] Failed to restore session from localStorage');
     }

@@ -89,7 +89,7 @@
                     [ngClass]="{
                         'border-primary/50 shadow-sm': day.isToday && !dateFilter,
                         'border-primary border-2 shadow-md': dateFilter && dateFilter.getTime() === day.date.getTime(),
-                        'border-amber-300 bg-amber-50/50 dark:bg-amber-900/30': !day.isToday && day.hasPendingPayment && !(dateFilter && dateFilter.getTime() === day.date.getTime()),
+                        'border-amber-300': !day.isToday && day.hasPendingPayment && !(dateFilter && dateFilter.getTime() === day.date.getTime()),
                         'border-slate-200 dark:border-slate-600': !day.isToday && !day.hasPendingPayment && !(dateFilter && dateFilter.getTime() === day.date.getTime())
                     }"
                     (click)="filterByDate(day.date)">
@@ -248,7 +248,7 @@
                             </span>
                             <!-- Warning icon with hover tooltip -->
                             <div class="relative ml-1.5">
-                                <lucide-icon name="triangle-alert" [size]="14" class="cursor-help"
+                                <lucide-icon name="alert-triangle" [size]="14" class="cursor-help"
                                     [ngClass]="{'text-red-400': countdown === 'Due now', 'text-amber-500': countdown !== 'Due now'}">
                                 </lucide-icon>
                                 <div class="absolute bottom-full right-0 mb-2 w-64 bg-slate-800 text-white text-[11px] leading-normal rounded-lg px-4 py-3 shadow-xl opacity-0 invisible group-hover/debit:opacity-100 group-hover/debit:visible transition-all z-50 pointer-events-none">
@@ -261,7 +261,7 @@
                         <!-- Fully paid indicator -->
                         <div *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment"
                             class="mt-2 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
-                            <lucide-icon name="circle-check" [size]="13" class="text-emerald-500"></lucide-icon>
+                            <lucide-icon name="check-circle" [size]="13" class="text-emerald-500"></lucide-icon>
                             <span class="text-[10px] font-bold text-emerald-600 leading-tight">No dues</span>
                         </div>
                     </div>

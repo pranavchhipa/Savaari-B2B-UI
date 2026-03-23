@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 /**
  * Savaari Analytics Service
@@ -48,7 +49,7 @@ export class AnalyticsService {
         .pipe(catchError(() => of(null)))
         .subscribe();
 
-      console.log(`[Analytics] ${eventName}`, enriched);
+      if (!environment.production) console.log(`[Analytics] ${eventName}`, enriched);
     } catch (e) {
       // Analytics must never break the app
     }

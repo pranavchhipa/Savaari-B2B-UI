@@ -24,12 +24,16 @@ export const environment = {
   /** Razorpay test key for wallet top-up */
   razorpayKeyId: 'rzp_test_dsrBANLbHxlwZb',
 
-  /** Partner API credentials (from JWT payload) */
-  apiKey: 'f645dbc7cd4ba17caf4fac8abc53dc02a01231dde7ec1c31124895aa0fd24166',
-  appId: 'MjAxN3Nhdm1vYmlsZXdlYnNpdGU=',
+  /**
+   * Partner API credentials — removed from source code for security.
+   * These are obtained dynamically via the JWT token after login.
+   * If needed for local dev, set via browser console or .env override.
+   */
+  apiKey: '',
+  appId: '',
 
   /** Agent ID — set dynamically after login from user_id */
-  agentId: '983680',
+  agentId: '',
 
   /** User email — set after login, used for B2B API calls */
   userEmail: '',

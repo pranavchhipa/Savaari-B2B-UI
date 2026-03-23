@@ -133,7 +133,7 @@ export class WalletService {
           const status = (data.walletStatus ?? data.wallet_status ?? data.status ?? 'ACTIVE').toUpperCase() as WalletStatus['status'];
           this.balanceSubject.next(balance);
           this.walletStatusSubject.next({ balance, status, walletId: data.walletId ?? data.wallet_id });
-          console.log(`[WALLET] Balance: ₹${balance} (${status})`);
+          if (!environment.production) console.log(`[WALLET] Balance: ₹${balance} (${status})`);
         }
       }),
       catchError(err => {
@@ -251,7 +251,7 @@ export class WalletService {
       }),
       catchError(err => {
         // API unreachable (not deployed yet) — credit wallet locally so UI reflects the payment
-        console.warn(`[WALLET] verifyTopUp API error (${err?.status ?? err?.message}), crediting ₹${amount} locally`);
+        if (!environment.production) console.warn(`[WALLET] verifyTopUp API error (${err?.status ?? err?.message}), crediting ₹${amount} locally`);
         this.addTopUp(amount, paymentId);
         return of(true);
       })
@@ -287,7 +287,7 @@ export class WalletService {
     return this.api.walletPost<any>('pay-booking', payload, this.getWalletToken()).pipe(
       map(response => {
         if (response?.statusCode === 200 || response?.status === 'success') {
-          console.log(`[WALLET] ₹${amount} deducted for booking #${bookingId} (option ${paymentOption})`);
+          if (!environment.production) console.log(`[WALLET] ₹${amount} deducted for booking #${bookingId} (option ${paymentOption})`);
           this.loadBalance();
           this.loadHistory();
           return true;
@@ -329,7 +329,7 @@ export class WalletService {
     return this.api.walletPost<any>('refund', this.buildPayload({ booking_id: bookingId, amount }), this.getWalletToken()).pipe(
       map(response => {
         if (response?.statusCode === 200 || response?.status === 'success') {
-          console.log(`[WALLET] ₹${amount} refunded for booking #${bookingId}`);
+          if (!environment.production) console.log(`[WALLET] ₹${amount} refunded for booking #${bookingId}`);
           this.loadBalance();
           this.loadHistory();
           return true;

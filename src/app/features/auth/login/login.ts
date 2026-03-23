@@ -6,6 +6,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { FooterComponent } from '../../../components/layout/footer/footer';
 import { AuthService } from '../../../core/services/auth.service';
 import { WalletService } from '../../../core/services/wallet.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -22,8 +23,8 @@ export class LoginComponent {
   private walletService = inject(WalletService);
 
   loginForm = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
+    password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(128)]],
     rememberMe: [false]
   });
 
@@ -43,7 +44,7 @@ export class LoginComponent {
 
     this.auth.login(email!, password!).subscribe({
       next: (user) => {
-        console.log('[Login] Success for', user.email);
+        if (!environment.production) console.log('[Login] Success for', user.email);
         this.isLoading.set(false);
         // Load wallet balance immediately after login so header shows correct amount
         this.walletService.loadBalance();

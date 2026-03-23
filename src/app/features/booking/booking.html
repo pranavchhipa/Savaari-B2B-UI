@@ -245,6 +245,84 @@
                                 / Door Number / Building</label>
                         </div>
 
+                        <!-- GST Invoice Section -->
+                        <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-slate-50/50 dark:bg-slate-800/50">
+                            <!-- Checkbox row -->
+                            <label class="flex items-center gap-3 cursor-pointer select-none">
+                                <input type="checkbox" [(ngModel)]="needsGstInvoice" name="needsGstInvoice"
+                                    (change)="onGstToggle()"
+                                    class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30" />
+                                <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Need GST Invoice for this Booking?</span>
+                            </label>
+
+                            <!-- GST Applied (profile has GST) -->
+                            <div *ngIf="needsGstInvoice && agentGstNumber && gstDecoded?.isValidFormat && !gstManualEntry"
+                                class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 space-y-1.5">
+                                <div class="flex items-center gap-2">
+                                    <lucide-icon name="check-circle" [size]="16" class="text-emerald-600"></lucide-icon>
+                                    <span class="text-sm font-bold text-emerald-700 dark:text-emerald-300">GST Applied: {{ agentGstNumber }}</span>
+                                </div>
+                                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-emerald-600 dark:text-emerald-400 pl-6">
+                                    <span>{{ gstDecoded!.stateName }}</span>
+                                    <span>&bull; {{ gstDecoded!.entityType }}</span>
+                                    <span>&bull; PAN: {{ gstDecoded!.pan }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Manual GST Entry (no GST in profile) -->
+                            <div *ngIf="needsGstInvoice && gstManualEntry" class="space-y-3">
+                                <div class="relative group">
+                                    <input type="text" id="gstInput" placeholder=" " [(ngModel)]="agentGstNumber" name="agentGstNumber"
+                                        (input)="onGstInput()" maxlength="15"
+                                        class="peer block w-full px-4 pt-6 pb-2 text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg uppercase tracking-widest font-mono text-sm" />
+                                    <label for="gstInput"
+                                        class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">
+                                        GST Number (15 digits) *</label>
+                                </div>
+
+                                <!-- Decoded info (shows when 15 chars entered) -->
+                                <div *ngIf="gstDecoded?.isValidFormat"
+                                    class="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg p-3 space-y-2">
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                            <span class="text-slate-500 dark:text-slate-400">State</span>
+                                            <p class="font-semibold text-slate-800 dark:text-white">{{ gstDecoded!.stateName }}</p>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500 dark:text-slate-400">Entity Type</span>
+                                            <p class="font-semibold text-slate-800 dark:text-white">{{ gstDecoded!.entityType }}</p>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500 dark:text-slate-400">PAN</span>
+                                            <p class="font-semibold text-slate-800 dark:text-white font-mono">{{ gstDecoded!.pan }}</p>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-500 dark:text-slate-400">Name Initial</span>
+                                            <p class="font-semibold text-slate-800 dark:text-white">{{ gstDecoded!.nameInitial }}</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" (click)="saveGstToProfile()" [disabled]="gstSavingToProfile"
+                                        class="w-full mt-1 py-2 text-xs font-bold text-white bg-primary hover:bg-sky-700 rounded-lg transition disabled:opacity-50">
+                                        {{ gstSavingToProfile ? 'Saving...' : 'Save to Profile & Apply' }}
+                                    </button>
+                                </div>
+
+                                <!-- Invalid format warning -->
+                                <p *ngIf="agentGstNumber.length === 15 && gstDecoded && !gstDecoded.isValidFormat"
+                                    class="text-xs text-red-500 flex items-center gap-1">
+                                    <lucide-icon name="alert-triangle" [size]="12"></lucide-icon>
+                                    Invalid GSTIN format. Please check and re-enter.
+                                </p>
+                            </div>
+
+                            <!-- Save success message -->
+                            <div *ngIf="gstSaveSuccess && !gstManualEntry"
+                                class="text-xs text-emerald-600 flex items-center gap-1">
+                                <lucide-icon name="check-circle" [size]="12"></lucide-icon>
+                                GST saved to your profile.
+                            </div>
+                        </div>
+
                         <div
                             class="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-4 rounded-xl flex gap-3">
                             <lucide-icon name="info" [size]="20" class="text-amber-500"></lucide-icon>

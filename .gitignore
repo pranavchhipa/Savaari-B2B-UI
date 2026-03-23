@@ -43,6 +43,12 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
+# Secrets / credentials
+.env
+.env.*
+*.secret
+*.credentials
+
 # Claude Code local settings
 .claude/settings.local.json
 .vercel

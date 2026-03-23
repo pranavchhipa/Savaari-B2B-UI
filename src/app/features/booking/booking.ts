@@ -8,6 +8,7 @@ import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocompl
 import { AuthService } from '../../core/services/auth.service';
 import { BookingStateService, Itinerary, SelectedCar } from '../../core/services/booking-state.service';
 import { BookingApiService } from '../../core/services/booking-api.service';
+import { ApiService } from '../../core/services/api.service';
 import { BookingRegistryService } from '../../core/services/booking-registry.service';
 import { CouponService } from '../../core/services/coupon.service';
 import { TripTypeService } from '../../core/services/trip-type.service';
@@ -17,6 +18,7 @@ import { LocalityService } from '../../core/services/locality.service';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { CreateBookingRequest, CouponValidationResponse } from '../../core/models';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
+import { decodeGSTIN, GSTINDecodeResult } from '../../core/utils/gstin-decoder';
 import { Observable } from 'rxjs';
 import { FooterComponent } from '../../components/layout/footer/footer';
 import { environment } from '../../../environments/environment';
@@ -36,6 +38,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   private auth = inject(AuthService);
   private bookingState = inject(BookingStateService);
   private bookingApi = inject(BookingApiService);
+  private api = inject(ApiService);
   private bookingRegistry = inject(BookingRegistryService);
   private couponService = inject(CouponService);
   private tripTypeService = inject(TripTypeService);
@@ -91,6 +94,14 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   couponMessage = '';
   isValidatingCoupon = false;
 
+  // GST Invoice
+  needsGstInvoice = false;
+  agentGstNumber = '';
+  gstDecoded: GSTINDecodeResult | null = null;
+  gstManualEntry = false;       // true when agent has no GST in profile
+  gstSavingToProfile = false;
+  gstSaveSuccess = false;
+
   // Error display
   bookingError = '';
   formSubmitAttempted = false;
@@ -136,6 +147,15 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.selectedCountryCode = codes.find(c => c.isdCode === '91') || codes[0] || null;
       this.cdr.markForCheck();
     });
+
+    // GST: auto-apply if agent has GST in profile
+    const profileGst = this.auth.getGstNumber();
+    if (profileGst) {
+      this.agentGstNumber = profileGst;
+      this.gstDecoded = decodeGSTIN(profileGst);
+      this.needsGstInvoice = true; // Per Shivam: auto-tick if GST filled
+      this.gstManualEntry = false;
+    }
 
     // Initial sync
     this.itinerary = this.bookingState.getItinerary();
@@ -187,6 +207,61 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.locationSub) {
       this.locationSub.unsubscribe();
     }
+  }
+
+  // ─── GST Invoice ───────────────────────────────────────────
+
+  /** Toggle GST invoice checkbox */
+  onGstToggle(): void {
+    if (this.needsGstInvoice && !this.agentGstNumber) {
+      // Checked but no GST in profile → show manual entry
+      this.gstManualEntry = true;
+    }
+    if (!this.needsGstInvoice) {
+      this.gstManualEntry = false;
+      this.gstSaveSuccess = false;
+    }
+    this.cdr.markForCheck();
+  }
+
+  /** Auto-decode GSTIN as user types (fires on every keystroke) */
+  onGstInput(): void {
+    const clean = (this.agentGstNumber || '').toUpperCase().trim();
+    this.agentGstNumber = clean;
+    if (clean.length === 15) {
+      this.gstDecoded = decodeGSTIN(clean);
+    } else {
+      this.gstDecoded = null;
+    }
+    this.gstSaveSuccess = false;
+    this.cdr.markForCheck();
+  }
+
+  /** Save manually entered GSTIN to agent profile */
+  saveGstToProfile(): void {
+    if (!this.gstDecoded?.isValidFormat) return;
+    this.gstSavingToProfile = true;
+    this.cdr.markForCheck();
+
+    // Call the same GST update API used in account-settings
+    const payload = { gst_number: this.agentGstNumber, userEmail: this.auth.getUserEmail() };
+    this.api.partnerPostForm<any>('update_gst', payload, { token: this.auth.getPartnerToken()! }).subscribe({
+      next: () => {
+        this.auth.setGstNumber(this.agentGstNumber);
+        this.gstSavingToProfile = false;
+        this.gstSaveSuccess = true;
+        this.gstManualEntry = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // Even if API fails, cache locally for this session
+        this.auth.setGstNumber(this.agentGstNumber);
+        this.gstSavingToProfile = false;
+        this.gstSaveSuccess = true;
+        this.gstManualEntry = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   proceedToPayment() {
@@ -703,6 +778,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       // Urgent booking flag (< 48h before pickup)
       ...(this.isBookingUrgent() && { Urgent_booking: '1' }),
+
+      // GST Invoice
+      ...(this.needsGstInvoice && this.agentGstNumber && { gst_invoice_required: '1', gst_number: this.agentGstNumber }),
     };
 
     console.log('[BOOKING] Sending request:', JSON.stringify(request, null, 2));

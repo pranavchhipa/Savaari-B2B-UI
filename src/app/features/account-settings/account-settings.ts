@@ -6,6 +6,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { FooterComponent } from '../../components/layout/footer/footer';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
+import { decodeGSTIN, isValidGSTIN, isValidPAN, GSTINDecodeResult } from '../../core/utils/gstin-decoder';
 
 type AccountSection = 'personal' | 'password';
 
@@ -64,6 +65,19 @@ export class AccountSettingsComponent implements OnInit {
   gstSaving = false;
   gstSuccess = false;
   gstError = '';
+  gstDecodedInfo: GSTINDecodeResult | null = null;
+
+  /** Auto-decode GSTIN as user types in account settings */
+  onGstNumberInput(): void {
+    const clean = (this.profile.gstNumber || '').toUpperCase().trim();
+    this.profile.gstNumber = clean;
+    if (clean.length === 15) {
+      this.gstDecodedInfo = decodeGSTIN(clean);
+    } else {
+      this.gstDecodedInfo = null;
+    }
+    this.cdr.markForCheck();
+  }
 
   ngOnInit() {
     this.loadProfileFromAuth();
@@ -93,21 +107,43 @@ export class AccountSettingsComponent implements OnInit {
     }
   }
 
+  private readonly ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  private readonly MAX_LOGO_SIZE = 1024 * 1024; // 1 MB
+  logoError = '';
+
   onLogoSelect(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.profile.logoFile = input.files[0];
-      const reader = new FileReader();
-      reader.onload = e => {
-        this.logoPreview = e.target?.result as string;
-        // Save to localStorage so navbar can show agent's logo
-        if (this.logoPreview) {
-          localStorage.setItem('agentLogo', this.logoPreview);
-        }
-        this.cdr.markForCheck();
-      };
-      reader.readAsDataURL(input.files[0]);
+    this.logoError = '';
+    if (!input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+
+    // Validate file type
+    if (!this.ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      this.logoError = 'Only PNG, JPEG, WebP, or GIF images are allowed.';
+      input.value = '';
+      this.cdr.markForCheck();
+      return;
     }
+
+    // Validate file size
+    if (file.size > this.MAX_LOGO_SIZE) {
+      this.logoError = 'Logo must be under 1 MB.';
+      input.value = '';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.profile.logoFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      this.logoPreview = e.target?.result as string;
+      if (this.logoPreview) {
+        localStorage.setItem('agentLogo', this.logoPreview);
+      }
+      this.cdr.markForCheck();
+    };
+    reader.readAsDataURL(file);
   }
 
   removeLogo() {
@@ -117,24 +153,52 @@ export class AccountSettingsComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
+  /** Strip HTML tags and trim whitespace from user input */
+  private sanitize(value: string): string {
+    return (value || '').replace(/<[^>]*>/g, '').trim();
+  }
+
+  /** Validate PAN format: ABCDE1234F (uses shared util) */
+  private isValidPAN(pan: string): boolean {
+    return !pan || isValidPAN(pan);
+  }
+
+  /** Validate GST format: 22AAAAA0000A1Z5 (uses shared util) */
+  private isValidGST(gst: string): boolean {
+    return !gst || isValidGSTIN(gst);
+  }
+
   updateProfile() {
     this.profileSuccess = false;
     this.profileError = '';
+
+    // Validate PAN/GST formats
+    if (this.profile.panNumber && !this.isValidPAN(this.profile.panNumber)) {
+      this.profileError = 'Invalid PAN format (e.g. ABCDE1234F)';
+      this.cdr.markForCheck();
+      return;
+    }
+    if (this.profile.gstNumber && !this.isValidGST(this.profile.gstNumber)) {
+      this.profileError = 'Invalid GST format (e.g. 22AAAAA0000A1Z5)';
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.isSaving = true;
     this.cdr.markForCheck();
 
     // POST /user/update-profile with form data (confirmed from beta site)
     const payload = {
-      userName: this.profile.fullName,
-      userEmail: this.profile.email,
-      userPhone: this.profile.phone,
-      agentCompanyName: this.profile.companyName,
-      agentCompanyAddress: this.profile.companyAddress,
-      agentCity: this.profile.city,
+      userName: this.sanitize(this.profile.fullName),
+      userEmail: this.sanitize(this.profile.email),
+      userPhone: this.sanitize(this.profile.phone),
+      agentCompanyName: this.sanitize(this.profile.companyName),
+      agentCompanyAddress: this.sanitize(this.profile.companyAddress),
+      agentCity: this.sanitize(this.profile.city),
       agentState: '',
       agentcityId: 0,
-      agentPAN: this.profile.panNumber,
-      agentGST: this.profile.gstNumber,
+      agentPAN: this.sanitize(this.profile.panNumber).toUpperCase(),
+      agentGST: this.sanitize(this.profile.gstNumber).toUpperCase(),
       token: this.auth.getB2bToken(),
       isAgent: true,
     };

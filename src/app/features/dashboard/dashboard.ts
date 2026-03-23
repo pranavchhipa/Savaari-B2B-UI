@@ -301,9 +301,9 @@ export class DashboardComponent implements OnInit {
 
   /** Format a number in Indian numbering system (12,34,567) */
   private decodeHtml(str: string): string {
-    const txt = document.createElement('textarea');
-    txt.innerHTML = str;
-    return txt.value;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(str, 'text/html');
+    return doc.body.textContent || str;
   }
 
   private formatIndianNumber(num: number): string {

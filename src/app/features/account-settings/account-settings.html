@@ -137,15 +137,25 @@
                 </div>
               </div>
 
-              <!-- GST Number — read-only, managed by Savaari admin -->
+              <!-- GST Number with auto-decode -->
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                   GST Number
-                  <span *ngIf="profile.gstNumber" class="ml-1 text-xs text-slate-400 font-normal">(Contact support to change)</span>
                 </label>
-                <input type="text" [ngModel]="profile.gstNumber" disabled
-                  placeholder="Not set"
-                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-500 cursor-not-allowed opacity-70" />
+                <input type="text" [(ngModel)]="profile.gstNumber" (input)="onGstNumberInput()" maxlength="15"
+                  placeholder="Enter 15-digit GSTIN"
+                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition uppercase tracking-wider font-mono" />
+                <!-- Decoded info -->
+                <div *ngIf="gstDecodedInfo?.isValidFormat" class="mt-2 p-2.5 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
+                  <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-sky-700 dark:text-sky-300">
+                    <span class="font-semibold">{{ gstDecodedInfo!.stateName }}</span>
+                    <span>&bull; {{ gstDecodedInfo!.entityType }}</span>
+                    <span>&bull; PAN: <span class="font-mono">{{ gstDecodedInfo!.pan }}</span></span>
+                    <span>&bull; Initial: {{ gstDecodedInfo!.nameInitial }}</span>
+                  </div>
+                </div>
+                <p *ngIf="profile.gstNumber?.length === 15 && gstDecodedInfo && !gstDecodedInfo.isValidFormat"
+                  class="mt-1 text-xs text-red-500">Invalid GSTIN format</p>
               </div>
 
               <!-- City -->
@@ -200,7 +210,7 @@
                     <label class="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 cursor-pointer transition">
                       <lucide-icon name="upload-cloud" [size]="14"></lucide-icon>
                       {{ logoPreview ? 'Change Logo' : 'Select File' }}
-                      <input type="file" accept="image/jpeg,image/png" class="hidden" (change)="onLogoSelect($event)" />
+                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" (change)="onLogoSelect($event)" />
                     </label>
                     <button *ngIf="logoPreview" type="button" (click)="removeLogo()"
                       class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition">
@@ -208,6 +218,7 @@
                       Remove
                     </button>
                   </div>
+                  <p *ngIf="logoError" class="text-xs text-red-500 mt-1">{{ logoError }}</p>
                 </div>
               </div>
             </div>
