@@ -8,7 +8,6 @@ import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocompl
 import { AuthService } from '../../core/services/auth.service';
 import { BookingStateService, Itinerary, SelectedCar } from '../../core/services/booking-state.service';
 import { BookingApiService } from '../../core/services/booking-api.service';
-import { ApiService } from '../../core/services/api.service';
 import { BookingRegistryService } from '../../core/services/booking-registry.service';
 import { CouponService } from '../../core/services/coupon.service';
 import { TripTypeService } from '../../core/services/trip-type.service';
@@ -38,7 +37,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   private auth = inject(AuthService);
   private bookingState = inject(BookingStateService);
   private bookingApi = inject(BookingApiService);
-  private api = inject(ApiService);
   private bookingRegistry = inject(BookingRegistryService);
   private couponService = inject(CouponService);
   private tripTypeService = inject(TripTypeService);
@@ -99,8 +97,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   agentGstNumber = '';
   gstDecoded: GSTINDecodeResult | null = null;
   gstManualEntry = false;       // true when agent has no GST in profile
-  gstSavingToProfile = false;
-  gstSaveSuccess = false;
 
   // Error display
   bookingError = '';
@@ -219,49 +215,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     if (!this.needsGstInvoice) {
       this.gstManualEntry = false;
-      this.gstSaveSuccess = false;
     }
     this.cdr.markForCheck();
   }
 
-  /** Auto-decode GSTIN as user types (fires on every keystroke) */
-  onGstInput(): void {
-    const clean = (this.agentGstNumber || '').toUpperCase().trim();
-    this.agentGstNumber = clean;
-    if (clean.length === 15) {
-      this.gstDecoded = decodeGSTIN(clean);
-    } else {
-      this.gstDecoded = null;
-    }
-    this.gstSaveSuccess = false;
-    this.cdr.markForCheck();
-  }
-
-  /** Save manually entered GSTIN to agent profile */
-  saveGstToProfile(): void {
-    if (!this.gstDecoded?.isValidFormat) return;
-    this.gstSavingToProfile = true;
-    this.cdr.markForCheck();
-
-    // Call the same GST update API used in account-settings
-    const payload = { gst_number: this.agentGstNumber, userEmail: this.auth.getUserEmail() };
-    this.api.partnerPostForm<any>('update_gst', payload, { token: this.auth.getPartnerToken()! }).subscribe({
-      next: () => {
-        this.auth.setGstNumber(this.agentGstNumber);
-        this.gstSavingToProfile = false;
-        this.gstSaveSuccess = true;
-        this.gstManualEntry = false;
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        // Even if API fails, cache locally for this session
-        this.auth.setGstNumber(this.agentGstNumber);
-        this.gstSavingToProfile = false;
-        this.gstSaveSuccess = true;
-        this.gstManualEntry = false;
-        this.cdr.markForCheck();
-      }
-    });
+  /** Navigate to Account Settings so agent can update GST in profile */
+  goToProfileForGst(): void {
+    this.router.navigate(['/account-settings'], { queryParams: { focus: 'gst' } });
   }
 
   proceedToPayment() {
