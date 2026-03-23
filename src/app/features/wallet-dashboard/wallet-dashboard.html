@@ -25,82 +25,58 @@
         </div>
 
         <!-- Balance Card — Dark Credit Card Style with Gold Accents -->
-        <!-- Premium Card — real credit card ratio 85.6:53.98 ≈ 1.586:1 -->
-        <div class="relative rounded-2xl overflow-hidden shadow-2xl shadow-sky-900/40"
-            style="width: 428px; height: 270px; background: linear-gradient(135deg, #0c1929 0%, #0e2a47 35%, #0a3d6b 65%, #0e2a47 100%); border: 1px solid rgba(56,189,248,0.15);">
+        <!-- Wallet Card — compact, real card ratio 85.6:54 ≈ 1.586:1 -->
+        <div class="relative rounded-xl overflow-hidden shadow-lg"
+            style="width: 340px; height: 214px; background: linear-gradient(135deg, #0c1929 0%, #0e2a47 40%, #0a3d6b 100%);">
 
-            <!-- Holographic shimmer overlay -->
-            <div class="absolute inset-0 opacity-[0.04]"
-                style="background: repeating-linear-gradient(115deg, transparent, transparent 30px, rgba(56,189,248,0.3) 30px, rgba(56,189,248,0.3) 31px);"></div>
+            <!-- Subtle glow -->
+            <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full blur-[60px]"
+                style="background: radial-gradient(circle, rgba(14,165,233,0.2) 0%, transparent 70%);"></div>
 
-            <!-- Glowing orbs -->
-            <div class="absolute -top-16 -right-16 w-56 h-56 rounded-full blur-[80px]"
-                style="background: radial-gradient(circle, rgba(14,165,233,0.25) 0%, transparent 70%);"></div>
-            <div class="absolute -bottom-20 -left-10 w-44 h-44 rounded-full blur-[60px]"
-                style="background: radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%);"></div>
-
-            <!-- Curved accent lines -->
-            <svg class="absolute inset-0 w-full h-full opacity-[0.06]" viewBox="0 0 428 270" fill="none">
-                <path d="M0,180 Q120,120 250,160 T428,100" stroke="url(#cLine1)" stroke-width="1.5"/>
-                <path d="M0,210 Q140,150 280,190 T428,130" stroke="url(#cLine2)" stroke-width="1"/>
-                <path d="M0,240 Q160,180 310,220 T428,160" stroke="url(#cLine3)" stroke-width="0.8"/>
-                <defs>
-                    <linearGradient id="cLine1" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stop-color="#38bdf8"/>
-                        <stop offset="100%" stop-color="#0ea5e9"/>
-                    </linearGradient>
-                    <linearGradient id="cLine2" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stop-color="#0ea5e9"/>
-                        <stop offset="100%" stop-color="#38bdf8"/>
-                    </linearGradient>
-                    <linearGradient id="cLine3" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stop-color="#38bdf8"/>
-                        <stop offset="50%" stop-color="#7dd3fc"/>
-                        <stop offset="100%" stop-color="#0ea5e9"/>
-                    </linearGradient>
-                </defs>
+            <!-- Accent lines -->
+            <svg class="absolute inset-0 w-full h-full opacity-[0.06]" viewBox="0 0 340 214" fill="none">
+                <path d="M0,150 Q100,100 200,130 T340,80" stroke="#38bdf8" stroke-width="1.2"/>
+                <path d="M0,175 Q120,130 240,160 T340,110" stroke="#0ea5e9" stroke-width="0.8"/>
             </svg>
 
             <!-- Card content -->
-            <div class="relative z-10 h-full flex flex-col justify-between p-7">
-                <!-- Top row: Brand + Chip -->
-                <div class="flex items-start justify-between">
-                    <div>
-                        <div class="inline-flex items-center bg-sky-500/20 backdrop-blur-sm border border-sky-400/20 rounded-lg px-3 py-1.5 mb-1">
-                            <span class="text-[13px] font-black text-white tracking-wide">B2B</span>
-                            <span class="text-[13px] font-black tracking-wide ml-1" style="background: linear-gradient(135deg, #38bdf8, #7dd3fc, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CAB</span>
-                        </div>
-                        <p class="text-[9px] font-medium text-sky-300/50 uppercase tracking-[0.2em] ml-0.5">Premium Wallet</p>
+            <div class="relative z-10 h-full flex flex-col justify-between p-5">
+                <!-- Top: Brand + Chip -->
+                <div class="flex items-center justify-between">
+                    <div class="inline-flex items-center bg-primary/90 rounded skew-x-[-8deg] px-2.5 py-1 shadow">
+                        <span class="skew-x-[8deg] text-[11px] font-black text-white tracking-wide">B2B CAB</span>
                     </div>
                     <!-- EMV Chip -->
-                    <div class="w-12 h-9 rounded-md relative overflow-hidden" style="background: linear-gradient(145deg, #d4a853 0%, #f5d78e 30%, #c9973b 60%, #f5d78e 100%); box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.2);">
-                        <div class="absolute inset-[3px] rounded-sm border border-amber-600/30">
-                            <div class="absolute top-1/2 left-0 right-0 h-px bg-amber-700/30"></div>
-                            <div class="absolute top-0 bottom-0 left-1/2 w-px bg-amber-700/30"></div>
+                    <div class="w-9 h-6.5 rounded" style="background: linear-gradient(145deg, #d4a853, #f5d78e, #c9973b); box-shadow: inset 0 1px 1px rgba(255,255,255,0.3);">
+                        <div class="w-full h-full rounded border border-amber-600/30 grid grid-cols-2 grid-rows-2">
+                            <div class="border-r border-b border-amber-700/20"></div>
+                            <div class="border-b border-amber-700/20"></div>
+                            <div class="border-r border-amber-700/20"></div>
+                            <div></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Middle: Balance -->
-                <div class="flex-1 flex flex-col justify-center -mt-1">
-                    <span class="text-[10px] font-bold text-sky-300/60 uppercase tracking-[0.25em] mb-2">Available Balance</span>
-                    <div class="flex items-baseline gap-1">
-                        <span class="text-lg font-light text-sky-300/40">₹</span>
-                        <span class="text-[44px] font-extrabold text-white leading-none" style="text-shadow: 0 0 40px rgba(56,189,248,0.15);">{{ (balance$ | async) | number:'1.0-0' }}</span>
+                <div>
+                    <span class="text-[8px] font-bold text-sky-300/50 uppercase tracking-[0.2em]">Available Balance</span>
+                    <div class="flex items-baseline gap-0.5 mt-1">
+                        <span class="text-sm font-light text-sky-300/40">₹</span>
+                        <span class="text-[34px] font-extrabold text-white leading-none tracking-tight">{{ (balance$ | async) | number:'1.0-0' }}</span>
                     </div>
                 </div>
 
-                <!-- Bottom row: Status + Card network -->
-                <div class="flex items-end justify-between">
-                    <div class="flex items-center gap-3">
-                        <span class="inline-flex items-center text-[9px] font-bold text-emerald-300 bg-emerald-500/10 backdrop-blur-sm border border-emerald-400/20 px-2.5 py-1 rounded-full tracking-wider uppercase gap-1.5">
+                <!-- Bottom: Status + Number -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <span class="inline-flex items-center text-[8px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-400/20 px-2 py-0.5 rounded-full tracking-wider uppercase gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                             Active
                         </span>
-                        <span class="text-[10px] text-sky-400/40 font-medium tracking-wider">•••• •••• •••• {{ agentId.slice(-4) }}</span>
+                        <span class="text-[9px] text-sky-400/35 font-medium tracking-wider">•••• {{ agentId.slice(-4) }}</span>
                     </div>
-                    <!-- Contactless icon -->
-                    <svg class="w-7 h-7 text-sky-300/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <!-- Contactless -->
+                    <svg class="w-5 h-5 text-sky-300/25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M8.5 16.5a5.25 5.25 0 0 1 0-9" stroke-linecap="round"/>
                         <path d="M5 19a8.75 8.75 0 0 1 0-14" stroke-linecap="round"/>
                         <path d="M12 13.5a1.75 1.75 0 0 1 0-3" stroke-linecap="round"/>
