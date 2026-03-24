@@ -49,6 +49,21 @@ Thumbs.db
 *.secret
 *.credentials
 
-# Claude Code local settings
-.claude/settings.local.json
+# Claude Code / AI tooling
+.claude/
+.agents/
+.gemini/
+AGENTS.md
+docs/superpowers/
+
+# Documentation & reference (keep local only)
+docs/
+*.docx
+*.txt
+!LICENSE.txt
+build.log
+savaari-enterprise-connect-main/
+
+# Vercel
 .vercel
+CLAUDE.md
