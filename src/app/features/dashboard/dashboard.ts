@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -17,6 +17,7 @@ import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-form
 import { BannerService, BannerImage } from '../../core/services/banner.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { LocalityService, Locality } from '../../core/services/locality.service';
+import { AuthService } from '../../core/services/auth.service';
 
 type TabType = 'ONE_WAY' | 'ROUND_TRIP' | 'LOCAL' | 'AIRPORT';
 
@@ -28,7 +29,7 @@ type TabType = 'ONE_WAY' | 'ROUND_TRIP' | 'LOCAL' | 'AIRPORT';
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private bookingState = inject(BookingStateService);
@@ -40,8 +41,22 @@ export class DashboardComponent implements OnInit {
   private bookingApi = inject(BookingApiService);
   private analytics = inject(AnalyticsService);
   private localityService = inject(LocalityService);
+  private authService = inject(AuthService);
 
   selectedTab: TabType = 'ONE_WAY';
+
+  get agentFirstName(): string {
+    const u = this.authService.getUserProfile() as any;
+    const name = u?.firstname || u?.companyname || 'Agent';
+    return name.split(' ')[0];
+  }
+
+  get greeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
 
   // Banner images from API
   bannerImages: BannerImage[] = [];
@@ -103,6 +118,66 @@ export class DashboardComponent implements OnInit {
 
   recentBookings: { id: string; route: string; date: string; status: string; amount: string }[] = [];
   statsLoading = true;
+
+  // ── Live Stats Bar (dummy social-proof counter) ──
+  liveBookings = 0;
+  liveAgents = 0;
+  readonly liveCities = '2,000+';
+  private liveStatsInterval: ReturnType<typeof setInterval> | null = null;
+
+  /** Generate a deterministic daily seed so all agents see similar numbers */
+  private getDailySeed(): number {
+    const d = new Date();
+    return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  }
+
+  /** Seeded pseudo-random (mulberry32) — same seed = same sequence */
+  private seededRandom(seed: number): () => number {
+    let t = seed + 0x6D2B79F5;
+    return () => {
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /** Smooth S-curve: slow start, fast middle, slow end (like real booking patterns) */
+  private easeInOut(t: number): number {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  /** Calculate current live bookings based on time-of-day */
+  private calculateLiveStats(): void {
+    const now = new Date();
+    const minuteOfDay = now.getHours() * 60 + now.getMinutes();
+    const progress = minuteOfDay / 1440; // 0.0 at midnight → 1.0 at 11:59 PM
+
+    const rng = this.seededRandom(this.getDailySeed());
+    const maxDaily = 8000 + Math.floor(rng() * 2000); // 8,000–10,000 per day
+
+    // S-curve progress + small jitter (±2%)
+    const jitter = 1 + (Math.random() - 0.5) * 0.04;
+    const rawBookings = Math.floor(maxDaily * this.easeInOut(progress) * jitter);
+    this.liveBookings = Math.max(0, rawBookings);
+
+    // Active agents: 15-25% of bookings, min 50
+    const agentRatio = 0.15 + rng() * 0.10;
+    this.liveAgents = Math.max(50, Math.floor(this.liveBookings * agentRatio));
+    this.cdr.markForCheck();
+  }
+
+  private startLiveStats(): void {
+    this.calculateLiveStats();
+    // Update every 8–12 seconds
+    this.liveStatsInterval = setInterval(() => {
+      this.calculateLiveStats();
+    }, 8000 + Math.random() * 4000);
+  }
+
+  /** Format number with commas (Indian style: 1,23,456) */
+  formatLiveNumber(n: number): string {
+    return n.toLocaleString('en-IN');
+  }
 
   tripTypes = [
     { label: 'Drop to Airport', value: 'drop' },
@@ -191,8 +266,14 @@ export class DashboardComponent implements OnInit {
     this.loadSourceCities();
     this.loadBanners();
     this.loadDashboardStats();
+    this.startLiveStats();
     // Track page load after 2s (mirrors savaari.com behaviour)
     setTimeout(() => this.analytics.trackPageLoad(), 2000);
+  }
+
+  ngOnDestroy() {
+    if (this.bannerInterval) clearInterval(this.bannerInterval);
+    if (this.liveStatsInterval) clearInterval(this.liveStatsInterval);
   }
 
   /** Load real booking data from API and compute dashboard stats */

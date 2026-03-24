@@ -1,11 +1,70 @@
 /* Dashboard component specific styles */
 
-/* Italic, smaller placeholders for all form inputs */
-:host ::ng-deep .p-autocomplete input::placeholder,
-:host ::ng-deep .p-datepicker input::placeholder,
-:host ::ng-deep .p-select .p-placeholder,
-:host input::placeholder {
-  font-style: italic;
-  font-size: 0.8rem;
-  opacity: 0.55;
+/* ============================================ */
+/* Search Bar — Stitch-inspired borderless inputs */
+/* ============================================ */
+
+/* Remove all PrimeNG borders/chrome from inputs inside search bar */
+:host ::ng-deep .search-bar-autocomplete .p-autocomplete-input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  line-height: 1.5 !important;
+}
+
+:host ::ng-deep .search-bar-autocomplete .p-autocomplete-input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  font-style: normal !important;
+  opacity: 1 !important;
+  font-size: 0.95rem !important;
+}
+
+:host ::ng-deep .search-bar-datepicker input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  line-height: 1.5 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+
+/* p-select inside search bar — make it borderless */
+:host ::ng-deep .search-bar-select {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+:host ::ng-deep .search-bar-select .p-select-label {
+  padding: 0 !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  line-height: 1.5 !important;
+}
+
+:host ::ng-deep .search-bar-select .p-placeholder {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  font-style: normal !important;
+  opacity: 1 !important;
+  font-size: 0.95rem !important;
+}
+
+:host ::ng-deep .search-bar-select .p-select-dropdown {
+  color: #64748b !important;
 }

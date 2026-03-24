@@ -185,6 +185,7 @@ export class SelectCarComponent implements OnInit {
     if (n.includes('mercedes') || n.includes('e-class') || n.includes('e class')) return base + 'e-class.png';
     if (n.includes('bmw'))                               return base + 'bmw-5.png';
     if (n.includes('xuv'))                               return base + 'xuv500.png';
+    if (n.includes('urbania'))                            return base + 'urbania.png';
     if ((n.includes('tempo') || n.includes('traveller')) && n.includes('26')) return base + 'tempo-26.png';
     if ((n.includes('tempo') || n.includes('traveller')) && n.includes('17')) return base + 'tempo-17.png';
     if (n.includes('tempo') || n.includes('traveller'))  return base + 'tempo-12.png';
@@ -325,9 +326,9 @@ export class SelectCarComponent implements OnInit {
     return sub === 'pickup' ? 'Pickup from Airport' : 'Drop to Airport';
   }
 
-  /** Cars to show — all come from the availability API now */
+  /** Cars to show — sorted by price (low to high) */
   get carsToDisplay(): DisplayCar[] {
-    return this.availableCars;
+    return [...this.availableCars].sort((a, b) => a.price - b.price);
   }
 
   get localPackageLabel(): string {

@@ -44,7 +44,8 @@ export interface SelectedCar {
 export class BookingStateService {
     private readonly STORAGE_KEYS = {
         ITINERARY: 'savaari_itinerary',
-        CAR: 'savaari_selected_car'
+        CAR: 'savaari_selected_car',
+        AVAILABILITY: 'savaari_availability'
     };
 
     private readonly DEFAULTS = {
@@ -73,13 +74,24 @@ export class BookingStateService {
 
     private currentItinerarySubject = new BehaviorSubject<Itinerary | null>(this.loadFromStorage(this.STORAGE_KEYS.ITINERARY, true));
     private selectedCarSubject = new BehaviorSubject<SelectedCar | null>(this.loadFromStorage(this.STORAGE_KEYS.CAR, false));
-    private availabilityResponseSubject = new BehaviorSubject<AvailabilityResponse | null>(null);
+    private availabilityResponseSubject: BehaviorSubject<AvailabilityResponse | null>;
 
     public readonly currentItinerary$ = this.currentItinerarySubject.asObservable();
     public readonly selectedCar$ = this.selectedCarSubject.asObservable();
-    public readonly availabilityResponse$ = this.availabilityResponseSubject.asObservable();
+    public readonly availabilityResponse$;
 
-    constructor() { }
+    constructor() {
+        // Restore availability response from sessionStorage (survives page refresh within same tab)
+        let savedAvailability: AvailabilityResponse | null = null;
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+            try {
+                const data = sessionStorage.getItem(this.STORAGE_KEYS.AVAILABILITY);
+                savedAvailability = data ? JSON.parse(data) : null;
+            } catch { /* ignore */ }
+        }
+        this.availabilityResponseSubject = new BehaviorSubject<AvailabilityResponse | null>(savedAvailability);
+        this.availabilityResponse$ = this.availabilityResponseSubject.asObservable();
+    }
 
     private loadFromStorage(key: string, isItinerary: boolean): any {
         if (typeof window === 'undefined' || !window.localStorage) return null;
@@ -115,6 +127,16 @@ export class BookingStateService {
         }
     }
 
+    private saveToSession(key: string, value: any): void {
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+            try {
+                sessionStorage.setItem(key, JSON.stringify(value));
+            } catch (e) {
+                console.error(`[BookingState] Failed to save ${key} to session.`, e);
+            }
+        }
+    }
+
     private saveToStorage(key: string, value: any): void {
         if (typeof window !== 'undefined' && window.localStorage) {
             try {
@@ -146,6 +168,7 @@ export class BookingStateService {
     }
 
     setAvailabilityResponse(response: AvailabilityResponse) {
+        this.saveToSession(this.STORAGE_KEYS.AVAILABILITY, response);
         this.availabilityResponseSubject.next(response);
     }
 
@@ -160,5 +183,8 @@ export class BookingStateService {
         this.setItinerary(this.DEFAULTS.ITINERARY);
         this.setSelectedCar(this.DEFAULTS.CAR);
         this.availabilityResponseSubject.next(null);
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+            sessionStorage.removeItem(this.STORAGE_KEYS.AVAILABILITY);
+        }
     }
 }

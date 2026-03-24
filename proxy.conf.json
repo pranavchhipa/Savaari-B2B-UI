@@ -21,7 +21,7 @@
     "logLevel": "debug"
   },
   "/analytics-api": {
-    "target": "https://apiext.savaari.com/partner_api/public",
+    "target": "https://apiext.betasavaari.com/partner_api/public",
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": { "^/analytics-api": "" },

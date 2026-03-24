@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { FooterComponent } from '../../../components/layout/footer/footer';
+import { LandingNavbarComponent } from '../../landing/components/navbar/landing-navbar';
 import { AuthService } from '../../../core/services/auth.service';
 import { WalletService } from '../../../core/services/wallet.service';
 import { environment } from '../../../../environments/environment';
@@ -11,7 +12,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule, FooterComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule, FooterComponent, LandingNavbarComponent],
   templateUrl: './login.html',
   styleUrl: './login.css',
   changeDetection: ChangeDetectionStrategy.OnPush
