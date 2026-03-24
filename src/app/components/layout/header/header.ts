@@ -79,7 +79,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   private checkRoute(url: string) {
     const path = url ? url.split('?')[0].split('#')[0] : ''; // Remove query params and hashes, safely
-    this.isLandingPage = path === '/' || path === '' || path.startsWith('/login') || path.startsWith('/register');
+    this.isLandingPage = path === '/' || path === '' || path.startsWith('/login') || path.startsWith('/register')
+      || path.startsWith('/about-us') || path.startsWith('/privacy-policy') || path.startsWith('/terms-conditions') || path.startsWith('/contact-us');
     this.isPublicRoute = this.isLandingPage;
   }
 

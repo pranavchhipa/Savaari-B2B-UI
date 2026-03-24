@@ -400,18 +400,43 @@
                             </button>
                         </div>
 
-                        <!-- Payment method info -->
-                        <div class="flex items-center justify-between text-[11px] text-slate-400 mb-4 pb-3 border-b border-slate-100">
-                            <span>Chosen payment method</span>
-                            <span class="font-medium text-slate-600">{{ getPaymentMethodLabel(booking) }} · cannot be changed</span>
+                        <!-- Pay Via Toggle -->
+                        <div class="mb-4">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pay Via</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button (click)="settlePaymentMethod = 'wallet'" type="button"
+                                    class="flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer"
+                                    [ngClass]="settlePaymentMethod === 'wallet'
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-slate-200 hover:border-slate-300'">
+                                    <lucide-icon name="wallet" [size]="16" [ngClass]="settlePaymentMethod === 'wallet' ? 'text-primary' : 'text-slate-400'"></lucide-icon>
+                                    <div>
+                                        <p class="text-xs font-bold" [ngClass]="settlePaymentMethod === 'wallet' ? 'text-primary' : 'text-slate-600'">Wallet</p>
+                                        <p class="text-[9px] text-slate-400">Bal: ₹{{ walletBalance | number:'1.0-0' }}</p>
+                                    </div>
+                                    <lucide-icon *ngIf="settlePaymentMethod === 'wallet'" name="check-circle" [size]="14" class="text-primary ml-auto"></lucide-icon>
+                                </button>
+                                <button (click)="settlePaymentMethod = 'razorpay'" type="button"
+                                    class="flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer"
+                                    [ngClass]="settlePaymentMethod === 'razorpay'
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-slate-200 hover:border-slate-300'">
+                                    <lucide-icon name="credit-card" [size]="16" [ngClass]="settlePaymentMethod === 'razorpay' ? 'text-primary' : 'text-slate-400'"></lucide-icon>
+                                    <div>
+                                        <p class="text-xs font-bold" [ngClass]="settlePaymentMethod === 'razorpay' ? 'text-primary' : 'text-slate-600'">Razorpay</p>
+                                        <p class="text-[9px] text-slate-400">UPI / Card / Net</p>
+                                    </div>
+                                    <lucide-icon *ngIf="settlePaymentMethod === 'razorpay'" name="check-circle" [size]="14" class="text-primary ml-auto"></lucide-icon>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Breakdown cards -->
                         <div class="grid grid-cols-2 gap-3 mb-4">
                             <div class="bg-sky-50 rounded-xl p-4 text-center">
-                                <p class="text-[9px] text-slate-400 uppercase tracking-wider font-bold mb-1">Pay from wallet now</p>
+                                <p class="text-[9px] text-slate-400 uppercase tracking-wider font-bold mb-1">{{ settlePaymentMethod === 'razorpay' ? 'Pay via Razorpay' : 'Pay from wallet' }}</p>
                                 <p class="text-2xl font-black text-primary">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</p>
-                                <p class="text-[10px] text-slate-400 mt-0.5">Deducted from wallet</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">{{ settlePaymentMethod === 'razorpay' ? 'UPI / Card / NetBanking' : 'Deducted from wallet' }}</p>
                             </div>
                             <div class="bg-amber-50 rounded-xl p-4 text-center">
                                 <p class="text-[9px] text-slate-400 uppercase tracking-wider font-bold mb-1">Guest pays driver</p>
@@ -420,8 +445,8 @@
                             </div>
                         </div>
 
-                        <!-- Wallet balance status -->
-                        <div class="flex items-center justify-between p-3 rounded-xl border mb-4"
+                        <!-- Wallet balance status (only when wallet selected) -->
+                        <div *ngIf="settlePaymentMethod === 'wallet'" class="flex items-center justify-between p-3 rounded-xl border mb-4"
                             [ngClass]="walletBalance >= getBalanceDue(booking)
                                 ? 'bg-emerald-50 border-emerald-200'
                                 : 'bg-red-50 border-red-200'">
@@ -448,8 +473,8 @@
                             </div>
                         </div>
 
-                        <!-- Top-up section (only when insufficient) -->
-                        <div *ngIf="walletBalance < getBalanceDue(booking)" class="bg-white rounded-xl border border-slate-200 p-4 mb-4">
+                        <!-- Top-up section (only when wallet selected & insufficient) -->
+                        <div *ngIf="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)" class="bg-white rounded-xl border border-slate-200 p-4 mb-4">
                             <h6 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-2">
                                 <lucide-icon name="plus-circle" [size]="14" class="text-primary"></lucide-icon>
                                 Quick Top-Up via Razorpay
@@ -481,8 +506,8 @@
                             <p *ngIf="topUpError" class="text-xs text-red-500 mt-2">{{ topUpError }}</p>
                         </div>
 
-                        <!-- After-payment info (when sufficient) -->
-                        <div *ngIf="walletBalance >= getBalanceDue(booking)"
+                        <!-- After-payment info (when wallet selected & sufficient) -->
+                        <div *ngIf="settlePaymentMethod === 'wallet' && walletBalance >= getBalanceDue(booking)"
                             class="p-3 bg-sky-50 rounded-xl mb-4 text-xs text-sky-700 flex items-center gap-2">
                             <lucide-icon name="info" [size]="14" class="shrink-0"></lucide-icon>
                             After payment your wallet balance will be ₹{{ (walletBalance - getBalanceDue(booking)) | number:'1.0-0' }}.
@@ -494,16 +519,17 @@
                                 <lucide-icon name="loader-2" [size]="24" class="text-primary animate-spin"></lucide-icon>
                             </div>
                             <p class="text-sm font-bold text-slate-700">Processing payment...</p>
-                            <p class="text-xs text-slate-400 mt-1">Debiting ₹{{ getBalanceDue(booking) | number:'1.0-0' }} from wallet</p>
+                            <p class="text-xs text-slate-400 mt-1">{{ settlePaymentMethod === 'razorpay' ? 'Processing Razorpay payment...' : 'Debiting ₹' + (getBalanceDue(booking) | number:'1.0-0') + ' from wallet' }}</p>
                         </div>
 
                         <!-- Confirm / Cancel buttons (hidden when processing) -->
                         <div *ngIf="!settleProcessing && !settleConfirmStep" class="flex items-center gap-2">
                             <button (click)="settleBooking(booking)"
-                                [disabled]="walletBalance < getBalanceDue(booking)"
+                                [disabled]="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)"
                                 class="flex-1 py-3 bg-primary hover:bg-sky-600 disabled:bg-slate-300 text-white font-bold text-sm rounded-xl transition cursor-pointer disabled:cursor-not-allowed shadow-sm">
-                                <span *ngIf="walletBalance >= getBalanceDue(booking)">Confirm — debit ₹{{ getBalanceDue(booking) | number:'1.0-0' }} from wallet</span>
-                                <span *ngIf="walletBalance < getBalanceDue(booking)">Insufficient balance — top up first</span>
+                                <span *ngIf="settlePaymentMethod === 'razorpay'">Pay ₹{{ getBalanceDue(booking) | number:'1.0-0' }} via Razorpay</span>
+                                <span *ngIf="settlePaymentMethod === 'wallet' && walletBalance >= getBalanceDue(booking)">Confirm — debit ₹{{ getBalanceDue(booking) | number:'1.0-0' }} from wallet</span>
+                                <span *ngIf="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)">Insufficient balance — top up or use Razorpay</span>
                             </button>
                             <button (click)="settleBookingId = null"
                                 class="px-5 py-3 border border-slate-200 text-sm font-medium rounded-xl hover:bg-slate-50 transition cursor-pointer text-slate-500">
@@ -514,7 +540,7 @@
                         <!-- Confirm step (Are you sure?) -->
                         <div *ngIf="settleConfirmStep && !settleProcessing" class="text-center">
                             <p class="text-sm font-bold text-slate-800 mb-1">Confirm Payment</p>
-                            <p class="text-xs text-slate-400 mb-4">₹{{ getBalanceDue(booking) | number:'1.0-0' }} will be deducted from your wallet</p>
+                            <p class="text-xs text-slate-400 mb-4">₹{{ getBalanceDue(booking) | number:'1.0-0' }} will be {{ settlePaymentMethod === 'razorpay' ? 'paid via Razorpay' : 'deducted from your wallet' }}</p>
                             <div class="flex items-center gap-2">
                                 <button (click)="confirmSettle(booking)"
                                     class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm rounded-xl transition cursor-pointer shadow-sm flex items-center justify-center gap-2">

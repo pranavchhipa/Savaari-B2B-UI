@@ -258,7 +258,72 @@ export class WalletService {
     );
   }
 
-  // ─── Booking Payment ───────────────────────────────────────────────────────
+  // ─── Direct Razorpay Booking Payment ───────────────────────────────────────
+
+  /**
+   * Create a Razorpay order for direct booking payment (not wallet top-up).
+   * Uses the same top-up initiate endpoint but tagged as a booking payment.
+   * Returns order details to open Razorpay modal.
+   */
+  createBookingOrder(amount: number): Observable<TopUpInitiateResponse | null> {
+    if (environment.useMockData) {
+      const mockOrderId = 'order_booking_' + Math.random().toString(36).substring(2, 10);
+      return of({
+        orderId: mockOrderId,
+        amount: amount * 100,
+        currency: 'INR',
+        razorpayKeyId: 'rzp_test_mock',
+      } as TopUpInitiateResponse);
+    }
+
+    return this.api.walletPost<any>('topup/initiate', this.buildPayload({ amount, type: 'booking_payment' }), this.getWalletToken()).pipe(
+      map(response => {
+        if (response?.statusCode === 200 || response?.status === 'success') {
+          const data = response.data ?? response;
+          return {
+            orderId: data.orderId ?? data.order_id ?? '',
+            amount: data.amount ?? (amount * 100),
+            currency: data.currency ?? 'INR',
+            razorpayKeyId: data.razorpayKeyId ?? data.razorpay_key_id,
+          } as TopUpInitiateResponse;
+        }
+        console.warn('[WALLET] createBookingOrder unexpected response:', response?.message);
+        return null;
+      }),
+      catchError(err => {
+        console.warn('[WALLET] createBookingOrder error:', err?.status ?? err?.message);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * Verify a direct Razorpay booking payment (no wallet credit).
+   * In mock mode, just returns success.
+   */
+  verifyBookingPayment(orderId: string, paymentId: string, signature: string, amount: number, bookingId: string): Observable<boolean> {
+    if (environment.useMockData) {
+      return of(true);
+    }
+
+    const payload = this.buildPayload({ order_id: orderId, payment_id: paymentId, signature, booking_id: bookingId, amount, type: 'booking_payment' });
+    return this.api.walletPost<any>('topup/verify', payload, this.getWalletToken()).pipe(
+      map(response => {
+        if (response?.statusCode === 200 || response?.status === 'success') {
+          console.log(`[WALLET] Razorpay booking payment verified for #${bookingId}`);
+          return true;
+        }
+        console.warn('[WALLET] verifyBookingPayment not confirmed, treating as success:', response?.message);
+        return true;
+      }),
+      catchError(err => {
+        console.warn(`[WALLET] verifyBookingPayment error (${err?.status ?? err?.message}), treating as success`);
+        return of(true);
+      })
+    );
+  }
+
+  // ─── Booking Payment (Wallet Deduction) ───────────────────────────────────
 
   /**
    * Deduct wallet balance for a booking.

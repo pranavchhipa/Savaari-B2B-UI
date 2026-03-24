@@ -7,6 +7,7 @@ import { FooterComponent } from '../../components/layout/footer/footer';
 import { BookingApiService } from '../../core/services/booking-api.service';
 import { BookingRegistryService } from '../../core/services/booking-registry.service';
 import { WalletService } from '../../core/services/wallet.service';
+import { AuthService } from '../../core/services/auth.service';
 import { BookingDetails } from '../../core/models';
 import { environment } from '../../../environments/environment';
 
@@ -75,6 +76,7 @@ export class BookingsComponent implements OnInit {
     private bookingApi = inject(BookingApiService);
     private bookingRegistry = inject(BookingRegistryService);
     private walletService = inject(WalletService);
+    private authService = inject(AuthService);
 
     // Categorized booking lists
     upcomingBookings: BookingCard[] = [];
@@ -92,6 +94,7 @@ export class BookingsComponent implements OnInit {
     settledBookingId: string | null = null;
     settleConfirmStep = false;
     settleProcessing = false;
+    settlePaymentMethod: 'wallet' | 'razorpay' = 'wallet';
 
     /** Map of bookingId → settled amount, persisted in localStorage */
     private settledPayments: Record<string, number> = {};
@@ -732,8 +735,8 @@ export class BookingsComponent implements OnInit {
     settleBooking(booking: BookingCard) {
         const amount = this.getBalanceDue(booking);
         if (amount <= 0) return;
-        // For wallet-debit options (Split Pay / Full Wallet), block if insufficient balance
-        if ((booking.paymentOption === 2 || booking.paymentOption === 3) && this.walletBalance < amount) {
+        // For wallet payment, block if insufficient balance (unless Razorpay selected)
+        if (this.settlePaymentMethod === 'wallet' && (booking.paymentOption === 2 || booking.paymentOption === 3) && this.walletBalance < amount) {
             return;
         }
         this.settleConfirmStep = true;
@@ -756,6 +759,7 @@ export class BookingsComponent implements OnInit {
             this.settleProcessing = false;
             this.settleBookingId = null;
             this.settledBookingId = booking.bookingId;
+            this.settlePaymentMethod = 'wallet'; // Reset for next settle
             this.updateCalendarWithBookings();
             this.cdr.markForCheck();
             setTimeout(() => { this.settledBookingId = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
@@ -775,11 +779,55 @@ export class BookingsComponent implements OnInit {
             return;
         }
 
-        // Split/Full wallet — pay from wallet
+        // Razorpay settlement — open Razorpay modal
+        if (this.settlePaymentMethod === 'razorpay') {
+            this.walletService.createBookingOrder(amount).subscribe({
+                next: (order) => {
+                    if (!order || !order.orderId) {
+                        onError();
+                        return;
+                    }
+                    const razorpayKey = order.razorpayKeyId || (window as any).environment?.razorpayKeyId || '';
+                    const options: any = {
+                        key: razorpayKey,
+                        amount: order.amount,
+                        currency: order.currency || 'INR',
+                        name: 'B2B CAB',
+                        description: `Settle Booking #${booking.bookingId} — ₹${amount}`,
+                        order_id: order.orderId,
+                        handler: (response: any) => {
+                            this.walletService.verifyBookingPayment(
+                                response.razorpay_order_id,
+                                response.razorpay_payment_id,
+                                response.razorpay_signature,
+                                amount,
+                                booking.bookingId
+                            ).subscribe({
+                                next: () => setTimeout(() => onSuccess(), 800),
+                                error: () => onError()
+                            });
+                        },
+                        modal: {
+                            ondismiss: () => {
+                                this.settleProcessing = false;
+                                this.cdr.markForCheck();
+                            }
+                        },
+                        prefill: { email: this.authService.getUserEmail() },
+                        theme: { color: '#00ace6' },
+                    };
+                    const rzp = new (window as any).Razorpay(options);
+                    rzp.open();
+                },
+                error: () => onError()
+            });
+            return;
+        }
+
+        // Wallet settlement — pay from wallet
         this.walletService.payForBooking(booking.bookingId, amount, (booking.paymentOption || 2) as 1 | 2 | 3).subscribe({
             next: (success) => {
                 if (success) {
-                    // Small delay so user sees the processing state
                     setTimeout(() => onSuccess(), 1200);
                 } else {
                     onError();

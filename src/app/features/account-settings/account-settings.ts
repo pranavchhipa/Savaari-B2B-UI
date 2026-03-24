@@ -69,6 +69,25 @@ export class AccountSettingsComponent implements OnInit {
   gstError = '';
   gstDecodedInfo: GSTINDecodeResult | null = null;
 
+  /** True when PAN was already saved — cannot be changed by agent */
+  panLocked = false;
+  isPanValid = true;
+  gstPanMismatch = false;
+
+  /** Auto-uppercase and validate PAN as user types */
+  onPanNumberInput(): void {
+    const clean = (this.profile.panNumber || '').toUpperCase().trim();
+    this.profile.panNumber = clean;
+    if (clean.length === 10) {
+      this.isPanValid = isValidPAN(clean);
+    } else {
+      this.isPanValid = true; // Don't show error while typing
+    }
+    // Re-validate GST-PAN match if GSTIN is already entered
+    this.validateGstPanMatch();
+    this.cdr.markForCheck();
+  }
+
   /** Auto-decode GSTIN as user types in account settings */
   onGstNumberInput(): void {
     const clean = (this.profile.gstNumber || '').toUpperCase().trim();
@@ -78,7 +97,22 @@ export class AccountSettingsComponent implements OnInit {
     } else {
       this.gstDecodedInfo = null;
     }
+    // Validate GST-PAN match
+    this.validateGstPanMatch();
     this.cdr.markForCheck();
+  }
+
+  /** Cross-validate: PAN embedded in GSTIN (chars 3-12) must match profile PAN */
+  private validateGstPanMatch(): void {
+    this.gstPanMismatch = false;
+    const pan = (this.profile.panNumber || '').toUpperCase().trim();
+    const gst = (this.profile.gstNumber || '').toUpperCase().trim();
+    if (pan.length === 10 && gst.length === 15) {
+      const gstPan = gst.substring(2, 12); // Extract PAN from GSTIN
+      if (gstPan !== pan) {
+        this.gstPanMismatch = true;
+      }
+    }
   }
 
   ngOnInit() {
@@ -111,6 +145,8 @@ export class AccountSettingsComponent implements OnInit {
       if (this.gstLocked) {
         this.gstDecodedInfo = decodeGSTIN(this.profile.gstNumber);
       }
+      // Lock PAN field if already saved — agent must contact support to change
+      this.panLocked = !!this.profile.panNumber;
     }
   }
 
@@ -189,6 +225,16 @@ export class AccountSettingsComponent implements OnInit {
       this.profileError = 'Invalid GST format (e.g. 22AAAAA0000A1Z5)';
       this.cdr.markForCheck();
       return;
+    }
+
+    // Cross-validate: PAN in GSTIN must match profile PAN
+    if (this.profile.panNumber && this.profile.gstNumber) {
+      this.validateGstPanMatch();
+      if (this.gstPanMismatch) {
+        this.profileError = 'PAN mismatch — the PAN in your GSTIN does not match your profile PAN. Please verify and correct.';
+        this.cdr.markForCheck();
+        return;
+      }
     }
 
     this.isSaving = true;

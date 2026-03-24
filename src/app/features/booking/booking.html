@@ -262,11 +262,6 @@
                                     <lucide-icon name="check-circle" [size]="16" class="text-emerald-600"></lucide-icon>
                                     <span class="text-sm font-bold text-emerald-700 dark:text-emerald-300">GST Applied: {{ agentGstNumber }}</span>
                                 </div>
-                                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-emerald-600 dark:text-emerald-400 pl-6">
-                                    <span>{{ gstDecoded!.stateName }}</span>
-                                    <span>&bull; {{ gstDecoded!.entityType }}</span>
-                                    <span>&bull; PAN: {{ gstDecoded!.pan }}</span>
-                                </div>
                             </div>
 
                             <!-- No GST in profile → redirect to profile page -->
@@ -709,9 +704,49 @@
                 </div>
 
                 <!-- ═══════════════════════════════════════════════ -->
-                <!-- TOP-UP SECTION (only when insufficient)        -->
+                <!-- PAYMENT METHOD TOGGLE (Wallet / Razorpay)      -->
                 <!-- ═══════════════════════════════════════════════ -->
-                <div *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance(walletObj.balance)"
+                <div *ngIf="paymentOption !== 0" class="mb-4">
+                    <h6 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Pay Via</h6>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Wallet Option -->
+                        <button (click)="paymentMethod = 'wallet'" type="button"
+                            class="relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer text-center"
+                            [ngClass]="paymentMethod === 'wallet'
+                                ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'">
+                            <div *ngIf="paymentMethod === 'wallet'" class="absolute top-2 right-2">
+                                <lucide-icon name="check-circle" [size]="16" class="text-primary"></lucide-icon>
+                            </div>
+                            <lucide-icon name="wallet" [size]="24"
+                                [ngClass]="paymentMethod === 'wallet' ? 'text-primary' : 'text-slate-400'"></lucide-icon>
+                            <span class="text-sm font-bold"
+                                [ngClass]="paymentMethod === 'wallet' ? 'text-primary' : 'text-slate-600 dark:text-slate-300'">Wallet</span>
+                            <span class="text-[10px] text-slate-400">Balance: ₹{{ walletObj.balance | number:'1.0-0' }}</span>
+                        </button>
+
+                        <!-- Razorpay Option -->
+                        <button (click)="paymentMethod = 'razorpay'" type="button"
+                            class="relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer text-center"
+                            [ngClass]="paymentMethod === 'razorpay'
+                                ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'">
+                            <div *ngIf="paymentMethod === 'razorpay'" class="absolute top-2 right-2">
+                                <lucide-icon name="check-circle" [size]="16" class="text-primary"></lucide-icon>
+                            </div>
+                            <lucide-icon name="credit-card" [size]="24"
+                                [ngClass]="paymentMethod === 'razorpay' ? 'text-primary' : 'text-slate-400'"></lucide-icon>
+                            <span class="text-sm font-bold"
+                                [ngClass]="paymentMethod === 'razorpay' ? 'text-primary' : 'text-slate-600 dark:text-slate-300'">Razorpay</span>
+                            <span class="text-[10px] text-slate-400">UPI / Card / NetBanking</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- TOP-UP SECTION (only when insufficient & wallet selected) -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <div *ngIf="paymentOption !== 0 && paymentMethod === 'wallet' && !hasSufficientWalletBalance(walletObj.balance)"
                     class="bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-amber-300 dark:border-amber-700 p-5 mb-4">
                     <h6 class="text-sm font-bold text-slate-800 dark:text-white mb-1 flex items-center gap-2">
                         <lucide-icon name="plus-circle" [size]="18" class="text-primary"></lucide-icon>
@@ -770,27 +805,32 @@
                 <!-- ═══════════════════════════════════════════════ -->
                 <!-- CONFIRM & BOOK BUTTON                          -->
                 <!-- ═══════════════════════════════════════════════ -->
-                <button (click)="bookNow()" [disabled]="paymentOption === 0 || isProcessingWallet || !hasSufficientWalletBalance(walletObj.balance)"
+                <button (click)="bookNow()"
+                    [disabled]="paymentOption === 0 || isProcessingWallet || isProcessingRazorpay || (paymentMethod === 'wallet' && !hasSufficientWalletBalance(walletObj.balance))"
                     class="w-full py-4 rounded-2xl font-bold text-base shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none disabled:shadow-none cursor-pointer disabled:cursor-not-allowed"
-                    [ngClass]="paymentOption !== 0 && hasSufficientWalletBalance(walletObj.balance)
-                        ? 'bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-600 hover:to-cyan-600 text-white shadow-primary/25'
+                    [ngClass]="paymentOption !== 0 && (paymentMethod === 'razorpay' || hasSufficientWalletBalance(walletObj.balance))
+                        ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/25'
                         : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500'">
-                    <span *ngIf="isProcessingWallet" class="flex items-center justify-center gap-2">
+                    <span *ngIf="isProcessingWallet || isProcessingRazorpay" class="flex items-center justify-center gap-2">
                         <lucide-icon name="loader-2" [size]="20" class="animate-spin"></lucide-icon>
-                        Creating Your Booking...
+                        {{ isProcessingRazorpay ? 'Processing Payment...' : 'Creating Your Booking...' }}
                     </span>
-                    <ng-container *ngIf="!isProcessingWallet">
+                    <ng-container *ngIf="!isProcessingWallet && !isProcessingRazorpay">
                         <span *ngIf="paymentOption === 0" class="flex items-center justify-center gap-2">
                             <lucide-icon name="crosshair" [size]="18"></lucide-icon>
                             Select a Payment Plan Above
                         </span>
-                        <span *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance(walletObj.balance)" class="flex items-center justify-center gap-2">
+                        <span *ngIf="paymentOption !== 0 && paymentMethod === 'wallet' && !hasSufficientWalletBalance(walletObj.balance)" class="flex items-center justify-center gap-2">
                             <lucide-icon name="wallet" [size]="18"></lucide-icon>
                             Top Up Wallet to Continue
                         </span>
-                        <span *ngIf="paymentOption !== 0 && hasSufficientWalletBalance(walletObj.balance)" class="flex items-center justify-center gap-2">
-                            <lucide-icon name="check-circle" [size]="18"></lucide-icon>
-                            Confirm Booking — Pay ₹{{ getPayNowAmount() | number:'1.0-0' }}
+                        <span *ngIf="paymentOption !== 0 && paymentMethod === 'wallet' && hasSufficientWalletBalance(walletObj.balance)" class="flex items-center justify-center gap-2">
+                            <lucide-icon name="wallet" [size]="18"></lucide-icon>
+                            Confirm Booking — Pay ₹{{ getPayNowAmount() | number:'1.0-0' }} from Wallet
+                        </span>
+                        <span *ngIf="paymentOption !== 0 && paymentMethod === 'razorpay'" class="flex items-center justify-center gap-2">
+                            <lucide-icon name="credit-card" [size]="18"></lucide-icon>
+                            Pay ₹{{ getPayNowAmount() | number:'1.0-0' }} via Razorpay
                         </span>
                     </ng-container>
                 </button>
@@ -798,7 +838,7 @@
                 <!-- Security note -->
                 <div class="flex items-center justify-center gap-2 mt-3 mb-1">
                     <lucide-icon name="shield-check" [size]="12" class="text-slate-400"></lucide-icon>
-                    <p class="text-[10px] text-slate-400 dark:text-slate-500">Secure wallet transaction · GST invoice included</p>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500">Secure {{ paymentMethod === 'razorpay' ? 'Razorpay' : 'wallet' }} transaction · GST invoice included</p>
                 </div>
 
             </div> <!-- Ends Step 2 -->
@@ -953,10 +993,13 @@
                 <div class="p-4 pt-0" *ngIf="step1Complete && { balance: walletBalance$ | async } as sidebarWallet">
                     <button (click)="handleBookOrTopUp()"
                         [disabled]="paymentOption === 0 || isProcessingWallet"
-                        class="w-full py-3 bg-gradient-to-r from-primary to-cyan-500 hover:from-sky-600 hover:to-cyan-600 disabled:from-slate-300 disabled:to-slate-300 text-white font-bold text-sm rounded-xl shadow-lg shadow-primary/20 transition-all cursor-pointer disabled:cursor-not-allowed disabled:shadow-none">
+                        class="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-300 text-white font-bold text-sm rounded-xl shadow-lg shadow-orange-500/20 transition-all cursor-pointer disabled:cursor-not-allowed disabled:shadow-none">
                         <span *ngIf="paymentOption === 0">Select Payment Option</span>
-                        <span *ngIf="paymentOption !== 0 && !hasSufficientWalletBalance(sidebarWallet.balance)">Top Up Wallet</span>
-                        <span *ngIf="paymentOption !== 0 && hasSufficientWalletBalance(sidebarWallet.balance)">Book Now — ₹{{ getPayNowAmount() | number:'1.0-0' }}</span>
+                        <!-- Razorpay selected — always show Pay Now -->
+                        <span *ngIf="paymentOption !== 0 && paymentMethod === 'razorpay'">Pay ₹{{ getPayNowAmount() | number:'1.0-0' }} via Razorpay</span>
+                        <!-- Wallet selected — check balance -->
+                        <span *ngIf="paymentOption !== 0 && paymentMethod === 'wallet' && !hasSufficientWalletBalance(sidebarWallet.balance)">Top Up Wallet</span>
+                        <span *ngIf="paymentOption !== 0 && paymentMethod === 'wallet' && hasSufficientWalletBalance(sidebarWallet.balance)">Pay ₹{{ getPayNowAmount() | number:'1.0-0' }} via Wallet</span>
                     </button>
                 </div>
 

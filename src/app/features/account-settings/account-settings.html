@@ -166,6 +166,13 @@
                 </div>
                 <p *ngIf="!gstLocked && profile.gstNumber?.length === 15 && gstDecodedInfo && !gstDecodedInfo.isValidFormat"
                   class="mt-1 text-xs text-red-500">Invalid GSTIN format</p>
+
+                <!-- PAN-GSTIN mismatch error -->
+                <div *ngIf="gstPanMismatch && gstDecodedInfo?.isValidFormat"
+                  class="mt-2 p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
+                  <lucide-icon name="alert-triangle" [size]="14" class="text-red-500 shrink-0"></lucide-icon>
+                  <span class="text-xs text-red-600 dark:text-red-400 font-medium">PAN mismatch — the PAN embedded in this GSTIN (<span class="font-mono">{{ gstDecodedInfo!.pan }}</span>) does not match your profile PAN (<span class="font-mono">{{ profile.panNumber }}</span>).</span>
+                </div>
               </div>
 
               <!-- City -->
@@ -189,15 +196,26 @@
                 </div>
               </div>
 
-              <!-- PAN Number — read-only, managed by Savaari admin -->
+              <!-- PAN Number — editable one-time, then locks -->
               <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                   PAN Number
-                  <span *ngIf="profile.panNumber" class="ml-1 text-xs text-slate-400 font-normal">(Contact support to change)</span>
+                  <span *ngIf="panLocked" class="ml-1 text-xs text-slate-400 font-normal">(Contact support to change)</span>
                 </label>
-                <input type="text" [ngModel]="profile.panNumber" disabled
-                  placeholder="Not set"
-                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-500 cursor-not-allowed opacity-70" />
+
+                <!-- Locked: PAN already saved — read-only -->
+                <div *ngIf="panLocked" class="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono flex items-center justify-between">
+                  <span>{{ profile.panNumber }}</span>
+                  <lucide-icon name="lock" [size]="14" class="text-slate-400"></lucide-icon>
+                </div>
+
+                <!-- Unlocked: PAN not yet saved — editable -->
+                <input *ngIf="!panLocked" type="text" [(ngModel)]="profile.panNumber" (input)="onPanNumberInput()" maxlength="10"
+                  placeholder="Enter 10-character PAN (e.g. ABCDE1234F)"
+                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition uppercase tracking-wider font-mono" />
+
+                <p *ngIf="!panLocked && profile.panNumber?.length === 10 && !isPanValid"
+                  class="mt-1 text-xs text-red-500">Invalid PAN format (expected: ABCDE1234F)</p>
               </div>
 
             </div>

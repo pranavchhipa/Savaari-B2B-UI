@@ -261,8 +261,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Minimum selectable return date (pickup date + 1 day) */
   minReturnDate: Date = new Date();
 
+  private readonly SEARCH_STATE_KEY = 'b2b_search_state';
+
   ngOnInit() {
     this.initForm();
+    this.restoreSearchState();
     this.loadSourceCities();
     this.loadBanners();
     this.loadDashboardStats();
@@ -477,6 +480,77 @@ export class DashboardComponent implements OnInit, OnDestroy {
         );
       }
     });
+
+    // Auto-save search state on any form change
+    this.bookingForm.valueChanges.subscribe(() => this.saveSearchState());
+  }
+
+  /** Save current search form state to sessionStorage for refresh persistence */
+  private saveSearchState(): void {
+    try {
+      const form = this.bookingForm.getRawValue();
+      const state: any = {
+        selectedTab: this.selectedTab,
+        fromCity: form.fromCity,
+        toCity: form.toCity,
+        tripType: form.tripType,
+        pickupAddress: form.pickupAddress,
+        dropAirport: form.dropAirport,
+        airportLocality: form.airportLocality,
+        airportCity: form.airportCity,
+        pickupDate: form.pickupDate ? new Date(form.pickupDate).toISOString() : null,
+        returnDate: form.returnDate ? new Date(form.returnDate).toISOString() : null,
+        pickupTime: form.pickupTime ? new Date(form.pickupTime).toISOString() : null,
+        selectedAirportCity: this.selectedAirportCity,
+        airportLocalityId: this.airportLocalityId,
+        extraDestinations: this.extraDestinations,
+      };
+      sessionStorage.setItem(this.SEARCH_STATE_KEY, JSON.stringify(state));
+    } catch { /* ignore */ }
+  }
+
+  /** Restore search form state from sessionStorage after page refresh */
+  private restoreSearchState(): void {
+    try {
+      const raw = sessionStorage.getItem(this.SEARCH_STATE_KEY);
+      if (!raw) return;
+      const state = JSON.parse(raw);
+
+      // Restore tab
+      if (state.selectedTab) {
+        this.selectedTab = state.selectedTab;
+      }
+
+      // Restore form values
+      if (state.fromCity) this.bookingForm.patchValue({ fromCity: state.fromCity }, { emitEvent: false });
+      if (state.toCity) this.bookingForm.patchValue({ toCity: state.toCity }, { emitEvent: false });
+      if (state.tripType) this.bookingForm.patchValue({ tripType: state.tripType }, { emitEvent: false });
+      if (state.pickupAddress) this.bookingForm.patchValue({ pickupAddress: state.pickupAddress }, { emitEvent: false });
+      if (state.dropAirport) this.bookingForm.patchValue({ dropAirport: state.dropAirport }, { emitEvent: false });
+      if (state.airportLocality) this.bookingForm.patchValue({ airportLocality: state.airportLocality }, { emitEvent: false });
+      if (state.airportCity) this.bookingForm.patchValue({ airportCity: state.airportCity }, { emitEvent: false });
+      if (state.pickupDate) this.bookingForm.patchValue({ pickupDate: new Date(state.pickupDate) }, { emitEvent: false });
+      if (state.returnDate) this.bookingForm.patchValue({ returnDate: new Date(state.returnDate) }, { emitEvent: false });
+      if (state.pickupTime) this.bookingForm.patchValue({ pickupTime: new Date(state.pickupTime) }, { emitEvent: false });
+
+      // Restore airport state
+      if (state.selectedAirportCity) this.selectedAirportCity = state.selectedAirportCity;
+      if (state.airportLocalityId) this.airportLocalityId = state.airportLocalityId;
+
+      // Restore extra destinations
+      if (state.extraDestinations?.length) this.extraDestinations = state.extraDestinations;
+
+      // Load destination cities if source city was already selected
+      if (state.fromCity?.id) {
+        const apiParams = this.tripTypeService.mapUiTabToApiParams(this.selectedTab, {});
+        this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, state.fromCity.id).subscribe(cities => {
+          this.destinationCities = cities;
+          this.cdr.markForCheck();
+        });
+      }
+
+      this.cdr.markForCheck();
+    } catch { /* ignore corrupt data */ }
   }
 
   /** Update minReturnDate and auto-adjust returnDate if it's now invalid */
@@ -610,6 +684,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.extraDestinations = [];
     this.bookingForm.updateValueAndValidity();
     this.loadSourceCities();
+    this.saveSearchState();
     this.cdr.markForCheck();
     this.analytics.trackSwitchTripType(prevSubtype, this.getAnalyticsSubtype(tab));
   }
