@@ -68,6 +68,8 @@ export class SelectCarComponent implements OnInit {
 
   showPriceAlert = true;
   isModifyModalOpen = false;
+  minPickupDate: Date = new Date();
+  minReturnDate: Date = new Date();
   isLoading = true;
 
   // Local trip package selection: '8hr' | '12hr'
@@ -244,6 +246,29 @@ export class SelectCarComponent implements OnInit {
       pickupAddress: [this.itinerary?.pickupAddress || ''],
       dropAirport: [this.itinerary?.dropAirport || '']
     });
+
+    // Set min return date to day after pickup
+    this.updateMinReturnDate(pickupDate);
+
+    // When pickup date changes, adjust min return date
+    this.modifyForm.get('pickupDate')?.valueChanges.subscribe((newPickup: Date) => {
+      if (newPickup) {
+        this.updateMinReturnDate(newPickup);
+        const currentReturn = this.modifyForm.get('returnDate')?.value;
+        if (currentReturn && currentReturn <= newPickup) {
+          const dayAfter = new Date(newPickup);
+          dayAfter.setDate(dayAfter.getDate() + 1);
+          this.modifyForm.patchValue({ returnDate: dayAfter }, { emitEvent: false });
+        }
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private updateMinReturnDate(pickupDate: Date): void {
+    const dayAfter = new Date(pickupDate);
+    dayAfter.setDate(dayAfter.getDate() + 1);
+    this.minReturnDate = dayAfter;
   }
 
   /** Parse "09:30 PM" style string to a Date object for PrimeNG time picker */
@@ -393,7 +418,7 @@ export class SelectCarComponent implements OnInit {
   }
 
   goBack() {
-    this.location.back();
+    this.router.navigate(['/dashboard']);
   }
 
 }

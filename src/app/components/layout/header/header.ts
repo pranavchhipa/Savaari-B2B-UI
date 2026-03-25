@@ -35,6 +35,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     return this.authService.getUserEmail() || '';
   }
   get userInitial(): string {
+    const parts = this.userFullName.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
     return this.userName.charAt(0).toUpperCase();
   }
   get agentLogo(): string | null {

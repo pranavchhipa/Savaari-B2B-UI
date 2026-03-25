@@ -20,7 +20,7 @@
       </div>
 
       <!-- Customer Care 24x7 pill — centered -->
-      <div class="hidden lg:flex absolute left-1/2 -translate-x-1/2">
+      <div class="hidden lg:flex absolute left-1/2 -translate-x-[60%]">
         <a href="tel:09045450000"
           class="inline-flex items-center text-primary hover:text-primary-dark border-2 border-primary rounded-md pl-3 pr-5 py-1.5 transition-all cursor-pointer whitespace-nowrap bg-transparent">
           <span class="inline-flex items-center text-sm font-bold tracking-wide mr-3 border-r-2 border-primary pr-3">
@@ -63,12 +63,12 @@
 
               <!-- Core Navigation -->
               <div class="flex items-center space-x-1 border-r border-slate-200 dark:border-slate-700 pr-4">
-                <a routerLink="/dashboard" routerLinkActive="bg-primary text-white shadow-sm"
+                <a routerLink="/dashboard" routerLinkActive="bg-white text-primary border border-slate-200 shadow-sm"
                   [routerLinkActiveOptions]="{exact: true}"
-                  class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition">Home</a>
+                  class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-white dark:hover:bg-slate-700 transition">Home</a>
 
-                <a routerLink="/bookings" routerLinkActive="bg-primary text-white shadow-sm"
-                  class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition">Bookings</a>
+                <a routerLink="/bookings" routerLinkActive="bg-white text-primary border border-slate-200 shadow-sm"
+                  class="px-3 py-1.5 md:py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-white dark:hover:bg-slate-700 transition">Bookings</a>
               </div>
 
               <!-- Wallet Display -->
@@ -86,7 +86,7 @@
             <div
               class="relative ml-2 md:ml-4 flex items-center border-l border-slate-200 dark:border-slate-700 pl-2 md:pl-4">
               <button (click)="isUserDropdownOpen = !isUserDropdownOpen"
-                class="flex items-center gap-2 outline-none p-1 pr-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700 relative z-50 cursor-pointer">
+                class="flex items-center gap-2 outline-none p-1.5 pr-3 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition border border-slate-200 dark:border-slate-700 relative z-50 cursor-pointer">
                 <div
                   class="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 text-white flex items-center justify-center font-bold text-[13px] md:text-[15px] shadow-inner uppercase tracking-wider">
                   {{ userInitial }}

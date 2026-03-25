@@ -422,7 +422,7 @@
                         class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Pick
                         Up</label>
                     <div class="modify-modal-datepicker relative flex items-center border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 bg-white dark:bg-slate-800">
-                        <p-datepicker #modifyPickupDate formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy"
+                        <p-datepicker #modifyPickupDate formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy" [minDate]="minPickupDate"
                             appendTo="body" styleClass="w-full border-none bg-transparent"
                             inputStyleClass="w-full bg-transparent border-none text-[14px] focus:ring-0 p-0 text-slate-800 dark:text-gray-100 font-medium !shadow-none outline-none">
                         </p-datepicker>
@@ -437,7 +437,7 @@
                     <label
                         class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Return</label>
                     <div class="modify-modal-datepicker relative flex items-center border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 bg-white dark:bg-slate-800">
-                        <p-datepicker #modifyReturnDate formControlName="returnDate" [showIcon]="false" dateFormat="dd-mm-yy"
+                        <p-datepicker #modifyReturnDate formControlName="returnDate" [showIcon]="false" dateFormat="dd-mm-yy" [minDate]="minReturnDate"
                             appendTo="body" styleClass="w-full border-none bg-transparent"
                             inputStyleClass="w-full bg-transparent border-none text-[14px] focus:ring-0 p-0 text-slate-800 dark:text-gray-100 font-medium !shadow-none outline-none">
                         </p-datepicker>

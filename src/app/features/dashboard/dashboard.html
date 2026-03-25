@@ -3,35 +3,35 @@
 <!-- ============================================ -->
 <div class="relative min-h-[600px] pt-12 pb-16 px-4 flex flex-col items-center justify-center overflow-hidden">
   <!-- Interactive Background that reacts to tab selection -->
-  <div class="absolute inset-0 overflow-hidden">
+  <div class="absolute inset-0 overflow-hidden bg-slate-700">
     <div class="absolute inset-0 bg-gradient-to-b from-slate-900/30 via-slate-900/20 to-slate-900/60 z-10 transition-colors duration-1000"></div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'ONE_WAY',
         'opacity-0 scale-105': selectedTab !== 'ONE_WAY'
       }" class="absolute inset-0 transition-all duration-1000 ease-out">
       <img src="https://images.unsplash.com/photo-1494783367193-149034c05e8f?auto=format&fit=crop&w=3200&q=100"
-        class="w-full h-full object-cover">
+        class="w-full h-full object-cover" loading="eager" fetchpriority="high">
     </div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'ROUND_TRIP',
         'opacity-0 scale-105': selectedTab !== 'ROUND_TRIP'
       }" class="absolute inset-0 transition-all duration-1000 ease-out">
       <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=3200&q=100"
-        class="w-full h-full object-cover">
+        class="w-full h-full object-cover" loading="lazy">
     </div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'LOCAL',
         'opacity-0 scale-105': selectedTab !== 'LOCAL'
       }" class="absolute inset-0 transition-all duration-1000 ease-out">
       <img src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=3200&q=100"
-        class="w-full h-full object-cover">
+        class="w-full h-full object-cover" loading="lazy">
     </div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'AIRPORT',
         'opacity-0 scale-105': selectedTab !== 'AIRPORT'
       }" class="absolute inset-0 transition-all duration-1000 ease-out">
       <img src="https://images.unsplash.com/photo-1556388158-158ea5ccacbd?auto=format&fit=crop&w=3200&q=100"
-        class="w-full h-full object-cover">
+        class="w-full h-full object-cover" loading="lazy">
     </div>
   </div>
 
@@ -227,8 +227,8 @@
                   <span class="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">To</span>
                   <button *ngIf="extraDestinations.length < MAX_DESTINATIONS - 1"
                     type="button" (click)="addDestinationCity()"
-                    class="px-2 py-0.5 text-white text-[8px] font-bold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap bg-orange-500 hover:bg-orange-600 cursor-pointer shadow-sm">
-                    + City
+                    class="px-3 py-1 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap bg-orange-500 hover:bg-orange-600 cursor-pointer shadow-sm">
+                    + Add City
                   </button>
                 </div>
                 <p-autoComplete formControlName="toCity" [suggestions]="filteredDestinationCities"

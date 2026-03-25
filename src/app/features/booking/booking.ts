@@ -75,6 +75,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Payment method: wallet deduction or direct Razorpay
   paymentMethod: 'wallet' | 'razorpay' = 'wallet';
   isProcessingRazorpay = false;
+  razorpayProcessingStage: 'payment' | 'booking' = 'payment'; // For showing different messages
 
   // Info tooltip toggle (0 = none, 1/2/3 = which payment option's info is shown)
   showInfo: number = 0;
@@ -132,6 +133,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Browser back button interception
   private locationSub: any;
 
+  // Session storage key for passenger details
+  private readonly PASSENGER_STATE_KEY = 'b2b_passenger_state';
+
   // Locality autocomplete suggestions (string arrays for direct ngModel binding)
   pickupSuggestions: string[] = [];
   dropSuggestions: string[] = [];
@@ -162,14 +166,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.selectedCar = this.bookingState.getSelectedCar();
 
     // Pre-fetch localities for source and destination cities (cached after first load).
-    // For drop city, only pre-fetch when toCitySourceId is set — it means the destination
-    // also exists as a source city and has registered localities. Destination-only cities
-    // (like small towns) have no localities so we skip the API call and allow free text entry.
+    // Pre-fetch localities for pickup and drop cities
     if (this.itinerary?.fromCityId) {
       this.localityService.getLocalities(this.itinerary.fromCityId).subscribe();
     }
-    if (this.itinerary?.toCitySourceId) {
-      this.localityService.getLocalities(this.itinerary.toCitySourceId).subscribe();
+    const dropCityId = this.itinerary?.toCitySourceId || this.itinerary?.toCityId;
+    if (dropCityId) {
+      this.localityService.getLocalities(dropCityId).subscribe();
     }
 
     // Reactive sync with auto-cleanup
@@ -191,6 +194,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         }
       });
 
+    // Restore passenger details from session storage (survives back navigation)
+    this.restorePassengerState();
+
     // Intercept browser back button: if on payment step, go back to passenger details instead of leaving
     this.locationSub = this.location.subscribe((event) => {
       if (event.type === 'popstate' && this.step1Complete && !this.bookingConfirmed) {
@@ -203,10 +209,22 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  ngAfterViewInit() {
+    // Auto-save passenger state every 2 seconds (debounced persist on any field change)
+    this.autoSaveInterval = setInterval(() => this.savePassengerState(), 2000);
+  }
+
+  private autoSaveInterval: any;
+
   ngOnDestroy() {
     if (this.locationSub) {
       this.locationSub.unsubscribe();
     }
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+    }
+    // Final save on leave
+    this.savePassengerState();
   }
 
   // ─── GST Invoice ───────────────────────────────────────────
@@ -235,6 +253,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.isPickupDetailsValid()) {
       return;
     }
+
+    // Save passenger details before proceeding
+    this.savePassengerState();
 
     this.step1Complete = true;
     // Push history state so browser back button can be intercepted
@@ -285,7 +306,8 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
    *  with registered localities. Falls back to empty (free text) for destination-only cities.
    */
   searchDropAddress(event: AutoCompleteCompleteEvent): void {
-    const cityId = this.itinerary?.toCitySourceId;
+    // Try toCitySourceId first (confirmed source city with localities), fall back to toCityId
+    const cityId = this.itinerary?.toCitySourceId || this.itinerary?.toCityId;
     console.log('[BOOKING] searchDropAddress called, cityId:', cityId, 'query:', event.query);
     if (!cityId || !event.query) { this.dropSuggestions = []; return; }
     this.localityService.searchLocalities(cityId, event.query).subscribe(results => {
@@ -677,6 +699,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.itinerary || !this.selectedCar) return;
 
     this.isProcessingRazorpay = true;
+    this.razorpayProcessingStage = 'payment';
     this.bookingError = '';
     this.cdr.markForCheck();
 
@@ -731,6 +754,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /** Called after Razorpay payment succeeds — creates booking + verifies payment */
   private onRazorpayBookingSuccess(razorpayResponse: any, amount: number) {
+    // Switch to "Creating booking" stage so UI shows proper message
+    this.razorpayProcessingStage = 'booking';
+    this.cdr.markForCheck();
+
     // First refresh partner token, then create booking
     this.auth.fetchPartnerToken().subscribe({
       next: () => this.executeRazorpayBookingRequest(razorpayResponse, amount),
@@ -830,13 +857,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         this.isProcessingRazorpay = false;
         this.bookingConfirmed = true;
+        this.clearPassengerState();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         this.cdr.markForCheck();
 
-        // Give user enough time to read booking confirmation (8 seconds)
-        setTimeout(() => {
-          this.router.navigate(['/bookings']);
-        }, 8000);
+        // No auto-redirect — card stays until user takes action
       },
       error: (err) => {
         this.isProcessingRazorpay = false;
@@ -999,14 +1024,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         this.isProcessingWallet = false;
         this.bookingConfirmed = true;
+        this.clearPassengerState();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         this.cdr.markForCheck();
 
-        // Redirect to bookings page after 8 seconds so user reads confirmation
-        // This prevents state loss on page refresh
-        setTimeout(() => {
-          this.router.navigate(['/bookings']);
-        }, 8000);
+        // No auto-redirect — card stays until user takes action
       },
       error: (err) => {
         this.isProcessingWallet = false;
@@ -1016,6 +1038,48 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  /** Save passenger form state to sessionStorage */
+  private savePassengerState(): void {
+    const state = {
+      guestName: this.guestName,
+      guestEmail: this.guestEmail,
+      phone: this.phone,
+      pickupAddress: this.pickupAddress,
+      dropAddress: this.dropAddress,
+      landmark: this.landmark,
+      needsGstInvoice: this.needsGstInvoice,
+      paymentOption: this.paymentOption,
+      paymentMethod: this.paymentMethod,
+      selectedCountryCode: this.selectedCountryCode,
+    };
+    sessionStorage.setItem(this.PASSENGER_STATE_KEY, JSON.stringify(state));
+  }
+
+  /** Restore passenger form state from sessionStorage */
+  private restorePassengerState(): void {
+    const raw = sessionStorage.getItem(this.PASSENGER_STATE_KEY);
+    if (!raw) return;
+    try {
+      const state = JSON.parse(raw);
+      if (state.guestName) this.guestName = state.guestName;
+      if (state.guestEmail) this.guestEmail = state.guestEmail;
+      if (state.phone) this.phone = state.phone;
+      if (state.pickupAddress) this.pickupAddress = state.pickupAddress;
+      if (state.dropAddress) this.dropAddress = state.dropAddress;
+      if (state.landmark) this.landmark = state.landmark;
+      if (state.needsGstInvoice !== undefined) this.needsGstInvoice = state.needsGstInvoice;
+      if (state.paymentOption) this.paymentOption = state.paymentOption;
+      if (state.paymentMethod) this.paymentMethod = state.paymentMethod;
+      if (state.selectedCountryCode) this.selectedCountryCode = state.selectedCountryCode;
+      this.cdr.markForCheck();
+    } catch {}
+  }
+
+  /** Clear passenger state after successful booking */
+  private clearPassengerState(): void {
+    sessionStorage.removeItem(this.PASSENGER_STATE_KEY);
   }
 
   /** Navigate back: payment → passenger details → select-car → dashboard */

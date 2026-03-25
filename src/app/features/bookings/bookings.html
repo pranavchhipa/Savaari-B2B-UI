@@ -310,248 +310,182 @@
 
                 <!-- Expanded Details Panel -->
                 <div *ngIf="expandedBookingId === booking.bookingId"
-                    class="border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/50 px-5 py-5">
+                    class="border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/50 px-4 py-3">
 
-                    <!-- Two-column structured layout -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                    <!-- Two-column: Trip Details + Payment Info -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
 
-                        <!-- Left: Trip Details Card -->
-                        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                            <h5 class="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                                <lucide-icon name="map" [size]="12"></lucide-icon>
-                                Trip Details
-                            </h5>
-                            <div class="space-y-2.5">
-                                <div class="flex items-start justify-between">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-24">Guest</span>
-                                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 text-right">{{ booking.customerName || '-' }}</span>
+                        <!-- Left: Trip Details -->
+                        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-4 py-3">
+                            <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-2">Trip Details</p>
+                            <div class="space-y-1.5 text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Guest</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ booking.customerName || '-' }}</span>
                                 </div>
-                                <div class="h-px bg-slate-100 dark:bg-slate-700"></div>
-                                <div class="flex items-start justify-between">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-24">Itinerary</span>
-                                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 text-right">{{ booking.itinerary || booking.sourceCity + ' → ' + booking.destinationCity }}</span>
+                                <div class="flex justify-between" *ngIf="booking.customerMobile">
+                                    <span class="text-slate-400 font-semibold">Phone</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ booking.customerMobile }}</span>
                                 </div>
-                                <div class="h-px bg-slate-100 dark:bg-slate-700"></div>
-                                <div class="flex items-start justify-between">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-24">Car Type</span>
-                                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 text-right">{{ booking.carName || '-' }}</span>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Route</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white text-right max-w-[60%] truncate">{{ booking.itinerary || booking.sourceCity + ' → ' + booking.destinationCity }}</span>
                                 </div>
-                                <div class="h-px bg-slate-100 dark:bg-slate-700"></div>
-                                <div class="flex items-start justify-between">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-24">Pickup</span>
-                                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 text-right">
-                                        {{ booking.pickupDate ? (booking.pickupDate | date:'dd MMM yyyy') : '-' }}, {{ booking.pickupTime }}
-                                    </span>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Car</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ booking.carName || '-' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Pickup</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ booking.pickupDate ? (booking.pickupDate | date:'dd MMM yyyy') : '-' }}, {{ booking.pickupTime }}</span>
+                                </div>
+                                <div class="flex justify-between" *ngIf="booking.pickupAddress">
+                                    <span class="text-slate-400 font-semibold">Address</span>
+                                    <span class="font-semibold text-slate-700 dark:text-slate-300 text-right max-w-[60%] truncate">{{ booking.pickupAddress }}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Right: Payment & Reservation Card -->
-                        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                            <h5 class="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                                <lucide-icon name="credit-card" [size]="12"></lucide-icon>
-                                Payment Info
-                            </h5>
-                            <div class="space-y-2.5">
-                                <div class="flex items-start justify-between">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-28">Payment Method</span>
-                                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 text-right">{{ getPaymentMethodLabel(booking) }}</span>
+                        <!-- Right: Payment Info -->
+                        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-4 py-3">
+                            <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-2">Payment Info</p>
+                            <div class="space-y-1.5 text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Total Fare</span>
+                                    <span class="font-bold text-slate-900 dark:text-white">₹{{ booking.fare | number:'1.0-0' }}</span>
                                 </div>
-                                <div class="h-px bg-slate-100 dark:bg-slate-700"></div>
-                                <div class="flex items-start justify-between">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-28">Auto-Debit</span>
-                                    <span class="text-xs font-semibold text-right" [ngClass]="getAutoDebitCountdown(booking) ? 'text-amber-600' : 'text-slate-400'">
-                                        {{ getAutoDebitCountdown(booking) || 'N/A' }}
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Paid Now</span>
+                                    <span class="font-bold text-emerald-600">₹{{ booking.prePayment || 0 | number:'1.0-0' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Payment Plan</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ getPaymentMethodLabel(booking) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Paid Via</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white flex items-center gap-1">
+                                        <ng-container *ngIf="booking.paymentMethod === 'razorpay'">
+                                            <lucide-icon name="credit-card" [size]="11" class="text-primary"></lucide-icon> Razorpay
+                                        </ng-container>
+                                        <ng-container *ngIf="booking.paymentMethod !== 'razorpay'">
+                                            <lucide-icon name="wallet" [size]="11" class="text-primary"></lucide-icon> Wallet
+                                        </ng-container>
                                     </span>
                                 </div>
-                                <div class="h-px bg-slate-100 dark:bg-slate-700"></div>
-                                <div class="flex items-start justify-between">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 w-28">Total Fare</span>
-                                    <span class="text-xs font-black text-slate-800 dark:text-white text-right">₹{{ booking.fare | number:'1.0-0' }}</span>
+                                <div *ngIf="getBalanceDue(booking) > 0" class="flex justify-between">
+                                    <span class="text-amber-500 font-semibold">Balance Due</span>
+                                    <span class="font-bold text-amber-600">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
                                 </div>
-                                <div *ngIf="getBalanceDue(booking) > 0">
-                                    <div class="h-px bg-slate-100 dark:bg-slate-700"></div>
-                                    <div class="flex items-start justify-between mt-2.5">
-                                        <span class="text-[10px] font-bold text-amber-500 uppercase tracking-wider shrink-0 w-28">Balance Due</span>
-                                        <span class="text-xs font-black text-amber-600 text-right">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
-                                    </div>
+                                <div *ngIf="getAutoDebitCountdown(booking)" class="flex justify-between">
+                                    <span class="text-amber-500 font-semibold">Auto-Debit</span>
+                                    <span class="font-semibold text-amber-600">{{ getAutoDebitCountdown(booking) }}</span>
                                 </div>
-                                <div *ngIf="booking.reservationId">
-                                    <div class="h-px bg-slate-100 dark:bg-slate-700"></div>
-                                    <div class="flex items-start justify-between mt-2.5">
-                                        <span class="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0 w-28">Reservation ID</span>
-                                        <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200 text-right">{{ booking.reservationId }}</span>
-                                    </div>
+                                <div *ngIf="booking.reservationId" class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Reservation</span>
+                                    <span class="font-mono font-semibold text-slate-600 dark:text-slate-300 text-[11px]">{{ booking.reservationId }}</span>
+                                </div>
+                                <div *ngIf="booking.bookingId" class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Booking ID</span>
+                                    <span class="font-mono font-semibold text-slate-600 dark:text-slate-300 text-[11px]">{{ booking.bookingId }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Settle Panel (inline) -->
+                    <!-- Settle Panel -->
                     <div *ngIf="settleBookingId === booking.bookingId && getBalanceDue(booking) > 0"
-                        class="bg-white rounded-xl border-2 border-amber-200 p-5 mb-4">
+                        class="bg-white dark:bg-slate-800 rounded-lg border border-amber-200 dark:border-amber-800 p-3 mb-3">
 
-                        <!-- Header -->
-                        <div class="flex items-center justify-between mb-4">
-                            <h4 class="text-sm font-bold text-slate-900">Settle pending balance — ₹{{ getBalanceDue(booking) | number:'1.0-0' }}</h4>
-                            <button (click)="settleBookingId = null; settleConfirmStep = false; settleProcessing = false"
-                                class="text-slate-400 hover:text-slate-600 cursor-pointer bg-transparent border-0">
-                                <lucide-icon name="x" [size]="16"></lucide-icon>
-                            </button>
-                        </div>
-
-                        <!-- Pay Via Toggle -->
-                        <div class="mb-4">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pay Via</p>
-                            <div class="grid grid-cols-2 gap-2">
+                        <!-- Header + Pay Via in one row -->
+                        <div class="flex items-center justify-between mb-2.5">
+                            <span class="text-sm font-bold text-slate-900 dark:text-white">Settle ₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
+                            <div class="flex items-center gap-1.5">
                                 <button (click)="settlePaymentMethod = 'wallet'" type="button"
-                                    class="flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer"
-                                    [ngClass]="settlePaymentMethod === 'wallet'
-                                        ? 'border-primary bg-primary/5'
-                                        : 'border-slate-200 hover:border-slate-300'">
-                                    <lucide-icon name="wallet" [size]="16" [ngClass]="settlePaymentMethod === 'wallet' ? 'text-primary' : 'text-slate-400'"></lucide-icon>
-                                    <div>
-                                        <p class="text-xs font-bold" [ngClass]="settlePaymentMethod === 'wallet' ? 'text-primary' : 'text-slate-600'">Wallet</p>
-                                        <p class="text-[9px] text-slate-400">Bal: ₹{{ walletBalance | number:'1.0-0' }}</p>
-                                    </div>
-                                    <lucide-icon *ngIf="settlePaymentMethod === 'wallet'" name="check-circle" [size]="14" class="text-primary ml-auto"></lucide-icon>
+                                    class="px-3 py-1.5 text-[10px] font-bold rounded-md border transition cursor-pointer flex items-center gap-1"
+                                    [ngClass]="settlePaymentMethod === 'wallet' ? 'border-primary bg-primary/10 text-primary' : 'border-slate-200 text-slate-500'">
+                                    <lucide-icon name="wallet" [size]="11"></lucide-icon> Wallet (₹{{ walletBalance | number:'1.0-0' }})
                                 </button>
                                 <button (click)="settlePaymentMethod = 'razorpay'" type="button"
-                                    class="flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer"
-                                    [ngClass]="settlePaymentMethod === 'razorpay'
-                                        ? 'border-primary bg-primary/5'
-                                        : 'border-slate-200 hover:border-slate-300'">
-                                    <lucide-icon name="credit-card" [size]="16" [ngClass]="settlePaymentMethod === 'razorpay' ? 'text-primary' : 'text-slate-400'"></lucide-icon>
-                                    <div>
-                                        <p class="text-xs font-bold" [ngClass]="settlePaymentMethod === 'razorpay' ? 'text-primary' : 'text-slate-600'">Razorpay</p>
-                                        <p class="text-[9px] text-slate-400">UPI / Card / Net</p>
-                                    </div>
-                                    <lucide-icon *ngIf="settlePaymentMethod === 'razorpay'" name="check-circle" [size]="14" class="text-primary ml-auto"></lucide-icon>
+                                    class="px-3 py-1.5 text-[10px] font-bold rounded-md border transition cursor-pointer flex items-center gap-1"
+                                    [ngClass]="settlePaymentMethod === 'razorpay' ? 'border-primary bg-primary/10 text-primary' : 'border-slate-200 text-slate-500'">
+                                    <lucide-icon name="credit-card" [size]="11"></lucide-icon> Razorpay
+                                </button>
+                                <button (click)="settleBookingId = null; settleConfirmStep = false; settleProcessing = false"
+                                    class="text-slate-400 hover:text-slate-600 cursor-pointer bg-transparent border-0 ml-1">
+                                    <lucide-icon name="x" [size]="14"></lucide-icon>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Breakdown cards -->
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div class="bg-sky-50 rounded-xl p-4 text-center">
-                                <p class="text-[9px] text-slate-400 uppercase tracking-wider font-bold mb-1">{{ settlePaymentMethod === 'razorpay' ? 'Pay via Razorpay' : 'Pay from wallet' }}</p>
-                                <p class="text-2xl font-black text-primary">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</p>
-                                <p class="text-[10px] text-slate-400 mt-0.5">{{ settlePaymentMethod === 'razorpay' ? 'UPI / Card / NetBanking' : 'Deducted from wallet' }}</p>
+                        <!-- Wallet insufficient — top-up section -->
+                        <div *ngIf="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)" class="bg-red-50 dark:bg-red-900/10 rounded-lg p-3 mb-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-semibold text-red-600">Insufficient balance — need ₹{{ (getBalanceDue(booking) - walletBalance) | number:'1.0-0' }} more</span>
+                                <span class="text-[10px] text-slate-400">Wallet: ₹{{ walletBalance | number:'1.0-0' }}</span>
                             </div>
-                            <div class="bg-amber-50 rounded-xl p-4 text-center">
-                                <p class="text-[9px] text-slate-400 uppercase tracking-wider font-bold mb-1">Guest pays driver</p>
-                                <p class="text-2xl font-black text-slate-700">Extras only</p>
-                                <p class="text-[10px] text-slate-400 mt-0.5">Toll, parking, permits</p>
-                            </div>
-                        </div>
-
-                        <!-- Wallet balance status (only when wallet selected) -->
-                        <div *ngIf="settlePaymentMethod === 'wallet'" class="flex items-center justify-between p-3 rounded-xl border mb-4"
-                            [ngClass]="walletBalance >= getBalanceDue(booking)
-                                ? 'bg-emerald-50 border-emerald-200'
-                                : 'bg-red-50 border-red-200'">
-                            <div class="flex items-center gap-2">
-                                <lucide-icon name="wallet" [size]="16"
-                                    [class]="walletBalance >= getBalanceDue(booking) ? 'text-emerald-500' : 'text-red-500'"></lucide-icon>
-                                <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Wallet Balance</p>
-                                    <p class="text-sm font-black"
-                                        [ngClass]="walletBalance >= getBalanceDue(booking) ? 'text-emerald-700' : 'text-red-700'">
-                                        ₹{{ walletBalance | number:'1.0-0' }}
-                                    </p>
-                                </div>
-                            </div>
-                            <div *ngIf="walletBalance >= getBalanceDue(booking)"
-                                class="flex items-center gap-1 px-2.5 py-1 bg-emerald-100 rounded-lg">
-                                <lucide-icon name="check-circle" [size]="12" class="text-emerald-600"></lucide-icon>
-                                <span class="text-[10px] font-bold text-emerald-700">Sufficient</span>
-                            </div>
-                            <div *ngIf="walletBalance < getBalanceDue(booking)"
-                                class="flex items-center gap-1 px-2.5 py-1 bg-red-100 rounded-lg">
-                                <lucide-icon name="alert-triangle" [size]="12" class="text-red-500"></lucide-icon>
-                                <span class="text-[10px] font-bold text-red-600">Need ₹{{ (getBalanceDue(booking) - walletBalance) | number:'1.0-0' }} more</span>
-                            </div>
-                        </div>
-
-                        <!-- Top-up section (only when wallet selected & insufficient) -->
-                        <div *ngIf="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)" class="bg-white rounded-xl border border-slate-200 p-4 mb-4">
-                            <h6 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-2">
-                                <lucide-icon name="plus-circle" [size]="14" class="text-primary"></lucide-icon>
-                                Quick Top-Up via Razorpay
-                            </h6>
-                            <div class="grid grid-cols-4 gap-2 mb-3">
+                            <div class="flex items-center gap-2 mb-2">
                                 <button *ngFor="let amt of [1000, 5000, 10000, 25000]"
                                     (click)="topUpAmount = amt; cdr.markForCheck()"
-                                    class="py-2 text-xs font-bold rounded-lg border transition cursor-pointer"
-                                    [ngClass]="topUpAmount === amt
-                                        ? 'bg-primary text-white border-primary'
-                                        : 'border-slate-200 text-slate-600 hover:border-primary/50'">
+                                    class="px-3 py-1.5 text-[10px] font-bold rounded-md border transition cursor-pointer"
+                                    [ngClass]="topUpAmount === amt ? 'bg-primary text-white border-primary' : 'border-slate-200 bg-white text-slate-600'">
                                     ₹{{ amt | number:'1.0-0' }}
                                 </button>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex items-center gap-2">
                                 <div class="relative flex-1">
-                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">₹</span>
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
                                     <input type="number" [(ngModel)]="topUpAmount" name="settleTopUp"
-                                        placeholder="Enter amount" min="100"
-                                        class="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                                        placeholder="Custom amount" min="100"
+                                        class="w-full pl-7 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
                                 </div>
-                                <button (click)="processTopUp()"
-                                    [disabled]="topUpAmount < 100 || isTopUpProcessing"
-                                    class="px-5 py-2.5 bg-primary hover:bg-sky-600 disabled:bg-slate-300 text-white font-bold text-sm rounded-xl transition disabled:cursor-not-allowed cursor-pointer flex items-center gap-2">
-                                    <lucide-icon *ngIf="isTopUpProcessing" name="loader-2" [size]="14" class="animate-spin"></lucide-icon>
-                                    {{ isTopUpProcessing ? 'Processing...' : 'Add Funds' }}
+                                <button (click)="processTopUp()" [disabled]="topUpAmount < 100 || isTopUpProcessing"
+                                    class="px-4 py-2 bg-primary hover:bg-sky-600 disabled:bg-slate-300 text-white font-bold text-xs rounded-lg transition cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5">
+                                    <lucide-icon *ngIf="isTopUpProcessing" name="loader-2" [size]="12" class="animate-spin"></lucide-icon>
+                                    {{ isTopUpProcessing ? 'Adding...' : 'Add Funds' }}
                                 </button>
                             </div>
-                            <p *ngIf="topUpError" class="text-xs text-red-500 mt-2">{{ topUpError }}</p>
+                            <p *ngIf="topUpError" class="text-[10px] text-red-500 mt-1.5">{{ topUpError }}</p>
                         </div>
 
-                        <!-- After-payment info (when wallet selected & sufficient) -->
+                        <!-- Wallet sufficient info -->
                         <div *ngIf="settlePaymentMethod === 'wallet' && walletBalance >= getBalanceDue(booking)"
-                            class="p-3 bg-sky-50 rounded-xl mb-4 text-xs text-sky-700 flex items-center gap-2">
-                            <lucide-icon name="info" [size]="14" class="shrink-0"></lucide-icon>
-                            After payment your wallet balance will be ₹{{ (walletBalance - getBalanceDue(booking)) | number:'1.0-0' }}.
+                            class="flex items-center justify-between text-xs mb-3 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                            <span class="text-emerald-700 font-semibold flex items-center gap-1.5">
+                                <lucide-icon name="check-circle" [size]="13" class="text-emerald-500"></lucide-icon>
+                                Wallet: ₹{{ walletBalance | number:'1.0-0' }}
+                            </span>
+                            <span class="text-slate-400 text-[10px]">After payment: ₹{{ (walletBalance - getBalanceDue(booking)) | number:'1.0-0' }}</span>
                         </div>
 
-                        <!-- Processing State -->
-                        <div *ngIf="settleProcessing" class="text-center py-6 mb-4">
-                            <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
-                                <lucide-icon name="loader-2" [size]="24" class="text-primary animate-spin"></lucide-icon>
-                            </div>
-                            <p class="text-sm font-bold text-slate-700">Processing payment...</p>
-                            <p class="text-xs text-slate-400 mt-1">{{ settlePaymentMethod === 'razorpay' ? 'Processing Razorpay payment...' : 'Debiting ₹' + (getBalanceDue(booking) | number:'1.0-0') + ' from wallet' }}</p>
+                        <!-- Processing spinner -->
+                        <div *ngIf="settleProcessing" class="flex items-center justify-center gap-2 py-2">
+                            <lucide-icon name="loader-2" [size]="14" class="text-primary animate-spin"></lucide-icon>
+                            <span class="text-xs font-semibold text-slate-600">Processing payment...</span>
                         </div>
 
-                        <!-- Confirm / Cancel buttons (hidden when processing) -->
-                        <div *ngIf="!settleProcessing && !settleConfirmStep" class="flex items-center gap-2">
+                        <!-- Action button -->
+                        <div *ngIf="!settleProcessing && !settleConfirmStep">
                             <button (click)="settleBooking(booking)"
                                 [disabled]="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)"
-                                class="flex-1 py-3 bg-primary hover:bg-sky-600 disabled:bg-slate-300 text-white font-bold text-sm rounded-xl transition cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                                class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 text-white disabled:text-slate-400 font-bold text-xs rounded-lg transition cursor-pointer disabled:cursor-not-allowed">
                                 <span *ngIf="settlePaymentMethod === 'razorpay'">Pay ₹{{ getBalanceDue(booking) | number:'1.0-0' }} via Razorpay</span>
-                                <span *ngIf="settlePaymentMethod === 'wallet' && walletBalance >= getBalanceDue(booking)">Confirm — debit ₹{{ getBalanceDue(booking) | number:'1.0-0' }} from wallet</span>
-                                <span *ngIf="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)">Insufficient balance — top up or use Razorpay</span>
-                            </button>
-                            <button (click)="settleBookingId = null"
-                                class="px-5 py-3 border border-slate-200 text-sm font-medium rounded-xl hover:bg-slate-50 transition cursor-pointer text-slate-500">
-                                Cancel
+                                <span *ngIf="settlePaymentMethod === 'wallet' && walletBalance >= getBalanceDue(booking)">Debit ₹{{ getBalanceDue(booking) | number:'1.0-0' }} from Wallet</span>
+                                <span *ngIf="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)">Top up wallet first or use Razorpay</span>
                             </button>
                         </div>
 
-                        <!-- Confirm step (Are you sure?) -->
-                        <div *ngIf="settleConfirmStep && !settleProcessing" class="text-center">
-                            <p class="text-sm font-bold text-slate-800 mb-1">Confirm Payment</p>
-                            <p class="text-xs text-slate-400 mb-4">₹{{ getBalanceDue(booking) | number:'1.0-0' }} will be {{ settlePaymentMethod === 'razorpay' ? 'paid via Razorpay' : 'deducted from your wallet' }}</p>
-                            <div class="flex items-center gap-2">
-                                <button (click)="confirmSettle(booking)"
-                                    class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm rounded-xl transition cursor-pointer shadow-sm flex items-center justify-center gap-2">
-                                    <lucide-icon name="check" [size]="16"></lucide-icon>
-                                    Yes, Pay ₹{{ getBalanceDue(booking) | number:'1.0-0' }}
-                                </button>
-                                <button (click)="cancelSettleConfirm()"
-                                    class="px-5 py-3 border border-slate-200 text-sm font-medium rounded-xl hover:bg-slate-50 transition cursor-pointer text-slate-500">
-                                    Go Back
-                                </button>
-                            </div>
+                        <!-- Confirm step -->
+                        <div *ngIf="settleConfirmStep && !settleProcessing" class="flex items-center gap-2">
+                            <button (click)="confirmSettle(booking)"
+                                class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-lg transition cursor-pointer flex items-center justify-center gap-1">
+                                <lucide-icon name="check" [size]="13"></lucide-icon>
+                                Confirm ₹{{ getBalanceDue(booking) | number:'1.0-0' }}
+                            </button>
+                            <button (click)="cancelSettleConfirm()"
+                                class="px-5 py-2.5 border border-slate-200 text-xs font-medium rounded-lg hover:bg-slate-50 transition cursor-pointer text-slate-500">
+                                Cancel
+                            </button>
                         </div>
                     </div>
 

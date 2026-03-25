@@ -64,6 +64,8 @@ export class ReportsComponent {
 
     this.reportApi.getReportByDates(fromDate, toDate).subscribe({
       next: (entries: ReportDetailedEntry[]) => {
+        // Debug: log first entry to see actual field names from API
+        if (entries?.length) console.log('[REPORTS] Sample API entry keys:', Object.keys(entries[0]), 'Values:', JSON.stringify(entries[0]).substring(0, 500));
         this.trips = (entries || []).map(e => this.mapToTripReport(e));
         this.isLoading = false;
         this.hasViewed = true;
