@@ -13,4 +13,6 @@ import { environment } from '../../../../environments/environment';
 export class FooterComponent {
   brandName = environment.brandName;
   companyName = environment.companyName;
+  supportPhone = environment.supportPhone;
+  supportPhoneTel = environment.supportPhoneTel;
 }

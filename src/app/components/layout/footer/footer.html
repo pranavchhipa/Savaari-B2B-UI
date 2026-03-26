@@ -17,7 +17,11 @@
         <!-- Right Side: Contact & Powered By -->
         <div class="flex flex-col space-y-3 sm:items-end sm:text-right">
             <h3 class="font-bold uppercase tracking-wider text-[13px] text-white">GET IN TOUCH</h3>
-            <div>
+            <div class="flex flex-col gap-1.5">
+                <a [href]="supportPhoneTel" class="inline-flex items-center gap-1.5 hover:text-white/80 transition-colors">
+                    <lucide-icon name="phone" [size]="12"></lucide-icon>
+                    {{ supportPhone }}
+                </a>
                 <a routerLink="/contact-us" class="hover:text-white/80 transition-colors">Contact Us</a>
             </div>
             <div class="pt-4 mt-auto">

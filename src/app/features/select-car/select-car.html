@@ -1,6 +1,6 @@
-<div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-border-dark py-5">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" class="flex text-[11px] text-slate-400 dark:text-slate-500 mb-3">
+<div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-border-dark py-3 sm:py-5">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <nav aria-label="Breadcrumb" class="flex text-[9px] sm:text-[11px] text-slate-400 dark:text-slate-500 mb-1.5 sm:mb-3">
             <ol class="flex items-center space-x-1">
                 <li><a class="hover:text-primary" href="/dashboard">Home</a></li>
                 <li><lucide-icon name="chevron-right" [size]="10" class="text-slate-300 mt-0.5"></lucide-icon></li>
@@ -8,23 +8,22 @@
             </ol>
         </nav>
 
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4" *ngIf="itinerary">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-4" *ngIf="itinerary">
             <div>
                 <!-- Route heading -->
-                <div class="flex items-center gap-3 mb-3">
+                <div class="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-3">
                     <button (click)="goBack()"
-                        class="flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm group cursor-pointer">
-                        <lucide-icon name="arrow-left" [size]="16"
-                            class="group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
+                        class="flex items-center justify-center w-6 h-6 sm:w-9 sm:h-9 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm group cursor-pointer shrink-0">
+                        <lucide-icon name="arrow-left" [size]="12" class="sm:!w-4 sm:!h-4 group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
                     </button>
-                    <h1 class="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-200">
+                    <h1 class="text-xs sm:text-lg md:text-xl font-bold text-slate-800 dark:text-slate-200 leading-tight">
                         <!-- Local -->
                         <ng-container *ngIf="isLocal">
                             <span>{{itinerary.fromCity || 'Bangalore'}}</span>
-                            <span class="text-slate-300 mx-2">&rsaquo;</span>
+                            <span class="text-slate-300 mx-1 sm:mx-2">&rsaquo;</span>
                             <span>Local</span>
                             <span
-                                class="ml-2 text-xs px-2.5 py-1 bg-sky-100 dark:bg-sky-900/40 rounded-md text-sky-600 dark:text-sky-400 font-bold">
+                                class="ml-1 sm:ml-2 text-[9px] sm:text-xs px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-sky-100 dark:bg-sky-900/40 rounded-md text-sky-600 dark:text-sky-400 font-bold">
                                 {{selectedLocalPackage === '8hr' ? '8 hrs / 80 km' : '12 hrs / 120 km'}}
                             </span>
                         </ng-container>
@@ -32,55 +31,55 @@
                         <ng-container *ngIf="isAirport">
                             <span>Cab to {{itinerary.dropAirport || itinerary.fromCity || 'Bangalore'}} Airport</span>
                             <span
-                                class="ml-2 text-xs px-2.5 py-1 bg-amber-100 dark:bg-amber-900/40 rounded-md text-amber-700 dark:text-amber-300 font-bold">
+                                class="ml-1 sm:ml-2 text-[9px] sm:text-xs px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-amber-100 dark:bg-amber-900/40 rounded-md text-amber-700 dark:text-amber-300 font-bold">
                                 {{airportSubTypeLabel}}
                             </span>
                         </ng-container>
                         <!-- One Way / Round Trip -->
                         <ng-container *ngIf="!isLocal && !isAirport">
                             <span>{{itinerary.fromCity || 'Bangalore'}}</span>
-                            <span class="text-slate-300 mx-2">/</span>
+                            <span class="text-slate-300 mx-1 sm:mx-2">/</span>
                             <span>{{itinerary.toCity || 'Mysore'}}</span>
                             <ng-container *ngIf="itinerary.tripType === 'Round Trip'">
-                                <span class="text-slate-300 mx-2">/</span>
+                                <span class="text-slate-300 mx-1 sm:mx-2">/</span>
                                 <span>{{itinerary.fromCity || 'Bangalore'}}</span>
                             </ng-container>
                             <span
-                                class="ml-3 text-[11px] px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400 uppercase font-bold tracking-tight align-middle">
+                                class="ml-1.5 sm:ml-3 text-[8px] sm:text-[11px] px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400 uppercase font-bold tracking-tight align-middle">
                                 {{itinerary.tripType}}
                             </span>
                         </ng-container>
                     </h1>
                 </div>
 
-                <!-- Trip details row -->
-                <div class="flex items-center gap-6 md:gap-10 flex-wrap ml-12">
-                    <div class="flex items-center gap-2.5">
-                        <div class="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            <lucide-icon name="calendar" [size]="16" class="text-primary"></lucide-icon>
+                <!-- Trip details row — single line on mobile -->
+                <div class="flex items-center gap-2 sm:gap-6 md:gap-10 flex-nowrap ml-8 sm:ml-12 overflow-x-auto">
+                    <div class="flex items-center gap-1 sm:gap-2.5 shrink-0">
+                        <div class="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            <lucide-icon name="calendar" [size]="12" class="text-primary sm:!w-4 sm:!h-4"></lucide-icon>
                             {{itinerary.pickupDate | date:'dd-MM-yyyy'}}
                         </div>
-                        <span class="text-[9px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">Pick up</span>
+                        <span class="text-[7px] sm:text-[9px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1 sm:px-1.5 py-0.5 rounded">Pick up</span>
                     </div>
 
-                    <div class="flex items-center gap-2.5" *ngIf="itinerary.tripType === 'Round Trip'">
-                        <div class="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            <lucide-icon name="calendar" [size]="16" class="text-orange-500"></lucide-icon>
+                    <div class="flex items-center gap-1 sm:gap-2.5 shrink-0" *ngIf="itinerary.tripType === 'Round Trip'">
+                        <div class="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            <lucide-icon name="calendar" [size]="12" class="text-orange-500 sm:!w-4 sm:!h-4"></lucide-icon>
                             {{itinerary.returnDate ? (itinerary.returnDate | date:'dd-MM-yyyy') : (itinerary.pickupDate | date:'dd-MM-yyyy')}}
                         </div>
-                        <span class="text-[9px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">Return</span>
+                        <span class="text-[7px] sm:text-[9px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1 sm:px-1.5 py-0.5 rounded">Return</span>
                     </div>
 
-                    <div class="flex items-center gap-2.5">
-                        <div class="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            <lucide-icon name="clock" [size]="16" class="text-primary"></lucide-icon>
+                    <div class="flex items-center gap-1 sm:gap-2.5 shrink-0">
+                        <div class="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            <lucide-icon name="clock" [size]="12" class="text-primary sm:!w-4 sm:!h-4"></lucide-icon>
                             {{itinerary.pickupTime || '09:30 PM'}}
                         </div>
-                        <span class="text-[9px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">Time</span>
+                        <span class="text-[7px] sm:text-[9px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1 sm:px-1.5 py-0.5 rounded">Time</span>
                     </div>
 
                     <button
-                        class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-primary dark:text-sky-400 hover:bg-primary hover:text-white font-bold text-[11px] px-5 py-2 rounded-lg shadow-sm transition-all uppercase tracking-wider cursor-pointer"
+                        class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-primary dark:text-sky-400 hover:bg-primary hover:text-white font-bold text-[9px] sm:text-[11px] px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg shadow-sm transition-all uppercase tracking-wider cursor-pointer shrink-0"
                         (click)="openModifyModal()">
                         Modify
                     </button>
@@ -89,8 +88,8 @@
         </div>
     </div>
 
-    <main class="flex-grow py-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div class="space-y-4">
+    <main class="flex-grow py-3 sm:py-4 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div class="space-y-2 sm:space-y-4">
 
             <!-- Price Info Popup -->
             <div *ngIf="showPriceAlert"
@@ -111,8 +110,8 @@
             </div>
 
             <!-- Cab Search Results -->
-            <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 mb-6">
-                <div class="text-sm text-center md:text-left md:col-start-1">
+            <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-2 sm:gap-4 mb-3 sm:mb-6">
+                <div class="text-[10px] sm:text-sm text-center md:text-left md:col-start-1">
                     <span class="text-slate-500 dark:text-slate-400">Showing</span>
                     <span class="font-bold text-slate-800 dark:text-slate-200 ml-1">{{carsToDisplay.length}} Cabs</span>
                     <span class="text-slate-500 dark:text-slate-400"> matching your search</span>
@@ -136,11 +135,11 @@
             </div>
 
             <!-- Loading State -->
-            <div *ngIf="isLoading" class="space-y-3">
+            <div *ngIf="isLoading" class="space-y-2 sm:space-y-3">
                 <div *ngFor="let i of [1,2,3,4]"
-                    class="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="flex flex-col md:flex-row gap-4 items-center">
-                        <div class="w-[260px] h-[150px] skeleton rounded-xl"></div>
+                    class="bg-white dark:bg-slate-800 rounded-xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex flex-row gap-3 sm:gap-4 items-center">
+                        <div class="w-[100px] sm:w-[260px] h-[70px] sm:h-[150px] skeleton rounded-lg sm:rounded-xl shrink-0"></div>
                         <div class="flex-grow space-y-2">
                             <div class="h-5 w-1/3 skeleton"></div>
                             <div class="h-3 w-1/5 skeleton"></div>
@@ -150,7 +149,7 @@
                                 <div class="h-4 w-14 skeleton rounded-full"></div>
                             </div>
                         </div>
-                        <div class="w-[200px] flex flex-col items-end space-y-2">
+                        <div class="w-full sm:w-[200px] flex flex-col items-end space-y-2">
                             <div class="h-6 w-20 skeleton"></div>
                             <div class="h-8 w-full skeleton rounded-lg"></div>
                         </div>
@@ -159,50 +158,63 @@
             </div>
 
             <!-- Cab List -->
-            <div *ngIf="!isLoading" class="space-y-3">
+            <div *ngIf="!isLoading" class="space-y-2 sm:space-y-3">
                 <div *ngFor="let car of carsToDisplay"
                     class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden group">
-                    <div class="px-5 py-4 flex flex-col md:flex-row gap-5 items-center">
-                        <!-- Car Image — larger -->
+                    <div class="px-3 py-3 sm:px-5 sm:py-4 flex flex-row gap-3 sm:gap-5 items-center">
+                        <!-- Car Image -->
                         <div
-                            class="w-full md:w-[320px] h-[180px] flex-shrink-0 bg-slate-50 dark:bg-slate-800 rounded-xl overflow-hidden">
+                            class="w-[100px] sm:w-[200px] md:w-[320px] h-[70px] sm:h-[130px] md:h-[180px] flex-shrink-0 bg-slate-50 dark:bg-slate-800 rounded-lg sm:rounded-xl overflow-hidden">
                             <img [src]="car.image" [alt]="car.name"
                                 class="w-full h-full object-cover" />
                         </div>
-                        <!-- Car Info -->
-                        <div class="flex-1 flex flex-col justify-center w-full text-center md:text-left">
+                        <!-- Car Info + Price combined on mobile -->
+                        <div class="flex-1 flex flex-col justify-center min-w-0">
                             <h2
-                                class="text-2xl font-bold text-primary group-hover:text-sky-600 transition-colors leading-tight mb-1">
+                                class="text-sm sm:text-xl md:text-2xl font-bold text-primary group-hover:text-sky-600 transition-colors leading-tight mb-0.5 sm:mb-1 truncate">
                                 {{car.name}}</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{{car.subtitle}}</p>
-                            <div class="flex flex-wrap justify-center md:justify-start gap-2">
+                            <p class="text-[9px] sm:text-xs text-slate-500 dark:text-slate-400 mb-1.5 sm:mb-3">{{car.subtitle}}</p>
+                            <div class="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-0">
                                 <span
-                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="gauge" [size]="13" class="mr-1"></lucide-icon>
+                                    class="inline-flex items-center px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="gauge" [size]="10" class="mr-0.5 sm:mr-1 sm:!w-[13px] sm:!h-[13px]"></lucide-icon>
                                     {{ getCarKms(car.kmsIncluded) }}
                                 </span>
                                 <span *ngIf="car.hoursIncluded"
-                                    class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                                    <lucide-icon name="clock" [size]="14" class="mr-1.5"></lucide-icon>
+                                    class="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[8px] sm:text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                    <lucide-icon name="clock" [size]="10" class="mr-0.5 sm:mr-1.5 sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
                                     {{car.hoursIncluded}}
                                 </span>
                                 <span
-                                    class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="users" [size]="14" class="mr-1.5"></lucide-icon> {{car.seats}}
+                                    class="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[8px] sm:text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="users" [size]="10" class="mr-0.5 sm:mr-1.5 sm:!w-[14px] sm:!h-[14px]"></lucide-icon> {{car.seats}}
                                 </span>
                                 <span
-                                    class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="briefcase" [size]="14" class="mr-1.5"></lucide-icon> {{car.bags}}
+                                    class="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[8px] sm:text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="briefcase" [size]="10" class="mr-0.5 sm:mr-1.5 sm:!w-[14px] sm:!h-[14px]"></lucide-icon> {{car.bags}}
                                 </span>
                                 <span
-                                    class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="snowflake" [size]="14" class="mr-1.5"></lucide-icon> {{car.ac}}
+                                    class="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[8px] sm:text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="snowflake" [size]="10" class="mr-0.5 sm:mr-1.5 sm:!w-[14px] sm:!h-[14px]"></lucide-icon> {{car.ac}}
                                 </span>
                             </div>
+                            <!-- Price & CTA inline on mobile — pushed right -->
+                            <div class="flex items-center justify-between md:hidden">
+                                <div>
+                                    <span class="text-sm font-extrabold text-slate-900 dark:text-white">₹ {{
+                                        getCarPrice(car.price) | number:'1.0-0' }}</span>
+                                    <p class="text-[7px] text-slate-400 leading-none">Incl. GST</p>
+                                </div>
+                                <button
+                                    (click)="onSelectCar(car)"
+                                    class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded-md shadow-sm transition-all transform active:scale-95 text-[8px] uppercase tracking-wider cursor-pointer whitespace-nowrap ml-auto">
+                                    SELECT
+                                </button>
+                            </div>
                         </div>
-                        <!-- Price & CTA -->
+                        <!-- Price & CTA — desktop only -->
                         <div
-                            class="w-full md:w-[180px] flex-shrink-0 flex flex-col items-center md:items-end justify-center border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-700 pt-3 md:pt-0 md:pl-6">
+                            class="hidden md:flex w-[180px] flex-shrink-0 flex-col items-end justify-center border-l border-slate-100 dark:border-slate-700 pl-6">
                             <div class="text-right">
                                 <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹ {{
                                     getCarPrice(car.price)
@@ -220,18 +232,18 @@
                     <!-- Collapsible Tabs -->
                     <div class="border-t border-slate-100 dark:border-slate-800">
                         <div
-                            class="flex px-4 overflow-x-auto scrollbar-hide">
+                            class="flex px-2 sm:px-4 overflow-x-auto scrollbar-hide">
                             <button *ngFor="let tab of ['Inclusions', 'Exclusions', 'Facilities', 'T&C']"
                                 (click)="toggleTab(car.id, tab === 'T&C' ? 'tc' : tab.toLowerCase())" [ngClass]="{
                                         'border-b-2 border-sky-500 text-sky-500 dark:text-sky-400 font-semibold': activeTab[car.id] === (tab === 'T&C' ? 'tc' : tab.toLowerCase()),
                                         'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium': activeTab[car.id] !== (tab === 'T&C' ? 'tc' : tab.toLowerCase())
-                                    }" class="px-4 py-2 text-[11px] transition-all whitespace-nowrap bg-transparent">
+                                    }" class="px-2 sm:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[11px] transition-all whitespace-nowrap bg-transparent">
                                 {{tab}}
                             </button>
                         </div>
 
                         <div *ngIf="activeTab[car.id]"
-                            class="px-4 py-3 border-t border-slate-50 dark:border-slate-800 transition-all duration-200">
+                            class="px-2 sm:px-4 py-2 sm:py-3 border-t border-slate-50 dark:border-slate-800 transition-all duration-200">
                             <!-- Inclusions -->
                             <div [hidden]="activeTab[car.id] !== 'inclusions'"
                                 class="flex flex-wrap gap-x-8 gap-y-2">
@@ -343,7 +355,7 @@
     <div *ngIf="isModifyModalOpen"
         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 transition-all animate-fade-in">
         <div
-            class="bg-white dark:bg-slate-900 rounded-[20px] shadow-2xl w-full max-w-5xl p-10 pb-14 relative border border-slate-100 dark:border-slate-800">
+            class="bg-white dark:bg-slate-900 rounded-[16px] sm:rounded-[20px] shadow-2xl w-full max-w-5xl p-3 sm:p-6 md:p-10 pb-12 sm:pb-14 relative border border-slate-100 dark:border-slate-800">
 
             <!-- Close Button (Top Right corner) -->
             <button (click)="closeModifyModal()"
@@ -468,7 +480,7 @@
             <!-- EXPLORE CABS button (Centered at bottom, overlapping) -->
             <div class="absolute -bottom-5 left-1/2 -translate-x-1/2">
                 <button (click)="submitModifyModal()"
-                    class="bg-primary hover:bg-sky-600 text-white font-bold py-3 px-12 rounded shadow shadow-sky-200 dark:shadow-none transition-all text-[12px] uppercase tracking-[1.5px] whitespace-nowrap">
+                    class="bg-primary hover:bg-sky-600 text-white font-bold py-3 px-6 sm:px-12 rounded shadow shadow-sky-200 dark:shadow-none transition-all text-[12px] uppercase tracking-[1.5px] whitespace-nowrap">
                     Explore Cabs
                 </button>
             </div>

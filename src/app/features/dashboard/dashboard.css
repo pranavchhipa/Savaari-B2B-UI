@@ -11,18 +11,18 @@
   box-shadow: none !important;
   padding: 0 !important;
   height: auto !important;
-  font-size: 1.125rem !important;
-  font-weight: 600 !important;
+  font-size: 0.5rem !important;
+  font-weight: 400 !important;
   color: #0f172a !important;
   line-height: 1.5 !important;
 }
 
 :host ::ng-deep .search-bar-autocomplete .p-autocomplete-input::placeholder {
   color: #94a3b8 !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   font-style: normal !important;
   opacity: 1 !important;
-  font-size: 0.95rem !important;
+  font-size: 0.5rem !important;
 }
 
 :host ::ng-deep .search-bar-datepicker input {
@@ -31,8 +31,8 @@
   box-shadow: none !important;
   padding: 0 !important;
   height: auto !important;
-  font-size: 1.125rem !important;
-  font-weight: 600 !important;
+  font-size: 0.5rem !important;
+  font-weight: 400 !important;
   color: #0f172a !important;
   line-height: 1.5 !important;
   cursor: pointer !important;
@@ -51,20 +51,48 @@
 
 :host ::ng-deep .search-bar-select .p-select-label {
   padding: 0 !important;
-  font-size: 1.125rem !important;
-  font-weight: 600 !important;
+  font-size: 0.5rem !important;
+  font-weight: 400 !important;
   color: #0f172a !important;
   line-height: 1.5 !important;
 }
 
 :host ::ng-deep .search-bar-select .p-placeholder {
   color: #94a3b8 !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   font-style: normal !important;
   opacity: 1 !important;
-  font-size: 0.95rem !important;
+  font-size: 0.5rem !important;
 }
 
 :host ::ng-deep .search-bar-select .p-select-dropdown {
   color: #64748b !important;
+}
+
+/* Desktop overrides (sm: 640px+) */
+@media (min-width: 640px) {
+  :host ::ng-deep .search-bar-autocomplete .p-autocomplete-input {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+  }
+
+  :host ::ng-deep .search-bar-autocomplete .p-autocomplete-input::placeholder {
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+  }
+
+  :host ::ng-deep .search-bar-datepicker input {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+  }
+
+  :host ::ng-deep .search-bar-select .p-select-label {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+  }
+
+  :host ::ng-deep .search-bar-select .p-placeholder {
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+  }
 }

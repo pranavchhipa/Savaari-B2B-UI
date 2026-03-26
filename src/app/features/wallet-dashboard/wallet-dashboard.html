@@ -45,7 +45,7 @@
             <div class="relative z-10 h-full flex flex-col justify-between p-5">
                 <!-- Top: Brand + Chip -->
                 <div class="flex items-center justify-between">
-                    <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-8 object-contain" />
+                    <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-16 object-contain" />
                     <!-- EMV Chip — brighter gold -->
                     <div class="w-10 h-7 rounded-md relative overflow-hidden"
                         style="background: linear-gradient(145deg, #e8b923 0%, #fcd34d 35%, #d97706 65%, #fbbf24 100%); box-shadow: 0 2px 8px rgba(217,119,6,0.4), inset 0 1px 2px rgba(255,255,255,0.4);">
@@ -187,7 +187,7 @@
                         </tr>
 
                         <tr *ngIf="filteredTransactions.length === 0">
-                            <td colspan="5" class="px-6 py-16 text-center">
+                            <td colspan="5" class="px-6 py-8 sm:py-16 text-center">
                                 <lucide-icon name="inbox" [size]="40" class="mx-auto text-slate-300 dark:text-slate-600 mb-3"></lucide-icon>
                                 <p class="text-sm font-medium text-slate-500">No transactions found.</p>
                                 <p class="text-xs text-slate-400 mt-1">Make a booking or top up to see transactions here.</p>
@@ -235,7 +235,7 @@
                     </div>
                 </div>
 
-                <div *ngIf="filteredTransactions.length === 0" class="px-6 py-16 text-center">
+                <div *ngIf="filteredTransactions.length === 0" class="px-6 py-8 sm:py-16 text-center">
                     <lucide-icon name="inbox" [size]="40" class="mx-auto text-slate-300 dark:text-slate-600 mb-3"></lucide-icon>
                     <p class="text-sm font-medium text-slate-500">No transactions found.</p>
                     <p class="text-xs text-slate-400 mt-1">Make a booking or top up to see transactions here.</p>
@@ -275,7 +275,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-4 gap-2 mb-6">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
                 <button *ngFor="let am of [1000, 5000, 10000, 25000]" (click)="topUpAmount = am"
                     [disabled]="isProcessing" type="button"
                     class="py-2.5 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-50 cursor-pointer"

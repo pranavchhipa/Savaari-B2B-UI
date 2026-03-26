@@ -113,7 +113,7 @@
         <div *ngIf="hasViewed">
 
           <!-- Summary Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <div
               class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4">
               <div
@@ -169,7 +169,7 @@
 
               <!-- Loading State -->
               <div *ngIf="isLoading" class="p-6 space-y-4">
-                <div class="grid grid-cols-4 gap-4 mb-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                   <div *ngFor="let i of [1,2,3,4]" class="h-20 skeleton rounded-xl"></div>
                 </div>
                 <div *ngFor="let i of [1,2,3,4,5]" class="h-10 w-full skeleton"></div>

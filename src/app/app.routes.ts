@@ -2,11 +2,12 @@ import { Routes } from '@angular/router';
 import { LandingComponent } from './features/landing/landing';
 import { bookingGuard } from './core/guards/booking.guard';
 import { authGuard } from './core/guards/auth.guard';
+import { guestGuard } from './core/guards/guest.guard';
 
 export const routes: Routes = [
-    { path: '', component: LandingComponent },
-    { path: 'login', loadComponent: () => import('./features/auth/login/login').then(m => m.LoginComponent) },
-    { path: 'register', loadComponent: () => import('./features/auth/register/register').then(m => m.RegisterComponent) },
+    { path: '', component: LandingComponent, canActivate: [guestGuard] },
+    { path: 'login', canActivate: [guestGuard], loadComponent: () => import('./features/auth/login/login').then(m => m.LoginComponent) },
+    { path: 'register', canActivate: [guestGuard], loadComponent: () => import('./features/auth/register/register').then(m => m.RegisterComponent) },
     { path: 'dashboard', canActivate: [authGuard], loadComponent: () => import('./features/dashboard/dashboard').then(m => m.DashboardComponent) },
     { path: 'bookings', canActivate: [authGuard], loadComponent: () => import('./features/bookings/bookings').then(m => m.BookingsComponent) },
     { path: 'markup-settings', canActivate: [authGuard], loadComponent: () => import('./features/markup-settings/markup-settings').then(m => m.MarkupSettingsComponent) },

@@ -10,7 +10,7 @@
     <div class="absolute top-16 right-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px]"></div>
     <div class="absolute bottom-20 left-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-[60px]"></div>
 
-    <div class="relative z-10 flex flex-col justify-center h-full w-full px-10 xl:px-14 py-12 gap-8">
+    <div class="relative z-10 flex flex-col justify-center h-full w-full px-4 sm:px-6 md:px-10 xl:px-14 py-6 sm:py-12 gap-8">
 
       <!-- Top: Badge + Heading -->
       <div class="animate-slide-up">
@@ -19,7 +19,7 @@
           <span class="text-sm font-extrabold text-white uppercase tracking-widest">Trusted by 5,000+ Agents</span>
         </div>
 
-        <h1 class="text-3xl xl:text-4xl font-extrabold text-white leading-tight">
+        <h1 class="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-extrabold text-white leading-tight">
           Grow Your Travel<br>Business with
           <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-primary">B2B CAB</span>.
         </h1>
@@ -79,7 +79,7 @@
 
       <!-- Testimonial Carousel -->
       <div class="bg-white/5 border border-white/10 rounded-2xl p-6 relative">
-        <div class="absolute top-4 right-5 text-cyan-500/20 text-5xl font-serif leading-none">"</div>
+        <div class="absolute top-4 right-5 text-cyan-500/20 text-3xl sm:text-5xl font-serif leading-none">"</div>
         <div *ngFor="let t of testimonials; let i = index">
           <div *ngIf="i === activeTestimonial" class="animate-fade-scale">
             <!-- Stars -->
@@ -122,7 +122,7 @@
     <div class="w-full max-w-xl">
       <!-- Header -->
       <div class="mb-8">
-        <h2 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
           Create Agent Account
         </h2>
         <p class="mt-2 text-sm text-slate-500">

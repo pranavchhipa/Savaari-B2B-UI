@@ -192,7 +192,7 @@
         </div>
 
         <!-- Empty State -->
-        <div *ngIf="!isLoading && filteredBookings.length === 0" class="text-center py-16">
+        <div *ngIf="!isLoading && filteredBookings.length === 0" class="text-center py-8 sm:py-16">
             <lucide-icon name="inbox" [size]="36" class="mx-auto text-slate-300 dark:text-slate-600 mb-3"></lucide-icon>
             <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400">No {{ activeTab }} bookings</h3>
             <p class="text-xs text-slate-400 mt-0.5">Bookings you make will appear here.</p>
@@ -212,11 +212,11 @@
                 ">
 
                 <!-- Main Row -->
-                <div class="flex items-center px-6 py-5 gap-6 cursor-pointer" (click)="toggleDetails(booking.bookingId)">
+                <div class="flex items-center px-3 py-3 sm:px-6 sm:py-5 gap-3 sm:gap-6 cursor-pointer" (click)="toggleDetails(booking.bookingId)">
 
                     <!-- Date Block -->
                     <div class="w-16 shrink-0 text-center">
-                        <p class="text-3xl font-black text-slate-800 dark:text-white leading-none">
+                        <p class="text-xl sm:text-2xl md:text-3xl font-black text-slate-800 dark:text-white leading-none">
                             {{ booking.pickupDate ? (booking.pickupDate | date:'dd') : '--' }}
                         </p>
                         <p class="text-[11px] font-bold uppercase tracking-wider mt-1"
