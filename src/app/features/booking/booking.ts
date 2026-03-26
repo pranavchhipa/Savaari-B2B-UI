@@ -9,13 +9,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { BookingStateService, Itinerary, SelectedCar } from '../../core/services/booking-state.service';
 import { BookingApiService } from '../../core/services/booking-api.service';
 import { BookingRegistryService } from '../../core/services/booking-registry.service';
-import { CouponService } from '../../core/services/coupon.service';
 import { TripTypeService } from '../../core/services/trip-type.service';
 import { WalletService } from '../../core/services/wallet.service';
 import { CountryCodeService, CountryCodeEntry } from '../../core/services/country-code.service';
 import { LocalityService } from '../../core/services/locality.service';
 import { AvailabilityService } from '../../core/services/availability.service';
-import { CreateBookingRequest, CouponValidationResponse } from '../../core/models';
+import { CreateBookingRequest } from '../../core/models';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
 import { decodeGSTIN, GSTINDecodeResult } from '../../core/utils/gstin-decoder';
 import { Observable } from 'rxjs';
@@ -38,7 +37,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   private bookingState = inject(BookingStateService);
   private bookingApi = inject(BookingApiService);
   private bookingRegistry = inject(BookingRegistryService);
-  private couponService = inject(CouponService);
   private tripTypeService = inject(TripTypeService);
   private countryCodeService = inject(CountryCodeService);
   private cdr = inject(ChangeDetectorRef);
@@ -89,13 +87,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   isProcessingWallet = false;
   bookingConfirmed = false;
   bookingId = '';
-
-  // Coupon
-  couponCode = '';
-  couponApplied = false;
-  couponDiscount = 0;
-  couponMessage = '';
-  isValidatingCoupon = false;
 
   // GST Invoice
   needsGstInvoice = false;
@@ -598,66 +589,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     return balance >= this.getPayNowAmount();
   }
 
-  /** Apply coupon code */
-  applyCoupon() {
-    if (!this.couponCode.trim() || !this.itinerary || !this.selectedCar) return;
-
-    this.isValidatingCoupon = true;
-    this.couponMessage = '';
-    this.cdr.markForCheck();
-
-    const apiParams = this.tripTypeService.mapUiTabToApiParams(this.itinerary.tripType, {
-      localPackage: this.itinerary.localPackage,
-      airportSubType: this.itinerary.airportSubType,
-    });
-
-    this.couponService.validateCoupon({
-      couponCode: this.couponCode.trim(),
-      sourceCity: this.itinerary.fromCityId || 377,
-      tripType: apiParams.tripType,
-      subTripType: apiParams.subTripType,
-      bookingAmount: this.selectedCar.originalPrice || this.selectedCar.price,
-      carType: this.selectedCar.carTypeId || 4,
-      pickupDateTime: toSavaariDateTime(
-        new Date(this.itinerary.pickupDate),
-        this.itinerary.pickupTime
-      ),
-      ...(this.itinerary.duration && { duration: this.itinerary.duration }),
-    }).subscribe({
-      next: (res: CouponValidationResponse) => {
-        this.isValidatingCoupon = false;
-        if (res.valid) {
-          this.couponApplied = true;
-          this.couponDiscount = res.discountAmount || 0;
-          this.couponMessage = res.message || 'Coupon applied!';
-        } else {
-          this.couponApplied = false;
-          this.couponDiscount = 0;
-          this.couponMessage = res.message || 'Invalid coupon code.';
-        }
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.isValidatingCoupon = false;
-        this.couponMessage = 'Failed to validate coupon. Please try again.';
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  /** Remove applied coupon */
-  removeCoupon() {
-    this.couponCode = '';
-    this.couponApplied = false;
-    this.couponDiscount = 0;
-    this.couponMessage = '';
-    this.cdr.markForCheck();
-  }
-
-  /** Effective price after coupon discount */
+  /** Effective price */
   getEffectivePrice(): number {
     if (!this.selectedCar) return 0;
-    return this.selectedCar.price - this.couponDiscount;
+    return this.selectedCar.price;
   }
 
   bookNow() {
@@ -706,6 +641,17 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.razorpayProcessingStage = 'payment';
     this.bookingError = '';
     this.cdr.markForCheck();
+
+    // Mock mode: skip Razorpay, simulate payment success
+    if (environment.useMockData) {
+      setTimeout(() => {
+        this.onRazorpayBookingSuccess(
+          { razorpay_order_id: 'mock_order', razorpay_payment_id: 'mock_pay', razorpay_signature: 'mock_sig' },
+          amount
+        );
+      }, 1500);
+      return;
+    }
 
     // Step 1: Create Razorpay order
     this.walletService.createBookingOrder(amount).subscribe({
@@ -797,7 +743,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       prePayment: prePaymentAmount,
       ...(this.itinerary.toCityId && { destinationCity: this.itinerary.toCityId }),
       ...(this.itinerary.localityId && { localityId: this.itinerary.localityId }),
-      ...(this.couponApplied && this.couponCode && { couponCode: this.couponCode.trim() }),
       ...(this.isBookingUrgent() && { Urgent_booking: '1' }),
       ...(this.needsGstInvoice && this.agentGstNumber && { gst_invoice_required: '1', gst_number: this.agentGstNumber }),
     };
@@ -943,9 +888,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       // Airport-specific
       ...(this.itinerary.localityId && { localityId: this.itinerary.localityId }),
-
-      // Coupon
-      ...(this.couponApplied && this.couponCode && { couponCode: this.couponCode.trim() }),
 
       // Urgent booking flag (< 48h before pickup)
       ...(this.isBookingUrgent() && { Urgent_booking: '1' }),
@@ -1167,6 +1109,21 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.topUpSuccess = false;
     this.bookingError = '';
     this.cdr.markForCheck();
+
+    // Mock mode: skip Razorpay, credit wallet directly
+    if (environment.useMockData) {
+      this.walletService.verifyTopUp('mock_order', 'mock_pay', 'mock_sig', this.topUpAmount).subscribe(success => {
+        this.isProcessingTopUp = false;
+        if (success) {
+          this.topUpSuccess = true;
+          this.topUpAmount = 0;
+          this.showTopUpConfirm = false;
+          setTimeout(() => { this.topUpSuccess = false; this.cdr.markForCheck(); }, 3000);
+        }
+        this.cdr.markForCheck();
+      });
+      return;
+    }
 
     // Step 1: Initiate top-up order on backend
     this.walletService.initiateTopUp(this.topUpAmount).subscribe({

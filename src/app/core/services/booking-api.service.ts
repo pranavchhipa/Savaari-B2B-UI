@@ -72,7 +72,6 @@ export class BookingApiService {
       premiumFlag: request.premiumFlag ?? 0,
       destinationCity: request.destinationCity,
       prePayment: request.prePayment,
-      couponCode: request.couponCode,
       agentId: btoa(this.auth.getAgentId()),
       api_source: 'b2b',
       source: request.source || 'b2b',

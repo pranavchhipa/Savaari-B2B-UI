@@ -209,6 +209,18 @@ export class BookingsComponent implements OnInit {
         this.topUpError = '';
         this.cdr.markForCheck();
 
+        // Mock mode: skip Razorpay, credit wallet directly
+        if (environment.useMockData) {
+            this.walletService.verifyTopUp('mock_order', 'mock_payment', 'mock_sig', this.topUpAmount).subscribe(success => {
+                this.isTopUpProcessing = false;
+                if (success) {
+                    this.showTopUpModal = false;
+                }
+                this.cdr.markForCheck();
+            });
+            return;
+        }
+
         this.walletService.initiateTopUp(this.topUpAmount).subscribe({
             next: (orderDetails) => {
                 if (!orderDetails?.orderId) {
@@ -798,8 +810,16 @@ export class BookingsComponent implements OnInit {
             return;
         }
 
-        // Razorpay settlement — open Razorpay modal
+        // Razorpay settlement — open Razorpay modal (or mock it)
         if (this.settlePaymentMethod === 'razorpay') {
+            if (environment.useMockData) {
+                // Mock mode: simulate Razorpay payment instantly
+                this.walletService.verifyBookingPayment('mock_order', 'mock_payment', 'mock_sig', amount, booking.bookingId).subscribe({
+                    next: () => setTimeout(() => onSuccess(), 1200),
+                    error: () => onError()
+                });
+                return;
+            }
             this.walletService.createBookingOrder(amount).subscribe({
                 next: (order) => {
                     if (!order || !order.orderId) {

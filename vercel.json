@@ -1,12 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npx ng build --configuration=production",
+  "buildCommand": "npx ng build --configuration=vercel",
   "outputDirectory": "dist/savaari-b2b-scratch/browser",
   "framework": null,
   "rewrites": [
-    { "source": "/partner-api/:path*", "destination": "https://api.savaari.com/partner_api/public/:path*" },
-    { "source": "/b2b-api/:path*", "destination": "https://api23.savaari.com/:path*" },
-    { "source": "/wallet-api/:path*", "destination": "https://apiext.savaari.com/wallet/public/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
