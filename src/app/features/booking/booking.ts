@@ -726,7 +726,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           key: razorpayKey,
           amount: amountInPaise,
           currency: order.currency || 'INR',
-          name: 'B2B CAB',
+          name: environment.brandName,
           description: `Booking Payment ₹${savedAmount}`,
           order_id: order.orderId,
           handler: (response: any) => {
@@ -1187,7 +1187,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           key: razorpayKey,
           amount: amountInPaise,
           currency: order.currency || 'INR',
-          name: 'B2B CAB Wallet',
+          name: `${environment.brandName} Wallet`,
           description: `Wallet Top-up ₹${savedAmount}`,
           order_id: order.orderId,
           handler: (response: any) => {
@@ -1342,7 +1342,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     const lines = [
-      `*Booking Confirmation - B2B CAB*`,
+      `*Booking Confirmation - ${environment.brandName}*`,
       ``,
       `Booking ID: ${this.bookingId}`,
       `Trip: ${itineraryText}`,
@@ -1351,7 +1351,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       `Car: ${this.selectedCar.name || 'Sedan'}`,
       `Fare: ₹${(this.selectedCar.price || 0).toLocaleString('en-IN')}`,
       ``,
-      `_Powered by B2B CAB - India's #1 Cab Service since 2006_`,
+      `_Powered by ${environment.brandName} - India's #1 Cab Service since 2006_`,
     ].filter(l => l !== undefined && l !== '');
 
     const text = encodeURIComponent(lines.join('\n'));

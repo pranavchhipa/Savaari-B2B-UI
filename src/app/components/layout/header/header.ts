@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { filter, Subscription, Observable } from 'rxjs';
 import { WalletService } from '../../../core/services/wallet.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-header',
@@ -19,6 +20,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isUserDropdownOpen = false;
   isScrolled = false;
   showLogoutConfirm = false;
+  supportPhone = environment.supportPhone;
+  supportPhoneTel = environment.supportPhoneTel;
+  brandName = environment.brandName;
   private routeSub!: Subscription;
   balance$!: Observable<number>;
 

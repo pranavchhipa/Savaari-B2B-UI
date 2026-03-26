@@ -2,6 +2,7 @@ import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
     selector: 'app-landing-navbar',
@@ -13,6 +14,8 @@ import { RouterLink } from '@angular/router';
 export class LandingNavbarComponent {
     mobileOpen = false;
     scrolled = false;
+    supportPhone = environment.supportPhone;
+    supportPhoneTel = environment.supportPhoneTel;
 
     navLinks = [
         { label: "Solutions", href: "#solutions" },

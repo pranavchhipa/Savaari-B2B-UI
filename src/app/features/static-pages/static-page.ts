@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { LandingNavbarComponent } from '../landing/components/navbar/landing-navbar';
 import { FooterComponent } from '../../components/layout/footer/footer';
+import { environment } from '../../../environments/environment';
 
 interface PageSection {
   heading?: string;
@@ -31,7 +32,7 @@ export class StaticPageComponent implements OnInit {
 
   private pages: Record<string, PageData> = {
     'about-us': {
-      title: 'About B2B Cab Car Rentals',
+      title: `About ${environment.brandName} Car Rentals`,
       icon: 'building-2',
       sections: [
         {
@@ -56,9 +57,9 @@ export class StaticPageComponent implements OnInit {
         {
           heading: 'Introduction',
           content: [
-            'This privacy policy sets out how B2BCab uses and protects any information that you give B2BCab when you use this website.',
-            'B2BCab is committed to ensuring that your privacy is protected. Should we ask you to provide certain information by which you can be identified when using this website, then you can be assured that it will only be used in accordance with this privacy statement.',
-            'B2BCab may change this policy from time to time by updating this page. You should check this page from time to time to ensure that you are happy with any changes. This policy is effective from 31st July 2006.'
+            `This privacy policy sets out how ${environment.brandName} uses and protects any information that you give ${environment.brandName} when you use this website.`,
+            `${environment.brandName} is committed to ensuring that your privacy is protected. Should we ask you to provide certain information by which you can be identified when using this website, then you can be assured that it will only be used in accordance with this privacy statement.`,
+            `${environment.brandName} may change this policy from time to time by updating this page. You should check this page from time to time to ensure that you are happy with any changes. This policy is effective from 31st July 2006.`
           ]
         },
         {
@@ -127,13 +128,13 @@ export class StaticPageComponent implements OnInit {
         {
           heading: 'Introduction',
           content: [
-            'Welcome to our website. If you continue to browse and use this website, you are agreeing to comply with and be bound by the following terms and conditions of use, which together with our privacy policy govern B2bCab\'s relationship with you in relation to this website. If you disagree with any part of these terms and conditions, please do not use our website.'
+            `Welcome to our website. If you continue to browse and use this website, you are agreeing to comply with and be bound by the following terms and conditions of use, which together with our privacy policy govern ${environment.brandName}'s relationship with you in relation to this website. If you disagree with any part of these terms and conditions, please do not use our website.`
           ]
         },
         {
           heading: 'Ownership',
           content: [
-            'The B2bcab.in is owned & powered by SAVAARI CAR RENTALS PRIVATE LIMITED. The term \'B2bCab\' or \'us\' or \'we\' refers to the SAVAARI CAR RENTALS PRIVATE LIMITED whose registered office is \'Savaari Car Rentals Pvt. Ltd., No 1137, 2nd Floor, RG Towers, Indiranagar, Bangalore - 560038.\' The term \'you\' refers to the user or viewer of our website.'
+            `The B2bcab.in is owned & powered by SAVAARI CAR RENTALS PRIVATE LIMITED. The term '${environment.brandName}' or 'us' or 'we' refers to the SAVAARI CAR RENTALS PRIVATE LIMITED whose registered office is '${environment.companyName}, ${environment.companyAddress}.' The term 'you' refers to the user or viewer of our website.`
           ]
         },
         {
@@ -176,31 +177,31 @@ export class StaticPageComponent implements OnInit {
           heading: 'Refunds',
           content: [
             'If you are eligible for refunds based on the "Cancellation and Returns" policy above, then the refund will be remitted back to you in 5-7 working days.',
-            'In case of any issues, write to us at info@savaari.com or call us at 90 4545 0000'
+            `In case of any issues, write to us at ${environment.supportEmail} or call us at ${environment.supportPhone}`
           ]
         }
       ]
     },
     'contact-us': {
-      title: 'Contact B2B Cab Car Rentals',
+      title: `Contact ${environment.brandName} Car Rentals`,
       icon: 'phone',
       sections: [
         {
           heading: '1. Send us an email',
           content: [
-            'If you are facing any issue/ or for feedback, write to us at info@savaari.com'
+            `If you are facing any issue/ or for feedback, write to us at ${environment.supportEmail}`
           ]
         },
         {
           heading: '2. Pick up the phone and call us 24*7',
           content: [
-            '90 4545 0000 (standard STD/local charges apply)'
+            `${environment.supportPhone} (standard STD/local charges apply)`
           ]
         },
         {
           heading: '3. Send snail mail to this address',
           content: [
-            'Savaari Car Rentals Pvt. Ltd.',
+            `${environment.companyName}`,
             '2nd, 3rd & 4th Floors, 1137, RG. Towers',
             '100Ft Road, Indiranagar,',
             'Bangalore - 560038'

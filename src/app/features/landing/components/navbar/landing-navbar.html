@@ -18,13 +18,13 @@
 
         <!-- Center: Phone pill (desktop) -->
         <div class="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2">
-            <a href="tel:09045450000"
+            <a [href]="supportPhoneTel"
                 class="inline-flex items-center text-white hover:text-white/90 bg-white/10 hover:bg-white/15 backdrop-blur-sm border border-white/15 rounded-full pl-3.5 pr-5 py-2 transition-all cursor-pointer whitespace-nowrap">
                 <span class="inline-flex items-center text-xs font-bold tracking-wide mr-3 text-cyan-400">
                     <lucide-icon name="phone" class="w-3.5 h-3.5 mr-1.5"></lucide-icon>
                     24x7
                 </span>
-                <span class="text-sm font-bold tracking-wider">090 4545 0000</span>
+                <span class="text-sm font-bold tracking-wider">{{ supportPhone }}</span>
             </a>
         </div>
 
@@ -42,13 +42,13 @@
 
         <!-- Mobile: Phone pill + hamburger -->
         <div class="md:hidden flex items-center gap-2">
-            <a href="tel:09045450000"
+            <a [href]="supportPhoneTel"
                 class="inline-flex items-center bg-primary/90 text-white rounded-full pl-1 pr-3 py-0.5 text-[11px] font-semibold whitespace-nowrap">
                 <span class="inline-flex items-center bg-white/20 rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wide mr-1.5">
                     <lucide-icon name="phone" class="w-3 h-3 mr-0.5"></lucide-icon>
                     24x7
                 </span>
-                090 4545 0000
+                {{ supportPhone }}
             </a>
             <button (click)="toggleMobile()" class="p-2 text-slate-300 bg-transparent border-0 cursor-pointer">
                 <lucide-icon [name]="mobileOpen ? 'x' : 'menu'" [size]="20"></lucide-icon>

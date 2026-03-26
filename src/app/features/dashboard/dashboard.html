@@ -9,28 +9,28 @@
         'opacity-100 scale-100': selectedTab === 'ONE_WAY',
         'opacity-0 scale-105': selectedTab !== 'ONE_WAY'
       }" class="absolute inset-0 transition-all duration-1000 ease-out">
-      <img src="https://images.unsplash.com/photo-1494783367193-149034c05e8f?auto=format&fit=crop&w=3200&q=100"
+      <img [src]="dashboardImages.oneWay"
         class="w-full h-full object-cover" loading="eager" fetchpriority="high">
     </div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'ROUND_TRIP',
         'opacity-0 scale-105': selectedTab !== 'ROUND_TRIP'
       }" class="absolute inset-0 transition-all duration-1000 ease-out">
-      <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=3200&q=100"
+      <img [src]="dashboardImages.roundTrip"
         class="w-full h-full object-cover" loading="lazy">
     </div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'LOCAL',
         'opacity-0 scale-105': selectedTab !== 'LOCAL'
       }" class="absolute inset-0 transition-all duration-1000 ease-out">
-      <img src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=3200&q=100"
+      <img [src]="dashboardImages.local"
         class="w-full h-full object-cover" loading="lazy">
     </div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'AIRPORT',
         'opacity-0 scale-105': selectedTab !== 'AIRPORT'
       }" class="absolute inset-0 transition-all duration-1000 ease-out">
-      <img src="https://images.unsplash.com/photo-1556388158-158ea5ccacbd?auto=format&fit=crop&w=3200&q=100"
+      <img [src]="dashboardImages.airport"
         class="w-full h-full object-cover" loading="lazy">
     </div>
   </div>

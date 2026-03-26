@@ -18,6 +18,7 @@ import { BannerService, BannerImage } from '../../core/services/banner.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { LocalityService, Locality } from '../../core/services/locality.service';
 import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 type TabType = 'ONE_WAY' | 'ROUND_TRIP' | 'LOCAL' | 'AIRPORT';
 
@@ -43,6 +44,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private localityService = inject(LocalityService);
   private authService = inject(AuthService);
 
+  dashboardImages = environment.dashboardImages;
   selectedTab: TabType = 'ONE_WAY';
 
   get agentFirstName(): string {

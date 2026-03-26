@@ -811,7 +811,7 @@ export class BookingsComponent implements OnInit {
                         key: razorpayKey,
                         amount: order.amount,
                         currency: order.currency || 'INR',
-                        name: 'B2B CAB',
+                        name: environment.brandName,
                         description: `Settle Booking #${booking.bookingId} — ₹${amount}`,
                         order_id: order.orderId,
                         handler: (response: any) => {
@@ -917,7 +917,7 @@ export class BookingsComponent implements OnInit {
             : '';
         const route = booking.itinerary || (booking.destinationCity ? `${booking.sourceCity} → ${booking.destinationCity}` : booking.sourceCity);
         const lines = [
-            `*Booking Confirmation - B2B CAB*`,
+            `*Booking Confirmation - ${environment.brandName}*`,
             ``,
             `Booking ID: ${booking.bookingId}`,
             `Route: ${route}`,
@@ -926,7 +926,7 @@ export class BookingsComponent implements OnInit {
             booking.customerName ? `Customer: ${booking.customerName}` : '',
             booking.fare ? `Fare: ₹${booking.fare.toLocaleString('en-IN')}` : '',
             ``,
-            `_Powered by B2B CAB_`,
+            `_Powered by ${environment.brandName}_`,
         ].filter(l => l !== '' && l !== undefined);
 
         const text = encodeURIComponent(lines.join('\n'));

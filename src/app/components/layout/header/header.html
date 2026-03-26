@@ -12,7 +12,7 @@
           <img *ngIf="agentLogo" [src]="agentLogo" alt="Company Logo"
             class="h-9 max-w-[140px] object-contain rounded" />
           <!-- Default B2B CAB logo (shown when no agent logo) -->
-          <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo.png" alt="B2B CAB"
+          <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo.png" [alt]="brandName"
             class="h-16 md:h-20 object-contain" />
         </div>
 
@@ -20,13 +20,13 @@
 
       <!-- Customer Care 24x7 pill — centered -->
       <div class="hidden lg:flex absolute left-1/2 -translate-x-[60%]">
-        <a href="tel:09045450000"
+        <a [href]="supportPhoneTel"
           class="inline-flex items-center text-primary hover:text-primary-dark border-2 border-primary rounded-md pl-3 pr-5 py-1.5 transition-all cursor-pointer whitespace-nowrap bg-transparent">
           <span class="inline-flex items-center text-sm font-bold tracking-wide mr-3 border-r-2 border-primary pr-3">
             <lucide-icon name="phone" [size]="14" class="mr-1.5"></lucide-icon>
             24x7
           </span>
-          <span class="text-base font-bold tracking-wider">090 4545 0000</span>
+          <span class="text-base font-bold tracking-wider">{{ supportPhone }}</span>
         </a>
       </div>
       <div class="flex items-center space-x-2 md:space-x-4">
