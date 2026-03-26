@@ -1,4 +1,4 @@
-<section class="relative min-h-[70vh] sm:min-h-screen flex items-start overflow-hidden pt-4 pb-6 sm:pt-8 sm:pb-10">
+<section class="relative min-h-[60vh] sm:min-h-screen flex items-start overflow-hidden pt-4 pb-6 sm:pt-8 sm:pb-10">
     <!-- Background image -->
     <div class="absolute inset-0">
         <img src="/hero-bg-innova.jpg" alt="Savaari B2B Car" class="w-full h-full object-cover object-bottom opacity-95"
@@ -9,34 +9,32 @@
     <div class="container mx-auto px-4 lg:px-8 relative z-10">
         <div class="max-w-3xl">
 
-            <div class="inline-flex items-center gap-2 sm:gap-3 bg-slate-800/80 backdrop-blur-md border border-white/15 rounded-full px-3 py-1.5 sm:px-7 sm:py-3 mb-4 sm:mb-7 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75 fill-mode-forwards shadow-lg">
-                <lucide-icon name="badge-check" [size]="20" class="text-amber-400 sm:[--size:26]"></lucide-icon>
-                <span class="text-xs sm:text-base text-white font-extrabold uppercase tracking-widest">Trusted by 5,000+ Agents</span>
+            <div class="inline-flex items-center gap-1.5 sm:gap-2 bg-slate-800/80 backdrop-blur-md border border-white/15 rounded-full px-2.5 py-1 sm:px-5 sm:py-2 mb-3 sm:mb-5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75 fill-mode-forwards shadow-lg">
+                <lucide-icon name="badge-check" [size]="16" class="text-amber-400 sm:[--size:20]"></lucide-icon>
+                <span class="text-[10px] sm:text-sm text-white font-extrabold uppercase tracking-widest">Trusted by 5,000+ Agents</span>
             </div>
 
             <h1
-                class="font-display text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold text-primary-foreground leading-[1.1] tracking-tight mb-4 sm:mb-7 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-forwards">
+                class="font-display text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-primary-foreground leading-[1.1] tracking-tight mb-3 sm:mb-5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-forwards">
                 Your <span class="text-gradient-cyan">Bookings</span>
                 <br />Our Cab
                 <br /><span class="text-amber">Maximum Earnings</span>
             </h1>
 
             <p
-                class="text-sm sm:text-lg md:text-xl text-white font-semibold leading-relaxed mb-6 sm:mb-9 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-forwards">
+                class="text-xs sm:text-base md:text-lg text-white font-semibold leading-relaxed mb-4 sm:mb-7 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-forwards">
                 Book one-way, round-trip, airport, and local cabs across 2,000+ cities. Enjoy confirmed rides, GST invoices, and the best prices.
             </p>
 
             <div
-                class="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-forwards">
-                <button routerLink="/register"
-                    class="inline-flex items-center justify-center rounded-md gradient-cyan text-primary-foreground font-bold text-sm sm:text-base shadow-cyan hover:opacity-90 transition-opacity border-0 h-11 sm:h-13 py-2.5 sm:py-3 px-6 sm:px-8 cursor-pointer">
-                    Sign Up
-                    <lucide-icon name="arrow-right" class="ml-2 h-4 w-4 sm:h-5 sm:w-5"></lucide-icon>
-                </button>
+                class="flex flex-row gap-3 mb-5 sm:mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-forwards">
                 <button routerLink="/login"
-                    class="inline-flex items-center justify-center rounded-md bg-amber hover:bg-amber-hover text-white font-bold text-sm sm:text-base h-11 sm:h-13 py-2.5 sm:py-3 px-6 sm:px-8 cursor-pointer border-0 shadow-amber transition-colors">
+                    class="inline-flex items-center justify-center rounded-md bg-amber hover:bg-amber-hover text-white font-bold text-xs sm:text-sm h-10 sm:h-11 py-2 sm:py-2.5 px-5 sm:px-7 cursor-pointer border-0 shadow-amber transition-colors">
                     Login
-                    <lucide-icon name="arrow-right" class="ml-2 h-4 w-4 sm:h-5 sm:w-5"></lucide-icon>
+                </button>
+                <button routerLink="/register"
+                    class="inline-flex items-center justify-center rounded-md gradient-cyan text-primary-foreground font-bold text-xs sm:text-sm shadow-cyan hover:opacity-90 transition-opacity border-0 h-10 sm:h-11 py-2 sm:py-2.5 px-5 sm:px-7 cursor-pointer">
+                    Register
                 </button>
             </div>
 
