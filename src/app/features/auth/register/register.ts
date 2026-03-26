@@ -1,10 +1,11 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { FooterComponent } from '../../../components/layout/footer/footer';
 import { LandingNavbarComponent } from '../../landing/components/navbar/landing-navbar';
+import { ApiService } from '../../../core/services/api.service';
 
 
 @Component({
@@ -15,9 +16,11 @@ import { LandingNavbarComponent } from '../../landing/components/navbar/landing-
   styleUrl: './register.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+  private api = inject(ApiService);
 
   // Testimonial carousel
   testimonials = [
@@ -27,11 +30,15 @@ export class RegisterComponent {
     { name: 'Anita Verma', city: 'Bangalore', text: 'GST-ready invoices and instant booking confirmations. My clients love the professional service.', rating: 5, avatar: 'assets/avatars/anita.jpg' },
   ];
   activeTestimonial = 0;
+  isSubmitting = false;
+  submitError = '';
+  submitSuccess = false;
   private testimonialInterval: any;
 
   ngOnInit() {
     this.testimonialInterval = setInterval(() => {
       this.activeTestimonial = (this.activeTestimonial + 1) % this.testimonials.length;
+      this.cdr.markForCheck();
     }, 4000);
   }
 
@@ -58,9 +65,40 @@ export class RegisterComponent {
 
   onSubmit() {
     if (this.registerForm.valid) {
-      console.log('Registration details:', this.registerForm.value);
-      // Mock successful registration redirection
-      this.router.navigate(['/login']);
+      this.isSubmitting = true;
+      this.submitError = '';
+      this.cdr.markForCheck();
+
+      const v = this.registerForm.value;
+      const body = {
+        firstname: v.firstName,
+        lastname: v.lastName,
+        userEmail: v.email,
+        mobileno: `91${v.phone}`,
+        companyname: v.companyName,
+        city: v.companyCity,
+        password: v.password,
+        isAgent: true
+      };
+
+      this.api.b2bPost<any>('user/register', body).subscribe({
+        next: (resp) => {
+          this.isSubmitting = false;
+          if (resp.statusCode === 200 || resp.status === 'success') {
+            this.submitSuccess = true;
+            this.cdr.markForCheck();
+            setTimeout(() => this.router.navigate(['/login']), 2000);
+          } else {
+            this.submitError = resp.message || 'Registration failed. Please try again.';
+            this.cdr.markForCheck();
+          }
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          this.submitError = err?.error?.message || err?.message || 'Registration failed. Please try again.';
+          this.cdr.markForCheck();
+        }
+      });
     } else {
       this.registerForm.markAllAsTouched();
     }

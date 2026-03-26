@@ -76,6 +76,7 @@ export class AvailabilityService {
       fare: raw.rates?.discounted?.totalAmount ?? 0,
       originalFare: raw.rates?.regular?.totalAmount,
       kmsIncluded: raw.rates?.discounted?.packageKilometer,
+      hoursIncluded: raw.rates?.discounted?.packageHour,
       extraKmRate: raw.rates?.discounted?.extraKilometer,
       nightAllowance: raw.rates?.discounted?.nightCharge,
       seatCapacity: raw.seatCapacity,

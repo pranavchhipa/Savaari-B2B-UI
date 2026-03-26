@@ -40,6 +40,7 @@ export interface BookingCard {
     cashToCollect?: number;
     paymentMethod?: string;
     paymentOption?: number;
+    paidVia?: string; // 'wallet' or 'razorpay'
     // Trip details
     kmsIncluded?: string;
     duration?: number;
@@ -501,14 +502,29 @@ export class BookingsComponent implements OnInit {
             itinerary = doc.body.textContent || itinerary;
         }
 
-        const paymentOpt = b.payment_option || b.paymentOption || b.prePaymentType || '';
+        // Check bookingRegistry first — it has the accurate data from when we created the booking
+        const bookingId = String(b.booking_id || b.bookingId || '');
+        const registryData = bookingId ? this.bookingRegistry.getStoredBookingData(bookingId) : null;
+
         let paymentMethod = '';
         let paymentOption = 0;
-        if (paymentOpt === '1' || paymentOpt === 1) { paymentMethod = 'Pay any amount now'; paymentOption = 1; }
-        else if (paymentOpt === '2' || paymentOpt === 2) { paymentMethod = 'Pay 25% now, auto-deducted'; paymentOption = 2; }
-        else if (paymentOpt === '3' || paymentOpt === 3) { paymentMethod = 'Zero cash — full wallet'; paymentOption = 3; }
-        else if (b.prePayment && b.cashToCollect) { paymentMethod = b.cashToCollect > 0 ? 'Pay 25% now, auto-deducted' : 'Zero cash — full wallet'; paymentOption = b.cashToCollect > 0 ? 2 : 3; }
-        else if (b.prePayment) { paymentMethod = 'Zero cash — full wallet'; paymentOption = 3; }
+        let paidVia = '';
+
+        if (registryData) {
+            // Registry has the truth — use it
+            paymentOption = registryData.paymentOption || 0;
+            paidVia = registryData.paymentMethod || 'wallet'; // 'wallet' or 'razorpay'
+            if (paymentOption === 1) paymentMethod = 'Pay any amount now';
+            else if (paymentOption === 2) paymentMethod = 'Pay 25% now, rest auto-deducted';
+            else if (paymentOption === 3) paymentMethod = 'Zero cash — full wallet';
+        } else {
+            // Fallback: try API fields
+            const paymentOpt = b.payment_option || b.paymentOption || b.prePaymentType || '';
+            if (paymentOpt === '1' || paymentOpt === 1) { paymentMethod = 'Pay any amount now'; paymentOption = 1; }
+            else if (paymentOpt === '2' || paymentOpt === 2) { paymentMethod = 'Pay 25% now, rest auto-deducted'; paymentOption = 2; }
+            else if (paymentOpt === '3' || paymentOpt === 3) { paymentMethod = 'Zero cash — full wallet'; paymentOption = 3; }
+            else { paymentMethod = 'Wallet Pay'; paymentOption = 0; }
+        }
 
         let pickupCountdown = '';
         if (pickupDate && status !== 'completed' && status !== 'cancelled') {
@@ -549,6 +565,7 @@ export class BookingsComponent implements OnInit {
             cashToCollect: parseFloat(b.cashToCollect || b.cash_to_collect || b.cash_to_driver) || 0,
             paymentMethod,
             paymentOption,
+            paidVia: paidVia || (b.paidVia) || 'wallet',
             kmsIncluded: b.kms_included || b.kmsIncluded || '',
             duration: parseInt(b.duration) || 0,
             extraKmRate: parseFloat(b.extra_km_rate || b.extraKmRate) || 0,
@@ -562,6 +579,8 @@ export class BookingsComponent implements OnInit {
     /** Balance remaining to be paid (fare - what was already paid) */
     getBalanceDue(booking: BookingCard): number {
         if (!booking.fare) return 0;
+        // Option 1: remaining is paid by customer to driver — no agent balance due
+        if (booking.paymentOption === 1) return 0;
         const paid = booking.prePayment || 0;
         return Math.max(0, booking.fare - paid);
     }

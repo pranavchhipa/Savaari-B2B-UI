@@ -141,28 +141,65 @@ export class DashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  /** Smooth S-curve: slow start, fast middle, slow end (like real booking patterns) */
-  private easeInOut(t: number): number {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  }
+  /**
+   * Hourly booking rate weights — models real-world cab booking patterns in India.
+   * Night (12AM-5AM): very low, Morning (6-9AM): rising, Midday (10AM-1PM): peak,
+   * Afternoon (2-4PM): moderate, Evening (5-8PM): peak, Night (9-11PM): declining.
+   * Total weights ≈ used to distribute ~5,000 daily bookings across hours.
+   */
+  private readonly HOURLY_WEIGHTS = [
+    5,   // 12 AM — almost nil
+    3,   // 1 AM
+    2,   // 2 AM
+    2,   // 3 AM
+    3,   // 4 AM
+    8,   // 5 AM — early risers
+    25,  // 6 AM — airport/outstation pickups start
+    45,  // 7 AM — morning rush
+    60,  // 8 AM — peak morning
+    55,  // 9 AM — still busy
+    50,  // 10 AM — midday bookings
+    65,  // 11 AM — high activity
+    70,  // 12 PM — lunch peak
+    55,  // 1 PM — moderate
+    45,  // 2 PM — afternoon
+    40,  // 3 PM — moderate
+    50,  // 4 PM — evening starts
+    65,  // 5 PM — evening rush begins
+    70,  // 6 PM — peak evening
+    60,  // 7 PM — still busy
+    45,  // 8 PM — winding down
+    30,  // 9 PM — late evening
+    18,  // 10 PM — low
+    10,  // 11 PM — very low
+  ];
 
-  /** Calculate current live bookings based on time-of-day */
+  /** Calculate cumulative bookings up to the current minute using hourly weights */
   private calculateLiveStats(): void {
     const now = new Date();
-    const minuteOfDay = now.getHours() * 60 + now.getMinutes();
-    const progress = minuteOfDay / 1440; // 0.0 at midnight → 1.0 at 11:59 PM
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
 
     const rng = this.seededRandom(this.getDailySeed());
-    const maxDaily = 8000 + Math.floor(rng() * 2000); // 8,000–10,000 per day
+    const maxDaily = 4500 + Math.floor(rng() * 1000); // 4,500–5,500 daily target
 
-    // S-curve progress + small jitter (±2%)
-    const jitter = 1 + (Math.random() - 0.5) * 0.04;
-    const rawBookings = Math.floor(maxDaily * this.easeInOut(progress) * jitter);
-    this.liveBookings = Math.max(0, rawBookings);
+    // Sum all weights to normalize
+    const totalWeight = this.HOURLY_WEIGHTS.reduce((sum, w) => sum + w, 0);
 
-    // Active agents: 15-25% of bookings, min 50
-    const agentRatio = 0.15 + rng() * 0.10;
-    this.liveAgents = Math.max(50, Math.floor(this.liveBookings * agentRatio));
+    // Calculate cumulative bookings up to current hour + fractional minute
+    let cumulativeWeight = 0;
+    for (let h = 0; h < currentHour; h++) {
+      cumulativeWeight += this.HOURLY_WEIGHTS[h];
+    }
+    // Add fractional weight for current hour based on minutes elapsed
+    cumulativeWeight += this.HOURLY_WEIGHTS[currentHour] * (currentMinute / 60);
+
+    const baseBookings = Math.floor(maxDaily * (cumulativeWeight / totalWeight));
+
+    // Add small jitter (±1.5%) so number doesn't look frozen
+    const jitter = 1 + (Math.random() - 0.5) * 0.03;
+    this.liveBookings = Math.max(0, Math.floor(baseBookings * jitter));
+
     this.cdr.markForCheck();
   }
 
@@ -825,7 +862,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       subTripType: apiParams.subTripType,
       pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
       ...((!isLocal && !isAirport) && { destinationCity: toCityId }),
-      duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
+      duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : isLocal ? 8 : 1,
       ...(isAirport && this.airportLocalityId && { localityId: this.airportLocalityId }),
     };
 
@@ -864,10 +901,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   /** CSS classes for booking status badges */
   getStatusClasses(status: string): Record<string, boolean> {
+    const s = (status || '').toLowerCase();
     return {
-      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': status === 'Completed',
-      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': status === 'Upcoming',
-      'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': status === 'In Progress',
+      'bg-emerald-100 text-emerald-700': s === 'completed' || s === 'billed',
+      'bg-sky-100 text-sky-700': s === 'upcoming' || s === 'confirmed' || s === 'assigned',
+      'bg-amber-100 text-amber-700': s === 'in progress' || s === 'in_progress',
+      'bg-red-100 text-red-600': s === 'cancel' || s === 'cancelled' || s === 'canceled',
+      'bg-slate-100 text-slate-600': !['completed','billed','upcoming','confirmed','assigned','in progress','in_progress','cancel','cancelled','canceled'].includes(s),
     };
+  }
+
+  /** Display label for booking status — maps API values to user-friendly labels */
+  getStatusLabel(status: string): string {
+    const s = (status || '').toLowerCase();
+    if (s === 'billed') return 'Completed';
+    if (s === 'cancel' || s === 'canceled') return 'Cancelled';
+    if (s === 'in_progress') return 'In Progress';
+    return status || '';
   }
 }

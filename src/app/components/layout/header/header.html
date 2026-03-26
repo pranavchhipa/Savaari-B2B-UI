@@ -12,9 +12,8 @@
           <img *ngIf="agentLogo" [src]="agentLogo" alt="Company Logo"
             class="h-9 max-w-[140px] object-contain rounded" />
           <!-- Default B2B CAB logo (shown when no agent logo) -->
-          <div *ngIf="!agentLogo" class="bg-primary text-white font-bold px-2 py-0.5 md:px-3 md:py-1 rounded skew-x-[-10deg] shadow-lg">
-            <span class="skew-x-[10deg] inline-block tracking-wide text-xs md:text-xl">B2B CAB</span>
-          </div>
+          <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo.png" alt="B2B CAB"
+            class="h-16 md:h-20 object-contain" />
         </div>
 
       </div>

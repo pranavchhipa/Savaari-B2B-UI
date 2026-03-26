@@ -28,6 +28,10 @@
               {
                 "glob": ".htaccess",
                 "input": "src"
+              },
+              {
+                "glob": "proxy.php",
+                "input": "src"
               }
             ],
             "stylePreprocessorOptions": {

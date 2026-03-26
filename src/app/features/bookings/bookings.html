@@ -203,9 +203,11 @@
             <div *ngFor="let booking of filteredBookings"
                 class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 transition-all hover:shadow-md"
                 [style.border-left]="
+                    activeTab === 'upcoming' && booking.paymentOption === 1 ? '6px solid #0ea5e9' :
                     activeTab === 'upcoming' && getBalanceDue(booking) > 0 ? '6px solid #f59e0b' :
                     activeTab === 'upcoming' && getBalanceDue(booking) <= 0 && booking.prePayment ? '6px solid #10b981' :
-                    activeTab === 'upcoming' && getBalanceDue(booking) <= 0 && !booking.prePayment ? '6px solid #06b6d4' :
+                    activeTab === 'completed' ? '6px solid #10b981' :
+                    activeTab === 'cancelled' ? '6px solid #ef4444' :
                     '6px solid #94a3b8'
                 ">
 
@@ -260,11 +262,17 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Fully paid indicator -->
-                        <div *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment"
+                        <!-- Fully paid indicator (Option 2/3 only) -->
+                        <div *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1"
                             class="mt-2 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
                             <lucide-icon name="check-circle" [size]="13" class="text-emerald-500"></lucide-icon>
                             <span class="text-[10px] font-bold text-emerald-600 leading-tight">No dues</span>
+                        </div>
+                        <!-- Option 1: customer pays remaining to driver -->
+                        <div *ngIf="booking.paymentOption === 1 && booking.prePayment"
+                            class="mt-2 flex items-center gap-1.5 bg-sky-50 border border-sky-200 rounded-lg px-3 py-1.5">
+                            <lucide-icon name="info" [size]="13" class="text-sky-500"></lucide-icon>
+                            <span class="text-[10px] font-bold text-sky-600 leading-tight">Remaining + extras paid to driver</span>
                         </div>
                     </div>
 
@@ -275,8 +283,11 @@
                             Balance due:<br/>
                             <span class="font-semibold">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
                         </p>
-                        <p *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment" class="text-[11px] text-emerald-500 font-semibold mt-1">
+                        <p *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1" class="text-[11px] text-emerald-500 font-semibold mt-1">
                             Fully paid
+                        </p>
+                        <p *ngIf="booking.paymentOption === 1 && booking.prePayment" class="text-[11px] text-sky-500 font-semibold mt-1">
+                            ₹{{ booking.prePayment | number:'1.0-0' }} paid
                         </p>
                     </div>
 
@@ -292,10 +303,14 @@
                                 class="px-5 py-2 text-xs font-bold rounded bg-primary hover:bg-sky-600 text-white border-0 cursor-pointer transition whitespace-nowrap shadow-sm">
                                 Settle now
                             </button>
-                            <button *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment"
+                            <button *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1"
                                 class="px-5 py-2 text-xs font-bold rounded bg-emerald-500 text-white whitespace-nowrap cursor-default border-0">
                                 Settled
                             </button>
+                            <span *ngIf="booking.paymentOption === 1 && booking.prePayment"
+                                class="px-3 py-1 text-[10px] font-bold rounded-full border border-sky-300 text-sky-600 bg-sky-50 whitespace-nowrap">
+                                Confirmed
+                            </span>
                         </ng-container>
                         <span *ngIf="activeTab === 'completed'"
                             class="px-2 py-0.5 text-[9px] font-bold rounded-full border border-slate-200 text-slate-400 bg-slate-50">
@@ -365,10 +380,10 @@
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Paid Via</span>
                                     <span class="font-semibold text-slate-800 dark:text-white flex items-center gap-1">
-                                        <ng-container *ngIf="booking.paymentMethod === 'razorpay'">
+                                        <ng-container *ngIf="booking.paidVia === 'razorpay'">
                                             <lucide-icon name="credit-card" [size]="11" class="text-primary"></lucide-icon> Razorpay
                                         </ng-container>
-                                        <ng-container *ngIf="booking.paymentMethod !== 'razorpay'">
+                                        <ng-container *ngIf="booking.paidVia !== 'razorpay'">
                                             <lucide-icon name="wallet" [size]="11" class="text-primary"></lucide-icon> Wallet
                                         </ng-container>
                                     </span>

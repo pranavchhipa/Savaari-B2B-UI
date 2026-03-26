@@ -30,6 +30,7 @@ export interface AvailableCar {
   fare: number;                // discounted totalAmount
   originalFare?: number;       // regular totalAmount
   kmsIncluded?: number;        // packageKilometer
+  hoursIncluded?: number;      // packageHour
   extraKmRate?: number;        // extraKilometer rate
   nightAllowance?: number;     // nightCharge
   seatCapacity?: number;
@@ -61,7 +62,7 @@ export interface RawAvailableCar {
   carNameAlias: string;
   package: string;
   rates: {
-    discounted: { totalAmount: number; extraKilometer: number; nightCharge: number; packageKilometer: number; driverAllowance: number; [key: string]: unknown };
+    discounted: { totalAmount: number; extraKilometer: number; nightCharge: number; packageKilometer: number; packageHour?: number; driverAllowance: number; [key: string]: unknown };
     regular: { totalAmount: number; extraKilometer: number; nightCharge: number; packageKilometer: number; [key: string]: unknown };
   };
   seatCapacity: number;

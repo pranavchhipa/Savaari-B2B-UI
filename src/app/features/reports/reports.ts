@@ -80,43 +80,42 @@ export class ReportsComponent {
   }
 
   /** Map API response to the TripReport view model.
-   *  Handles both our model's camelCase and the real API's snake_case fields.
+   *  API returns Title Case keys like "Booking Id", "Customer Name", "City Name" etc.
    */
   private mapToTripReport(entry: any): TripReport {
-    // Handle date — API uses start_date_time "YYYY-MM-DD HH:MM:SS" or pickupDateTime "DD-MM-YYYY"
+    // Handle date — API uses "Start Date" (YYYY-MM-DD) or "Booking Date" (YYYY-MM-DD HH:MM:SS)
     let dateStr = '';
-    const rawDate = entry.start_date_time || entry.pickupDateTime || '';
+    const rawDate = entry['Start Date'] || entry['Booking Date'] || entry.start_date_time || '';
     if (rawDate) {
       const d = new Date(rawDate);
       if (!isNaN(d.getTime())) {
         dateStr = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
       } else {
-        // Try DD-MM-YYYY format
-        const match = rawDate.match(/(\d{2})-(\d{2})-(\d{4})/);
-        if (match) {
-          const parsed = new Date(parseInt(match[3]), parseInt(match[2]) - 1, parseInt(match[1]));
-          dateStr = parsed.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        } else {
-          dateStr = rawDate;
-        }
+        dateStr = rawDate;
       }
     }
 
-    // Map status — API returns "CANCEL", "COMPLETED", "CONFIRMED" etc.
-    const rawStatus = (entry.booking_status || entry.status || 'completed').toLowerCase();
+    // Extract route from "Itinerary" field (e.g. "Bangalore &rarr; Mysore &rarr; Coorg→Bangalore")
+    const itinerary = (entry['Itinerary'] || '').replace(/&rarr;/g, '→').trim();
+    const routeParts = itinerary.split('→').map((s: string) => s.trim()).filter(Boolean);
+    const pickupCity = entry['City Name'] || (routeParts.length > 0 ? routeParts[0] : '');
+    const dropCity = routeParts.length > 1 ? routeParts[routeParts.length - 1] : '';
+
+    // Map status from "Prepaid/Postpaid" or booking status
+    const rawStatus = (entry['Prepaid/Postpaid'] || entry.booking_status || '').toLowerCase();
     const status: TripReport['status'] = (rawStatus === 'cancelled' || rawStatus === 'cancel') ? 'Cancelled'
       : rawStatus === 'ongoing' ? 'Ongoing'
       : 'Completed';
 
     return {
-      id: entry.booking_id || entry.bookingId || '',
+      id: entry['Booking Id'] || entry.booking_id || '',
       date: dateStr,
-      passengerName: entry.customer_name || entry.customerName || '',
-      pickupCity: entry.pick_city || entry.sourceCity || '',
-      dropCity: entry.drop_city || entry.destinationCity || '',
-      tripType: entry.trip_type || entry.tripType || '',
+      passengerName: entry['Customer Name'] || entry.customer_name || '',
+      pickupCity,
+      dropCity,
+      tripType: entry['Trip Type'] || entry.trip_type || '',
       status,
-      fare: (() => { const f = parseFloat(entry.gross_amount); return Number.isNaN(f) ? (entry.fare ?? 0) : f; })(),
+      fare: (() => { const f = parseFloat(entry['Booking Amount'] || entry.gross_amount); return Number.isNaN(f) ? 0 : f; })(),
     };
   }
 

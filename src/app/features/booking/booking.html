@@ -128,44 +128,44 @@
                             </div>
                             <div class="relative country-code-wrapper">
                                 <label for="phone"
-                                    class="absolute text-xs text-slate-500 top-2 left-4 z-10 pointer-events-none">Phone Number <span class="text-red-500">*</span></label>
-                                <div class="flex items-center bg-slate-50 border-0 border-b-2 border-slate-200 rounded-lg focus-within:border-primary transition-all"
+                                    class="absolute text-xs text-slate-500 dark:text-slate-400 top-2 left-4 z-10 pointer-events-none">Phone Number <span class="text-red-500">*</span></label>
+                                <div class="flex items-center bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-600 rounded-lg focus-within:border-primary transition-all"
                                     [class.!border-red-400]="formSubmitAttempted && !isPhoneValid()">
                                     <div class="country-code-trigger shrink-0 pl-3 pr-1 py-1 cursor-pointer" (click)="countryDropdownOpen = !countryDropdownOpen">
                                         <div class="flex items-center gap-1.5 mt-4 mb-0.5">
                                             <img *ngIf="selectedCountryCode"
                                                 [src]="'https://flagcdn.com/w40/' + selectedCountryCode.iso2 + '.png'"
                                                 [alt]="selectedCountryCode.countryName"
-                                                class="w-7 h-5 object-cover rounded-[3px] shadow-sm border border-slate-200" />
-                                            <span class="font-semibold text-sm text-slate-800">+{{selectedCountryCode?.isdCode || '91'}}</span>
+                                                class="w-7 h-5 object-cover rounded-[3px] shadow-sm border border-slate-200 dark:border-slate-600" />
+                                            <span class="font-semibold text-sm text-slate-800 dark:text-slate-200">+{{selectedCountryCode?.isdCode || '91'}}</span>
                                             <lucide-icon name="chevron-down" [size]="14" class="text-slate-400"></lucide-icon>
                                         </div>
                                     </div>
-                                    <div class="w-px h-7 bg-slate-200 shrink-0 mt-3"></div>
+                                    <div class="w-px h-7 bg-slate-200 dark:bg-slate-600 shrink-0 mt-3"></div>
                                     <input id="phone" type="tel" [(ngModel)]="phone" name="phone"
                                         maxlength="10"
                                         (keypress)="$event.charCode >= 48 && $event.charCode <= 57 || $event.preventDefault()"
                                         (paste)="$event.preventDefault()"
-                                        class="flex-1 bg-transparent border-0 outline-none pt-6 pb-2 px-3 text-slate-900 text-sm focus:ring-0"
+                                        class="flex-1 bg-transparent border-0 outline-none pt-6 pb-2 px-3 text-slate-900 dark:text-white text-sm focus:ring-0"
                                         placeholder="Enter phone number" />
                                 </div>
                                 <!-- Country code dropdown -->
                                 <div *ngIf="countryDropdownOpen"
-                                    class="absolute left-0 top-full mt-1 w-72 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
-                                    <div class="p-2 border-b border-slate-100">
+                                    class="absolute left-0 top-full mt-1 w-72 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden">
+                                    <div class="p-2 border-b border-slate-100 dark:border-slate-700">
                                         <input type="text" [(ngModel)]="countrySearch" name="countrySearch"
                                             placeholder="Search country or code..."
-                                            class="w-full px-3 py-2 text-sm border border-slate-200 rounded-md outline-none focus:border-primary bg-slate-50" />
+                                            class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-md outline-none focus:border-primary bg-slate-50 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400" />
                                     </div>
                                     <div class="max-h-52 overflow-y-auto">
                                         <div *ngFor="let cc of filteredCountryCodes"
-                                            class="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 cursor-pointer transition-colors"
+                                            class="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
                                             [style.background-color]="cc.isdCode === selectedCountryCode?.isdCode ? 'rgb(0 150 199 / 0.06)' : ''"
                                             (click)="selectCountry(cc)">
                                             <img [src]="'https://flagcdn.com/w40/' + cc.iso2 + '.png'"
                                                 [alt]="cc.countryName"
-                                                class="w-6 h-4 object-cover rounded-[2px] shadow-sm border border-slate-100" />
-                                            <span class="text-sm text-slate-700 flex-1">{{cc.countryName}}</span>
+                                                class="w-6 h-4 object-cover rounded-[2px] shadow-sm border border-slate-100 dark:border-slate-600" />
+                                            <span class="text-sm text-slate-700 dark:text-slate-300 flex-1">{{cc.countryName}}</span>
                                             <span class="text-xs text-slate-400 font-medium">+{{cc.isdCode}}</span>
                                         </div>
                                     </div>
@@ -190,7 +190,7 @@
                                     appendTo="body"
                                     styleClass="w-full"
                                     inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
-                                    panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 bg-white"
+                                    panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                                     [forceSelection]="false"
                                     [completeOnFocus]="false">
                                     <ng-template pTemplate="item" let-item>
@@ -221,7 +221,7 @@
                                     appendTo="body"
                                     styleClass="w-full"
                                     inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
-                                    panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 bg-white"
+                                    panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                                     [forceSelection]="false"
                                     [completeOnFocus]="false">
                                     <ng-template pTemplate="item" let-item>
@@ -416,7 +416,7 @@
                             <div class="flex-1 min-w-0">
                                 <h4 class="text-sm font-bold text-slate-900 dark:text-white">Pay any amount now</h4>
                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Pay {{ option1SliderPercent }}% now (₹{{ getPayNowAmount(1) | number:'1.0-0' }}). Customer pays the rest in cash to the driver.
+                                    Pay {{ option1SliderPercent }}% now (₹{{ getPayNowAmount(1) | number:'1.0-0' }}). Remaining fare & extras (toll, parking, extra KMs) paid to driver.
                                 </p>
                             </div>
                             <!-- Amount badge -->
@@ -446,16 +446,18 @@
                                 <div class="flex items-center justify-between mt-2 text-[11px]">
                                     <span class="text-emerald-600 font-semibold">You pay ₹{{ getPayNowAmount(1) | number:'1.0-0' }}</span>
                                     <span class="text-slate-400">|</span>
-                                    <span class="text-slate-600 font-semibold">Customer pays driver ₹{{ getDriverCollectsAmount() | number:'1.0-0' }}</span>
+                                    <span class="text-slate-600 font-semibold">Customer pays driver ₹{{ getDriverCollectsAmount() | number:'1.0-0' }} + extras</span>
                                 </div>
+                                <p class="text-[10px] text-slate-400 mt-1">Remaining fare + extras (toll, parking, extra KMs) — paid directly to driver</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- ════════════════════════════════════════════ -->
-                    <!-- OPTION 2: Split Pay (25/75)                 -->
+                    <!-- OPTION 2: Split Pay (25/75) — only for advance bookings (>48h) -->
                     <!-- ════════════════════════════════════════════ -->
-                    <div (click)="setPaymentOption(2)"
+                    <div *ngIf="!isBookingUrgent()"
+                        (click)="setPaymentOption(2)"
                         class="relative rounded-2xl border-2 cursor-pointer transition-all"
                         [ngClass]="paymentOption === 2
                             ? 'border-primary bg-white dark:bg-slate-900 shadow-lg shadow-primary/10'
@@ -467,17 +469,9 @@
                                 <div class="w-2 h-2 rounded-full bg-white" *ngIf="paymentOption === 2"></div>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">
-                                    <ng-container *ngIf="!isBookingUrgent()">Pay 25% now, rest auto-deducted</ng-container>
-                                    <ng-container *ngIf="isBookingUrgent()">Pay 25% now, rest auto-deducted</ng-container>
-                                </h4>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Pay 25% now, rest auto-deducted</h4>
                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                    <ng-container *ngIf="!isBookingUrgent()">
-                                        Pay 25% now (₹{{ getPayNowAmount(2) | number:'1.0-0' }}). Remaining ₹{{ getDeferredAmount(2) | number:'1.0-0' }} auto-deducted 48h before trip.
-                                    </ng-container>
-                                    <ng-container *ngIf="isBookingUrgent()">
-                                        Full fare ₹{{ getPayNowAmount(2) | number:'1.0-0' }} required now. Trip is within 48 hours.
-                                    </ng-container>
+                                    Pay 25% now (₹{{ getPayNowAmount(2) | number:'1.0-0' }}). Remaining auto-deducted 48h before trip. Extras paid to driver.
                                 </p>
                             </div>
                             <div class="text-right shrink-0">
@@ -491,10 +485,10 @@
                             class="px-4 pb-4 pt-0" (click)="$event.stopPropagation()">
                             <div class="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-1.5 text-[11px]">
                                 <div class="flex justify-between">
-                                    <span class="text-emerald-600 font-semibold">Pay now from wallet ({{ isBookingUrgent() ? '100%' : '25%' }})</span>
+                                    <span class="text-emerald-600 font-semibold">Pay now (25%)</span>
                                     <span class="font-bold text-emerald-600">₹{{ getPayNowAmount(2) | number:'1.0-0' }}</span>
                                 </div>
-                                <div *ngIf="!isBookingUrgent()" class="flex justify-between">
+                                <div class="flex justify-between">
                                     <span class="text-amber-600 font-semibold flex items-center gap-1">
                                         <lucide-icon name="clock" [size]="10"></lucide-icon>
                                         Remaining 75% auto-deducted from wallet 48h before trip
@@ -503,9 +497,10 @@
                                 </div>
                                 <div class="flex justify-between text-slate-600">
                                     <span class="font-semibold">Customer pays driver</span>
-                                    <span class="font-bold">₹0</span>
+                                    <span class="font-bold">Extras only</span>
                                 </div>
-                                <div *ngIf="!isBookingUrgent()" class="mt-2 space-y-1">
+                                <p class="text-[10px] text-slate-400">Extras include toll, parking & extra KMs — paid directly to driver</p>
+                                <div class="mt-2 space-y-1">
                                     <p class="text-[10px] text-sky-600">
                                         <lucide-icon name="info" [size]="10" class="inline-block mr-0.5"></lucide-icon>
                                         You can also settle the remaining amount early via Wallet or Razorpay from Manage Bookings.
@@ -541,10 +536,10 @@
                                 </div>
                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                                     <ng-container *ngIf="!isBookingUrgent()">
-                                        Pay 25% now. Full fare + 20% buffer auto-deducted before trip. Customer carries zero cash.
+                                        Pay 25% now (₹{{ getPayNowAmount(3) | number:'1.0-0' }}). Remaining ₹{{ getDeferredAmount(3) | number:'1.0-0' }} (75% fare + 20% buffer) auto-deducted 48h before trip. Buffer refunded post-trip.
                                     </ng-container>
                                     <ng-container *ngIf="isBookingUrgent()">
-                                        Full fare + 20% buffer (₹{{ getPayNowAmount(3) | number:'1.0-0' }}) now. Customer carries zero cash.
+                                        Full fare + 20% buffer (₹{{ getPayNowAmount(3) | number:'1.0-0' }}) required now. Trip within 48h. Buffer refunded post-trip.
                                     </ng-container>
                                 </p>
                             </div>
@@ -567,12 +562,13 @@
                                     <span class="font-bold text-slate-700">₹{{ getOption3BufferAmount() | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-emerald-600 font-semibold">Pay now ({{ isBookingUrgent() ? '100%' : '25%' }})</span>
+                                    <span class="text-emerald-600 font-semibold">Pay now ({{ isBookingUrgent() ? '100% + buffer' : '25%' }})</span>
                                     <span class="font-bold text-emerald-600">₹{{ getPayNowAmount(3) | number:'1.0-0' }}</span>
                                 </div>
                                 <div *ngIf="!isBookingUrgent()" class="flex justify-between">
                                     <span class="text-amber-600 font-semibold flex items-center gap-1">
-                                        <lucide-icon name="clock" [size]="10"></lucide-icon>Auto-deducted 48h before
+                                        <lucide-icon name="clock" [size]="10"></lucide-icon>
+                                        Auto-deducted 48h before (75% fare + 20% buffer)
                                     </span>
                                     <span class="font-bold text-amber-600">₹{{ getDeferredAmount(3) | number:'1.0-0' }}</span>
                                 </div>
@@ -583,11 +579,11 @@
                                 </div>
                                 <p class="text-[10px] text-emerald-600 font-medium mt-1">
                                     <lucide-icon name="info" [size]="10" class="inline-block mr-0.5"></lucide-icon>
-                                    Unused buffer refunded to wallet post-trip.
+                                    20% buffer (₹{{ getOption3BufferAmount() | number:'1.0-0' }}) refunded to wallet after trip completion &amp; invoice confirmation.
                                 </p>
                                 <p *ngIf="!isBookingUrgent()" class="text-[10px] text-red-500 font-medium">
                                     <lucide-icon name="alert-triangle" [size]="10" class="inline-block mr-0.5"></lucide-icon>
-                                    Low wallet at deduction = auto-cancel. Keep ₹{{ getDeferredAmount(3) | number:'1.0-0' }} ready.
+                                    If wallet balance is insufficient at auto-deduction, booking will be auto-cancelled. Keep ₹{{ getDeferredAmount(3) | number:'1.0-0' }} ready.
                                 </p>
                             </div>
                         </div>
@@ -764,7 +760,7 @@
         <div class="lg:col-span-4 space-y-6">
 
             <!-- Booking Summary Sticky Card -->
-            <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden sticky top-6 mt-14">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden sticky top-6 mt-14">
                 <div class="bg-slate-900 px-5 py-3">
                     <h3 class="text-white font-semibold flex items-center gap-2 text-sm">
                         <lucide-icon name="receipt-text" [size]="16" class="text-primary"></lucide-icon>
@@ -781,11 +777,11 @@
                         <ng-container *ngIf="itinerary?.tripType === 'Local'">
                             <div class="flex justify-between items-center mt-2">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup City</span>
-                                <span class="text-sm text-slate-800 font-bold">{{itinerary?.fromCity || 'Bangalore'}}</span>
+                                <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">{{itinerary?.fromCity || 'Bangalore'}}</span>
                             </div>
                             <div class="flex justify-between items-center mt-1">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trip Type</span>
-                                <span class="text-sm text-slate-800 font-bold">Local ({{itinerary?.localPackage || '8hr/80km'}})</span>
+                                <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">Local ({{itinerary?.localPackage || '8hr/80km'}})</span>
                             </div>
                         </ng-container>
 
@@ -793,11 +789,11 @@
                         <ng-container *ngIf="itinerary?.tripType === 'Airport'">
                             <div class="flex justify-between items-center mt-2">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup City</span>
-                                <span class="text-sm text-slate-800 font-bold">{{itinerary?.fromCity || 'Bangalore'}}</span>
+                                <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">{{itinerary?.fromCity || 'Bangalore'}}</span>
                             </div>
                             <div class="flex justify-between items-center mt-1">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trip Type</span>
-                                <span class="text-sm text-slate-800 font-bold">
+                                <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">
                                     Transfer ({{itinerary?.airportSubType === 'pickup' ? 'Pickup From Airport' : 'Drop To Airport'}})
                                 </span>
                             </div>
@@ -806,18 +802,18 @@
                         <!-- ONE WAY / ROUND TRIP -->
                         <ng-container *ngIf="itinerary?.tripType !== 'Local' && itinerary?.tripType !== 'Airport'">
                             <div class="flex flex-col gap-1 mt-1">
-                                <div class="flex items-center gap-2 text-slate-900 font-bold text-[14px]">
+                                <div class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-[14px]">
                                     <lucide-icon name="map-pin" [size]="12" class="text-primary"></lucide-icon>
                                     <span>{{itinerary?.fromCity || 'Bangalore'}}</span>
                                 </div>
-                                <div class="h-4 w-px bg-slate-200 ml-[5px]"></div>
-                                <div class="flex items-center gap-2 text-slate-900 font-bold text-[14px]">
+                                <div class="h-4 w-px bg-slate-200 dark:bg-slate-600 ml-[5px]"></div>
+                                <div class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-[14px]">
                                     <lucide-icon name="map-pin" [size]="12" class="text-rose-500"></lucide-icon>
                                     <span>{{itinerary?.toCity || 'Mysore'}}</span>
                                 </div>
                                 <ng-container *ngIf="itinerary?.tripType === 'Round Trip'">
-                                    <div class="h-4 w-px bg-slate-200 ml-[5px]"></div>
-                                    <div class="flex items-center gap-2 text-slate-900 font-bold text-[14px]">
+                                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-600 ml-[5px]"></div>
+                                    <div class="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-[14px]">
                                         <lucide-icon name="map-pin" [size]="12" class="text-emerald-500"></lucide-icon>
                                         <span>{{itinerary?.fromCity || 'Bangalore'}}</span>
                                     </div>
@@ -830,7 +826,7 @@
                     <div class="grid grid-cols-2 gap-2">
                         <div class="flex flex-col gap-1">
                             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pickup Date</span>
-                            <span class="text-sm text-slate-800 font-bold">
+                            <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">
                                 {{itinerary?.pickupDate ? (itinerary?.pickupDate | date:'dd MMM yyyy') : 'Tomorrow'}}
                             </span>
                         </div>
@@ -844,7 +840,7 @@
                     <div class="grid grid-cols-2 gap-2" *ngIf="itinerary?.tripType === 'Round Trip'">
                         <div class="flex flex-col gap-1">
                             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Return Date</span>
-                            <span class="text-sm text-slate-800 font-bold">
+                            <span class="text-sm text-slate-800 dark:text-slate-200 font-bold">
                                 {{itinerary?.returnDate ? (itinerary?.returnDate | date:'dd MMM yyyy') : (itinerary?.pickupDate | date:'dd MMM yyyy')}}
                             </span>
                         </div>
@@ -855,12 +851,12 @@
                     </div>
 
                     <!-- Selected Car -->
-                    <div class="flex justify-between items-center py-3 border-y border-slate-100">
+                    <div class="flex justify-between items-center py-3 border-y border-slate-100 dark:border-slate-700">
                         <div class="flex items-center gap-2">
                             <lucide-icon name="car" [size]="20" class="text-slate-400"></lucide-icon>
-                            <span class="text-sm font-bold text-slate-700">{{selectedCar?.name || 'Wagon R or Equivalent'}}</span>
+                            <span class="text-sm font-bold text-slate-700 dark:text-slate-300">{{selectedCar?.name || 'Wagon R or Equivalent'}}</span>
                         </div>
-                        <span class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-600 font-black uppercase tracking-tighter">
+                        <span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-600 dark:text-slate-300 font-black uppercase tracking-tighter">
                             {{selectedCar?.type || 'SEDAN'}}
                         </span>
                     </div>
@@ -868,20 +864,20 @@
                     <!-- KMs + Fare -->
                     <div class="flex justify-between items-center">
                         <span class="text-sm text-slate-500">KMs Included</span>
-                        <span class="text-sm font-bold text-slate-900">{{selectedCar?.kmsIncluded || '145 km'}}</span>
+                        <span class="text-sm font-bold text-slate-900 dark:text-white">{{selectedCar?.kmsIncluded || '145 km'}}</span>
                     </div>
 
-                    <div class="pt-3 mt-1 border-t border-slate-100 flex justify-between items-end">
+                    <div class="pt-3 mt-1 border-t border-slate-100 dark:border-slate-700 flex justify-between items-end">
                         <div>
                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Estimated Total Fare</p>
-                            <p class="text-lg font-bold text-slate-900 tracking-tight">₹ {{(selectedCar?.price || 0) | number:'1.0-0'}}</p>
+                            <p class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">₹ {{(selectedCar?.price || 0) | number:'1.0-0'}}</p>
                         </div>
-                        <span class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full font-black uppercase tracking-tighter">ALL INCLUSIVE</span>
+                        <span class="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-black uppercase tracking-tighter">ALL INCLUSIVE</span>
                     </div>
 
                     <!-- Dynamic Pay Now Section -->
                     <div *ngIf="step1Complete"
-                        class="pt-3 mt-3 border-t-2 border-dashed border-primary/30 flex flex-col gap-2 bg-sky-50 p-4 rounded-xl">
+                        class="pt-3 mt-3 border-t-2 border-dashed border-primary/30 flex flex-col gap-2 bg-sky-50 dark:bg-sky-900/20 p-4 rounded-xl">
                         <div>
                             <p class="text-[12px] font-bold text-primary uppercase tracking-widest mb-1">Amount to Pay Now</p>
                             <p *ngIf="paymentOption === 0" class="text-sm font-semibold text-slate-400 italic">Select a payment plan</p>
@@ -891,14 +887,21 @@
                             <span class="text-slate-500">Auto-deducted 48h before trip</span>
                             <span class="font-bold text-amber-600">₹ {{ getDeferredAmount() | number:'1.0-0' }}</span>
                         </div>
+                        <div *ngIf="paymentOption === 3 && !isBookingUrgent()" class="flex justify-between items-center text-[10px] text-slate-400">
+                            <span>Includes 20% buffer (₹{{ getOption3BufferAmount() | number:'1.0-0' }})</span>
+                        </div>
                         <div *ngIf="paymentOption === 1 && getDriverCollectsAmount() > 0" class="flex justify-between items-center text-xs pt-2 border-t border-primary/10">
                             <span class="text-slate-500">Customer pays driver</span>
-                            <span class="font-bold text-slate-700">₹ {{ getDriverCollectsAmount() | number:'1.0-0' }}</span>
+                            <span class="font-bold text-slate-700">₹ {{ getDriverCollectsAmount() | number:'1.0-0' }} + extras</span>
+                        </div>
+                        <div *ngIf="paymentOption === 2" class="flex justify-between items-center text-xs pt-2 border-t border-primary/10">
+                            <span class="text-slate-500">Customer pays driver</span>
+                            <span class="font-semibold text-slate-600 text-[10px]">Extras only (toll, parking, extra KMs)</span>
                         </div>
                         <div *ngIf="paymentOption !== 0" class="flex justify-between items-center text-[10px] pt-2 border-t border-primary/10">
                             <span class="text-slate-400">Payment plan</span>
                             <span class="font-semibold text-slate-600">
-                                {{ paymentOption === 1 ? 'Pay any amount now' : paymentOption === 2 ? 'Pay 25% now, auto-deducted' : 'Zero cash — full wallet' }}
+                                {{ paymentOption === 1 ? 'Pay any amount now' : paymentOption === 2 ? (isBookingUrgent() ? 'Full payment (urgent)' : 'Pay 25% now, auto-deducted') : (isBookingUrgent() ? 'Full + buffer (urgent)' : 'Zero cash — full wallet') }}
                             </span>
                         </div>
                     </div>
@@ -919,8 +922,8 @@
                 </div>
 
                 <!-- Footer Note -->
-                <div class="bg-slate-50 px-4 py-2.5 border-t border-slate-100">
-                    <div class="flex items-start gap-2 text-[10px] text-slate-500 leading-tight">
+                <div class="bg-slate-50 dark:bg-slate-800/50 px-4 py-2.5 border-t border-slate-100 dark:border-slate-700">
+                    <div class="flex items-start gap-2 text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                         <lucide-icon name="shield-check" [size]="14" class="mt-0.5 flex-shrink-0 text-emerald-500"></lucide-icon>
                         <p>Price includes fuel, driver allowance, and basic toll. Parking and extra KMs billed as actuals.</p>
                     </div>
@@ -1027,7 +1030,11 @@
                     </div>
                     <div class="flex justify-between" *ngIf="paymentOption === 1 && getDriverCollectsAmount() > 0">
                         <span class="text-slate-400">Customer pays driver</span>
-                        <span class="font-semibold text-slate-500">₹{{ getDriverCollectsAmount() | number:'1.0-0' }}</span>
+                        <span class="font-semibold text-slate-500">₹{{ getDriverCollectsAmount() | number:'1.0-0' }} + extras</span>
+                    </div>
+                    <div class="flex justify-between" *ngIf="paymentOption === 2">
+                        <span class="text-slate-400">Customer pays driver</span>
+                        <span class="font-semibold text-slate-500">Extras only</span>
                     </div>
                 </div>
 

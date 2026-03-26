@@ -97,6 +97,9 @@ export class TripTypeService {
         if (options?.localPackage === '12hr/120km') {
           return { tripType: TRIP_TYPE_VALUES.LOCAL, subTripType: SUB_TRIP_TYPE_VALUES.LOCAL_12HR_120KM };
         }
+        if (options?.localPackage === '4hr/40km') {
+          return { tripType: TRIP_TYPE_VALUES.LOCAL, subTripType: SUB_TRIP_TYPE_VALUES.LOCAL_4HR_40KM };
+        }
         return { tripType: TRIP_TYPE_VALUES.LOCAL, subTripType: SUB_TRIP_TYPE_VALUES.LOCAL_8HR_80KM };
       case 'Airport':
         if (options?.airportSubType === 'pickup') {

@@ -1,40 +1,76 @@
 <section id="value-props" class="py-24 bg-slate-50">
     <div class="container mx-auto px-4 lg:px-8">
-        <div class="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <span class="inline-block text-xs font-bold uppercase tracking-widest text-amber mb-4">
+        <div class="text-center mb-14 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <span class="inline-block text-xs font-bold uppercase tracking-widest text-amber mb-3">
                 WHY CHOOSE B2B CAB
             </span>
-            <h2
-                class="font-display text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight max-w-2xl mx-auto">
+            <h2 class="font-display text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight max-w-2xl mx-auto">
                 Everything Your Enterprise Needs for
-                <span class="text-gradient-cyan">Ground Mobility</span>
+                <span class="text-gradient-cyan"> Ground Mobility</span>
             </h2>
         </div>
 
-        <div class="max-w-5xl mx-auto">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div *ngFor="let prop of props; let i = index"
-                    class="bg-white rounded-2xl border border-slate-200 p-6 shadow-card hover:shadow-card-hover transition-all duration-300 group"
-                    [ngClass]="{'lg:col-start-1': i === 3 && props.length === 5, 'lg:col-start-2': i === 4 && props.length === 5}">
-                    <div class="flex items-start justify-between mb-4">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors duration-300">
-                            <lucide-icon [name]="prop.icon"
-                                class="w-6 h-6 text-primary transition-colors duration-300"></lucide-icon>
-                        </div>
-                        <span
-                            class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber/10 text-amber border border-amber/20">
-                            {{ prop.highlight }}
-                        </span>
-                    </div>
-                    <h3 class="font-display font-bold text-base text-slate-900 mb-2 leading-snug">
-                        {{ prop.title }}
-                    </h3>
-                    <p class="text-slate-500 text-sm leading-relaxed">
-                        {{ prop.description }}
-                    </p>
+        <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Cyan -->
+            <div *ngFor="let prop of props"
+                class="relative bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group overflow-hidden flex flex-col">
+                <!-- Top accent bar -->
+                <div class="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
+                    [ngClass]="{
+                        'bg-gradient-to-r from-cyan-400 to-sky-500': prop.accent === 'cyan',
+                        'bg-gradient-to-r from-blue-400 to-blue-600': prop.accent === 'blue',
+                        'bg-gradient-to-r from-emerald-400 to-teal-500': prop.accent === 'emerald',
+                        'bg-gradient-to-r from-amber-400 to-orange-400': prop.accent === 'amber',
+                        'bg-gradient-to-r from-violet-400 to-purple-500': prop.accent === 'violet',
+                        'bg-gradient-to-r from-rose-400 to-pink-500': prop.accent === 'rose'
+                    }">
                 </div>
+
+                <div class="flex items-start justify-between mb-5 mt-1">
+                    <!-- Icon -->
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center transition-colors duration-300"
+                        [ngClass]="{
+                            'bg-cyan-50 group-hover:bg-cyan-100': prop.accent === 'cyan',
+                            'bg-blue-50 group-hover:bg-blue-100': prop.accent === 'blue',
+                            'bg-emerald-50 group-hover:bg-emerald-100': prop.accent === 'emerald',
+                            'bg-amber-50 group-hover:bg-amber-100': prop.accent === 'amber',
+                            'bg-violet-50 group-hover:bg-violet-100': prop.accent === 'violet',
+                            'bg-rose-50 group-hover:bg-rose-100': prop.accent === 'rose'
+                        }">
+                        <lucide-icon [name]="prop.icon" class="w-5 h-5 transition-colors duration-300"
+                            [ngClass]="{
+                                'text-cyan-500': prop.accent === 'cyan',
+                                'text-blue-500': prop.accent === 'blue',
+                                'text-emerald-500': prop.accent === 'emerald',
+                                'text-amber-500': prop.accent === 'amber',
+                                'text-violet-500': prop.accent === 'violet',
+                                'text-rose-500': prop.accent === 'rose'
+                            }">
+                        </lucide-icon>
+                    </div>
+                    <!-- Badge -->
+                    <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border"
+                        [ngClass]="{
+                            'bg-cyan-50 text-cyan-600 border-cyan-200': prop.accent === 'cyan',
+                            'bg-blue-50 text-blue-600 border-blue-200': prop.accent === 'blue',
+                            'bg-emerald-50 text-emerald-600 border-emerald-200': prop.accent === 'emerald',
+                            'bg-amber-50 text-amber-600 border-amber-200': prop.accent === 'amber',
+                            'bg-violet-50 text-violet-600 border-violet-200': prop.accent === 'violet',
+                            'bg-rose-50 text-rose-600 border-rose-200': prop.accent === 'rose'
+                        }">
+                        {{ prop.highlight }}
+                    </span>
+                </div>
+
+                <h3 class="font-display font-bold text-base text-slate-900 mb-2 leading-snug">
+                    {{ prop.title }}
+                </h3>
+                <p class="text-slate-500 text-sm leading-relaxed">
+                    {{ prop.description }}
+                </p>
             </div>
+
         </div>
     </div>
 </section>

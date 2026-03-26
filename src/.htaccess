@@ -1,22 +1,13 @@
 RewriteEngine On
 
-# ── API Proxy Rewrites (same as vercel.json but for Apache) ──
-# These forward /partner-api/*, /b2b-api/*, /wallet-api/* to Savaari servers
+# ── API Proxy via PHP (no mod_proxy needed) ──
+# Routes API calls to proxy.php which forwards to beta/staging servers
 
-# Partner API → api.savaari.com
-RewriteCond %{REQUEST_URI} ^/partner-api/(.*)$
-RewriteRule ^partner-api/(.*)$ https://api.savaari.com/partner_api/public/$1 [P,L]
-
-# B2B API → api23.savaari.com
-RewriteCond %{REQUEST_URI} ^/b2b-api/(.*)$
-RewriteRule ^b2b-api/(.*)$ https://api23.savaari.com/$1 [P,L]
-
-# Wallet API → apiext.savaari.com
-RewriteCond %{REQUEST_URI} ^/wallet-api/(.*)$
-RewriteRule ^wallet-api/(.*)$ https://apiext.savaari.com/wallet/public/$1 [P,L]
+RewriteCond %{REQUEST_URI} ^/(partner-api|b2b-api|wallet-api)/
+RewriteRule ^(.*)$ /proxy.php [L,QSA]
 
 # ── SPA Fallback ──
-# All non-file, non-directory requests go to index.php (Angular handles routing)
+# All non-file, non-directory requests go to index.html (Angular handles routing)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /index.php [L]
+RewriteRule ^(.*)$ /index.html [L]

@@ -25,7 +25,7 @@
                             <span>Local</span>
                             <span
                                 class="ml-2 text-xs px-2.5 py-1 bg-sky-100 dark:bg-sky-900/40 rounded-md text-sky-600 dark:text-sky-400 font-bold">
-                                {{selectedLocalPackage === '8hr' ? '8hr/80km' : '12hr/120km'}}
+                                {{selectedLocalPackage === '8hr' ? '8 hrs / 80 km' : '12 hrs / 120 km'}}
                             </span>
                         </ng-container>
                         <!-- Airport -->
@@ -120,15 +120,15 @@
 
                 <!-- Local Package Toggles -->
                 <div *ngIf="isLocal && !isLoading" class="flex justify-center md:col-start-2">
-                    <div class="inline-flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                    <div class="inline-flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl gap-1">
                         <button (click)="selectLocalPackage('8hr')"
-                            [ngClass]="{'bg-white dark:bg-slate-700 shadow-sm text-primary font-bold': selectedLocalPackage === '8hr', 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300': selectedLocalPackage !== '8hr'}"
-                            class="px-6 py-2 rounded-md text-[13px] transition-all focus:outline-none">
+                            [ngClass]="{'bg-white dark:bg-slate-700 shadow-md text-primary font-bold border border-primary/20': selectedLocalPackage === '8hr', 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300': selectedLocalPackage !== '8hr'}"
+                            class="px-6 py-2.5 rounded-lg text-sm transition-all focus:outline-none whitespace-nowrap cursor-pointer">
                             8 hrs | 80 km
                         </button>
                         <button (click)="selectLocalPackage('12hr')"
-                            [ngClass]="{'bg-white dark:bg-slate-700 shadow-sm text-primary font-bold': selectedLocalPackage === '12hr', 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300': selectedLocalPackage !== '12hr'}"
-                            class="px-6 py-2 rounded-md text-[13px] transition-all focus:outline-none">
+                            [ngClass]="{'bg-white dark:bg-slate-700 shadow-md text-primary font-bold border border-primary/20': selectedLocalPackage === '12hr', 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300': selectedLocalPackage !== '12hr'}"
+                            class="px-6 py-2.5 rounded-lg text-sm transition-all focus:outline-none whitespace-nowrap cursor-pointer">
                             12 hrs | 120 km
                         </button>
                     </div>
@@ -172,7 +172,7 @@
                         <!-- Car Info -->
                         <div class="flex-1 flex flex-col justify-center w-full text-center md:text-left">
                             <h2
-                                class="text-lg font-bold text-primary group-hover:text-sky-600 transition-colors leading-tight mb-1">
+                                class="text-2xl font-bold text-primary group-hover:text-sky-600 transition-colors leading-tight mb-1">
                                 {{car.name}}</h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{{car.subtitle}}</p>
                             <div class="flex flex-wrap justify-center md:justify-start gap-2">
@@ -182,21 +182,21 @@
                                     {{ getCarKms(car.kmsIncluded) }}
                                 </span>
                                 <span *ngIf="car.hoursIncluded"
-                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                                    <lucide-icon name="clock" [size]="13" class="mr-1"></lucide-icon>
+                                    class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                    <lucide-icon name="clock" [size]="14" class="mr-1.5"></lucide-icon>
                                     {{car.hoursIncluded}}
                                 </span>
                                 <span
-                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="users" [size]="13" class="mr-1"></lucide-icon> {{car.seats}} Seater
+                                    class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="users" [size]="14" class="mr-1.5"></lucide-icon> {{car.seats}}
                                 </span>
                                 <span
-                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="briefcase" [size]="13" class="mr-1"></lucide-icon> {{car.bags}} Bags
+                                    class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="briefcase" [size]="14" class="mr-1.5"></lucide-icon> {{car.bags}}
                                 </span>
                                 <span
-                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="snowflake" [size]="13" class="mr-1"></lucide-icon> {{car.ac}}
+                                    class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="snowflake" [size]="14" class="mr-1.5"></lucide-icon> {{car.ac}}
                                 </span>
                             </div>
                         </div>

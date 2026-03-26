@@ -521,27 +521,30 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   getPayNowAmount(optionOverride?: number): number {
     if (!this.selectedCar) return 0;
     const total = this.selectedCar.price;
-    // Use the regular (non-discounted) fare as the prePayment basis.
-    // The Savaari booking API validates prePayment >= 25% of its internal
-    // totalFare, which is based on the regular rate — not the discounted rate
-    // we display. Using regularPrice ensures we always clear the minimum.
-    const prePayBase = this.selectedCar.regularPrice || total;
+    // Use the higher of regularPrice and displayed price as the base.
+    // API validates prePayment >= 25% of its totalFare — we must meet or exceed that.
+    // For round trips, regularPrice may be one-way rate while total is full trip fare.
+    const prePayBase = Math.max(this.selectedCar.regularPrice || total, total);
     const option = optionOverride !== undefined ? optionOverride : this.paymentOption;
     const isUrgent = this.isBookingUrgent();
 
-    // Option 1: Flexible Agent — slider % of regular fare (API minimum compliance)
+    // Option 1: Flexible Agent — slider % of fare (API minimum compliance)
     if (option === 1) {
       return Math.round(prePayBase * (this.option1SliderPercent / 100));
     }
 
-    // Option 2: Full Agent (25/75)
+    // Option 2: Pay 25% now, rest auto-deducted
+    // Urgent (<48h): 100% now (no time for auto-deduction)
+    // Advance (>48h): 25% now, 75% auto-deducted 48h before trip
     if (option === 2) {
       return isUrgent ? total : Math.round(prePayBase * 0.25);
     }
 
-    // Option 3: Full Agent + 20% Buffer
+    // Option 3: Zero cash — full wallet
+    // Urgent (<48h): 100% + 20% buffer now (buffer refunded post-trip)
+    // Advance (>48h): 25% now, (75% + 20% buffer) auto-deducted 48h before trip
     if (option === 3) {
-      return isUrgent ? Math.round(prePayBase * 1.20) : Math.round(prePayBase * 0.25);
+      return isUrgent ? Math.round(total * 1.20) : Math.round(prePayBase * 0.25);
     }
 
     return 0;
@@ -562,11 +565,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Urgent bookings pay everything upfront — nothing deferred
     if (this.isBookingUrgent()) return 0;
 
-    // Option 2: 75% deferred
-    if (option === 2) return Math.round(total * 0.75);
+    // Option 2: 75% auto-deducted 48h before trip
+    if (option === 2) return total - this.getPayNowAmount(2);
 
-    // Option 3: 75% + 20% buffer = 95% deferred
-    if (option === 3) return Math.round(total * 0.95);
+    // Option 3: (75% + 20% buffer) auto-deducted 48h before trip
+    // Total commitment = fare + 20% buffer, minus the 25% paid now
+    if (option === 3) return Math.round(total * 1.20) - this.getPayNowAmount(3);
 
     return 0;
   }
@@ -988,8 +992,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           prePayment: prePaymentAmount,
           cashToCollect: (this.selectedCar?.price || 0) - prePaymentAmount,
           carType: this.selectedCar?.carTypeId || request.carType || 0,
-          // Store payment option so bookings page shows correct label
+          // Store payment option + method so bookings page shows correct label
           paymentOption: this.paymentOption,
+          paymentMethod: 'wallet',
         });
 
         // Deduct wallet balance for booking payment

@@ -4,7 +4,7 @@
 <div class="relative min-h-[600px] pt-12 pb-16 px-4 flex flex-col items-center justify-center overflow-hidden">
   <!-- Interactive Background that reacts to tab selection -->
   <div class="absolute inset-0 overflow-hidden bg-slate-700">
-    <div class="absolute inset-0 bg-gradient-to-b from-slate-900/30 via-slate-900/20 to-slate-900/60 z-10 transition-colors duration-1000"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/60 to-slate-900/60 z-10 transition-colors duration-1000"></div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'ONE_WAY',
         'opacity-0 scale-105': selectedTab !== 'ONE_WAY'
@@ -38,7 +38,7 @@
   <div class="w-full max-w-6xl relative z-20">
     <!-- Greeting + Tagline -->
     <div class="mb-10 text-center">
-      <h1 class="text-3xl md:text-5xl font-semibold text-white/90 tracking-tight mb-3"
+      <h1 class="text-3xl md:text-5xl font-light text-white/90 tracking-tight mb-3"
         style="font-family: 'Poppins', 'Inter', sans-serif;">
         {{ greeting }}, <span class="text-orange-500 font-bold">{{ agentFirstName }}</span>
       </h1>
@@ -85,7 +85,7 @@
           class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 lg:gap-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl lg:rounded-xl p-3 lg:p-2 border border-slate-200 dark:border-slate-700/30">
 
           <!-- FROM -->
-          <div class="search-cell flex-[3] px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+          <div class="search-cell flex-[3] px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
             [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('fromCity')?.value?.id}">
             <lucide-icon name="map-pin" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col flex-1 min-w-0">
@@ -106,19 +106,22 @@
             </div>
           </div>
 
+          <!-- Divider before SWAP -->
+          <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
+
           <!-- SWAP -->
-          <div class="flex items-center justify-center mx-1 lg:mx-3 z-20">
+          <div class="flex items-center justify-center mx-3 z-20">
             <button type="button" (click)="swapCities()"
-              class="w-10 h-10 rounded-lg bg-white dark:bg-slate-700 shadow-md border border-slate-200 dark:border-slate-600 flex items-center justify-center text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
-              <lucide-icon name="arrow-left-right" [size]="14"></lucide-icon>
+              class="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 shadow-md border border-slate-200 dark:border-slate-600 flex items-center justify-center text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
+              <lucide-icon name="arrow-left-right" [size]="18"></lucide-icon>
             </button>
           </div>
 
-          <!-- Divider (desktop) -->
-          <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+          <!-- Divider after SWAP -->
+          <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
           <!-- TO -->
-          <div class="search-cell flex-[3] px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+          <div class="search-cell flex-[3] px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
             [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('toCity')?.value?.id}">
             <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col flex-1 min-w-0">
@@ -139,10 +142,10 @@
           </div>
 
           <!-- Divider (desktop) -->
-          <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+          <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
           <!-- PICKUP DATE -->
-          <div class="search-cell flex-[2] px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+          <div class="search-cell flex-[2] px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
             (click)="pickupDate1.showOverlay()">
             <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
@@ -155,10 +158,10 @@
           </div>
 
           <!-- Divider (desktop) -->
-          <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+          <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
           <!-- PICKUP TIME -->
-          <div class="search-cell flex-[2] px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+          <div class="search-cell flex-[2] px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
             (click)="pickupTime1.showOverlay()">
             <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
@@ -183,13 +186,13 @@
         <!-- ROUND TRIP                                                   -->
         <!-- ============================================================ -->
         <div [hidden]="selectedTab !== 'ROUND_TRIP'">
-          <!-- Row 1: Cities bar -->
+          <!-- Row 1: FROM / SWAP / TO -->
           <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 lg:gap-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl lg:rounded-xl p-3 lg:p-2 border border-slate-200 dark:border-slate-700/30 mb-3">
 
             <!-- FROM -->
-            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('fromCity')?.value?.id}">
-              <lucide-icon name="map-pin" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
+              <lucide-icon name="map-pin" [size]="20" class="text-primary shrink-0"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">From</span>
                 <p-autoComplete formControlName="fromCity" [suggestions]="filteredSourceCities"
@@ -208,29 +211,22 @@
               </div>
             </div>
 
-            <!-- SWAP -->
-            <div class="flex items-center justify-center lg:-mx-1 z-20">
+            <!-- Divider + SWAP -->
+            <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
+            <div class="flex items-center justify-center mx-3 z-20">
               <button type="button" (click)="swapCities()"
-                class="w-10 h-10 rounded-lg bg-white dark:bg-slate-700 shadow-md border border-slate-200 dark:border-slate-600 flex items-center justify-center text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
-                <lucide-icon name="arrow-left-right" [size]="14"></lucide-icon>
+                class="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 shadow-md border border-slate-200 dark:border-slate-600 flex items-center justify-center text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
+                <lucide-icon name="arrow-left-right" [size]="18"></lucide-icon>
               </button>
             </div>
-
-            <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+            <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
             <!-- TO -->
-            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('toCity')?.value?.id}">
-              <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
+              <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <div class="flex items-center justify-between">
-                  <span class="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">To</span>
-                  <button *ngIf="extraDestinations.length < MAX_DESTINATIONS - 1"
-                    type="button" (click)="addDestinationCity()"
-                    class="px-3 py-1 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors whitespace-nowrap bg-orange-500 hover:bg-orange-600 cursor-pointer shadow-sm">
-                    + Add City
-                  </button>
-                </div>
+                <span class="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">To</span>
                 <p-autoComplete formControlName="toCity" [suggestions]="filteredDestinationCities"
                   (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="1"
                   placeholder="Destination city" styleClass="w-full search-bar-autocomplete"
@@ -247,35 +243,51 @@
             </div>
           </div>
 
-          <!-- Extra Destinations -->
-          <div *ngIf="extraDestinations.length > 0" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-            <div *ngFor="let dest of extraDestinations; let i = index"
-              class="bg-slate-50/50 dark:bg-slate-800/30 rounded-lg p-3 border border-slate-200/50 dark:border-slate-700/30 flex items-center gap-2">
-              <lucide-icon name="map-pin" [size]="14" class="text-orange-400 shrink-0"></lucide-icon>
-              <p-autoComplete [ngModel]="extraDestinations[i]" [ngModelOptions]="{standalone: true}"
-                [suggestions]="filteredDestinationCities" (completeMethod)="filterExtraDestCities($event)"
-                (onSelect)="onExtraDestinationSelect($event, i)" field="name" optionLabel="name" [minLength]="1"
-                placeholder="Enter city" styleClass="w-full search-bar-autocomplete"
-                inputStyleClass="w-full bg-transparent border-none text-sm font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
-                panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
-                <ng-template pTemplate="item" let-city>
-                  <div class="flex items-center gap-2 px-2 py-1.5">
-                    <lucide-icon name="map-pin" [size]="14" class="text-orange-500 shrink-0"></lucide-icon>
-                    <span class="text-sm">{{ city.name }}</span>
-                  </div>
-                </ng-template>
-              </p-autoComplete>
-              <button type="button" (click)="removeDestinationCity(i)" class="text-slate-300 hover:text-red-500 transition-colors cursor-pointer shrink-0">
-                <lucide-icon name="x" [size]="14"></lucide-icon>
-              </button>
-            </div>
+          <!-- Row 2: Stops (only when stops exist) -->
+          <div *ngIf="extraDestinations.length > 0"
+            class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 lg:gap-0 bg-orange-50/50 dark:bg-orange-900/10 rounded-xl p-3 lg:p-2 border border-orange-200/60 dark:border-orange-700/30 mb-3">
+            <ng-container *ngFor="let dest of extraDestinations; let i = index">
+              <div *ngIf="i > 0" class="hidden lg:block w-px h-12 bg-orange-200 dark:bg-orange-700/40"></div>
+              <div class="search-cell flex-1 px-4 py-3 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-lg border border-orange-200/80 dark:border-orange-600/30">
+                <lucide-icon name="map-pin" [size]="16" class="text-orange-400 shrink-0"></lucide-icon>
+                <div class="flex flex-col flex-1 min-w-0">
+                  <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">Stop {{ i + 1 }}</span>
+                  <p-autoComplete [ngModel]="extraDestinations[i]" [ngModelOptions]="{standalone: true}"
+                    [suggestions]="filteredDestinationCities" (completeMethod)="filterExtraDestCities($event)"
+                    (onSelect)="onExtraDestinationSelect($event, i)" field="name" optionLabel="name" [minLength]="1"
+                    placeholder="Enter city" styleClass="w-full search-bar-autocomplete"
+                    inputStyleClass="w-full bg-transparent border-none text-sm font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                    panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                    <ng-template pTemplate="item" let-city>
+                      <div class="flex items-center gap-2 px-2 py-1.5">
+                        <lucide-icon name="map-pin" [size]="14" class="text-orange-500 shrink-0"></lucide-icon>
+                        <span class="text-sm">{{ city.name }}</span>
+                      </div>
+                    </ng-template>
+                  </p-autoComplete>
+                </div>
+                <button type="button" (click)="removeDestinationCity(i)"
+                  class="w-5 h-5 rounded-full bg-orange-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer shrink-0 text-orange-400 border-0">
+                  <lucide-icon name="x" [size]="11"></lucide-icon>
+                </button>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- + Add Stop button -->
+          <div *ngIf="extraDestinations.length < MAX_DESTINATIONS - 1" class="flex items-center mt-2 mb-1">
+            <button type="button" (click)="addDestinationCity()"
+              class="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-3 py-1.5 transition-all cursor-pointer border-0 shadow-sm">
+              <lucide-icon name="plus" [size]="13"></lucide-icon>
+              Add Stop {{ extraDestinations.length > 0 ? extraDestinations.length + 1 : 1 }}
+            </button>
           </div>
 
           <!-- Row 2: Dates bar -->
           <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 lg:gap-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl lg:rounded-xl p-3 lg:p-2 border border-slate-200 dark:border-slate-700/30">
 
             <!-- PICKUP DATE -->
-            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               (click)="pickupDate2.showOverlay()">
               <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
@@ -287,10 +299,10 @@
               </div>
             </div>
 
-            <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+            <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
             <!-- PICKUP TIME -->
-            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               (click)="pickupTime2.showOverlay()">
               <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
@@ -302,10 +314,10 @@
               </div>
             </div>
 
-            <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+            <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
             <!-- RETURN DATE -->
-            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               (click)="returnDate2.showOverlay()">
               <lucide-icon name="calendar" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
@@ -317,7 +329,7 @@
               </div>
             </div>
 
-            <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+            <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
             <!-- DROP TIME (read-only) -->
             <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group rounded-xl lg:rounded-full relative">
@@ -352,7 +364,7 @@
           class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 lg:gap-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl lg:rounded-xl p-3 lg:p-2 border border-slate-200 dark:border-slate-700/30">
 
           <!-- CITY -->
-          <div class="search-cell flex-[2] px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors">
+          <div class="search-cell flex-[2] px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40">
             <lucide-icon name="map-pin" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col flex-1 min-w-0">
               <span class="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">City</span>
@@ -372,10 +384,10 @@
             </div>
           </div>
 
-          <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+          <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
           <!-- PICKUP DATE -->
-          <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+          <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
             (click)="pickupDate3.showOverlay()">
             <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
@@ -387,10 +399,10 @@
             </div>
           </div>
 
-          <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+          <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
           <!-- PICKUP TIME -->
-          <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+          <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
             (click)="pickupTime3.showOverlay()">
             <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
@@ -412,7 +424,7 @@
           <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 lg:gap-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl lg:rounded-xl p-3 lg:p-2 border border-slate-200 dark:border-slate-700/30 mb-3">
 
             <!-- Trip Type -->
-            <div class="search-cell px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors lg:min-w-[200px]">
+            <div class="search-cell px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40 lg:min-w-[200px]">
               <lucide-icon name="navigation" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">Trip <span class="text-red-400">*</span></span>
@@ -424,10 +436,10 @@
               </div>
             </div>
 
-            <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+            <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
             <!-- Airport -->
-            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors">
+            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40">
               <lucide-icon name="plane" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[11px] font-bold text-primary uppercase tracking-wider mb-1">
@@ -449,10 +461,10 @@
               </div>
             </div>
 
-            <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40" [hidden]="!bookingForm.get('tripType')?.value"></div>
+            <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60" [hidden]="!bookingForm.get('tripType')?.value"></div>
 
             <!-- Address (conditional) -->
-            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               [hidden]="!bookingForm.get('tripType')?.value">
               <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
@@ -480,7 +492,7 @@
           <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 lg:gap-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl lg:rounded-xl p-3 lg:p-2 border border-slate-200 dark:border-slate-700/30">
 
             <!-- PICKUP DATE -->
-            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               (click)="pickupDate4.showOverlay()">
               <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
@@ -492,10 +504,10 @@
               </div>
             </div>
 
-            <div class="hidden lg:block w-px h-12 bg-slate-200 dark:bg-slate-700/40"></div>
+            <div class="hidden lg:block w-px h-12 bg-slate-300 dark:bg-slate-600/60"></div>
 
             <!-- PICKUP TIME -->
-            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer hover:bg-white dark:hover:bg-slate-800 rounded-lg lg:rounded-lg transition-colors"
+            <div class="search-cell flex-1 px-5 py-4 flex items-center gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               (click)="pickupTime4.showOverlay()">
               <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
@@ -559,7 +571,7 @@
         <div class="flex items-center gap-2.5">
           <lucide-icon name="headphones" [size]="14" class="text-primary/80"></lucide-icon>
           <span class="text-[9px] font-bold text-white/40 uppercase tracking-[0.12em]">Network</span>
-          <span class="text-white font-bold text-base">10,000+</span>
+          <span class="text-white font-bold text-base">5,000+</span>
           <span class="text-white/50 text-xs font-medium">Active Agents</span>
         </div>
 
@@ -627,9 +639,14 @@
   <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
 
     <!-- Section: Recent Bookings -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
-        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Recent Bookings</h3>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+            <lucide-icon name="list" [size]="14" class="text-primary"></lucide-icon>
+          </div>
+          <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Recent Bookings</h3>
+        </div>
         <a routerLink="/bookings" class="text-xs font-semibold text-primary hover:text-primary-dark transition-colors flex items-center gap-1">
           View All <lucide-icon name="arrow-right" [size]="12"></lucide-icon>
         </a>
@@ -639,7 +656,7 @@
       <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="text-left text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide border-b border-slate-100 dark:border-slate-700">
+            <tr class="text-left text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-slate-50 dark:bg-slate-800/60">
               <th class="px-6 py-3 font-semibold">Booking ID</th>
               <th class="px-6 py-3 font-semibold">Route</th>
               <th class="px-6 py-3 font-semibold">Date</th>
@@ -648,17 +665,17 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let b of recentBookings" class="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-              <td class="px-6 py-3.5 font-mono text-xs text-slate-600 dark:text-slate-300">#{{ b.id }}</td>
-              <td class="px-6 py-3.5 text-slate-700 dark:text-slate-200">{{ b.route }}</td>
-              <td class="px-6 py-3.5 text-slate-500 dark:text-slate-400">{{ b.date }}</td>
-              <td class="px-6 py-3.5">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+            <tr *ngFor="let b of recentBookings" class="border-t border-slate-50 dark:border-slate-700/50 hover:bg-slate-50/70 dark:hover:bg-slate-700/20 transition-colors group">
+              <td class="px-6 py-4 font-mono text-xs text-slate-400 dark:text-slate-400 group-hover:text-slate-600 transition-colors">#{{ b.id }}</td>
+              <td class="px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-200">{{ b.route }}</td>
+              <td class="px-6 py-4 text-sm text-slate-400 dark:text-slate-400 whitespace-nowrap">{{ b.date }}</td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider"
                   [ngClass]="getStatusClasses(b.status)">
-                  {{ b.status }}
+                  {{ getStatusLabel(b.status) }}
                 </span>
               </td>
-              <td class="px-6 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-200">{{ b.amount }}</td>
+              <td class="px-6 py-4 text-right font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ b.amount }}</td>
             </tr>
           </tbody>
         </table>
@@ -668,16 +685,16 @@
       <div class="md:hidden divide-y divide-slate-100 dark:divide-slate-700">
         <div *ngFor="let b of recentBookings" class="px-5 py-4 space-y-1.5">
           <div class="flex items-center justify-between">
-            <span class="font-mono text-xs text-slate-500">#{{ b.id }}</span>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+            <span class="font-mono text-xs text-slate-400">#{{ b.id }}</span>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider"
               [ngClass]="getStatusClasses(b.status)">
-              {{ b.status }}
+              {{ getStatusLabel(b.status) }}
             </span>
           </div>
           <p class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ b.route }}</p>
-          <div class="flex items-center justify-between text-xs text-slate-500">
+          <div class="flex items-center justify-between text-xs text-slate-400">
             <span>{{ b.date }}</span>
-            <span class="font-semibold text-slate-700 dark:text-slate-200">{{ b.amount }}</span>
+            <span class="font-bold text-slate-800 dark:text-slate-100">{{ b.amount }}</span>
           </div>
         </div>
       </div>

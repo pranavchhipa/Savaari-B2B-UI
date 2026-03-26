@@ -7,6 +7,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BookingStateService, Itinerary, SelectedCar } from '../../core/services/booking-state.service';
 import { MarkupService } from '../../core/services/markup.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
+import { AvailabilityService } from '../../core/services/availability.service';
+import { TripTypeService } from '../../core/services/trip-type.service';
 import { AvailableCar } from '../../core/models';
 
 import { FooterComponent } from '../../components/layout/footer/footer';
@@ -56,6 +58,8 @@ export class SelectCarComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private location = inject(Location);
   private analytics = inject(AnalyticsService);
+  private availabilityService = inject(AvailabilityService);
+  private tripTypeService = inject(TripTypeService);
 
   itinerary: Itinerary | null = null;
   modifyForm!: FormGroup;
@@ -145,6 +149,8 @@ export class SelectCarComponent implements OnInit {
       'Cancellation is free up to 6 hours before pickup.'
     ];
 
+    const hoursInc = car.hoursIncluded ?? 0;
+
     return {
       id: car.carId || `car_${typeId}`,
       carTypeId: typeId,
@@ -154,6 +160,7 @@ export class SelectCarComponent implements OnInit {
       price: car.fare,
       regularFare: car.originalFare,
       kmsIncluded: `${kmsInc} km`,
+      hoursIncluded: hoursInc > 0 ? `${hoursInc} hrs` : undefined,
       seats,
       bags,
       ac: 'AC',
@@ -361,9 +368,63 @@ export class SelectCarComponent implements OnInit {
   }
 
   selectLocalPackage(pkg: '8hr' | '12hr') {
+    if (this.selectedLocalPackage === pkg) return;
     this.selectedLocalPackage = pkg;
-    this.initializeTabs();
+    this.isLoading = true;
     this.cdr.markForCheck();
+
+    // Update itinerary with new local package
+    const localPackage = pkg === '8hr' ? '8hr/80km' : '12hr/120km';
+    if (this.itinerary) {
+      this.itinerary.localPackage = localPackage;
+      this.bookingState.setItinerary(this.itinerary);
+    }
+
+    // Re-fetch availability with new package
+    const apiParams = this.tripTypeService.mapUiTabToApiParams('Local', { localPackage });
+    const request = {
+      sourceCity: this.itinerary?.fromCityId || 377,
+      tripType: apiParams.tripType,
+      subTripType: apiParams.subTripType,
+      pickupDateTime: this.itinerary?.pickupDate
+        ? this.formatPickupDateTime(new Date(this.itinerary.pickupDate), this.itinerary.pickupTime || '06:00 PM')
+        : '',
+      duration: pkg === '8hr' ? 8 : 12,
+    };
+
+    this.availabilityService.checkAvailability(request).subscribe({
+      next: (response) => {
+        if (response?.cars?.length) {
+          this.bookingState.setAvailabilityResponse(response);
+          this.availableCars = response.cars.map(car => this.mapApiCarToDisplay(car));
+          this.availableCars.sort((a, b) => a.price - b.price);
+        } else {
+          this.availableCars = [];
+        }
+        this.isLoading = false;
+        this.initializeTabs();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.availableCars = [];
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private formatPickupDateTime(date: Date, time: string): string {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!match) return `${dd}-${mm}-${yyyy} 18:00`;
+    let hours = parseInt(match[1]);
+    const minutes = match[2];
+    const ampm = match[3].toUpperCase();
+    if (ampm === 'PM' && hours < 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+    return `${dd}-${mm}-${yyyy} ${String(hours).padStart(2, '0')}:${minutes}`;
   }
 
   /** Returns car price with agent markup applied, doubled for round trip */
