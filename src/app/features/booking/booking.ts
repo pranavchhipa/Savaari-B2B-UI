@@ -98,12 +98,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   bookingError = '';
   formSubmitAttempted = false;
 
-  // Inline wallet top-up
+  // Wallet top-up modal
   topUpAmount: number = 0;
   isProcessingTopUp = false;
   topUpSuccess = false;
   topUpPresets = [5000, 10000, 25000, 50000];
   showTopUpConfirm = false;
+  showTopUpModal = false;
 
   // Fare recalculation (One Way drop address)
   showFareChangePopup = false;
@@ -1075,8 +1076,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   /** Sidebar button handler: scroll to top-up if balance is low, otherwise book */
   handleBookOrTopUp() {
     const balance = this.walletService.getCurrentBalance();
-    if (this.paymentOption !== 0 && !this.hasSufficientWalletBalance(balance)) {
-      this.scrollToTopUp();
+    if (this.paymentOption !== 0 && this.paymentMethod === 'wallet' && !this.hasSufficientWalletBalance(balance)) {
+      this.showTopUpModal = true;
+      this.autoFillTopUpShortfall();
+      this.cdr.markForCheck();
     } else {
       this.bookNow();
     }
@@ -1118,7 +1121,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.topUpSuccess = true;
           this.topUpAmount = 0;
           this.showTopUpConfirm = false;
-          setTimeout(() => { this.topUpSuccess = false; this.cdr.markForCheck(); }, 3000);
+          setTimeout(() => { this.topUpSuccess = false; this.showTopUpModal = false; this.cdr.markForCheck(); }, 2000);
         }
         this.cdr.markForCheck();
       });
@@ -1163,8 +1166,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   this.showTopUpConfirm = false;
                   setTimeout(() => {
                     this.topUpSuccess = false;
+                    this.showTopUpModal = false;
                     this.cdr.markForCheck();
-                  }, 3000);
+                  }, 2000);
                 } else {
                   this.bookingError = 'Payment verification failed. Contact support if money was deducted.';
                 }

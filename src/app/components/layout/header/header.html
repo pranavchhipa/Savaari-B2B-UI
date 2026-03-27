@@ -1,8 +1,9 @@
 <nav *ngIf="!isLandingPage" [ngClass]="{
     'sticky top-0 z-50 border-b transition-all duration-300': true,
-    'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-slate-200/50 dark:border-slate-800/50 shadow-sm': isScrolled,
-    'bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-700': !isScrolled
-  }">
+    'shadow-lg shadow-primary/5': isScrolled,
+    'shadow-md shadow-slate-900/10': !isScrolled
+  }"
+  class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-white/5">
   <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16 relative">
       <div class="flex items-center gap-4 md:gap-8">
@@ -12,7 +13,7 @@
           <img *ngIf="agentLogo" [src]="agentLogo" alt="Company Logo"
             class="h-9 max-w-[140px] object-contain rounded" />
           <!-- Default B2B CAB logo (shown when no agent logo) -->
-          <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo.png" [alt]="brandName"
+          <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo-white.webp" [alt]="brandName"
             class="h-12 sm:h-14 md:h-16 lg:h-20 object-contain" />
         </div>
 
@@ -21,8 +22,8 @@
       <!-- Customer Care 24x7 pill — centered -->
       <div class="hidden lg:flex absolute left-1/2 -translate-x-[60%]">
         <a [href]="supportPhoneTel"
-          class="inline-flex items-center text-primary hover:text-primary-dark border-2 border-primary rounded-md pl-3 pr-5 py-1.5 transition-all cursor-pointer whitespace-nowrap bg-transparent">
-          <span class="inline-flex items-center text-sm font-bold tracking-wide mr-3 border-r-2 border-primary pr-3">
+          class="inline-flex items-center text-white/90 hover:text-white border-2 border-white/30 hover:border-white/50 rounded-md pl-3 pr-5 py-1.5 transition-all cursor-pointer whitespace-nowrap bg-white/5">
+          <span class="inline-flex items-center text-sm font-bold tracking-wide mr-3 border-r-2 border-white/30 pr-3">
             <lucide-icon name="phone" [size]="14" class="mr-1.5"></lucide-icon>
             24x7
           </span>
@@ -35,19 +36,19 @@
         <ng-container *ngIf="isPublicRoute">
           <div class="hidden md:flex items-center gap-6 mr-6">
             <a href="/#solutions"
-              class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+              class="text-sm font-semibold text-white/70 hover:text-white transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
               Solutions
             </a>
             <a href="/#value-props"
-              class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+              class="text-sm font-semibold text-white/70 hover:text-white transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
               Why B2B CAB
             </a>
             <a href="/#overview"
-              class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+              class="text-sm font-semibold text-white/70 hover:text-white transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
               About
             </a>
             <a href="/#cta"
-              class="text-sm font-semibold text-slate-600 hover:text-primary transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+              class="text-sm font-semibold text-white/70 hover:text-white transition-all duration-300 relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
               Contact
             </a>
           </div>
@@ -61,18 +62,18 @@
             <div class="flex items-center space-x-4 overflow-x-auto hide-scrollbar max-w-full mr-2">
 
               <!-- Core Navigation -->
-              <div class="flex items-center space-x-0.5 sm:space-x-1 border-r border-slate-200 dark:border-slate-700 pr-2 sm:pr-4">
-                <a routerLink="/dashboard" routerLinkActive="bg-white text-primary border border-slate-200 shadow-sm"
+              <div class="flex items-center space-x-0.5 sm:space-x-1 border-r border-white/10 pr-2 sm:pr-4">
+                <a routerLink="/dashboard" routerLinkActive="!bg-primary !text-white"
                   [routerLinkActiveOptions]="{exact: true}"
-                  class="px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-white dark:hover:bg-slate-700 transition">Home</a>
+                  class="px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 rounded-lg text-xs sm:text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition">Home</a>
 
-                <a routerLink="/bookings" routerLinkActive="bg-white text-primary border border-slate-200 shadow-sm"
-                  class="px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-white dark:hover:bg-slate-700 transition">Bookings</a>
+                <a routerLink="/bookings" routerLinkActive="!bg-primary !text-white"
+                  class="px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 rounded-lg text-xs sm:text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition">Bookings</a>
               </div>
 
               <!-- Wallet Display -->
               <a routerLink="/wallet"
-                class="hidden md:flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 px-3 py-1.5 rounded-lg text-[13px] font-bold mr-1 shadow-sm transition-all cursor-pointer group">
+                class="hidden md:flex items-center bg-white/10 border border-white/20 hover:border-white/40 hover:bg-white/15 px-3 py-1.5 rounded-lg text-[13px] font-bold text-white mr-1 transition-all cursor-pointer group">
                 <div
                   class="bg-primary text-white rounded-md p-2 mr-2 shadow-sm group-hover:scale-110 transition-transform">
                   <lucide-icon name="wallet" [size]="18"></lucide-icon>
@@ -83,19 +84,19 @@
 
             <!-- User Dropdown Menu -->
             <div
-              class="relative ml-2 md:ml-4 flex items-center border-l border-slate-200 dark:border-slate-700 pl-2 md:pl-4">
+              class="relative ml-2 md:ml-4 flex items-center border-l border-white/10 pl-2 md:pl-4">
               <button (click)="isUserDropdownOpen = !isUserDropdownOpen"
-                class="flex items-center gap-1.5 sm:gap-2 outline-none p-1 sm:p-1.5 pr-2 sm:pr-3 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition border border-slate-200 dark:border-slate-700 relative z-50 cursor-pointer">
+                class="flex items-center gap-1.5 sm:gap-2 outline-none p-1 sm:p-1.5 pr-2 sm:pr-3 rounded-lg bg-white/10 hover:bg-white/15 transition border border-white/20 relative z-50 cursor-pointer">
                 <div
                   class="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 text-white flex items-center justify-center font-bold text-[11px] sm:text-[13px] md:text-[15px] shadow-inner uppercase tracking-wider">
                   {{ userInitial }}
                 </div>
                 <div class="hidden md:flex flex-col items-start px-1 text-left">
-                  <span class="text-[13px] font-bold text-slate-800 dark:text-slate-200 leading-tight">{{ userName }}</span>
-                  <span class="text-[10px] text-slate-500 font-medium leading-none">Travel Agent</span>
+                  <span class="text-[13px] font-bold text-white leading-tight">{{ userName }}</span>
+                  <span class="text-[10px] text-white/50 font-medium leading-none">Travel Agent</span>
                 </div>
                 <lucide-icon name="chevron-down" [size]="14"
-                  class="text-slate-400 mt-1 md:ml-1 text-primary"></lucide-icon>
+                  class="text-white/50 mt-1 md:ml-1"></lucide-icon>
               </button>
 
               <!-- Dropdown Panel -->

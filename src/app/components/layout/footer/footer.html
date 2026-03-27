@@ -1,32 +1,22 @@
-<footer class="bg-[#24a3d6] text-white py-6 mt-12 w-full">
-    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between gap-6 sm:gap-0 text-xs font-semibold tracking-wide">
+<footer class="bg-[#24a3d6] text-white py-3 mt-8 w-full">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 text-[11px] font-semibold tracking-wide">
 
-        <!-- Left Side: Company Info & Copyright -->
-        <div class="flex flex-col space-y-3">
-            <h3 class="font-bold uppercase tracking-wider text-[13px] text-white">COMPANY</h3>
-            <div class="flex gap-6">
-                <a routerLink="/about-us" class="hover:text-white/80 transition-colors">About Us</a>
-                <a routerLink="/privacy-policy" class="hover:text-white/80 transition-colors">Privacy Policy</a>
-                <a routerLink="/terms-conditions" class="hover:text-white/80 transition-colors">Terms & Conditions</a>
-            </div>
-            <div class="pt-4 mt-auto">
-                © Copyright {{ brandName }}.
-            </div>
+        <!-- Left Side -->
+        <div class="flex items-center gap-4 flex-wrap">
+            <span>© {{ brandName }}</span>
+            <a routerLink="/about-us" class="hover:text-white/80 transition-colors">About Us</a>
+            <a routerLink="/privacy-policy" class="hover:text-white/80 transition-colors">Privacy Policy</a>
+            <a routerLink="/terms-conditions" class="hover:text-white/80 transition-colors">Terms & Conditions</a>
         </div>
 
-        <!-- Right Side: Contact & Powered By -->
-        <div class="flex flex-col space-y-3 sm:items-end sm:text-right">
-            <h3 class="font-bold uppercase tracking-wider text-[13px] text-white">GET IN TOUCH</h3>
-            <div class="flex flex-col gap-1.5">
-                <a [href]="supportPhoneTel" class="inline-flex items-center gap-1.5 hover:text-white/80 transition-colors">
-                    <lucide-icon name="phone" [size]="12"></lucide-icon>
-                    {{ supportPhone }}
-                </a>
-                <a routerLink="/contact-us" class="hover:text-white/80 transition-colors">Contact Us</a>
-            </div>
-            <div class="pt-4 mt-auto">
-                Powered by {{ companyName }}.
-            </div>
+        <!-- Right Side -->
+        <div class="flex items-center gap-4">
+            <a [href]="supportPhoneTel" class="inline-flex items-center gap-1 hover:text-white/80 transition-colors">
+                <lucide-icon name="phone" [size]="11"></lucide-icon>
+                {{ supportPhone }}
+            </a>
+            <a routerLink="/contact-us" class="hover:text-white/80 transition-colors">Contact Us</a>
+            <span class="text-white/70">Powered by {{ companyName }}</span>
         </div>
 
     </div>
