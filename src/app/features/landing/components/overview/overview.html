@@ -1,21 +1,21 @@
-<section id="overview" class="py-24 bg-background">
+<section id="overview" class="py-12 sm:py-24 bg-background">
     <div class="container mx-auto px-4 lg:px-8">
-        <div class="grid lg:grid-cols-2 gap-16 items-center">
+        <div class="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             <!-- Left copy -->
             <div class="animate-in fade-in slide-in-from-left-8 duration-700">
-                <span class="inline-block text-xs font-bold uppercase tracking-widest text-primary mb-4">
+                <span class="inline-block text-xs font-bold uppercase tracking-widest text-primary mb-3 sm:mb-4">
                     About B2B CAB
                 </span>
-                <h2 class="font-display text-3xl sm:text-4xl font-extrabold text-foreground leading-tight mb-6">
+                <h2 class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground leading-tight mb-4 sm:mb-6">
                     India's Most Trusted Corporate Ground Mobility Partner
                 </h2>
-                <p class="text-muted-foreground text-lg leading-relaxed mb-6">
+                <p class="text-muted-foreground text-sm sm:text-lg leading-relaxed mb-4 sm:mb-6">
                     With over 17 years of expertise, B2B CAB operates the largest vetted fleet
                     in India. We eliminate the friction in corporate ground transport by ensuring
                     absolute safety, zero-cancellation guarantees, and uncompromising quality across
                     every ride.
                 </p>
-                <p class="text-muted-foreground leading-relaxed">
+                <p class="text-muted-foreground text-sm sm:text-base leading-relaxed">
                     From Tier 1 metros to Tier 3 towns, our network spans 2,000+ cities and 5 lakh+
                     routes — making us the single platform enterprises trust for seamless, compliant,
                     and reliable ground travel.
@@ -23,17 +23,17 @@
             </div>
 
             <!-- Right - modern stat strips instead of cards -->
-            <div class="space-y-4 animate-in fade-in slide-in-from-right-8 duration-700">
+            <div class="space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-right-8 duration-700">
                 <div *ngFor="let stat of stats; let i = index"
-                    class="flex items-center gap-5 p-5 rounded-xl bg-secondary/60 border-l-4 border-primary hover:bg-secondary transition-colors duration-300">
-                    <div class="w-12 h-12 rounded-lg gradient-cyan flex items-center justify-center flex-shrink-0">
-                        <lucide-icon [name]="stat.icon" class="w-6 h-6 text-primary-foreground"></lucide-icon>
+                    class="flex items-center gap-3 sm:gap-5 p-3 sm:p-5 rounded-xl bg-secondary/60 border-l-4 border-primary hover:bg-secondary transition-colors duration-300">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg gradient-cyan flex items-center justify-center flex-shrink-0">
+                        <lucide-icon [name]="stat.icon" class="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground"></lucide-icon>
                     </div>
                     <div>
-                        <span class="font-display text-2xl sm:text-3xl font-extrabold text-foreground">
+                        <span class="font-display text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground">
                             {{ stat.value }}
                         </span>
-                        <span class="block text-sm text-muted-foreground font-medium">
+                        <span class="block text-xs sm:text-sm text-muted-foreground font-medium">
                             {{ stat.label }}
                         </span>
                     </div>
