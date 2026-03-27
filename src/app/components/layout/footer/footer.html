@@ -1,22 +1,43 @@
-<footer class="bg-[#24a3d6] text-white py-3 mt-8 w-full">
-    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 text-[11px] font-semibold tracking-wide">
+<footer class="bg-[#24a3d6] text-white py-2.5 sm:py-3 mt-8 w-full">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 text-[10px] sm:text-[11px] font-semibold tracking-wide">
 
-        <!-- Left Side -->
-        <div class="flex items-center gap-4 flex-wrap">
-            <span>© {{ brandName }}</span>
-            <a routerLink="/about-us" class="hover:text-white/80 transition-colors">About Us</a>
-            <a routerLink="/privacy-policy" class="hover:text-white/80 transition-colors">Privacy Policy</a>
-            <a routerLink="/terms-conditions" class="hover:text-white/80 transition-colors">Terms & Conditions</a>
+        <!-- Desktop: single row -->
+        <div class="hidden sm:flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <span>© {{ brandName }}</span>
+                <a routerLink="/about-us" class="hover:text-white/80 transition-colors">About Us</a>
+                <a routerLink="/privacy-policy" class="hover:text-white/80 transition-colors">Privacy Policy</a>
+                <a routerLink="/terms-conditions" class="hover:text-white/80 transition-colors">Terms & Conditions</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a [href]="supportPhoneTel" class="inline-flex items-center gap-1 hover:text-white/80 transition-colors">
+                    <lucide-icon name="phone" [size]="11"></lucide-icon>
+                    {{ supportPhone }}
+                </a>
+                <a routerLink="/contact-us" class="hover:text-white/80 transition-colors">Contact Us</a>
+                <span class="text-white/70">Powered by {{ companyName }}</span>
+            </div>
         </div>
 
-        <!-- Right Side -->
-        <div class="flex items-center gap-4">
-            <a [href]="supportPhoneTel" class="inline-flex items-center gap-1 hover:text-white/80 transition-colors">
-                <lucide-icon name="phone" [size]="11"></lucide-icon>
-                {{ supportPhone }}
-            </a>
-            <a routerLink="/contact-us" class="hover:text-white/80 transition-colors">Contact Us</a>
-            <span class="text-white/70">Powered by {{ companyName }}</span>
+        <!-- Mobile: compact 2-row -->
+        <div class="sm:hidden text-center space-y-1.5">
+            <div class="flex items-center justify-center gap-3 flex-wrap">
+                <span>© {{ brandName }}</span>
+                <span class="text-white/40">|</span>
+                <a routerLink="/about-us" class="hover:text-white/80">About</a>
+                <span class="text-white/40">|</span>
+                <a routerLink="/privacy-policy" class="hover:text-white/80">Privacy</a>
+                <span class="text-white/40">|</span>
+                <a routerLink="/terms-conditions" class="hover:text-white/80">Terms</a>
+            </div>
+            <div class="flex items-center justify-center gap-3 text-white/70">
+                <a [href]="supportPhoneTel" class="inline-flex items-center gap-1 text-white hover:text-white/80">
+                    <lucide-icon name="phone" [size]="10"></lucide-icon>
+                    {{ supportPhone }}
+                </a>
+                <span class="text-white/40">|</span>
+                <span>Powered by Savaari</span>
+            </div>
         </div>
 
     </div>

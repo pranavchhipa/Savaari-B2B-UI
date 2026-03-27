@@ -6,7 +6,7 @@
   class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-white/5">
   <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16 relative">
-      <div class="flex items-center gap-4 md:gap-8">
+      <div class="flex items-center gap-2 sm:gap-4 md:gap-8">
         <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer group"
           [routerLink]="isPublicRoute ? '/' : '/dashboard'">
           <!-- Agent uploaded logo -->
@@ -14,7 +14,7 @@
             class="h-9 max-w-[140px] object-contain rounded" />
           <!-- Default B2B CAB logo (shown when no agent logo) -->
           <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo-white.webp" [alt]="brandName"
-            class="h-12 sm:h-14 md:h-16 lg:h-20 object-contain" />
+            class="h-14 sm:h-16 md:h-20 lg:h-24 object-contain" />
         </div>
 
       </div>
@@ -59,96 +59,98 @@
         <ng-container *ngIf="!isPublicRoute">
           <div class="flex items-center">
 
-            <div class="flex items-center space-x-4 overflow-x-auto hide-scrollbar max-w-full mr-2">
+            <div class="flex items-center space-x-1.5 sm:space-x-4 overflow-x-auto hide-scrollbar max-w-full mr-1 sm:mr-2">
 
-              <!-- Core Navigation -->
+              <!-- Core Navigation: Home + Wallet -->
               <div class="flex items-center space-x-0.5 sm:space-x-1 border-r border-white/10 pr-2 sm:pr-4">
                 <a routerLink="/dashboard" routerLinkActive="!bg-primary !text-white"
                   [routerLinkActiveOptions]="{exact: true}"
                   class="px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 rounded-lg text-xs sm:text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition">Home</a>
 
+                <!-- Bookings link — desktop only, mobile moved to dropdown -->
                 <a routerLink="/bookings" routerLinkActive="!bg-primary !text-white"
-                  class="px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 rounded-lg text-xs sm:text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition">Bookings</a>
+                  class="hidden sm:block px-2 sm:px-3 py-1 sm:py-1.5 md:py-2 rounded-lg text-xs sm:text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition">Bookings</a>
               </div>
 
               <!-- Wallet Display -->
               <a routerLink="/wallet"
-                class="hidden md:flex items-center bg-white/10 border border-white/20 hover:border-white/40 hover:bg-white/15 px-3 py-1.5 rounded-lg text-[13px] font-bold text-white mr-1 transition-all cursor-pointer group">
+                class="flex items-center bg-white/10 border border-white/20 hover:border-white/40 hover:bg-white/15 px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[11px] sm:text-[13px] font-bold text-white mr-0.5 sm:mr-1 transition-all cursor-pointer group">
                 <div
-                  class="bg-primary text-white rounded-md p-2 mr-2 shadow-sm group-hover:scale-110 transition-transform">
-                  <lucide-icon name="wallet" [size]="18"></lucide-icon>
+                  class="bg-primary text-white rounded p-1 sm:p-2 mr-1 sm:mr-2 shadow-sm group-hover:scale-110 transition-transform">
+                  <lucide-icon name="wallet" [size]="12" class="sm:!w-[18px] sm:!h-[18px]"></lucide-icon>
                 </div>
-                ₹ {{ (balance$ | async) | number:'1.0-0' }}
+                ₹{{ (balance$ | async) | number:'1.0-0' }}
               </a>
             </div>
 
             <!-- User Dropdown Menu -->
             <div
-              class="relative ml-2 md:ml-4 flex items-center border-l border-white/10 pl-2 md:pl-4">
+              class="relative ml-1.5 md:ml-4 flex items-center border-l border-white/10 pl-1.5 md:pl-4">
               <button (click)="isUserDropdownOpen = !isUserDropdownOpen"
-                class="flex items-center gap-1.5 sm:gap-2 outline-none p-1 sm:p-1.5 pr-2 sm:pr-3 rounded-lg bg-white/10 hover:bg-white/15 transition border border-white/20 relative z-50 cursor-pointer">
+                class="flex items-center gap-1 sm:gap-2 outline-none p-0.5 sm:p-1.5 pr-1.5 sm:pr-3 rounded-md sm:rounded-lg transition border relative z-50 cursor-pointer"
+                [ngClass]="isUserDropdownOpen ? 'bg-white/20 border-primary/50 shadow-md shadow-primary/20' : 'bg-white/10 hover:bg-white/15 border-white/20'">
                 <div
-                  class="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 text-white flex items-center justify-center font-bold text-[11px] sm:text-[13px] md:text-[15px] shadow-inner uppercase tracking-wider">
+                  class="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-md sm:rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 text-white flex items-center justify-center font-bold text-[9px] sm:text-[13px] md:text-[15px] shadow-inner uppercase tracking-wider">
                   {{ userInitial }}
                 </div>
                 <div class="hidden md:flex flex-col items-start px-1 text-left">
                   <span class="text-[13px] font-bold text-white leading-tight">{{ userName }}</span>
                   <span class="text-[10px] text-white/50 font-medium leading-none">Travel Agent</span>
                 </div>
-                <lucide-icon name="chevron-down" [size]="14"
-                  class="text-white/50 mt-1 md:ml-1"></lucide-icon>
+                <lucide-icon name="chevron-down" [size]="10"
+                  class="text-white/50 sm:!w-[14px] sm:!h-[14px] md:ml-1"></lucide-icon>
               </button>
 
               <!-- Dropdown Panel -->
               <div *ngIf="isUserDropdownOpen"
-                class="absolute top-full right-0 mt-3 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden py-2 z-50 animate-in fade-in slide-in-from-top-2 origin-top-right">
-                <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700/80 mb-1">
-                  <p class="text-sm font-bold text-slate-900 dark:text-white">{{ userFullName }}</p>
-                  <p class="text-[11px] text-slate-500 truncate mt-0.5" [title]="userEmail">
+                class="absolute top-full right-0 mt-2 w-48 sm:w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden py-1 sm:py-2 z-50 animate-in fade-in slide-in-from-top-2 origin-top-right">
+                <div class="px-3 sm:px-4 py-2 sm:py-3 border-b border-slate-100 dark:border-slate-700/80 mb-0.5">
+                  <p class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{{ userFullName }}</p>
+                  <p class="text-[10px] sm:text-[11px] text-slate-500 truncate mt-0.5" [title]="userEmail">
                     {{ userEmail }}</p>
                 </div>
                 <a routerLink="/account-settings" (click)="isUserDropdownOpen = false"
-                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
-                  <lucide-icon name="user" [size]="16" class="text-slate-400"></lucide-icon>
+                  class="flex items-center gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
+                  <lucide-icon name="user" [size]="14" class="text-slate-400 sm:!w-4 sm:!h-4"></lucide-icon>
                   My Account
                 </a>
                 <a routerLink="/bookings" (click)="isUserDropdownOpen = false"
-                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
-                  <lucide-icon name="briefcase" [size]="16" class="text-slate-400"></lucide-icon>
+                  class="flex items-center gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
+                  <lucide-icon name="briefcase" [size]="14" class="text-slate-400 sm:!w-4 sm:!h-4"></lucide-icon>
                   My Bookings
                 </a>
                 <a routerLink="/reports" (click)="isUserDropdownOpen = false"
-                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
-                  <lucide-icon name="file-bar-chart" [size]="16" class="text-slate-400"></lucide-icon>
+                  class="flex items-center gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
+                  <lucide-icon name="file-bar-chart" [size]="14" class="text-slate-400 sm:!w-4 sm:!h-4"></lucide-icon>
                   Reports
                 </a>
                 <a routerLink="/markup-settings" (click)="isUserDropdownOpen = false"
-                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
-                  <lucide-icon name="percent-circle" [size]="16" class="text-slate-400"></lucide-icon>
+                  class="flex items-center gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
+                  <lucide-icon name="percent-circle" [size]="14" class="text-slate-400 sm:!w-4 sm:!h-4"></lucide-icon>
                   Mark-ups
                 </a>
                 <a routerLink="/wallet" (click)="isUserDropdownOpen = false"
-                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
-                  <lucide-icon name="wallet" [size]="16" class="text-slate-400"></lucide-icon>
+                  class="flex items-center gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
+                  <lucide-icon name="wallet" [size]="14" class="text-slate-400 sm:!w-4 sm:!h-4"></lucide-icon>
                   Wallet
                 </a>
-                <div class="h-px bg-slate-100 dark:bg-slate-700/80 my-1"></div>
+                <div class="h-px bg-slate-100 dark:bg-slate-700/80 my-0.5 sm:my-1"></div>
                 <button (click)="toggleDarkMode(); isUserDropdownOpen = false"
-                  class="w-full flex items-center justify-between px-4 py-2.5 text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer text-left">
-                  <div class="flex items-center gap-3">
-                    <lucide-icon name="moon" [size]="16" class="text-slate-400 dark:hidden"></lucide-icon>
-                    <lucide-icon name="sun" [size]="16" class="text-slate-400 hidden dark:block"></lucide-icon>
+                  class="w-full flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer text-left">
+                  <div class="flex items-center gap-2.5">
+                    <lucide-icon name="moon" [size]="14" class="text-slate-400 dark:hidden sm:!w-4 sm:!h-4"></lucide-icon>
+                    <lucide-icon name="sun" [size]="14" class="text-slate-400 hidden dark:block sm:!w-4 sm:!h-4"></lucide-icon>
                     Dark Mode
                   </div>
-                  <span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  <span class="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                     <span class="dark:hidden">Off</span>
                     <span class="hidden dark:inline">On</span>
                   </span>
                 </button>
-                <div class="h-px bg-slate-100 dark:bg-slate-700/80 my-1"></div>
+                <div class="h-px bg-slate-100 dark:bg-slate-700/80 my-0.5 sm:my-1"></div>
                 <a (click)="onLogout()"
-                  class="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer">
-                  <lucide-icon name="log-out" [size]="16" class="text-red-500"></lucide-icon>
+                  class="flex items-center gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer">
+                  <lucide-icon name="log-out" [size]="14" class="text-red-500 sm:!w-4 sm:!h-4"></lucide-icon>
                   Log Out
                 </a>
               </div>

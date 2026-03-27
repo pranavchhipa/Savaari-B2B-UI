@@ -17,9 +17,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $uri = $_SERVER['REQUEST_URI'];
 $target = null;
 
-// Route to correct backend
+// Route to correct backend (Alpha servers for testing)
 if (preg_match('#^/partner-api/(.*)$#', $uri, $m)) {
-    $target = 'https://api.betasavaari.com/partner_api/public/' . $m[1];
+    $target = 'https://api.alphasavaari.com/partner_api/public/' . $m[1];
 } elseif (preg_match('#^/b2b-api/(.*)$#', $uri, $m)) {
     $target = 'https://api23.betasavaari.com/' . $m[1];
 } elseif (preg_match('#^/wallet-api/(.*)$#', $uri, $m)) {

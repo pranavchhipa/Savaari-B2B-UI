@@ -1,85 +1,81 @@
 <footer class="gradient-cyan-dark text-primary-foreground">
-    <div class="container mx-auto px-4 lg:px-8 py-8 sm:py-12">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10">
-            <!-- Logo + tagline -->
-            <div class="col-span-2 lg:col-span-1">
+    <div class="container mx-auto px-4 lg:px-8 py-5 sm:py-12">
+        <div class="grid grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-10">
+            <!-- Logo + tagline — hidden on mobile, shown on desktop -->
+            <div class="hidden lg:block col-span-1">
                 <div class="flex items-start group mb-3">
-                    <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-10 sm:h-12 object-contain" />
+                    <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-12 object-contain" />
                 </div>
-                <p class="text-xs sm:text-sm text-primary-foreground/60 leading-relaxed">
+                <p class="text-sm text-primary-foreground/60 leading-relaxed">
                     India's trusted B2B cab booking platform for travel agents.
                 </p>
             </div>
 
             <!-- Quick Links -->
             <div>
-                <h4 class="font-bold text-xs sm:text-sm uppercase tracking-wider text-primary-foreground mb-3 sm:mb-4">
+                <h4 class="font-bold text-[9px] sm:text-sm uppercase tracking-wider text-primary-foreground mb-1.5 sm:mb-4">
                     Quick Links
                 </h4>
-                <div class="flex flex-col gap-1.5 sm:gap-2">
+                <div class="flex flex-col gap-1 sm:gap-2">
                     <a href="#solutions"
-                        class="text-xs sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
+                        class="text-[10px] sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
                         Solutions
                     </a>
                     <a href="#value-props"
-                        class="text-xs sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
+                        class="text-[10px] sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
                         Why B2B CAB
                     </a>
                     <a href="#overview"
-                        class="text-xs sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
+                        class="text-[10px] sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
                         About
-                    </a>
-                    <a href="#cta"
-                        class="text-xs sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
-                        Contact
                     </a>
                 </div>
             </div>
 
             <!-- Company -->
             <div>
-                <h4 class="font-bold text-xs sm:text-sm uppercase tracking-wider text-primary-foreground mb-3 sm:mb-4">
+                <h4 class="font-bold text-[9px] sm:text-sm uppercase tracking-wider text-primary-foreground mb-1.5 sm:mb-4">
                     Company
                 </h4>
-                <div class="flex flex-col gap-1.5 sm:gap-2">
+                <div class="flex flex-col gap-1 sm:gap-2">
                     <a routerLink="/about-us"
-                        class="text-xs sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
+                        class="text-[10px] sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
                         About Us
                     </a>
                     <a routerLink="/privacy-policy"
-                        class="text-xs sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
-                        Privacy Policy
+                        class="text-[10px] sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
+                        Privacy
                     </a>
                     <a routerLink="/terms-conditions"
-                        class="text-xs sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
-                        Terms & Conditions
+                        class="text-[10px] sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
+                        Terms
                     </a>
                 </div>
             </div>
 
             <!-- Get in Touch -->
             <div>
-                <h4 class="font-bold text-xs sm:text-sm uppercase tracking-wider text-primary-foreground mb-3 sm:mb-4">
-                    Get in Touch
+                <h4 class="font-bold text-[9px] sm:text-sm uppercase tracking-wider text-primary-foreground mb-1.5 sm:mb-4">
+                    Contact
                 </h4>
                 <a routerLink="/contact-us"
-                    class="block text-xs sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
+                    class="block text-[10px] sm:text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors cursor-pointer">
                     Contact Us
                 </a>
-                <div class="flex items-center gap-1.5 mt-2 text-xs sm:text-sm text-primary-foreground/70">
-                    <lucide-icon name="headset" [size]="14"></lucide-icon>
-                    <span>24x7: {{ supportPhone }}</span>
+                <div class="flex items-center gap-1 sm:gap-1.5 mt-1 sm:mt-2 text-[10px] sm:text-sm text-primary-foreground/70">
+                    <lucide-icon name="headset" [size]="11" class="sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
+                    <span>{{ supportPhone }}</span>
                 </div>
             </div>
         </div>
 
         <div
-            class="mt-6 sm:mt-10 pt-4 sm:pt-6 border-t border-primary-foreground/15 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4">
-            <p class="text-xs sm:text-sm text-primary-foreground/50">
-                © Copyright {{ brandName }}.
+            class="mt-3 sm:mt-10 pt-3 sm:pt-6 border-t border-primary-foreground/15 flex flex-row justify-between items-center gap-2 sm:gap-4">
+            <p class="text-[9px] sm:text-sm text-primary-foreground/50">
+                © {{ brandName }}
             </p>
-            <p class="text-xs sm:text-sm text-primary-foreground/50">
-                Powered by {{ companyName }}.
+            <p class="text-[9px] sm:text-sm text-primary-foreground/50">
+                Powered by {{ companyName }}
             </p>
         </div>
     </div>

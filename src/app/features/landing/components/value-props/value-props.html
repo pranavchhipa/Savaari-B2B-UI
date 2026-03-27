@@ -1,22 +1,22 @@
-<section id="value-props" class="py-12 sm:py-24 bg-slate-50">
+<section id="value-props" class="py-8 sm:py-16 bg-slate-50">
     <div class="container mx-auto px-4 lg:px-8">
-        <div class="text-center mb-14 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <span class="inline-block text-xs font-bold uppercase tracking-widest text-amber mb-3">
+        <div class="text-center mb-6 sm:mb-14 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <span class="inline-block text-[10px] sm:text-xs font-bold uppercase tracking-widest text-amber mb-1.5 sm:mb-3">
                 WHY CHOOSE B2B CAB
             </span>
-            <h2 class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight max-w-2xl mx-auto">
+            <h2 class="font-display text-xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight max-w-2xl mx-auto">
                 Everything Your Enterprise Needs for
                 <span class="text-gradient-cyan"> Ground Mobility</span>
             </h2>
         </div>
 
-        <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6">
 
             <!-- Cyan -->
             <div *ngFor="let prop of props"
-                class="relative bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group overflow-hidden flex flex-col">
+                class="relative bg-white rounded-xl sm:rounded-2xl border border-slate-100 p-3 sm:p-6 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group overflow-hidden flex flex-col">
                 <!-- Top accent bar -->
-                <div class="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
+                <div class="absolute top-0 left-0 right-0 h-0.5 sm:h-1 rounded-t-xl sm:rounded-t-2xl"
                     [ngClass]="{
                         'bg-gradient-to-r from-cyan-400 to-sky-500': prop.accent === 'cyan',
                         'bg-gradient-to-r from-blue-400 to-blue-600': prop.accent === 'blue',
@@ -27,9 +27,9 @@
                     }">
                 </div>
 
-                <div class="flex items-start justify-between mb-5 mt-1">
+                <div class="flex items-start justify-between mb-2.5 sm:mb-5 mt-0.5 sm:mt-1">
                     <!-- Icon -->
-                    <div class="w-11 h-11 rounded-xl flex items-center justify-center transition-colors duration-300"
+                    <div class="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center transition-colors duration-300"
                         [ngClass]="{
                             'bg-cyan-50 group-hover:bg-cyan-100': prop.accent === 'cyan',
                             'bg-blue-50 group-hover:bg-blue-100': prop.accent === 'blue',
@@ -50,7 +50,7 @@
                         </lucide-icon>
                     </div>
                     <!-- Badge -->
-                    <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border"
+                    <span class="text-[7px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full border hidden sm:inline-block"
                         [ngClass]="{
                             'bg-cyan-50 text-cyan-600 border-cyan-200': prop.accent === 'cyan',
                             'bg-blue-50 text-blue-600 border-blue-200': prop.accent === 'blue',
@@ -63,10 +63,10 @@
                     </span>
                 </div>
 
-                <h3 class="font-display font-bold text-base text-slate-900 mb-2 leading-snug">
+                <h3 class="font-display font-bold text-xs sm:text-base text-slate-900 mb-1 sm:mb-2 leading-snug">
                     {{ prop.title }}
                 </h3>
-                <p class="text-slate-500 text-sm leading-relaxed">
+                <p class="text-slate-500 text-[10px] sm:text-sm leading-relaxed">
                     {{ prop.description }}
                 </p>
             </div>

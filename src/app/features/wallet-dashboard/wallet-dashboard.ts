@@ -43,6 +43,32 @@ export class WalletDashboardComponent implements OnInit {
   filteredTransactions: WalletTransaction[] = [];
   private allTransactions: WalletTransaction[] = [];
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+  Math = Math;
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredTransactions.length / this.pageSize);
+  }
+
+  get paginatedTransactions(): WalletTransaction[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredTransactions.slice(start, start + this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    const pages: number[] = [];
+    for (let i = 1; i <= this.totalPages; i++) pages.push(i);
+    return pages;
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    this.cdr.markForCheck();
+  }
+
   filterOptions = [
     { label: 'All', value: 'ALL' as const },
     { label: 'Credits', value: 'TOPUP' as const },
@@ -154,6 +180,7 @@ export class WalletDashboardComponent implements OnInit {
   applyFilter(filter: 'ALL' | 'TOPUP' | 'BOOKING_PAYMENT' | 'REFUND'): void {
     this.activeFilter = filter;
     this.showFilterDropdown = false;
+    this.currentPage = 1;
     if (filter === 'ALL') {
       this.filteredTransactions = [...this.allTransactions];
     } else {

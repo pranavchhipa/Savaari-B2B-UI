@@ -160,65 +160,90 @@
             <!-- Cab List -->
             <div *ngIf="!isLoading" class="space-y-2 sm:space-y-3">
                 <div *ngFor="let car of carsToDisplay"
-                    class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden group">
-                    <div class="px-3 py-3 sm:px-5 sm:py-4 flex flex-row gap-3 sm:gap-5 items-center">
+                    class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden group hover:border-primary/40 hover:shadow-md transition-all">
+
+                    <!-- Mobile: full card tappable -->
+                    <div class="md:hidden cursor-pointer active:bg-slate-50 transition-colors" (click)="onSelectCar(car)">
+                        <!-- Top: Image full width -->
+                        <div class="w-full h-[170px] bg-slate-50 dark:bg-slate-800 overflow-hidden relative">
+                            <img [src]="car.image" [alt]="car.name"
+                                class="w-full h-full object-cover scale-90" />
+                            <!-- Price badge overlay -->
+                            <div class="absolute bottom-2 right-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-lg px-2.5 py-1.5 shadow-lg border border-slate-200/50">
+                                <span class="text-base font-extrabold text-slate-900 dark:text-white">₹ {{ getCarPrice(car.price) | number:'1.0-0' }}</span>
+                                <span class="text-[8px] text-slate-400 block leading-none">Incl. GST</span>
+                            </div>
+                        </div>
+                        <!-- Bottom: Info -->
+                        <div class="px-3 py-2.5">
+                            <div class="flex items-start justify-between mb-1.5">
+                                <div class="min-w-0">
+                                    <h2 class="text-[13px] font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">{{car.name}}</h2>
+                                    <p class="text-[10px] text-slate-400">{{car.subtitle}}</p>
+                                </div>
+                                <div class="shrink-0 ml-2 flex items-center gap-1 text-[9px] text-primary font-bold">
+                                    <span>Tap to select</span>
+                                    <lucide-icon name="chevron-right" [size]="12" class="text-primary"></lucide-icon>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                    <lucide-icon name="gauge" [size]="10" class="mr-0.5"></lucide-icon>
+                                    {{ getCarKms(car.kmsIncluded) }}
+                                </span>
+                                <span *ngIf="car.hoursIncluded" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+                                    <lucide-icon name="clock" [size]="10" class="mr-0.5"></lucide-icon>
+                                    {{car.hoursIncluded}}
+                                </span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                    <lucide-icon name="users" [size]="10" class="mr-0.5"></lucide-icon> {{car.seats}}
+                                </span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                    <lucide-icon name="briefcase" [size]="10" class="mr-0.5"></lucide-icon> {{car.bags}}
+                                </span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                    <lucide-icon name="snowflake" [size]="10" class="mr-0.5"></lucide-icon> {{car.ac}}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Desktop: original horizontal layout -->
+                    <div class="hidden md:flex px-5 py-4 gap-5 items-center">
                         <!-- Car Image -->
-                        <div
-                            class="w-[100px] sm:w-[200px] md:w-[320px] h-[70px] sm:h-[130px] md:h-[180px] flex-shrink-0 bg-slate-50 dark:bg-slate-800 rounded-lg sm:rounded-xl overflow-hidden">
+                        <div class="w-[320px] h-[180px] flex-shrink-0 bg-slate-50 dark:bg-slate-800 rounded-xl overflow-hidden">
                             <img [src]="car.image" [alt]="car.name"
                                 class="w-full h-full object-cover" />
                         </div>
-                        <!-- Car Info + Price combined on mobile -->
+                        <!-- Car Info -->
                         <div class="flex-1 flex flex-col justify-center min-w-0">
-                            <h2
-                                class="text-sm sm:text-xl md:text-2xl font-bold text-primary group-hover:text-sky-600 transition-colors leading-tight mb-0.5 sm:mb-1 truncate">
+                            <h2 class="text-xl md:text-2xl font-bold text-primary group-hover:text-sky-600 transition-colors leading-tight mb-1 truncate">
                                 {{car.name}}</h2>
-                            <p class="text-[9px] sm:text-xs text-slate-500 dark:text-slate-400 mb-1.5 sm:mb-3">{{car.subtitle}}</p>
-                            <div class="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-0">
-                                <span
-                                    class="inline-flex items-center px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="gauge" [size]="10" class="mr-0.5 sm:mr-1 sm:!w-[13px] sm:!h-[13px]"></lucide-icon>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{{car.subtitle}}</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="gauge" [size]="13" class="mr-1"></lucide-icon>
                                     {{ getCarKms(car.kmsIncluded) }}
                                 </span>
-                                <span *ngIf="car.hoursIncluded"
-                                    class="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[8px] sm:text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                                    <lucide-icon name="clock" [size]="10" class="mr-0.5 sm:mr-1.5 sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
+                                <span *ngIf="car.hoursIncluded" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                    <lucide-icon name="clock" [size]="14" class="mr-1.5"></lucide-icon>
                                     {{car.hoursIncluded}}
                                 </span>
-                                <span
-                                    class="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[8px] sm:text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="users" [size]="10" class="mr-0.5 sm:mr-1.5 sm:!w-[14px] sm:!h-[14px]"></lucide-icon> {{car.seats}}
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="users" [size]="14" class="mr-1.5"></lucide-icon> {{car.seats}}
                                 </span>
-                                <span
-                                    class="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[8px] sm:text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="briefcase" [size]="10" class="mr-0.5 sm:mr-1.5 sm:!w-[14px] sm:!h-[14px]"></lucide-icon> {{car.bags}}
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="briefcase" [size]="14" class="mr-1.5"></lucide-icon> {{car.bags}}
                                 </span>
-                                <span
-                                    class="inline-flex items-center px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[8px] sm:text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                    <lucide-icon name="snowflake" [size]="10" class="mr-0.5 sm:mr-1.5 sm:!w-[14px] sm:!h-[14px]"></lucide-icon> {{car.ac}}
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                    <lucide-icon name="snowflake" [size]="14" class="mr-1.5"></lucide-icon> {{car.ac}}
                                 </span>
-                            </div>
-                            <!-- Price & CTA inline on mobile — pushed right -->
-                            <div class="flex items-center justify-between md:hidden">
-                                <div>
-                                    <span class="text-sm font-extrabold text-slate-900 dark:text-white">₹ {{
-                                        getCarPrice(car.price) | number:'1.0-0' }}</span>
-                                    <p class="text-[7px] text-slate-400 leading-none">Incl. GST</p>
-                                </div>
-                                <button
-                                    (click)="onSelectCar(car)"
-                                    class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded-md shadow-sm transition-all transform active:scale-95 text-[8px] uppercase tracking-wider cursor-pointer whitespace-nowrap ml-auto">
-                                    SELECT
-                                </button>
                             </div>
                         </div>
                         <!-- Price & CTA — desktop only -->
-                        <div
-                            class="hidden md:flex w-[180px] flex-shrink-0 flex-col items-end justify-center border-l border-slate-100 dark:border-slate-700 pl-6">
+                        <div class="w-[180px] flex-shrink-0 flex flex-col items-end justify-center border-l border-slate-100 dark:border-slate-700 pl-6">
                             <div class="text-right">
-                                <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹ {{
-                                    getCarPrice(car.price)
-                                    | number:'1.0-0' }}</span>
+                                <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹ {{ getCarPrice(car.price) | number:'1.0-0' }}</span>
                             </div>
                             <p class="text-[10px] text-slate-400 mb-3">Inclusive of GST</p>
                             <button

@@ -9,7 +9,27 @@
             <span class="text-xs sm:text-sm font-medium text-slate-500">{{ step1Complete ? 'Back to Pickup Details' : 'Back to Select Car' }}</span>
         </div>
 
-        <!-- High-Contrast Trust Badges -->
+        <!-- Mobile Trust Badges — colored mini-cards (hidden on Step 2) -->
+        <div class="flex md:hidden items-center gap-2 mt-1 mb-0.5 overflow-x-auto" [hidden]="step1Complete">
+            <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200/60 rounded-lg px-2.5 py-1.5 shrink-0">
+                <div class="w-5 h-5 rounded-md bg-amber-400/20 flex items-center justify-center">
+                    <lucide-icon name="clock" [size]="11" class="text-amber-600"></lucide-icon>
+                </div>
+                <span class="text-[10px] font-bold text-amber-700">Since 2006</span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-sky-50 border border-sky-200/60 rounded-lg px-2.5 py-1.5 shrink-0">
+                <div class="w-5 h-5 rounded-md bg-sky-400/20 flex items-center justify-center">
+                    <lucide-icon name="user-check" [size]="11" class="text-sky-600"></lucide-icon>
+                </div>
+                <span class="text-[10px] font-bold text-sky-700">Expert Staff</span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200/60 rounded-lg px-2.5 py-1.5 shrink-0">
+                <div class="w-5 h-5 rounded-md bg-emerald-400/20 flex items-center justify-center">
+                    <lucide-icon name="star" [size]="11" class="text-emerald-600"></lucide-icon>
+                </div>
+                <span class="text-[10px] font-bold text-emerald-700">9.5/10 Rated</span>
+            </div>
+        </div>
         <div class="hidden md:flex items-center gap-4">
             <div
                 class="flex items-center gap-3 pl-2 pr-5 py-2 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] border border-slate-100 dark:border-slate-800">
@@ -46,8 +66,9 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-5" *ngIf="!bookingConfirmed">
         <div class="lg:col-span-8 space-y-2 sm:space-y-3">
 
-            <!-- Step Progress Indicator -->
-            <div class="flex items-center space-x-2 sm:space-x-4 mb-1 sm:mb-2">
+            <!-- Step Progress Indicator (hidden on mobile Step 2 — saves space) -->
+            <div class="flex items-center space-x-2 sm:space-x-4 mb-1 sm:mb-2"
+                [class.hidden]="step1Complete" [class.sm:flex]="step1Complete">
                 <div class="flex items-center space-x-1.5 sm:space-x-2">
                     <span
                         [ngClass]="{'bg-primary text-white': !step1Complete, 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400': step1Complete}"
@@ -67,12 +88,16 @@
                 </div>
             </div>
 
+
             <!-- STEP 1: Contact & Pickup Details -->
             <div [hidden]="step1Complete"
                 class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div
-                    class="bg-primary/5 dark:bg-primary/10 px-4 sm:px-5 py-2 sm:py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-                    <h2 class="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">Contact & Pickup Details</h2>
+                    class="bg-gradient-to-r from-primary/10 to-sky-50 dark:from-primary/15 dark:to-slate-800 px-4 sm:px-5 py-2.5 sm:py-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                        <lucide-icon name="user" [size]="13" class="text-primary sm:!w-[15px] sm:!h-[15px]"></lucide-icon>
+                    </div>
+                    <h2 class="text-[13px] sm:text-base font-bold text-slate-800 dark:text-white">Contact & Pickup Details</h2>
                 </div>
                 <div class="p-3 sm:p-4">
                     <form class="space-y-2.5 sm:space-y-3">
@@ -172,7 +197,7 @@
                                     placeholder="Pickup locality or address"
                                     appendTo="body"
                                     styleClass="w-full"
-                                    inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
+                                    inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 !text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
                                     panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                                     [forceSelection]="false"
                                     [completeOnFocus]="false">
@@ -184,7 +209,7 @@
                                     </ng-template>
                                 </p-autoComplete>
                                 <label
-                                    class="absolute text-sm text-slate-500 dark:text-slate-400 top-2 left-12 scale-75 font-medium pointer-events-none">Pickup
+                                    class="absolute text-xs text-slate-500 dark:text-slate-400 top-1.5 left-12 font-medium pointer-events-none">Pickup
                                     Address <span class="text-red-500">*</span></label>
                             </div>
                             <div *ngIf="formSubmitAttempted && !isPickupAddressValid()" class="text-xs text-red-500 mt-1 ml-4">Pickup address is required (min 3 characters)</div>
@@ -203,7 +228,7 @@
                                     placeholder="Drop locality or address"
                                     appendTo="body"
                                     styleClass="w-full"
-                                    inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
+                                    inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 !text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
                                     panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                                     [forceSelection]="false"
                                     [completeOnFocus]="false">
@@ -215,7 +240,7 @@
                                     </ng-template>
                                 </p-autoComplete>
                                 <label
-                                    class="absolute text-sm text-slate-500 dark:text-slate-400 top-2 left-12 scale-75 font-medium pointer-events-none">Drop
+                                    class="absolute text-xs text-slate-500 dark:text-slate-400 top-1.5 left-12 font-medium pointer-events-none">Drop
                                     Address <span class="text-red-500">*</span></label>
                             </div>
                             <div *ngIf="formSubmitAttempted && !isDropAddressValid()" class="text-xs text-red-500 mt-1 ml-4">Drop address is required (min 3 characters)</div>
@@ -261,10 +286,11 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-center pt-1">
+                        <div class="flex justify-center pt-2 sm:pt-1">
                             <button type="button" (click)="proceedToPayment()"
-                                class="bg-primary hover:bg-sky-700 text-white font-semibold py-2.5 px-10 rounded-full shadow-lg shadow-sky-200 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-sm">
+                                class="w-full sm:w-auto bg-gradient-to-r from-primary to-sky-500 hover:from-sky-600 hover:to-sky-700 text-white font-bold py-3 sm:py-2.5 px-10 rounded-xl sm:rounded-full shadow-lg shadow-sky-200/50 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2">
                                 Proceed to Next Step
+                                <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
                             </button>
                         </div>
                     </form>
@@ -273,7 +299,7 @@
 
             <!-- STEP 1 COMPLETED: Collapsed View -->
             <div [hidden]="!step1Complete"
-                class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden opacity-60">
+                class="hidden sm:block bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden opacity-60">
                 <div class="px-4 py-2 flex items-center gap-2">
                     <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold text-[9px]">✓</span>
                     <h2 class="text-xs font-semibold text-slate-400 dark:text-slate-500">Contact Details Verified</h2>
@@ -294,8 +320,8 @@
             <!-- STEP 2: Payment Details -->
             <div [hidden]="!step1Complete" *ngIf="{ balance: walletBalance$ | async } as walletObj">
 
-                <!-- Back Button -->
-                <div class="flex items-center mb-2">
+                <!-- Back Button (hidden on mobile — top back arrow serves same purpose) -->
+                <div class="hidden sm:flex items-center mb-2">
                     <button (click)="step1Complete = false"
                         class="text-xs font-semibold text-primary hover:text-sky-700 flex items-center gap-1 cursor-pointer transition-colors">
                         <lucide-icon name="arrow-left" [size]="12"></lucide-icon> Edit Pickup Details
@@ -305,24 +331,25 @@
                 <!-- ═══════════════════════════════════════════════ -->
                 <!-- TRIP FARE SUMMARY CARD                         -->
                 <!-- ═══════════════════════════════════════════════ -->
-                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 mb-2 shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-[10px] font-black text-primary uppercase tracking-widest">Trip Fare</p>
-                            <p class="text-sm text-slate-700 dark:text-slate-300 font-medium mt-0.5">
+                <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 mb-2 shadow-sm">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-widest">Trip Fare</p>
+                            <p class="text-[13px] sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5 leading-snug">
                                 {{ itinerary?.fromCity || 'Source' }}
                                 <ng-container *ngIf="itinerary?.toCity"> → {{ itinerary?.toCity }}</ng-container>
-                                · {{ selectedCar?.name || 'Sedan' }}
                             </p>
-                            <p class="text-[11px] text-slate-400 dark:text-slate-500">
-                                {{ itinerary?.tripType }}
-                                <ng-container *ngIf="itinerary?.tripType === 'Local'"> ({{ itinerary?.localPackage || '8hr/80km' }})</ng-container>
-                                · {{ itinerary?.pickupDate | date:'dd MMM' }} · {{ itinerary?.pickupTime }}
-                            </p>
+                            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <span class="text-[10px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{{ selectedCar?.name || 'Sedan' }}</span>
+                                <span class="text-[10px] text-slate-400">·</span>
+                                <span class="text-[10px] text-slate-400">{{ itinerary?.tripType }}<ng-container *ngIf="itinerary?.tripType === 'Local'"> ({{ itinerary?.localPackage || '8hr/80km' }})</ng-container></span>
+                                <span class="text-[10px] text-slate-400">·</span>
+                                <span class="text-[10px] text-slate-400">{{ itinerary?.pickupDate | date:'dd MMM' }} · {{ itinerary?.pickupTime }}</span>
+                            </div>
                         </div>
-                        <div class="text-right pl-4">
-                            <p class="text-xl font-black text-slate-900 dark:text-white tracking-tight">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</p>
-                            <p class="text-[10px] text-emerald-500 font-semibold">All inclusive</p>
+                        <div class="text-right shrink-0">
+                            <p class="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</p>
+                            <p class="text-[9px] sm:text-[10px] text-emerald-500 font-semibold">All inclusive</p>
                         </div>
                     </div>
                 </div>
@@ -330,7 +357,7 @@
                 <!-- ═══════════════════════════════════════════════ -->
                 <!-- 48-HOUR TIMING BANNER                          -->
                 <!-- ═══════════════════════════════════════════════ -->
-                <div class="flex items-center gap-2 px-3 py-2 mb-2 rounded-lg border"
+                <div class="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 mb-1.5 sm:mb-2 rounded-lg border"
                     [ngClass]="isBookingUrgent()
                         ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
                         : 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800'">
@@ -356,7 +383,7 @@
                     <p class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Choose Payment Plan</p>
                 </div>
 
-                <div class="space-y-1.5 sm:space-y-2 mb-2 sm:mb-3">
+                <div class="space-y-1.5 mb-1.5 sm:mb-3">
 
                     <!-- ════════════════════════════════════════════ -->
                     <!-- OPTION 1: Part Payment (Slider)             -->
@@ -560,8 +587,9 @@
         <!-- RIGHT SIDEBAR -->
         <div class="lg:col-span-4 space-y-3 sm:space-y-4">
 
-            <!-- Booking Summary Sticky Card -->
-            <div class="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden sticky top-2">
+            <!-- Booking Summary Sticky Card — hidden on mobile during Step 1, always visible on desktop -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden sticky top-2"
+                [ngClass]="{'hidden lg:block': !step1Complete}">
                 <div class="bg-slate-900 px-5 py-2.5">
                     <h3 class="text-white font-semibold flex items-center gap-2 text-sm">
                         <lucide-icon name="receipt-text" [size]="16" class="text-primary"></lucide-icon>
@@ -863,38 +891,38 @@
         class="booking-voucher-print max-w-2xl mx-auto mt-2 mb-6 relative z-[201] px-4">
 
         <!-- Compact Success + Booking ID Row -->
-        <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/30 confirmation-pop">
-                    <lucide-icon name="check" [size]="22" class="text-white"></lucide-icon>
+        <div class="flex items-center justify-between mb-3 gap-2">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/30 confirmation-pop shrink-0">
+                    <lucide-icon name="check" [size]="18" class="text-white sm:!w-[22px] sm:!h-[22px]"></lucide-icon>
                 </div>
-                <div>
-                    <h1 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">Booking Confirmed</h1>
-                    <p class="text-xs text-slate-400">ID: <span class="font-semibold text-slate-600 dark:text-slate-300">{{bookingId}}</span></p>
+                <div class="min-w-0">
+                    <h1 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Booking Confirmed</h1>
+                    <p class="text-[10px] sm:text-xs text-slate-400 truncate">ID: <span class="font-semibold text-slate-600 dark:text-slate-300">{{bookingId}}</span></p>
                 </div>
             </div>
-            <span class="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-800">Confirmed</span>
+            <span class="px-2 sm:px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-800 shrink-0">Confirmed</span>
         </div>
 
         <!-- Main Booking Card -->
         <div class="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200/80 dark:border-slate-700/60 overflow-hidden confirmation-card-rise">
 
-            <div class="px-5 py-4 space-y-3">
+            <div class="px-3 sm:px-5 py-3 sm:py-4 space-y-2.5 sm:space-y-3">
 
                 <!-- Route Row -->
-                <div class="flex items-center gap-2 flex-wrap">
-                    <div class="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0"></div>
-                    <span class="text-sm font-semibold text-slate-900 dark:text-white">{{itinerary?.fromCity}}</span>
-                    <lucide-icon name="arrow-right" [size]="14" class="text-slate-300 flex-shrink-0"></lucide-icon>
-                    <div class="w-2.5 h-2.5 rounded-full bg-orange-500 flex-shrink-0"></div>
-                    <span class="text-sm font-semibold text-slate-900 dark:text-white">{{itinerary?.toCity}}</span>
-                    <span class="text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded ml-auto">{{itinerary?.tripType}}</span>
+                <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-primary flex-shrink-0"></div>
+                    <span class="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">{{itinerary?.fromCity}}</span>
+                    <lucide-icon name="arrow-right" [size]="12" class="text-slate-300 flex-shrink-0 sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
+                    <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-500 flex-shrink-0"></div>
+                    <span class="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">{{itinerary?.toCity}}</span>
+                    <span class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 sm:px-2 py-0.5 rounded ml-auto">{{itinerary?.tripType}}</span>
                 </div>
 
                 <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
 
                 <!-- Trip + Passenger in one compact grid -->
-                <div class="grid grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-2 text-xs">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-x-3 sm:gap-x-4 gap-y-2 text-[11px] sm:text-xs">
                     <div>
                         <p class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">Date</p>
                         <p class="font-semibold text-slate-900 dark:text-white">{{itinerary?.pickupDate | date:'dd MMM yy'}}</p>
@@ -924,7 +952,7 @@
                 <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
 
                 <!-- Payment — compact rows -->
-                <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2.5 space-y-1.5 text-xs">
+                <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg px-2.5 sm:px-3 py-2 sm:py-2.5 space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs">
                     <div class="flex justify-between">
                         <span class="text-slate-500">Total Fare</span>
                         <span class="font-bold text-slate-900 dark:text-white">₹{{ selectedCar?.price || 0 | number:'1.0-0' }}</span>
@@ -966,25 +994,25 @@
             </div>
         </div>
 
-        <!-- Compact Action Row -->
-        <div class="mt-3 flex items-center gap-2 no-print">
+        <!-- Compact Action Row — 2x2 on mobile, 4 in a row on desktop -->
+        <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 no-print">
             <button (click)="shareOnWhatsApp()"
-                class="flex-1 py-2 bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all">
+                class="py-2.5 sm:py-2 bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                 Share
             </button>
             <button (click)="printVoucher()"
-                class="flex-1 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold rounded-lg text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 active:scale-[0.98] transition-all">
+                class="py-2.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold rounded-lg text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer">
                 <lucide-icon name="printer" [size]="13"></lucide-icon>
                 Print
             </button>
             <button routerLink="/bookings"
-                class="flex-1 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold rounded-lg text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 active:scale-[0.98] transition-all">
+                class="py-2.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold rounded-lg text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer">
                 <lucide-icon name="list" [size]="13"></lucide-icon>
                 Bookings
             </button>
             <button routerLink="/dashboard"
-                class="flex-1 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all">
+                class="py-2.5 sm:py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer">
                 <lucide-icon name="plus" [size]="13"></lucide-icon>
                 New Booking
             </button>

@@ -32,21 +32,48 @@ export class StaticPageComponent implements OnInit {
 
   private pages: Record<string, PageData> = {
     'about-us': {
-      title: `About ${environment.brandName} Car Rentals`,
+      title: 'About Us',
       icon: 'building-2',
       sections: [
         {
+          heading: 'Who We Are',
           content: [
-            '2017 has been a great year for Team Savaari. We witnessed some important milestones including - completing 12 years of service, extending our footprint to 98 cities and covering over 265 million kilometers of road travel across India!',
-            'In 2018, our focus will remain on continuously creating differentiated value for the inter-city traveler. We have several exciting offerings lined up, the most prominent being \'Package Offers\' to key tourist and business destinations. With your support, these initiatives will transform road travel into even more memorable and exciting journeys.'
+            'B2BCab is India\'s cab booking platform built just for travel agents. We connect you to a trusted fleet across 2,000+ cities — so you can focus on your clients, not your vendors.'
           ]
         },
         {
+          heading: 'What We Do',
           content: [
-            'Gaurav Aggarwal',
-            'CEO, Savaari Car Rentals'
+            'We make cab booking simple for travel agents. You get the booking, we handle the ride. No cancellations, no follow-ups, no stress. Just confirmed cabs and commissions in your account.'
+          ]
+        },
+        {
+          heading: 'Why We Built This',
+          content: [
+            'Every travel agent in India has lost a client because a local cab operator let them down. We built B2BCab to fix that. One platform, one trusted network, zero drama.'
+          ]
+        },
+        {
+          heading: 'The Numbers',
+          content: [
+            '20+ years in the cab business',
+            '2,000+ cities across India',
+            '5,000+ travel agent partners',
+            '0% cancellation rate'
           ],
-          type: 'address'
+          type: 'list'
+        },
+        {
+          heading: 'Who Is Behind This',
+          content: [
+            'B2BCab is powered by Savaari Car Rentals — one of India\'s oldest and most trusted intercity cab companies. We have been on the road since 2006. We know what travel agents need because we have worked with thousands of them.'
+          ]
+        },
+        {
+          heading: 'Our Promise',
+          content: [
+            'Every cab you book through us will show up. Every invoice will be GST ready. Every commission will be paid on time. That is our promise to every agent who partners with us.'
+          ]
         }
       ]
     },
@@ -55,68 +82,56 @@ export class StaticPageComponent implements OnInit {
       icon: 'shield',
       sections: [
         {
-          heading: 'Introduction',
           content: [
-            `This privacy policy sets out how ${environment.brandName} uses and protects any information that you give ${environment.brandName} when you use this website.`,
-            `${environment.brandName} is committed to ensuring that your privacy is protected. Should we ask you to provide certain information by which you can be identified when using this website, then you can be assured that it will only be used in accordance with this privacy statement.`,
-            `${environment.brandName} may change this policy from time to time by updating this page. You should check this page from time to time to ensure that you are happy with any changes. This policy is effective from 31st July 2006.`
+            'Last updated: March 2026'
           ]
         },
         {
-          heading: 'Information We Collect',
+          heading: 'What We Collect',
           content: [
-            'We may collect the following information:'
+            'When you register on B2BCab, we collect your name, mobile number, email address, and business details. We also collect booking information when you use our platform.'
           ]
         },
         {
+          heading: 'Why We Collect It',
           content: [
-            'Name and job title',
-            'Contact information including email address',
-            'Demographic information such as postcode, preferences and interests',
-            'Other information relevant to customer surveys and/or offers'
-          ],
-          type: 'list'
-        },
-        {
-          content: [
-            'We require this information to understand your needs and provide you with a better service, and in particular for the following reasons:'
+            'We use your information to process bookings, send confirmations, calculate commissions, and provide customer support. We do not sell your data to anyone.'
           ]
         },
         {
+          heading: 'How We Store It',
           content: [
-            'Internal record keeping.',
-            'We may use the information to improve our products and services.',
-            'We may periodically send promotional emails about new products, special offers or other information which we think you may find interesting using the email address which you have provided.',
-            'From time to time, we may also use your information to contact you for market research purposes. We may contact you by email, phone, fax or mail. We may use the information to customize the website according to your interests.'
-          ],
-          type: 'list'
-        },
-        {
-          heading: 'Security',
-          content: [
-            'We are committed to ensuring that your information is secure. In order to prevent unauthorized access or disclosure we have put in place suitable physical, electronic and managerial procedures to safeguard and secure the information we collect online.'
+            'Your data is stored securely on our servers. We follow standard security practices to keep your information safe.'
           ]
         },
         {
-          heading: 'How We Use Cookies',
+          heading: 'Sharing Your Data',
           content: [
-            'A cookie is a small file which asks permission to be placed on your computer\'s hard drive. Once you agree, the file is added and the cookie helps analyze web traffic or lets you know when you visit a particular site. Cookies allow web applications to respond to you as an individual. The web application can tailor its operations to your needs, likes and dislikes by gathering and remembering information about your preferences.',
-            'We use traffic log cookies to identify which pages are being used. This helps us analyze data about webpage traffic and improve our website in order to tailor it to customer needs. We only use this information for statistical analysis purposes and then the data is removed from the system.',
-            'Overall, cookies help us provide you with a better website, by enabling us to monitor which pages you find useful and which you do not. A cookie in no way gives us access to your computer or any information about you, other than the data you choose to share with us.',
-            'You can choose to accept or decline cookies. Most web browsers automatically accept cookies, but you can usually modify your browser setting to decline cookies if you prefer. This may prevent you from taking full advantage of the website.'
+            'We only share your data with our driver and fleet partners to fulfil your bookings. We do not share your personal information with any third party for marketing purposes.'
           ]
         },
         {
-          heading: 'Links to Other Websites',
+          heading: 'Cookies',
           content: [
-            'Our website may contain links to other websites of interest. However, once you have used these links to leave our site, you should note that we do not have any control over that other website. Therefore, we cannot be responsible for the protection and privacy of any information which you provide whilst visiting such sites and such sites are not governed by this privacy statement. You should exercise caution and look at the privacy statement applicable to the website in question.',
-            'We will not sell, distribute or lease your personal information to third parties unless we have your permission or are required by law to do so. We may use your personal information to send you promotional information about third parties which we think you may find interesting if you tell us that you wish this to happen.'
+            'Our website uses cookies to keep you logged in and improve your experience. You can turn off cookies in your browser settings at any time.'
           ]
         },
         {
-          heading: 'Contacting Us',
+          heading: 'Your Rights',
           content: [
-            'If there are any questions regarding this privacy policy you may contact us using the information on the Contact Us page.'
+            'You can ask us to update or delete your account information at any time. Write to us at privacy@b2bcab.in and we will respond within 7 working days.'
+          ]
+        },
+        {
+          heading: 'Changes to This Policy',
+          content: [
+            'We may update this policy from time to time. We will notify you by email if anything important changes.'
+          ]
+        },
+        {
+          heading: 'Contact Us',
+          content: [
+            `For any privacy questions, write to us at ${environment.supportEmail} or call ${environment.supportPhone}.`
           ]
         }
       ]
@@ -126,58 +141,68 @@ export class StaticPageComponent implements OnInit {
       icon: 'file-text',
       sections: [
         {
-          heading: 'Introduction',
           content: [
-            `Welcome to our website. If you continue to browse and use this website, you are agreeing to comply with and be bound by the following terms and conditions of use, which together with our privacy policy govern ${environment.brandName}'s relationship with you in relation to this website. If you disagree with any part of these terms and conditions, please do not use our website.`
+            'Last updated: March 2026'
           ]
         },
         {
-          heading: 'Ownership',
+          heading: '1. Who This Applies To',
           content: [
-            `The B2bcab.in is owned & powered by SAVAARI CAR RENTALS PRIVATE LIMITED. The term '${environment.brandName}' or 'us' or 'we' refers to the SAVAARI CAR RENTALS PRIVATE LIMITED whose registered office is '${environment.companyName}, ${environment.companyAddress}.' The term 'you' refers to the user or viewer of our website.`
+            'These terms apply to all travel agents and businesses registered on B2BCab.in. By signing up, you agree to these terms.'
           ]
         },
         {
-          heading: 'Terms of Use',
+          heading: '2. Your Account',
           content: [
-            'The use of this website is subject to the following terms of use:'
+            'You are responsible for keeping your login details safe. Do not share your account with anyone. All bookings made from your account are your responsibility.'
           ]
         },
         {
+          heading: '3. Making Bookings',
           content: [
-            'The content of the pages of this website is for your general information and use only. It is subject to change without notice.',
-            'This website uses cookies to monitor browsing preferences. If you do allow cookies to be used, the following personal information may be stored by us for use by third parties: IP Address, Location',
-            'Neither we nor any third parties provide any warranty or guarantee as to the accuracy, timeliness, performance, completeness or suitability of the information and materials found or offered on this website for any particular purpose. You acknowledge that such information and materials may contain inaccuracies or errors and we expressly exclude liability for any such inaccuracies or errors to the fullest extent permitted by law.',
-            'Your use of any information or materials on this website is entirely at your own risk, for which we shall not be liable. It shall be your own responsibility to ensure that any products, services or information available through this website meet your specific requirements.',
-            'This website contains material which is owned by or licensed to us. This material includes, but is not limited to, the design, layout, look, appearance and graphics. Reproduction is prohibited other than in accordance with the copyright notice, which forms part of these terms and conditions.',
-            'All trademarks reproduced in this website which are not the property of, or licensed to, the operator are acknowledged on the website.',
-            'Unauthorized use of this website may give rise to a claim for damages and/or be a criminal offence.',
-            'From time to time this website may also include links to other websites. These links are provided for your convenience to provide further information. They do not signify that we endorse the website(s). We have no responsibility for the content of the linked website(s).',
-            'Your use of this website and any dispute arising out of such use of the website is subject to the laws of India.',
-            'Specific offers will have might have additional Terms & Conditions which the user has to comply with in case he chooses to avail that offer.'
-          ],
-          type: 'list'
-        },
-        {
-          heading: 'Cancellation and Returns',
-          content: [
-            'You may cancel the booking 24 hour prior to the time of journey, without any cancellation charges for all services.',
-            'In case cancellation or shorting of the trip is requested within 24 hours of the pick-up time, then following rules will apply:'
+            'All bookings must be made through the B2BCab platform. Once a booking is confirmed, it is guaranteed. Do not book through other channels for the same trip.'
           ]
         },
         {
+          heading: '4. Commissions',
           content: [
-            'Multi Day trip: The charge for the first day would be deducted from the total amount and refund will be issued to the user.',
-            'Single Day trip/ Airport transfer: No Refund will be issued to the user.',
-            'Airport transfer: No Cancellation Charges if Cancelled at least 2 hours prior of pickup time.'
-          ],
-          type: 'list'
+            'Commissions are calculated based on the trip type and distance. Payouts are processed as per the payout schedule shared with you at registration. B2BCab reserves the right to revise commission rates with 30 days notice.'
+          ]
         },
         {
-          heading: 'Refunds',
+          heading: '5. Cancellations',
           content: [
-            'If you are eligible for refunds based on the "Cancellation and Returns" policy above, then the refund will be remitted back to you in 5-7 working days.',
-            `In case of any issues, write to us at ${environment.supportEmail} or call us at ${environment.supportPhone}`
+            'We do not cancel confirmed bookings. If a cancellation is initiated by the agent after confirmation, standard cancellation charges will apply as per the booking policy.'
+          ]
+        },
+        {
+          heading: '6. Prohibited Use',
+          content: [
+            'You may not use B2BCab to book cabs for illegal purposes, share platform access with unauthorised users, or misrepresent your identity or business.'
+          ]
+        },
+        {
+          heading: '7. Liability',
+          content: [
+            'B2BCab is not liable for delays caused by traffic, weather, or events outside our control. We are committed to fulfilling every booking but cannot be held responsible for circumstances beyond our reasonable control.'
+          ]
+        },
+        {
+          heading: '8. Termination',
+          content: [
+            'We reserve the right to suspend or terminate any account that violates these terms, misuses the platform, or engages in fraudulent activity.'
+          ]
+        },
+        {
+          heading: '9. Governing Law',
+          content: [
+            'These terms are governed by the laws of India. Any disputes will be handled in the courts of Bengaluru, Karnataka.'
+          ]
+        },
+        {
+          heading: '10. Contact Us',
+          content: [
+            `For any questions about these terms, write to us at ${environment.supportEmail} or call ${environment.supportPhone}.`
           ]
         }
       ]

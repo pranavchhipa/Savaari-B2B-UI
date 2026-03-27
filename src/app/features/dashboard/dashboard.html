@@ -51,10 +51,10 @@
     <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-[0_12px_32px_rgba(0,172,230,0.08)] p-3 sm:p-4 md:p-6 lg:p-8 pb-8 border border-slate-100 dark:border-slate-800 overflow-visible">
 
       <!-- Trip Type Toggles with Checkboxes -->
-      <div class="flex flex-nowrap gap-1 sm:gap-5 items-center justify-center md:justify-start mb-3 sm:mb-6 overflow-x-auto">
+      <div class="flex flex-nowrap gap-0 sm:gap-5 items-center justify-between sm:justify-center md:justify-start mb-3 sm:mb-6">
         <button *ngFor="let tab of [{id: 'ONE_WAY', label: 'One Way', icon: 'arrow-right'}, {id: 'ROUND_TRIP', label: 'Round Trip', icon: 'refresh-cw'}, {id: 'LOCAL', label: 'Local', icon: 'map-pin'}, {id: 'AIRPORT', label: 'Airport', icon: 'plane'}]"
           (click)="selectTab(tab.id)" type="button"
-          class="flex items-center gap-2 px-1 py-1 cursor-pointer border-0 outline-none bg-transparent transition-all duration-200 group">
+          class="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-1 py-1 cursor-pointer border-0 outline-none bg-transparent transition-all duration-200 group">
           <!-- Checkbox -->
           <div class="w-[14px] h-[14px] sm:w-[18px] sm:h-[18px] rounded border-2 flex items-center justify-center shrink-0 transition-all duration-200"
             [ngClass]="{
@@ -63,9 +63,9 @@
             }">
             <lucide-icon *ngIf="selectedTab === tab.id" name="check" [size]="12" class="text-white"></lucide-icon>
           </div>
-          <!-- Icon + Label -->
-          <lucide-icon [name]="tab.icon" [size]="15" class="text-slate-500"></lucide-icon>
-          <span class="text-[11px] sm:text-sm font-medium transition-colors duration-200"
+          <!-- Icon (hidden on mobile) + Label -->
+          <lucide-icon [name]="tab.icon" [size]="15" class="text-slate-500 hidden sm:block"></lucide-icon>
+          <span class="text-[11px] sm:text-sm font-medium transition-colors duration-200 whitespace-nowrap"
             [ngClass]="{
               'text-slate-700 dark:text-white': selectedTab === tab.id,
               'text-slate-500 dark:text-slate-400 group-hover:text-slate-600': selectedTab !== tab.id
@@ -84,19 +84,19 @@
         <div [hidden]="selectedTab !== 'ONE_WAY'"
           class="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-1.5 sm:p-2 border border-slate-200 dark:border-slate-700/30">
 
-          <!-- Row 1: FROM | SWAP | TO -->
-          <div class="flex items-center gap-1 sm:gap-2 lg:gap-0 mb-1.5 lg:mb-0">
+          <!-- Row 1: FROM | SWAP | TO — vertical on mobile, horizontal on sm+ -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-2 lg:gap-0 mb-1.5 lg:mb-0">
             <!-- FROM -->
-            <div class="search-cell flex-1 px-2 py-1 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-1.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
+            <div class="search-cell flex-1 px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('fromCity')?.value?.id}">
-              <lucide-icon name="map-pin" [size]="13" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
+              <lucide-icon name="map-pin" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0 sm:mb-1">From</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">From</span>
                 <p-autoComplete formControlName="fromCity" [suggestions]="filteredSourceCities"
                   (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
                   field="name" optionLabel="name" [minLength]="1" placeholder="Source city"
                   styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-sm lg:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -111,21 +111,21 @@
             <!-- SWAP -->
             <div class="flex items-center justify-center z-20">
               <button type="button" (click)="swapCities()"
-                class="w-7 h-7 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-md sm:rounded-xl bg-white dark:bg-slate-700 shadow-md border border-slate-200 dark:border-slate-600 flex items-center justify-center text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
-                <lucide-icon name="arrow-left-right" [size]="14" class="sm:!w-[18px] sm:!h-[18px]"></lucide-icon>
+                class="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-white dark:bg-slate-700 shadow-md border border-slate-200 dark:border-slate-600 flex items-center justify-center text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
+                <lucide-icon name="arrow-left-right" [size]="14" class="sm:rotate-0 rotate-90 sm:!w-[18px] sm:!h-[18px]"></lucide-icon>
               </button>
             </div>
 
             <!-- TO -->
-            <div class="search-cell flex-1 px-2 py-1 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-1.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
+            <div class="search-cell flex-1 px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('toCity')?.value?.id}">
-              <lucide-icon name="map-pin" [size]="13" class="text-orange-500 shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
+              <lucide-icon name="map-pin" [size]="16" class="text-orange-500 shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0 sm:mb-1">To</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
                 <p-autoComplete formControlName="toCity" [suggestions]="filteredDestinationCities"
                   (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="1"
                   placeholder="Destination" styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-sm lg:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -138,30 +138,30 @@
             </div>
           </div>
 
-          <!-- Row 2: DATE | TIME -->
-          <div class="flex items-center gap-1 sm:gap-2 lg:gap-0">
+          <!-- Row 2: DATE | TIME — vertical on mobile, horizontal on sm+ -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-2 lg:gap-0">
             <!-- PICKUP DATE -->
-            <div class="search-cell flex-1 px-2 py-1 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-1.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
+            <div class="search-cell flex-1 px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               (click)="pickupDate1.showOverlay()">
-              <lucide-icon name="calendar" [size]="13" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
+              <lucide-icon name="calendar" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0 sm:mb-1">Pick Up</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
                 <p-datepicker #pickupDate1 formControlName="pickupDate" [showIcon]="false" dateFormat="dd M yy"
                   [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-sm lg:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
 
             <!-- PICKUP TIME -->
-            <div class="search-cell flex-1 px-2 py-1 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-1.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
+            <div class="search-cell flex-1 px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               (click)="pickupTime1.showOverlay()">
-              <lucide-icon name="clock" [size]="13" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
+              <lucide-icon name="clock" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0 sm:mb-1">Pick Up At</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
                 <p-datepicker #pickupTime1 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
                   appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-sm lg:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
@@ -188,12 +188,12 @@
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('fromCity')?.value?.id}">
               <lucide-icon name="map-pin" [size]="20" class="text-primary shrink-0"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">From</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">From</span>
                 <p-autoComplete formControlName="fromCity" [suggestions]="filteredSourceCities"
                   (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
                   field="name" optionLabel="name" [minLength]="1" placeholder="Source city"
                   styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -220,11 +220,11 @@
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('toCity')?.value?.id}">
               <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
                 <p-autoComplete formControlName="toCity" [suggestions]="filteredDestinationCities"
                   (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="1"
                   placeholder="Destination city" styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -250,7 +250,7 @@
                     [suggestions]="filteredDestinationCities" (completeMethod)="filterExtraDestCities($event)"
                     (onSelect)="onExtraDestinationSelect($event, i)" field="name" optionLabel="name" [minLength]="1"
                     placeholder="Enter city" styleClass="w-full search-bar-autocomplete"
-                    inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-sm font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                    inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                     panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                     <ng-template pTemplate="item" let-city>
                       <div class="flex items-center gap-2 px-2 py-1.5">
@@ -285,10 +285,10 @@
               (click)="pickupDate2.showOverlay()">
               <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
                 <p-datepicker #pickupDate2 formControlName="pickupDate" [showIcon]="false" dateFormat="dd M yy"
                   [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
@@ -300,10 +300,10 @@
               (click)="pickupTime2.showOverlay()">
               <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
                 <p-datepicker #pickupTime2 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
                   appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
@@ -315,10 +315,10 @@
               (click)="returnDate2.showOverlay()">
               <lucide-icon name="calendar" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Return <span class="text-red-400">*</span></span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Return <span class="text-red-400">*</span></span>
                 <p-datepicker #returnDate2 formControlName="returnDate" [showIcon]="false" dateFormat="dd M yy"
                   [minDate]="minReturnDate" appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
@@ -329,7 +329,7 @@
             <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group rounded-xl lg:rounded-full relative">
               <lucide-icon name="clock" [size]="18" class="text-slate-300 shrink-0"></lucide-icon>
               <div class="flex flex-col">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Drop Time
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Drop Time
                   <lucide-icon name="info" [size]="10" class="text-slate-300 inline-block ml-0.5"></lucide-icon>
                 </span>
                 <span class="text-[8px] sm:text-base font-normal sm:font-bold text-slate-400 whitespace-nowrap">{{ getDropTime() }}</span>
@@ -361,12 +361,12 @@
           <div class="search-cell flex-[2] px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40">
             <lucide-icon name="map-pin" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col flex-1 min-w-0">
-              <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">City</span>
+              <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">City</span>
               <p-autoComplete formControlName="fromCity" [suggestions]="filteredSourceCities"
                 (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
                 field="name" optionLabel="name" [minLength]="1" placeholder="Enter city — e.g. Bangalore"
                 styleClass="w-full search-bar-autocomplete"
-                inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                 panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                 <ng-template pTemplate="item" let-city>
                   <div class="flex items-center gap-2 px-2 py-1.5">
@@ -385,10 +385,10 @@
             (click)="pickupDate3.showOverlay()">
             <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
-              <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
+              <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
               <p-datepicker #pickupDate3 formControlName="pickupDate" [showIcon]="false" dateFormat="dd M yy"
                 [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
               </p-datepicker>
             </div>
           </div>
@@ -400,10 +400,10 @@
             (click)="pickupTime3.showOverlay()">
             <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
-              <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
+              <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
               <p-datepicker #pickupTime3 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
                 appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
               </p-datepicker>
             </div>
           </div>
@@ -421,7 +421,7 @@
             <div class="search-cell px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40 lg:min-w-[200px]">
               <lucide-icon name="navigation" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Trip <span class="text-red-400">*</span></span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Trip <span class="text-red-400">*</span></span>
                 <p-select formControlName="tripType" [options]="tripTypes" optionLabel="label" optionValue="value"
                   placeholder="Select type"
                   styleClass="w-full search-bar-select"
@@ -436,14 +436,14 @@
             <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40">
               <lucide-icon name="plane" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
                   {{ bookingForm.get('tripType')?.value === 'pickup' ? 'Pickup Airport' : 'Drop Airport' }} <span class="text-red-400">*</span>
                 </span>
                 <p-autoComplete formControlName="airportLocality" [suggestions]="filteredAirports"
                   (completeMethod)="filterAirports($event)" (onSelect)="onAirportSelect($event)"
                   field="name" optionLabel="name" [minLength]="0" placeholder="Search airport"
                   styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-airport>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -462,13 +462,13 @@
               [hidden]="!bookingForm.get('tripType')?.value">
               <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
                   {{ bookingForm.get('tripType')?.value === 'pickup' ? 'Drop Address' : 'Pickup Address' }}
                 </span>
                 <p-autoComplete formControlName="pickupAddress" [suggestions]="filteredLocalities"
                   (completeMethod)="filterLocalities($event)" field="name" optionLabel="name" [minLength]="2"
                   placeholder="Start typing address" styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-loc>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -490,10 +490,10 @@
               (click)="pickupDate4.showOverlay()">
               <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
                 <p-datepicker #pickupDate4 formControlName="pickupDate" [showIcon]="false" dateFormat="dd M yy"
                   [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
@@ -505,10 +505,10 @@
               (click)="pickupTime4.showOverlay()">
               <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
-                <span class="text-[7px] sm:text-[11px] font-normal sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
                 <p-datepicker #pickupTime4 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
                   appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-[8px] sm:text-base font-normal sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
@@ -675,19 +675,30 @@
       </div>
 
       <!-- Mobile Cards -->
-      <div class="md:hidden divide-y divide-slate-100 dark:divide-slate-700">
-        <div *ngFor="let b of recentBookings" class="px-5 py-4 space-y-1.5">
-          <div class="flex items-center justify-between">
-            <span class="font-mono text-xs text-slate-400">#{{ b.id }}</span>
-            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider"
+      <div class="md:hidden p-3 space-y-2.5">
+        <div *ngFor="let b of recentBookings"
+          class="rounded-xl border border-slate-100 dark:border-slate-700 p-3 flex gap-3 items-start"
+          [ngClass]="{
+            'border-l-[3px] border-l-emerald-400': b.status === 'COMPLETED' || b.status === 'completed',
+            'border-l-[3px] border-l-red-400': b.status === 'CANCELLED' || b.status === 'cancelled',
+            'border-l-[3px] border-l-amber-400': b.status !== 'COMPLETED' && b.status !== 'completed' && b.status !== 'CANCELLED' && b.status !== 'cancelled'
+          }">
+          <!-- Left: Route + meta -->
+          <div class="flex-1 min-w-0">
+            <p class="text-[13px] font-semibold text-slate-800 dark:text-slate-200 truncate leading-tight">{{ b.route }}</p>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="text-[10px] text-slate-400 font-mono">#{{ b.id }}</span>
+              <span class="text-[10px] text-slate-300">|</span>
+              <span class="text-[10px] text-slate-400">{{ b.date }}</span>
+            </div>
+          </div>
+          <!-- Right: Amount + Status -->
+          <div class="flex flex-col items-end gap-1 shrink-0">
+            <span class="text-sm font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ b.amount }}</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider"
               [ngClass]="getStatusClasses(b.status)">
               {{ getStatusLabel(b.status) }}
             </span>
-          </div>
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ b.route }}</p>
-          <div class="flex items-center justify-between text-xs text-slate-400">
-            <span>{{ b.date }}</span>
-            <span class="font-bold text-slate-800 dark:text-slate-100">{{ b.amount }}</span>
           </div>
         </div>
       </div>
@@ -695,50 +706,50 @@
 
     <!-- Section: Quick Actions -->
     <div>
-      <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide mb-4">Quick Actions</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <h3 class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide mb-3 sm:mb-4">Quick Actions</h3>
+      <div class="grid grid-cols-4 md:grid-cols-4 gap-2 sm:gap-4">
         <!-- Reports -->
         <a routerLink="/reports"
-          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer">
-          <div class="w-11 h-11 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-sm shadow-blue-200 dark:shadow-blue-900/30 shrink-0">
-            <lucide-icon name="bar-chart-3" [size]="20" class="text-white"></lucide-icon>
+          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:p-5 flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer text-center sm:text-left">
+          <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-sm shadow-blue-200 dark:shadow-blue-900/30 shrink-0">
+            <lucide-icon name="bar-chart-3" [size]="16" class="text-white sm:!w-5 sm:!h-5"></lucide-icon>
           </div>
           <div>
-            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 block">Reports</span>
-            <span class="text-[11px] text-slate-400 dark:text-slate-500">View trip reports</span>
+            <span class="text-[11px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block leading-tight">Reports</span>
+            <span class="text-[9px] sm:text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">View trip reports</span>
           </div>
         </a>
         <!-- Markup -->
         <a routerLink="/markup-settings"
-          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer">
-          <div class="w-11 h-11 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-sm shadow-orange-200 dark:shadow-orange-900/30 shrink-0">
-            <lucide-icon name="percent" [size]="20" class="text-white"></lucide-icon>
+          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:p-5 flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer text-center sm:text-left">
+          <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-sm shadow-orange-200 dark:shadow-orange-900/30 shrink-0">
+            <lucide-icon name="percent" [size]="16" class="text-white sm:!w-5 sm:!h-5"></lucide-icon>
           </div>
           <div>
-            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 block">Markup</span>
-            <span class="text-[11px] text-slate-400 dark:text-slate-500">Set commission rates</span>
+            <span class="text-[11px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block leading-tight">Markup</span>
+            <span class="text-[9px] sm:text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Set commission rates</span>
           </div>
         </a>
         <!-- Account Settings -->
         <a routerLink="/account-settings"
-          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer">
-          <div class="w-11 h-11 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-sm shadow-blue-200 dark:shadow-blue-900/30 shrink-0">
-            <lucide-icon name="settings" [size]="20" class="text-white"></lucide-icon>
+          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:p-5 flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer text-center sm:text-left">
+          <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-sm shadow-blue-200 dark:shadow-blue-900/30 shrink-0">
+            <lucide-icon name="settings" [size]="16" class="text-white sm:!w-5 sm:!h-5"></lucide-icon>
           </div>
           <div>
-            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 block">Settings</span>
-            <span class="text-[11px] text-slate-400 dark:text-slate-500">Account & profile</span>
+            <span class="text-[11px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block leading-tight">Settings</span>
+            <span class="text-[9px] sm:text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Account & profile</span>
           </div>
         </a>
         <!-- Wallet -->
         <a routerLink="/wallet"
-          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer">
-          <div class="w-11 h-11 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-sm shadow-orange-200 dark:shadow-orange-900/30 shrink-0">
-            <lucide-icon name="wallet" [size]="20" class="text-white"></lucide-icon>
+          class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:p-5 flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer text-center sm:text-left">
+          <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-sm shadow-orange-200 dark:shadow-orange-900/30 shrink-0">
+            <lucide-icon name="wallet" [size]="16" class="text-white sm:!w-5 sm:!h-5"></lucide-icon>
           </div>
           <div>
-            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200 block">Wallet</span>
-            <span class="text-[11px] text-slate-400 dark:text-slate-500">Balance & transactions</span>
+            <span class="text-[11px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 block leading-tight">Wallet</span>
+            <span class="text-[9px] sm:text-[11px] text-slate-400 dark:text-slate-500 hidden sm:block">Balance & transactions</span>
           </div>
         </a>
       </div>
