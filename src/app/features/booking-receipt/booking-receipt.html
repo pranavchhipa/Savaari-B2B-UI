@@ -1,165 +1,181 @@
-<div class="receipt-wrapper min-h-screen bg-slate-100 dark:bg-slate-900 py-6 px-4">
+<div class="receipt-wrapper min-h-screen bg-gradient-to-b from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950 py-8 px-4">
 
   <!-- Action Bar (hidden on print) -->
-  <div class="no-print max-w-2xl mx-auto flex items-center justify-between mb-4">
+  <div class="no-print max-w-[700px] mx-auto flex items-center justify-between mb-5">
     <a routerLink="/bookings" class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition cursor-pointer">
       <lucide-icon name="arrow-left" [size]="16"></lucide-icon>
       Back to Bookings
     </a>
     <button (click)="print()"
-      class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/90 transition cursor-pointer">
+      class="flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/90 transition cursor-pointer shadow-lg shadow-primary/25">
       <lucide-icon name="download" [size]="15"></lucide-icon>
       Download / Print
     </button>
   </div>
 
   <!-- Receipt Card -->
-  <div *ngIf="booking" class="receipt-card max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
+  <div *ngIf="booking" class="receipt-card max-w-[700px] mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden">
 
-    <!-- Header -->
-    <div class="receipt-header bg-slate-900 px-6 py-4 flex items-center justify-between">
-      <div>
-        <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-12">
-      </div>
+    <!-- ═══ HEADER ═══ -->
+    <div class="receipt-header bg-slate-900 px-8 py-5 flex items-center justify-between">
+      <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-12">
       <div class="text-right">
-        <div class="text-white font-bold text-sm">Booking Receipt</div>
-        <div class="text-slate-400 text-xs mt-0.5">{{ receiptDate | date:'dd MMM yyyy, h:mm a' }}</div>
+        <div class="text-white font-bold text-base">Booking Receipt</div>
+        <div class="text-slate-400 text-xs mt-1">{{ receiptDate | date:'dd MMM yyyy, h:mm a' }}</div>
       </div>
     </div>
 
-    <!-- Booking ID Banner -->
-    <div class="receipt-banner bg-primary/10 border-b border-primary/20 px-6 py-2.5 flex flex-wrap gap-4 text-sm">
-      <div>
-        <span class="receipt-section-title text-slate-500 dark:text-slate-400 text-xs">Booking ID</span>
-        <div class="font-bold text-slate-800 dark:text-slate-100 text-sm">{{ booking.bookingId }}</div>
-      </div>
-      <div *ngIf="booking.reservationId">
-        <span class="receipt-section-title text-slate-500 dark:text-slate-400 text-xs">Reservation ID</span>
-        <div class="font-bold text-slate-800 dark:text-slate-100 text-sm">{{ booking.reservationId }}</div>
-      </div>
-      <div>
-        <span class="receipt-section-title text-slate-500 dark:text-slate-400 text-xs">Trip Type</span>
-        <div class="font-bold text-slate-800 dark:text-slate-100 text-sm">{{ tripTypeLabel }}</div>
-      </div>
-      <div *ngIf="booking.pickupDate">
-        <span class="receipt-section-title text-slate-500 dark:text-slate-400 text-xs">Pickup Date</span>
-        <div class="font-bold text-slate-800 dark:text-slate-100 text-sm">{{ booking.pickupDate | date:'dd MMM yyyy' }}, {{ booking.pickupTime }}</div>
+    <!-- ═══ BOOKING INFO STRIP ═══ -->
+    <div class="receipt-banner bg-primary/5 border-b border-primary/15 px-8 py-4">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-y-3 gap-x-6">
+        <div>
+          <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Booking ID</div>
+          <div class="font-bold text-slate-800 dark:text-slate-100 text-sm mt-0.5">{{ booking.bookingId }}</div>
+        </div>
+        <div *ngIf="booking.reservationId">
+          <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Reservation ID</div>
+          <div class="font-bold text-slate-800 dark:text-slate-100 text-sm mt-0.5">{{ booking.reservationId }}</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Trip Type</div>
+          <div class="font-bold text-slate-800 dark:text-slate-100 text-sm mt-0.5">{{ tripTypeLabel }}</div>
+        </div>
+        <div *ngIf="booking.pickupDate">
+          <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Pickup Date</div>
+          <div class="font-bold text-slate-800 dark:text-slate-100 text-sm mt-0.5">{{ booking.pickupDate | date:'dd MMM yyyy' }}, {{ booking.pickupTime }}</div>
+        </div>
       </div>
     </div>
 
-    <div class="receipt-body px-6 py-4 space-y-4">
+    <!-- ═══ BODY ═══ -->
+    <div class="receipt-body px-8 py-6 space-y-6">
 
-      <!-- Agent + Customer -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <!-- Agent / Billed By -->
-        <div class="receipt-info-box bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3.5">
-          <div class="receipt-section-title text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Agent (Billed By)</div>
-          <div class="font-semibold text-slate-800 dark:text-slate-100 text-sm">{{ agentCompany || agentName }}</div>
-          <div *ngIf="agentCompany && agentName" class="text-slate-500 dark:text-slate-400 text-xs">{{ agentName }}</div>
-          <div class="text-slate-500 dark:text-slate-400 text-xs">{{ agentEmail }}</div>
-          <div *ngIf="agentGst" class="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-            <span class="font-medium">GSTIN:</span> {{ agentGst }}
+      <!-- Agent + Customer — Side by Side -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Agent -->
+        <div class="receipt-info-box border border-slate-200 dark:border-slate-600/40 rounded-xl p-5">
+          <div class="receipt-section-title text-[10px] font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <lucide-icon name="building-2" [size]="12"></lucide-icon>
+            Agent (Billed By)
+          </div>
+          <div class="font-bold text-slate-800 dark:text-slate-100 text-[15px]">{{ agentCompany || agentName }}</div>
+          <div *ngIf="agentCompany && agentName" class="text-slate-500 dark:text-slate-400 text-xs mt-1">{{ agentName }}</div>
+          <div class="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{{ agentEmail }}</div>
+          <div *ngIf="agentGst" class="mt-2 inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded">
+            GSTIN: {{ agentGst }}
           </div>
         </div>
 
         <!-- Customer -->
-        <div class="receipt-info-box bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3.5">
-          <div class="receipt-section-title text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Customer</div>
-          <div class="font-semibold text-slate-800 dark:text-slate-100 text-sm">{{ booking.customerName }}</div>
-          <div class="text-slate-500 dark:text-slate-400 text-xs">{{ booking.customerMobile }}</div>
-          <div *ngIf="booking.customerEmail" class="text-slate-500 dark:text-slate-400 text-xs">{{ booking.customerEmail }}</div>
+        <div class="receipt-info-box border border-slate-200 dark:border-slate-600/40 rounded-xl p-5">
+          <div class="receipt-section-title text-[10px] font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <lucide-icon name="user" [size]="12"></lucide-icon>
+            Customer
+          </div>
+          <div class="font-bold text-slate-800 dark:text-slate-100 text-[15px]">{{ booking.customerName }}</div>
+          <div class="text-slate-500 dark:text-slate-400 text-xs mt-1">{{ booking.customerMobile }}</div>
+          <div *ngIf="booking.customerEmail" class="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{{ booking.customerEmail }}</div>
         </div>
       </div>
 
-      <!-- Trip Details -->
+      <!-- ═══ TRIP DETAILS ═══ -->
       <div>
-        <div class="receipt-section-title text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Trip Details</div>
-        <table class="receipt-table w-full text-sm">
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-            <tr>
-              <td class="py-1.5 text-slate-500 dark:text-slate-400 w-36">From</td>
-              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.sourceCity }}</td>
-            </tr>
-            <tr *ngIf="booking.destinationCity">
-              <td class="py-1.5 text-slate-500 dark:text-slate-400">To</td>
-              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.destinationCity }}</td>
-            </tr>
-            <tr *ngIf="booking.pickupAddress">
-              <td class="py-1.5 text-slate-500 dark:text-slate-400">Pickup Point</td>
-              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.pickupAddress }}</td>
-            </tr>
-            <tr *ngIf="booking.carName">
-              <td class="py-1.5 text-slate-500 dark:text-slate-400">Vehicle</td>
-              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.carName }}</td>
-            </tr>
-            <tr *ngIf="booking.kmsIncluded">
-              <td class="py-1.5 text-slate-500 dark:text-slate-400">Kms Included</td>
-              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.kmsIncluded }} km</td>
-            </tr>
-            <tr *ngIf="booking.driverName">
-              <td class="py-1.5 text-slate-500 dark:text-slate-400">Driver</td>
-              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.driverName }} {{ booking.carNumber ? '· ' + booking.carNumber : '' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="receipt-section-title text-[10px] font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <lucide-icon name="map-pin" [size]="12"></lucide-icon>
+          Trip Details
+        </div>
+        <div class="border border-slate-200 dark:border-slate-600/40 rounded-xl overflow-hidden">
+          <table class="receipt-table w-full text-sm">
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+              <tr>
+                <td class="px-5 py-3 text-slate-500 dark:text-slate-400 w-36 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Route</td>
+                <td class="px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ booking.itinerary || (booking.sourceCity + (booking.destinationCity ? ' → ' + booking.destinationCity : '')) }}</td>
+              </tr>
+              <tr *ngIf="booking.pickupAddress">
+                <td class="px-5 py-3 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Pickup Point</td>
+                <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{{ booking.pickupAddress }}</td>
+              </tr>
+              <tr *ngIf="booking.carName">
+                <td class="px-5 py-3 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Vehicle</td>
+                <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{{ booking.carName }}</td>
+              </tr>
+              <tr *ngIf="booking.kmsIncluded">
+                <td class="px-5 py-3 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Kms Included</td>
+                <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{{ booking.kmsIncluded }} km</td>
+              </tr>
+              <tr *ngIf="booking.driverName">
+                <td class="px-5 py-3 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Driver</td>
+                <td class="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{{ booking.driverName }} {{ booking.carNumber ? '· ' + booking.carNumber : '' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- Payment Breakdown -->
+      <!-- ═══ PAYMENT BREAKDOWN ═══ -->
       <div>
-        <div class="receipt-section-title text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Payment Breakdown</div>
-        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl overflow-hidden">
+        <div class="receipt-section-title text-[10px] font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <lucide-icon name="indian-rupee" [size]="12"></lucide-icon>
+          Payment Breakdown
+        </div>
+        <div class="border border-slate-200 dark:border-slate-600/40 rounded-xl overflow-hidden">
           <table class="receipt-table w-full text-sm">
             <tbody class="divide-y divide-slate-100 dark:divide-slate-600">
               <tr>
-                <td class="px-4 py-2 text-slate-600 dark:text-slate-300">Total Fare</td>
-                <td class="px-4 py-2 font-semibold text-slate-800 dark:text-slate-100 text-right">₹{{ booking.fare | number:'1.0-0' }}</td>
+                <td class="px-5 py-3.5 text-slate-600 dark:text-slate-300 font-medium">Total Fare</td>
+                <td class="px-5 py-3.5 font-bold text-slate-800 dark:text-slate-100 text-right text-base">₹{{ booking.fare | number:'1.0-0' }}</td>
               </tr>
               <tr *ngIf="walletPaid > 0">
-                <td class="px-4 py-2 text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                  <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                <td class="px-5 py-3 text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                   Paid via Wallet
                 </td>
-                <td class="px-4 py-2 font-semibold text-emerald-600 text-right">− ₹{{ walletPaid | number:'1.0-0' }}</td>
+                <td class="px-5 py-3 font-semibold text-emerald-600 text-right">− ₹{{ walletPaid | number:'1.0-0' }}</td>
               </tr>
               <tr *ngIf="razorpayPaid > 0">
-                <td class="px-4 py-2 text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                  <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+                <td class="px-5 py-3 text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500"></span>
                   Paid via Razorpay
                 </td>
-                <td class="px-4 py-2 font-semibold text-blue-600 text-right">− ₹{{ razorpayPaid | number:'1.0-0' }}</td>
+                <td class="px-5 py-3 font-semibold text-blue-600 text-right">− ₹{{ razorpayPaid | number:'1.0-0' }}</td>
               </tr>
-              <tr *ngIf="cashToDriver > 0" class="bg-amber-50 dark:bg-amber-900/20">
-                <td class="px-4 py-2 text-amber-700 dark:text-amber-400 font-medium">Cash to Driver</td>
-                <td class="px-4 py-2 font-bold text-amber-700 dark:text-amber-400 text-right">₹{{ cashToDriver | number:'1.0-0' }}</td>
+              <tr *ngIf="cashToDriver > 0" class="bg-amber-50/50 dark:bg-amber-900/10">
+                <td class="px-5 py-3 text-amber-700 dark:text-amber-400 font-medium flex items-center gap-2">
+                  <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  Cash to Driver
+                </td>
+                <td class="px-5 py-3 font-bold text-amber-700 dark:text-amber-400 text-right">₹{{ cashToDriver | number:'1.0-0' }}</td>
               </tr>
             </tbody>
           </table>
 
-          <!-- Total line -->
-          <div class="receipt-total-bar bg-slate-800 dark:bg-slate-900 px-4 py-2.5 flex items-center justify-between">
+          <!-- Total Bar -->
+          <div class="receipt-total-bar bg-slate-900 dark:bg-slate-950 px-5 py-3.5 flex items-center justify-between">
             <span class="text-white font-bold text-sm">Total Charged to Agent</span>
-            <span class="text-white font-black text-base">₹{{ (booking.prePayment || 0) | number:'1.0-0' }}</span>
+            <span class="text-white font-black text-lg">₹{{ (booking.prePayment || 0) | number:'1.0-0' }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Payment Method -->
-      <div *ngIf="booking.paymentMethod" class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-        <lucide-icon name="credit-card" [size]="13"></lucide-icon>
-        Payment Option: <span class="font-medium text-slate-700 dark:text-slate-300">{{ booking.paymentMethod }}</span>
+      <!-- Payment Method pill -->
+      <div *ngIf="booking.paymentMethod" class="flex items-center gap-2 text-xs">
+        <span class="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-full font-medium">
+          <lucide-icon name="credit-card" [size]="12"></lucide-icon>
+          Payment Option: {{ booking.paymentMethod }}
+        </span>
       </div>
 
     </div>
 
-    <!-- Footer -->
-    <div class="receipt-footer border-t border-slate-100 dark:border-slate-700 px-6 py-3 text-center">
-      <div class="text-xs text-slate-400">This is a computer-generated receipt. No signature required.</div>
+    <!-- ═══ FOOTER ═══ -->
+    <div class="receipt-footer border-t border-slate-200 dark:border-slate-700 px-8 py-4 text-center">
+      <div class="text-[11px] text-slate-400">This is a computer-generated receipt. No signature required.</div>
     </div>
 
   </div>
 
   <!-- Loading / Not Found -->
-  <div *ngIf="!booking" class="max-w-2xl mx-auto text-center py-20 text-slate-400">
+  <div *ngIf="!booking" class="max-w-[700px] mx-auto text-center py-20 text-slate-400">
     Loading receipt...
   </div>
 

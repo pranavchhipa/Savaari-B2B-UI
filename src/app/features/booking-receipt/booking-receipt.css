@@ -5,30 +5,30 @@
   /* Force white background, preserve colors */
   body, html { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  /* Remove shadow, add subtle border */
-  .receipt-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; border-radius: 0 !important; }
+  /* Remove decorations */
+  .receipt-card { box-shadow: none !important; border-radius: 0 !important; }
 
-  /* Dark mode overrides for print */
-  .dark\:bg-slate-800, .dark\:bg-slate-700\/50, .dark\:bg-slate-900 { background: white !important; }
+  /* Dark mode overrides */
+  .dark\:bg-slate-800, .dark\:bg-slate-700\/50, .dark\:bg-slate-700\/30, .dark\:bg-slate-900, .dark\:bg-slate-950 { background: white !important; }
   .dark\:text-slate-100, .dark\:text-slate-300, .dark\:text-slate-400 { color: #1e293b !important; }
+  .dark\:border-slate-600\/40, .dark\:border-slate-700 { border-color: #e2e8f0 !important; }
 
-  /* Page setup — tight margins, single page */
+  /* Page setup — fit on 1 page */
   @page {
-    margin: 6mm;
+    margin: 8mm;
     size: A4;
   }
 
-  /* Compact everything for 1-page fit */
-  .receipt-wrapper { padding: 0 !important; min-height: auto !important; }
+  /* Compact for print */
+  .receipt-wrapper { padding: 0 !important; min-height: auto !important; background: white !important; }
   .receipt-card { max-width: 100% !important; margin: 0 !important; }
-  .receipt-header { padding: 12px 16px !important; }
-  .receipt-header img { height: 28px !important; }
-  .receipt-banner { padding: 8px 16px !important; }
-  .receipt-body { padding: 12px 16px !important; gap: 10px !important; }
-  .receipt-body > div { margin-bottom: 0 !important; }
-  .receipt-section-title { margin-bottom: 4px !important; font-size: 9px !important; }
-  .receipt-info-box { padding: 8px 10px !important; }
-  .receipt-table td { padding: 4px 12px !important; font-size: 11px !important; }
-  .receipt-total-bar { padding: 6px 12px !important; }
-  .receipt-footer { padding: 8px 16px !important; }
+  .receipt-header { padding: 14px 20px !important; }
+  .receipt-header img { height: 32px !important; }
+  .receipt-banner { padding: 10px 20px !important; }
+  .receipt-body { padding: 16px 20px !important; gap: 14px !important; }
+  .receipt-info-box { padding: 10px 14px !important; }
+  .receipt-section-title { margin-bottom: 6px !important; }
+  .receipt-table td { padding: 6px 14px !important; }
+  .receipt-total-bar { padding: 8px 14px !important; }
+  .receipt-footer { padding: 10px 20px !important; }
 }
