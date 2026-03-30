@@ -1,4 +1,5 @@
-<main class="max-w-7xl mx-auto px-3 sm:px-4 pb-6 sm:pb-8 pt-2 sm:pt-3">
+<div class="min-h-screen flex flex-col bg-white dark:bg-slate-900">
+<main class="flex-1 max-w-7xl mx-auto px-3 sm:px-4 pb-6 sm:pb-8 pt-2 sm:pt-3 w-full">
     <div class="mb-2 sm:mb-3 flex flex-col md:flex-row md:items-center justify-between gap-2" *ngIf="!bookingConfirmed">
         <div class="flex items-center gap-2 sm:gap-3">
             <button (click)="goBackFromBooking()"
@@ -1099,3 +1100,4 @@
     </div>
 </div>
 <app-footer></app-footer>
+</div>
