@@ -48,6 +48,9 @@ export interface BookingCard {
     // Booking metadata
     bookedAt?: Date | null;
     pickupCountdown?: string;
+    // Invoice
+    billFlag?: number;
+    billUrl?: string;
 }
 
 /** Calendar day model for the week strip */
@@ -583,7 +586,13 @@ export class BookingsComponent implements OnInit {
             extraKmRate: parseFloat(b.extra_km_rate || b.extraKmRate) || 0,
             bookedAt: b._storedAt ? new Date(b._storedAt) : null,
             pickupCountdown,
+            billFlag: Number(b.bill_flag) || 0,
+            billUrl: b.bill_url || '',
         };
+    }
+
+    openReceipt(booking: BookingCard) {
+        this.router.navigate(['/receipt'], { state: { booking } });
     }
 
     // ─── Payment Helpers ───────────────────────────────────────

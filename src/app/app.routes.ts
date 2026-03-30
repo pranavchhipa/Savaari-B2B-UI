@@ -19,5 +19,6 @@ export const routes: Routes = [
     { path: 'about-us', data: { slug: 'about-us' }, loadComponent: () => import('./features/static-pages/static-page').then(m => m.StaticPageComponent) },
     { path: 'privacy-policy', data: { slug: 'privacy-policy' }, loadComponent: () => import('./features/static-pages/static-page').then(m => m.StaticPageComponent) },
     { path: 'terms-conditions', data: { slug: 'terms-conditions' }, loadComponent: () => import('./features/static-pages/static-page').then(m => m.StaticPageComponent) },
-    { path: 'contact-us', data: { slug: 'contact-us' }, loadComponent: () => import('./features/static-pages/static-page').then(m => m.StaticPageComponent) }
+    { path: 'contact-us', data: { slug: 'contact-us' }, loadComponent: () => import('./features/static-pages/static-page').then(m => m.StaticPageComponent) },
+    { path: 'receipt', canActivate: [authGuard], loadComponent: () => import('./features/booking-receipt/booking-receipt').then(m => m.BookingReceiptComponent) }
 ];
