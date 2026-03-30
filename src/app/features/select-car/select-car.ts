@@ -70,7 +70,7 @@ export class SelectCarComponent implements OnInit {
   // Cars from availability API (mapped to display format)
   availableCars: DisplayCar[] = [];
 
-  showPriceAlert = true;
+  showPriceAlert = !sessionStorage.getItem('priceAlertDismissed');
   isModifyModalOpen = false;
   minPickupDate: Date = new Date();
   minReturnDate: Date = new Date();
@@ -454,6 +454,7 @@ export class SelectCarComponent implements OnInit {
 
   closeAlert() {
     this.showPriceAlert = false;
+    sessionStorage.setItem('priceAlertDismissed', '1');
     this.cdr.markForCheck();
   }
 
