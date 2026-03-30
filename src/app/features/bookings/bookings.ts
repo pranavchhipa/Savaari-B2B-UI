@@ -51,6 +51,8 @@ export interface BookingCard {
     // Invoice
     billFlag?: number;
     billUrl?: string;
+    // Cancellation
+    cancelFlag?: boolean;
 }
 
 /** Calendar day model for the week strip */
@@ -99,6 +101,19 @@ export class BookingsComponent implements OnInit {
     settleConfirmStep = false;
     settleProcessing = false;
     settlePaymentMethod: 'wallet' | 'razorpay' = 'wallet';
+
+    // Cancel modal
+    cancelModalBooking: BookingCard | null = null;
+    cancelReason = '';
+    cancelProcessing = false;
+    cancelReasons = [
+        'Customer request',
+        'Change in travel plans',
+        'Found a better option',
+        'Weather / road conditions',
+        'Driver not assigned',
+        'Other'
+    ];
 
     /** Map of bookingId → settled amount, persisted in localStorage */
     private settledPayments: Record<string, number> = {};
@@ -588,6 +603,7 @@ export class BookingsComponent implements OnInit {
             pickupCountdown,
             billFlag: Number(b.bill_flag) || 0,
             billUrl: b.bill_url || '',
+            cancelFlag: b.cancel_flag === '1' || b.cancel_flag === 1 || b.cancel_flag_web === '1' || b.cancel_flag_web === 1,
         };
     }
 
@@ -893,19 +909,37 @@ export class BookingsComponent implements OnInit {
 
     // ─── Cancel ────────────────────────────────────────────────
 
-    cancelBooking(bookingId: string) {
-        const reason = prompt('Why do you want to cancel this booking?', 'Customer request');
-        if (!reason) return;
+    openCancelModal(booking: BookingCard) {
+        this.cancelModalBooking = booking;
+        this.cancelReason = '';
+        this.cancelProcessing = false;
+        this.cdr.markForCheck();
+    }
 
-        this.bookingApi.cancelBooking(bookingId, reason).subscribe({
+    closeCancelModal() {
+        this.cancelModalBooking = null;
+        this.cancelReason = '';
+        this.cancelProcessing = false;
+        this.cdr.markForCheck();
+    }
+
+    confirmCancel() {
+        if (!this.cancelModalBooking || !this.cancelReason) return;
+        this.cancelProcessing = true;
+        this.cdr.markForCheck();
+
+        this.bookingApi.cancelBooking(this.cancelModalBooking.bookingId, this.cancelReason).subscribe({
             next: () => {
-                this.upcomingBookings = this.upcomingBookings.filter(b => b.bookingId !== bookingId);
-                this.bookingRegistry.removeBookingId(bookingId);
+                const id = this.cancelModalBooking!.bookingId;
+                this.upcomingBookings = this.upcomingBookings.filter(b => b.bookingId !== id);
+                this.bookingRegistry.removeBookingId(id);
                 this.updateCalendarWithBookings();
-                this.cdr.markForCheck();
+                this.closeCancelModal();
             },
             error: (err) => {
-                alert(err?.message || 'Failed to cancel booking.');
+                this.cancelProcessing = false;
+                this.cdr.markForCheck();
+                alert(err?.message || 'Failed to cancel booking. Please contact support.');
             }
         });
     }
