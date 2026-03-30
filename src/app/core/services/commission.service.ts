@@ -143,6 +143,45 @@ export class CommissionService {
     };
   }
 
+  /**
+   * Update agent's commission/markup settings via API.
+   * POST /user/update-commission
+   *
+   * Confirmed from live API (March 2026):
+   *   POST https://api23.betasavaari.com/user/update-commission
+   *   Body: JSON with userEmail, token, and rate_bump_up fields
+   *   Returns: { statusCode: 200, message, result: true }
+   */
+  updateCommission(updates: Record<string, string | number>): Observable<{ statusCode: number; message: string; result: boolean }> {
+    if (environment.useMockData) {
+      // Update cached data locally for mock mode
+      if (this.cachedCommission) {
+        Object.entries(updates).forEach(([key, val]) => {
+          (this.cachedCommission as any)[key] = String(val);
+        });
+      }
+      return of({ statusCode: 200, message: 'Mock updated', result: true });
+    }
+
+    const body = {
+      userEmail: this.auth.getUserEmail(),
+      token: this.auth.getB2bToken(),
+      ...updates,
+    };
+
+    return this.api.b2bPost<{ statusCode: number; message: string; result: boolean }>('user/update-commission', body).pipe(
+      tap(resp => {
+        if (resp.statusCode === 200 && this.cachedCommission) {
+          // Update local cache
+          Object.entries(updates).forEach(([key, val]) => {
+            (this.cachedCommission as any)[key] = String(val);
+          });
+        }
+      }),
+      catchError(err => this.errorHandler.handleApiError(err, 'CommissionService.updateCommission'))
+    );
+  }
+
   clearCache(): void {
     this.cachedCommission = null;
     this.inFlight$ = null;

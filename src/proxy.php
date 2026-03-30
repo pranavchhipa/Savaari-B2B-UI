@@ -14,23 +14,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-$uri = $_SERVER['REQUEST_URI'];
+// Strip query string from URI — match only the path
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $target = null;
 
-// Route to correct backend (Alpha servers for testing)
+// Route to correct backend (Beta servers — per Shubhendu's instruction 2026-03-30)
 if (preg_match('#^/partner-api/(.*)$#', $uri, $m)) {
-    $target = 'https://api.alphasavaari.com/partner_api/public/' . $m[1];
+    $target = 'https://api.betasavaari.com/partner_api/public/' . $m[1];
 } elseif (preg_match('#^/b2b-api/(.*)$#', $uri, $m)) {
     $target = 'https://api23.betasavaari.com/' . $m[1];
 } elseif (preg_match('#^/wallet-api/(.*)$#', $uri, $m)) {
-    $target = 'https://apiext.alphasavaari.com/wallet/public/' . $m[1];
+    $target = 'https://apiext.betasavaari.com/wallet/public/' . $m[1];
 } else {
     http_response_code(404);
     echo json_encode(['error' => 'Unknown API route']);
     exit;
 }
 
-// Preserve query string
+// Append query string (token, params, etc.) — only once
 if (!empty($_SERVER['QUERY_STRING'])) {
     $target .= '?' . $_SERVER['QUERY_STRING'];
 }
