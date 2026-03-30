@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-slate-100 dark:bg-slate-900 py-6 px-4">
+<div class="receipt-wrapper min-h-screen bg-slate-100 dark:bg-slate-900 py-6 px-4">
 
   <!-- Action Bar (hidden on print) -->
   <div class="no-print max-w-2xl mx-auto flex items-center justify-between mb-4">
@@ -17,9 +17,9 @@
   <div *ngIf="booking" class="receipt-card max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
 
     <!-- Header -->
-    <div class="bg-slate-900 px-6 py-5 flex items-center justify-between">
+    <div class="receipt-header bg-slate-900 px-6 py-4 flex items-center justify-between">
       <div>
-        <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-10">
+        <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-12">
       </div>
       <div class="text-right">
         <div class="text-white font-bold text-sm">Booking Receipt</div>
@@ -28,43 +28,43 @@
     </div>
 
     <!-- Booking ID Banner -->
-    <div class="bg-primary/10 border-b border-primary/20 px-6 py-3 flex flex-wrap gap-4 text-sm">
+    <div class="receipt-banner bg-primary/10 border-b border-primary/20 px-6 py-2.5 flex flex-wrap gap-4 text-sm">
       <div>
-        <span class="text-slate-500 dark:text-slate-400 text-xs">Booking ID</span>
-        <div class="font-bold text-slate-800 dark:text-slate-100">{{ booking.bookingId }}</div>
+        <span class="receipt-section-title text-slate-500 dark:text-slate-400 text-xs">Booking ID</span>
+        <div class="font-bold text-slate-800 dark:text-slate-100 text-sm">{{ booking.bookingId }}</div>
       </div>
       <div *ngIf="booking.reservationId">
-        <span class="text-slate-500 dark:text-slate-400 text-xs">Reservation ID</span>
-        <div class="font-bold text-slate-800 dark:text-slate-100">{{ booking.reservationId }}</div>
+        <span class="receipt-section-title text-slate-500 dark:text-slate-400 text-xs">Reservation ID</span>
+        <div class="font-bold text-slate-800 dark:text-slate-100 text-sm">{{ booking.reservationId }}</div>
       </div>
       <div>
-        <span class="text-slate-500 dark:text-slate-400 text-xs">Trip Type</span>
-        <div class="font-bold text-slate-800 dark:text-slate-100">{{ tripTypeLabel }}</div>
+        <span class="receipt-section-title text-slate-500 dark:text-slate-400 text-xs">Trip Type</span>
+        <div class="font-bold text-slate-800 dark:text-slate-100 text-sm">{{ tripTypeLabel }}</div>
       </div>
       <div *ngIf="booking.pickupDate">
-        <span class="text-slate-500 dark:text-slate-400 text-xs">Pickup Date</span>
-        <div class="font-bold text-slate-800 dark:text-slate-100">{{ booking.pickupDate | date:'dd MMM yyyy' }}, {{ booking.pickupTime }}</div>
+        <span class="receipt-section-title text-slate-500 dark:text-slate-400 text-xs">Pickup Date</span>
+        <div class="font-bold text-slate-800 dark:text-slate-100 text-sm">{{ booking.pickupDate | date:'dd MMM yyyy' }}, {{ booking.pickupTime }}</div>
       </div>
     </div>
 
-    <div class="px-6 py-5 space-y-5">
+    <div class="receipt-body px-6 py-4 space-y-4">
 
       <!-- Agent + Customer -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <!-- Agent / Billed By -->
-        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-          <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Agent (Billed By)</div>
+        <div class="receipt-info-box bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3.5">
+          <div class="receipt-section-title text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Agent (Billed By)</div>
           <div class="font-semibold text-slate-800 dark:text-slate-100 text-sm">{{ agentCompany || agentName }}</div>
           <div *ngIf="agentCompany && agentName" class="text-slate-500 dark:text-slate-400 text-xs">{{ agentName }}</div>
           <div class="text-slate-500 dark:text-slate-400 text-xs">{{ agentEmail }}</div>
-          <div *ngIf="agentGst" class="text-slate-500 dark:text-slate-400 text-xs mt-1">
+          <div *ngIf="agentGst" class="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
             <span class="font-medium">GSTIN:</span> {{ agentGst }}
           </div>
         </div>
 
         <!-- Customer -->
-        <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-          <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Customer</div>
+        <div class="receipt-info-box bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3.5">
+          <div class="receipt-section-title text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Customer</div>
           <div class="font-semibold text-slate-800 dark:text-slate-100 text-sm">{{ booking.customerName }}</div>
           <div class="text-slate-500 dark:text-slate-400 text-xs">{{ booking.customerMobile }}</div>
           <div *ngIf="booking.customerEmail" class="text-slate-500 dark:text-slate-400 text-xs">{{ booking.customerEmail }}</div>
@@ -73,32 +73,32 @@
 
       <!-- Trip Details -->
       <div>
-        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Trip Details</div>
-        <table class="w-full text-sm">
+        <div class="receipt-section-title text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Trip Details</div>
+        <table class="receipt-table w-full text-sm">
           <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-            <tr class="py-2">
-              <td class="py-2 text-slate-500 dark:text-slate-400 w-40">From</td>
-              <td class="py-2 font-medium text-slate-800 dark:text-slate-100">{{ booking.sourceCity }}</td>
-            </tr>
             <tr>
-              <td class="py-2 text-slate-500 dark:text-slate-400">To</td>
-              <td class="py-2 font-medium text-slate-800 dark:text-slate-100">{{ booking.destinationCity || '—' }}</td>
+              <td class="py-1.5 text-slate-500 dark:text-slate-400 w-36">From</td>
+              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.sourceCity }}</td>
+            </tr>
+            <tr *ngIf="booking.destinationCity">
+              <td class="py-1.5 text-slate-500 dark:text-slate-400">To</td>
+              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.destinationCity }}</td>
             </tr>
             <tr *ngIf="booking.pickupAddress">
-              <td class="py-2 text-slate-500 dark:text-slate-400">Pickup Point</td>
-              <td class="py-2 font-medium text-slate-800 dark:text-slate-100">{{ booking.pickupAddress }}</td>
+              <td class="py-1.5 text-slate-500 dark:text-slate-400">Pickup Point</td>
+              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.pickupAddress }}</td>
             </tr>
             <tr *ngIf="booking.carName">
-              <td class="py-2 text-slate-500 dark:text-slate-400">Vehicle</td>
-              <td class="py-2 font-medium text-slate-800 dark:text-slate-100">{{ booking.carName }}</td>
+              <td class="py-1.5 text-slate-500 dark:text-slate-400">Vehicle</td>
+              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.carName }}</td>
             </tr>
             <tr *ngIf="booking.kmsIncluded">
-              <td class="py-2 text-slate-500 dark:text-slate-400">Kms Included</td>
-              <td class="py-2 font-medium text-slate-800 dark:text-slate-100">{{ booking.kmsIncluded }} km</td>
+              <td class="py-1.5 text-slate-500 dark:text-slate-400">Kms Included</td>
+              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.kmsIncluded }} km</td>
             </tr>
             <tr *ngIf="booking.driverName">
-              <td class="py-2 text-slate-500 dark:text-slate-400">Driver</td>
-              <td class="py-2 font-medium text-slate-800 dark:text-slate-100">{{ booking.driverName }} {{ booking.carNumber ? '· ' + booking.carNumber : '' }}</td>
+              <td class="py-1.5 text-slate-500 dark:text-slate-400">Driver</td>
+              <td class="py-1.5 font-medium text-slate-800 dark:text-slate-100">{{ booking.driverName }} {{ booking.carNumber ? '· ' + booking.carNumber : '' }}</td>
             </tr>
           </tbody>
         </table>
@@ -106,37 +106,37 @@
 
       <!-- Payment Breakdown -->
       <div>
-        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Payment Breakdown</div>
+        <div class="receipt-section-title text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Payment Breakdown</div>
         <div class="bg-slate-50 dark:bg-slate-700/50 rounded-xl overflow-hidden">
-          <table class="w-full text-sm">
+          <table class="receipt-table w-full text-sm">
             <tbody class="divide-y divide-slate-100 dark:divide-slate-600">
               <tr>
-                <td class="px-4 py-3 text-slate-600 dark:text-slate-300">Total Fare</td>
-                <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-100 text-right">₹{{ booking.fare | number:'1.0-0' }}</td>
+                <td class="px-4 py-2 text-slate-600 dark:text-slate-300">Total Fare</td>
+                <td class="px-4 py-2 font-semibold text-slate-800 dark:text-slate-100 text-right">₹{{ booking.fare | number:'1.0-0' }}</td>
               </tr>
               <tr *ngIf="walletPaid > 0">
-                <td class="px-4 py-3 text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <td class="px-4 py-2 text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                   <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
                   Paid via Wallet
                 </td>
-                <td class="px-4 py-3 font-semibold text-emerald-600 text-right">− ₹{{ walletPaid | number:'1.0-0' }}</td>
+                <td class="px-4 py-2 font-semibold text-emerald-600 text-right">− ₹{{ walletPaid | number:'1.0-0' }}</td>
               </tr>
               <tr *ngIf="razorpayPaid > 0">
-                <td class="px-4 py-3 text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <td class="px-4 py-2 text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                   <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
                   Paid via Razorpay
                 </td>
-                <td class="px-4 py-3 font-semibold text-blue-600 text-right">− ₹{{ razorpayPaid | number:'1.0-0' }}</td>
+                <td class="px-4 py-2 font-semibold text-blue-600 text-right">− ₹{{ razorpayPaid | number:'1.0-0' }}</td>
               </tr>
               <tr *ngIf="cashToDriver > 0" class="bg-amber-50 dark:bg-amber-900/20">
-                <td class="px-4 py-3 text-amber-700 dark:text-amber-400 font-medium">Cash to Driver</td>
-                <td class="px-4 py-3 font-bold text-amber-700 dark:text-amber-400 text-right">₹{{ cashToDriver | number:'1.0-0' }}</td>
+                <td class="px-4 py-2 text-amber-700 dark:text-amber-400 font-medium">Cash to Driver</td>
+                <td class="px-4 py-2 font-bold text-amber-700 dark:text-amber-400 text-right">₹{{ cashToDriver | number:'1.0-0' }}</td>
               </tr>
             </tbody>
           </table>
 
           <!-- Total line -->
-          <div class="bg-slate-800 dark:bg-slate-900 px-4 py-3 flex items-center justify-between">
+          <div class="receipt-total-bar bg-slate-800 dark:bg-slate-900 px-4 py-2.5 flex items-center justify-between">
             <span class="text-white font-bold text-sm">Total Charged to Agent</span>
             <span class="text-white font-black text-base">₹{{ (booking.prePayment || 0) | number:'1.0-0' }}</span>
           </div>
@@ -152,9 +152,8 @@
     </div>
 
     <!-- Footer -->
-    <div class="border-t border-slate-100 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+    <div class="receipt-footer border-t border-slate-100 dark:border-slate-700 px-6 py-3 text-center">
       <div class="text-xs text-slate-400">This is a computer-generated receipt. No signature required.</div>
-      <div class="text-xs text-slate-400">Powered by Savaari Car Rentals Pvt Ltd</div>
     </div>
 
   </div>

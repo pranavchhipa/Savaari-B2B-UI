@@ -1,8 +1,34 @@
 @media print {
+  /* Hide non-print elements */
   .no-print { display: none !important; }
-  body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .receipt-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+
+  /* Force white background, preserve colors */
+  body, html { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Remove shadow, add subtle border */
+  .receipt-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; border-radius: 0 !important; }
+
+  /* Dark mode overrides for print */
   .dark\:bg-slate-800, .dark\:bg-slate-700\/50, .dark\:bg-slate-900 { background: white !important; }
   .dark\:text-slate-100, .dark\:text-slate-300, .dark\:text-slate-400 { color: #1e293b !important; }
-  @page { margin: 10mm; }
+
+  /* Page setup — tight margins, single page */
+  @page {
+    margin: 6mm;
+    size: A4;
+  }
+
+  /* Compact everything for 1-page fit */
+  .receipt-wrapper { padding: 0 !important; min-height: auto !important; }
+  .receipt-card { max-width: 100% !important; margin: 0 !important; }
+  .receipt-header { padding: 12px 16px !important; }
+  .receipt-header img { height: 28px !important; }
+  .receipt-banner { padding: 8px 16px !important; }
+  .receipt-body { padding: 12px 16px !important; gap: 10px !important; }
+  .receipt-body > div { margin-bottom: 0 !important; }
+  .receipt-section-title { margin-bottom: 4px !important; font-size: 9px !important; }
+  .receipt-info-box { padding: 8px 10px !important; }
+  .receipt-table td { padding: 4px 12px !important; font-size: 11px !important; }
+  .receipt-total-bar { padding: 6px 12px !important; }
+  .receipt-footer { padding: 8px 16px !important; }
 }
