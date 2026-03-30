@@ -14,6 +14,7 @@ export class AppComponent {
     protected readonly title = signal('savaari-b2b-scratch');
     isPublicRoute = false;
     isLandingPage = false;
+    isReceiptPage = false;
 
     constructor(private router: Router) {
         this.checkRoute(this.router.url);
@@ -28,5 +29,6 @@ export class AppComponent {
         const path = url ? url.split('?')[0].split('#')[0] : '';
         this.isPublicRoute = path === '/' || path === '' || path.startsWith('/login') || path.startsWith('/register');
         this.isLandingPage = path === '/' || path === '';
+        this.isReceiptPage = path.startsWith('/receipt');
     }
 }
