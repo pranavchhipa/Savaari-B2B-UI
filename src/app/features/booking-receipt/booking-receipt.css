@@ -1,5 +1,8 @@
 @media print {
   .no-print { display: none !important; }
-  body { background: white !important; }
+  body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .receipt-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+  .dark\:bg-slate-800, .dark\:bg-slate-700\/50, .dark\:bg-slate-900 { background: white !important; }
+  .dark\:text-slate-100, .dark\:text-slate-300, .dark\:text-slate-400 { color: #1e293b !important; }
+  @page { margin: 10mm; }
 }

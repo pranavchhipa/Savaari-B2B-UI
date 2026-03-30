@@ -25,20 +25,13 @@ export class BookingReceiptComponent implements OnInit {
   receiptDate = new Date();
 
   ngOnInit() {
-    // Booking data passed via router state
-    const nav = this.router.getCurrentNavigation();
-    const state = nav?.extras?.state as { booking: BookingCard } | undefined;
-    if (state?.booking) {
-      this.booking = state.booking;
+    // Booking data passed via router state (history.state is available after navigation completes)
+    const histState = history.state as { booking?: BookingCard };
+    if (histState?.booking?.bookingId) {
+      this.booking = histState.booking;
     } else {
-      // Fallback: try history.state (already navigated)
-      const histState = history.state as { booking?: BookingCard };
-      if (histState?.booking) {
-        this.booking = histState.booking;
-      } else {
-        this.router.navigate(['/bookings']);
-        return;
-      }
+      this.router.navigate(['/bookings']);
+      return;
     }
 
     const profile = this.auth.getUserProfile();

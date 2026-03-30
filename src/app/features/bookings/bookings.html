@@ -310,7 +310,7 @@
                                 <span class="px-2 py-0.5 text-[9px] font-bold rounded-full border border-slate-200 text-slate-400 bg-slate-50">
                                     Completed
                                 </span>
-                                <button (click)="openReceipt(booking)"
+                                <button (click)="$event.stopPropagation(); openReceipt(booking)"
                                     class="px-2.5 py-0.5 text-[9px] font-bold rounded-full border border-emerald-300 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
                                     <lucide-icon name="file-text" [size]="10"></lucide-icon>
                                     Receipt
@@ -385,7 +385,7 @@
                                 <span class="px-2 py-0.5 text-[8px] font-bold rounded-full border border-slate-200 text-slate-400 bg-slate-50">
                                     Completed
                                 </span>
-                                <button (click)="openReceipt(booking)"
+                                <button (click)="$event.stopPropagation(); openReceipt(booking)"
                                     class="px-2.5 py-0.5 text-[8px] font-bold rounded-full border border-emerald-300 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
                                     <lucide-icon name="file-text" [size]="9"></lucide-icon>
                                     Receipt

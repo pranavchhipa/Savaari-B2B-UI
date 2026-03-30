@@ -60,7 +60,7 @@ export class CommissionService {
       tap(commission => {
         this.cachedCommission = commission;
         this.inFlight$ = null;
-        console.log('[COMMISSION] Loaded:', {
+        if (!environment.production) console.log('[COMMISSION] Loaded:', {
           airport: commission.airport_commision,
           local: commission.local_commision,
           outstation: commission.outstation_commision,
