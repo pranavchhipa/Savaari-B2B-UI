@@ -49,10 +49,10 @@
     </div>
 
     <!-- Search Card -->
-    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-[0_12px_32px_rgba(0,172,230,0.08)] p-3 sm:p-4 md:p-6 lg:p-8 pb-8 border border-slate-100 dark:border-slate-800 overflow-visible">
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-[0_12px_32px_rgba(0,172,230,0.08)] p-4 sm:p-4 md:p-6 lg:p-8 pb-10 sm:pb-8 border border-slate-100 dark:border-slate-800 overflow-visible">
 
       <!-- Trip Type Toggles with Checkboxes -->
-      <div class="flex flex-nowrap gap-0 sm:gap-5 items-center justify-between sm:justify-center md:justify-start mb-3 sm:mb-6">
+      <div class="flex flex-nowrap gap-0 sm:gap-5 items-center justify-between sm:justify-center md:justify-start mb-4 sm:mb-6">
         <button *ngFor="let tab of [{id: 'ONE_WAY', label: 'One Way', icon: 'arrow-right'}, {id: 'ROUND_TRIP', label: 'Round Trip', icon: 'refresh-cw'}, {id: 'LOCAL', label: 'Local', icon: 'map-pin'}, {id: 'AIRPORT', label: 'Airport', icon: 'plane'}]"
           (click)="selectTab(tab.id)" type="button"
           class="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-1 py-1 cursor-pointer border-0 outline-none bg-transparent transition-all duration-200 group">
@@ -88,7 +88,7 @@
           <!-- Row 1: FROM | TO with SWAP on right — vertical on mobile, horizontal on sm+ -->
           <div class="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-0 sm:gap-2 lg:gap-0 mb-1.5 lg:mb-0">
             <!-- FROM -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 pr-14 sm:pr-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-t-lg sm:rounded-lg rounded-b-none sm:rounded-b-lg transition-colors border border-slate-200/80 dark:border-slate-600/40 border-b-0 sm:border-b"
+            <div class="search-cell flex-1 px-3 py-3.5 sm:px-4 sm:py-3 lg:px-5 lg:py-4 pr-14 sm:pr-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-t-lg sm:rounded-lg rounded-b-none sm:rounded-b-lg transition-colors border border-slate-200/80 dark:border-slate-600/40 border-b-0 sm:border-b"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('fromCity')?.value?.id}">
               <lucide-icon name="map-pin" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
@@ -119,7 +119,7 @@
             </div>
 
             <!-- TO -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 pr-14 sm:pr-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-b-lg sm:rounded-lg rounded-t-none sm:rounded-t-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
+            <div class="search-cell flex-1 px-3 py-3.5 sm:px-4 sm:py-3 lg:px-5 lg:py-4 pr-14 sm:pr-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-b-lg sm:rounded-lg rounded-t-none sm:rounded-t-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('toCity')?.value?.id}">
               <lucide-icon name="map-pin" [size]="16" class="text-orange-500 shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
@@ -143,7 +143,7 @@
           <!-- Row 2: DATE | TIME — vertical on mobile, horizontal on sm+ -->
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-2 lg:gap-0">
             <!-- PICKUP DATE -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
+            <div class="search-cell flex-1 px-3 py-3.5 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               (click)="pickupDate1.showOverlay()">
               <lucide-icon name="calendar" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col">
@@ -156,7 +156,7 @@
             </div>
 
             <!-- PICKUP TIME -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
+            <div class="search-cell flex-1 px-3 py-3.5 sm:px-4 sm:py-3 lg:px-5 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-600/40"
               (click)="pickupTime1.showOverlay()">
               <lucide-icon name="clock" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col">
