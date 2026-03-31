@@ -17,6 +17,7 @@ import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-form
 import { BannerService, BannerImage } from '../../core/services/banner.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { LocalityService, Locality } from '../../core/services/locality.service';
+import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 
@@ -43,6 +44,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private analytics = inject(AnalyticsService);
   private localityService = inject(LocalityService);
   private authService = inject(AuthService);
+  private addressAutocomplete = inject(AddressAutocompleteService);
 
   dashboardImages = environment.dashboardImages;
   selectedTab: TabType = 'ONE_WAY';
@@ -233,20 +235,39 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** One-way conversion popup for airport bookings */
   showConversionPopup = false;
 
-  /** Locality suggestions for airport pickup/drop address */
-  filteredLocalities: Locality[] = [];
+  /** Address suggestions for airport pickup/drop (from Savaari autocomplete API) */
+  filteredLocalities: AddressSuggestion[] = [];
 
-  /** Filter localities for the pickup/drop address autocomplete (airport tab) */
+  /** Resolved place details (lat, lng) from 2nd API after user selects an address */
+  selectedPlaceDetails: { lat: number; lng: number; name: string; place_id: string } | null = null;
+
+  /** Filter addresses using Savaari autocomplete API (replaces Google Maps Places) */
   filterLocalities(event: AutoCompleteCompleteEvent) {
     const q = event.query || '';
-    const cityId = this.selectedAirportCity?.id;
-    if (!cityId || q.length < 2) {
+    if (q.length < 2) {
       this.filteredLocalities = [];
       this.cdr.markForCheck();
       return;
     }
-    this.localityService.searchLocalities(cityId, q, 20).subscribe(localities => {
-      this.filteredLocalities = localities;
+    const cityName = this.selectedAirportCity?.cityOnly || this.selectedAirportCity?.name || '';
+    const request = this.bookingForm.get('tripType')?.value === 'pickup' ? 'to' : 'from';
+    this.addressAutocomplete.searchAddress(q, request, cityName).subscribe(suggestions => {
+      this.filteredLocalities = suggestions;
+      this.cdr.markForCheck();
+    });
+  }
+
+  /** When user selects an address from autocomplete → call 2nd API (place_id) to get lat/lng */
+  onAddressSelect(event: any) {
+    const suggestion: AddressSuggestion = event.value || event;
+    if (!suggestion?.place_id) return;
+
+    const request = this.bookingForm.get('tripType')?.value === 'pickup' ? 'to' : 'from';
+    this.addressAutocomplete.getPlaceDetails(suggestion.place_id, request).subscribe(details => {
+      if (details) {
+        this.selectedPlaceDetails = details;
+        console.log('[Dashboard] Place details resolved:', details.name, details.lat, details.lng);
+      }
       this.cdr.markForCheck();
     });
   }
@@ -727,11 +748,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
   swapCities() {
     const from = this.bookingForm.get('fromCity')?.value;
     const to = this.bookingForm.get('toCity')?.value;
-    this.bookingForm.patchValue({ fromCity: to, toCity: from });
-    if (to?.id) {
-      this.loadDestinationCities(to.id);
+    if (!from?.name || !to?.name) return;
+
+    // After swap, the new "from" must use its ID from the source cities list,
+    // and the new "to" must use its ID from the destination cities list.
+    // Source and destination APIs return DIFFERENT cityIds for the same city.
+    const newFromName = (to.cityOnly || to.name || '').toLowerCase();
+    const matchedSource = this.sourceCities.find(
+      c => (c.cityOnly || c.name || '').toLowerCase() === newFromName
+    );
+
+    if (!matchedSource) {
+      // City not available as source — can't swap
+      console.warn('[Dashboard] Cannot swap: destination city not found in source cities list');
+      return;
     }
+
+    // Set the new from city with the correct source city ID
+    this.bookingForm.patchValue({ fromCity: matchedSource, toCity: null });
     this.cdr.markForCheck();
+
+    // Load destination cities for the new source, then find and set the old "from" as "to"
+    this.loadDestinationCities(matchedSource.id);
+    const oldFromName = (from.cityOnly || from.name || '').toLowerCase();
+
+    // Wait for destination cities to load, then match
+    const apiParams = this.getApiParams();
+    this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, matchedSource.id).subscribe(cities => {
+      this.destinationCities = cities;
+      const matchedDest = cities.find(
+        c => (c.cityOnly || c.name || '').toLowerCase() === oldFromName
+      );
+      if (matchedDest) {
+        this.bookingForm.patchValue({ toCity: matchedDest });
+      } else {
+        // Fallback: use the original from object (ID might mismatch but name is correct)
+        this.bookingForm.patchValue({ toCity: from });
+      }
+      this.cdr.markForCheck();
+    });
   }
 
   selectTab(tab: any) {
@@ -863,16 +918,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
       subTripType: apiParams.subTripType,
       ...(isRoundTrip && {
         returnDate: returnDate,
-        duration: calculateDuration(pickupDate, returnDate)
+        duration: calculateDuration(pickupDate, returnDate),
+        // Multi-city intermediate stops (e.g. Bangalore → Mysore → Ooty → Bangalore)
+        ...(this.extraDestinations.length > 0 && {
+          extraDestinations: this.extraDestinations
+            .filter(c => c && typeof c === 'object' && c.id)
+            .map(c => ({ cityId: c.id, cityName: c.name, cityOnly: c.cityOnly }))
+        })
       }),
       ...(isAirport && {
         airportSubType: val.tripType || 'drop',
-        pickupAddress: (typeof val.pickupAddress === 'object' ? val.pickupAddress?.name : val.pickupAddress) || '',
+        pickupAddress: (typeof val.pickupAddress === 'object' ? (val.pickupAddress?.description || val.pickupAddress?.main_text || val.pickupAddress?.name) : val.pickupAddress) || '',
         dropAirport: selectedAirport?.name || val.dropAirport || '',
         airportName: selectedAirport?.name || this.airportLocalityName || '',
         airportCityId: selectedAirport?.id,
         airportId: selectedAirport?.aid ? Number(selectedAirport.aid) : (this.airportLocalityId || undefined),
-        custShortAddress: (typeof val.pickupAddress === 'object' ? val.pickupAddress?.name : val.pickupAddress) || '',
+        custShortAddress: (typeof val.pickupAddress === 'object' ? (val.pickupAddress?.description || val.pickupAddress?.main_text || val.pickupAddress?.name) : val.pickupAddress) || '',
       })
     };
 
@@ -886,6 +947,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       subTripType: isLocal ? '' : apiParams.subTripType,
       pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
       ...((!isLocal && !isAirport) && { destinationCity: toCityId }),
+      // Multicity intermediate stops for round trip (e.g. Bangalore → Mysore → Ooty)
+      ...(isRoundTrip && this.extraDestinations.length > 0 && {
+        multicityId: this.extraDestinations
+          .filter(c => c && typeof c === 'object' && c.id)
+          .map(c => c.id)
+          .join(',')
+      }),
       duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
       ...(isAirport && this.airportLocalityId && { localityId: this.airportLocalityId }),
       // Airport-specific params (confirmed by Shubhendu — aid from source-cities API)
@@ -894,7 +962,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         airport_name: selectedAirport?.name || this.airportLocalityName || '',
         terminalId: '',
         selectPlaceId: '',
-        custShortAddress: (typeof val.pickupAddress === 'object' ? val.pickupAddress?.name : val.pickupAddress) || '',
+        custShortAddress: (typeof val.pickupAddress === 'object' ? (val.pickupAddress?.description || val.pickupAddress?.main_text || val.pickupAddress?.name) : val.pickupAddress) || '',
       }),
     };
 

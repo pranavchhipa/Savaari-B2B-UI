@@ -15,6 +15,7 @@ import { PaymentService } from '../../core/services/payment.service';
 import { CommissionService } from '../../core/services/commission.service';
 import { CountryCodeService, CountryCodeEntry } from '../../core/services/country-code.service';
 import { LocalityService } from '../../core/services/locality.service';
+import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { CreateBookingRequest } from '../../core/models';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
@@ -121,6 +122,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   private commissionService = inject(CommissionService);
   private localityService = inject(LocalityService);
   private availabilityService = inject(AvailabilityService);
+  private addressAutocomplete = inject(AddressAutocompleteService);
 
   // Confetti canvas
   @ViewChild('confettiCanvas') confettiCanvas!: ElementRef<HTMLCanvasElement>;
@@ -132,9 +134,17 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Session storage key for passenger details
   private readonly PASSENGER_STATE_KEY = 'b2b_passenger_state';
 
-  // Locality autocomplete suggestions (string arrays for direct ngModel binding)
+  // Address autocomplete suggestions (Savaari autocomplete API replaces Google Maps)
   pickupSuggestions: string[] = [];
   dropSuggestions: string[] = [];
+
+  // Full suggestion objects (kept to look up place_id when user selects)
+  private pickupSuggestionsRaw: AddressSuggestion[] = [];
+  private dropSuggestionsRaw: AddressSuggestion[] = [];
+
+  // Lat/lng resolved from place_id API (2nd API) after address selection
+  private pickupLatLng: { lat: number; lng: number } | null = null;
+  private dropLatLng: { lat: number; lng: number } | null = null;
 
   ngOnInit() {
     this.walletBalance$ = this.walletService.balance$;
@@ -285,32 +295,52 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
-  /** PrimeNG AutoComplete: search pickup address localities (source city) */
+  /** PrimeNG AutoComplete: search pickup address via Savaari autocomplete API */
   searchPickupAddress(event: AutoCompleteCompleteEvent): void {
-    const cityId = this.itinerary?.fromCityId;
-    console.log('[BOOKING] searchPickupAddress called, cityId:', cityId, 'query:', event.query);
-    if (!cityId || !event.query) { this.pickupSuggestions = []; return; }
-    this.localityService.searchLocalities(cityId, event.query).subscribe(results => {
-      this.pickupSuggestions = results.map(l => l.name);
-      console.log('[BOOKING] Pickup suggestions:', this.pickupSuggestions.length, 'results');
+    const city = this.itinerary?.fromCity || '';
+    if (!event.query || event.query.length < 2) { this.pickupSuggestions = []; this.pickupSuggestionsRaw = []; return; }
+    this.addressAutocomplete.searchAddress(event.query, 'from', city).subscribe(results => {
+      this.pickupSuggestionsRaw = results;
+      this.pickupSuggestions = results.map(r => r.description);
       this.cdr.markForCheck();
     });
   }
 
-  /** PrimeNG AutoComplete: search drop address localities (destination city).
-   *  Uses toCitySourceId — only set when the destination is also a valid source city
-   *  with registered localities. Falls back to empty (free text) for destination-only cities.
-   */
+  /** PrimeNG AutoComplete: search drop address via Savaari autocomplete API */
   searchDropAddress(event: AutoCompleteCompleteEvent): void {
-    // Try toCitySourceId first (confirmed source city with localities), fall back to toCityId
-    const cityId = this.itinerary?.toCitySourceId || this.itinerary?.toCityId;
-    console.log('[BOOKING] searchDropAddress called, cityId:', cityId, 'query:', event.query);
-    if (!cityId || !event.query) { this.dropSuggestions = []; return; }
-    this.localityService.searchLocalities(cityId, event.query).subscribe(results => {
-      this.dropSuggestions = results.map(l => l.name);
-      console.log('[BOOKING] Drop suggestions:', this.dropSuggestions.length, 'results');
+    const city = this.itinerary?.toCity || '';
+    if (!event.query || event.query.length < 2) { this.dropSuggestions = []; this.dropSuggestionsRaw = []; return; }
+    this.addressAutocomplete.searchAddress(event.query, 'to', city).subscribe(results => {
+      this.dropSuggestionsRaw = results;
+      this.dropSuggestions = results.map(r => r.description);
       this.cdr.markForCheck();
     });
+  }
+
+  /** When user selects a pickup address → call place_id API (2nd API) to get lat/lng */
+  onPickupAddressSelect(event: any): void {
+    const selected: string = event.value || event;
+    const match = this.pickupSuggestionsRaw.find(s => s.description === selected);
+    if (match?.place_id) {
+      this.addressAutocomplete.getPlaceDetails(match.place_id, 'from').subscribe(details => {
+        if (details) {
+          this.pickupLatLng = { lat: details.lat, lng: details.lng };
+        }
+      });
+    }
+  }
+
+  /** When user selects a drop address → call place_id API (2nd API) to get lat/lng */
+  onDropAddressSelect(event: any): void {
+    const selected: string = event.value || event;
+    const match = this.dropSuggestionsRaw.find(s => s.description === selected);
+    if (match?.place_id) {
+      this.addressAutocomplete.getPlaceDetails(match.place_id, 'to').subscribe(details => {
+        if (details) {
+          this.dropLatLng = { lat: details.lat, lng: details.lng };
+        }
+      });
+    }
   }
 
   /** Triggered when user selects a drop address from autocomplete (One Way) */
@@ -860,9 +890,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       pickupDateTime: toSavaariDateTime(new Date(this.itinerary!.pickupDate), this.itinerary!.pickupTime),
       duration: this.itinerary!.duration || 1,
       pickupAddress: pickupLocality || this.itinerary!.pickupAddress || '',
-      customerLatLong: '',
+      customerLatLong: this.pickupLatLng ? `${this.pickupLatLng.lat},${this.pickupLatLng.lng}` : '',
       locality: pickupLocality,
       dropAddress: this.dropAddress || '',
+      dropLatLong: this.dropLatLng ? `${this.dropLatLng.lat},${this.dropLatLng.lng}` : '',
       customerTitle: 'Mr',
       customerName: this.guestName,
       customerEmail: this.guestEmail || this.agentEmail || undefined,
@@ -874,6 +905,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       prePayment: prePaymentAmount,
       invoicePayer: this.commissionService.getInvoicePayer(),
       ...(this.itinerary!.toCityId && { destinationCity: this.itinerary!.toCityId }),
+      ...(this.itinerary!.extraDestinations?.length && {
+        multicityId: this.itinerary!.extraDestinations.map(s => s.cityId).join(',')
+      }),
       ...(this.itinerary!.localityId && { localityId: this.itinerary!.localityId }),
       // Airport-specific params (confirmed missing by Shubhendu — required for airport flow)
       ...(isAirport && {
@@ -897,6 +931,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       drop_city: this.itinerary?.toCity || '',
       source_city: this.itinerary?.fromCity || '',
       destination_city: this.itinerary?.toCity || '',
+      ...(this.itinerary?.extraDestinations?.length && {
+        intermediate_cities: this.itinerary.extraDestinations.map(s => s.cityOnly || s.cityName).join(', ')
+      }),
       pickup_address: this.pickupAddress || this.itinerary?.pickupAddress || '',
       drop_address: this.dropAddress || '',
       start_date_time: (() => {
@@ -914,7 +951,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       customer_name: this.guestName || '',
       customer_mobile: this.phone || '',
       customer_email: this.guestEmail || '',
-      itinerary: (this.itinerary?.fromCity || '') + ' → ' + (this.itinerary?.toCity || ''),
+      itinerary: (this.itinerary?.fromCity || '') + (this.itinerary?.extraDestinations?.length ? ' → ' + this.itinerary.extraDestinations.map(s => s.cityOnly || s.cityName).join(' → ') : '') + ' → ' + (this.itinerary?.toCity || ''),
       prePayment: prePaymentAmount,
       cashToCollect: (this.selectedCar?.price || 0) - prePaymentAmount,
       carType: this.selectedCar?.carTypeId || request.carType || 0,
@@ -1323,7 +1360,8 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     } else if (this.itinerary.tripType === 'Airport') {
       itineraryText = `${this.itinerary.fromCity} (Airport ${this.itinerary.airportSubType === 'pickup' ? 'Pickup' : 'Drop'})`;
     } else if (this.itinerary.tripType === 'Round Trip') {
-      itineraryText = `${this.itinerary.fromCity} → ${this.itinerary.toCity} → ${this.itinerary.fromCity} (Round Trip)`;
+      const stops = this.itinerary.extraDestinations?.map(s => s.cityOnly || s.cityName).join(' → ') || '';
+      itineraryText = `${this.itinerary.fromCity}${stops ? ' → ' + stops : ''} → ${this.itinerary.toCity} → ${this.itinerary.fromCity} (Round Trip)`;
     } else {
       itineraryText = `${this.itinerary.fromCity} → ${this.itinerary.toCity} (One Way)`;
     }

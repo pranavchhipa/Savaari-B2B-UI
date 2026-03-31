@@ -71,6 +71,7 @@ export class BookingApiService {
       carType: request.carType,
       premiumFlag: request.premiumFlag ?? 0,
       destinationCity: request.destinationCity,
+      multicityId: request.multicityId,
       prePayment: request.prePayment,
       locality: request.locality,
       agentId: btoa(this.auth.getAgentId()),

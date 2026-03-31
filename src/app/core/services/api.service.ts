@@ -125,6 +125,16 @@ export class ApiService {
   }
 
   /**
+   * GET from the Address API (apiext.betasavaari.com/).
+   * Used for: autocomplete/info.php, place_id/info.php
+   * These Savaari APIs replace Google Maps Places API.
+   */
+  addressGet<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const httpParams = new HttpParams({ fromObject: this.cleanParams(params) });
+    return this.http.get<T>(`${environment.addressApiBaseUrl}/${endpoint}`, { params: httpParams });
+  }
+
+  /**
    * Strip undefined/null values and convert everything to strings.
    * HttpParams requires all values to be strings.
    * Empty strings are KEPT — live site sends empty params like subTripType=&customerLatLong=

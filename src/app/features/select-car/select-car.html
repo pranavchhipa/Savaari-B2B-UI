@@ -39,6 +39,12 @@
                         <!-- One Way / Round Trip -->
                         <ng-container *ngIf="!isLocal && !isAirport">
                             <span>{{itinerary.fromCity || 'Bangalore'}}</span>
+                            <ng-container *ngIf="itinerary.extraDestinations?.length">
+                                <ng-container *ngFor="let stop of itinerary.extraDestinations">
+                                    <span class="text-orange-400 mx-1 sm:mx-2">&rsaquo;</span>
+                                    <span class="text-orange-600 dark:text-orange-400">{{stop.cityOnly || stop.cityName}}</span>
+                                </ng-container>
+                            </ng-container>
                             <span class="text-slate-300 mx-1 sm:mx-2">/</span>
                             <span>{{itinerary.toCity || 'Mysore'}}</span>
                             <ng-container *ngIf="itinerary.tripType === 'Round Trip'">

@@ -33,5 +33,12 @@
     "changeOrigin": true,
     "pathRewrite": { "^/analytics-api": "" },
     "logLevel": "debug"
+  },
+  "/address-api": {
+    "target": "https://apiext.betasavaari.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/address-api": "" },
+    "logLevel": "debug"
   }
 }

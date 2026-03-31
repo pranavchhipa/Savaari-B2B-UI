@@ -2,6 +2,12 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { AvailabilityResponse } from '../models';
 
+export interface ItineraryStop {
+    cityId: number;
+    cityName: string;         // Full name e.g. "Mysore, Karnataka"
+    cityOnly?: string;        // Short name e.g. "Mysore"
+}
+
 export interface Itinerary {
     fromCity: string;
     fromCityId?: number;      // Savaari integer city ID for API calls
@@ -14,6 +20,7 @@ export interface Itinerary {
     subTripType?: string;     // API value: 'oneWay', 'roundTrip', '880', etc.
     returnDate?: Date;        // Round Trip only
     duration?: number;        // Calculated number of days for round trip
+    extraDestinations?: ItineraryStop[];  // Round Trip multicity intermediate stops
     localPackage?: string;    // Local only: '8hr/80km' | '12hr/120km'
     airportSubType?: string;  // Airport only: 'drop' | 'pickup'
     pickupAddress?: string;   // Airport / booking address

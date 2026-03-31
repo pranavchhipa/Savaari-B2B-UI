@@ -18,6 +18,7 @@ export interface CreateBookingRequest {
   tripType: string;              // 'outstation' | 'local' | 'airport'
   subTripType: string;           // 'oneWay' | 'roundTrip' | '880' etc.
   destinationCity?: number;      // Required for outstation
+  multicityId?: string;          // Comma-separated intermediate city IDs for round trip multicity
   pickupDateTime: string;        // DD-MM-YYYY HH:MM
   duration?: number;             // Days (1 for oneWay)
 

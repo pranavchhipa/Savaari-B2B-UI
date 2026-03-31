@@ -469,15 +469,17 @@
                   {{ bookingForm.get('tripType')?.value === 'pickup' ? 'Drop Address' : 'Pickup Address' }}
                 </span>
                 <p-autoComplete formControlName="pickupAddress" [suggestions]="filteredLocalities"
-                  (completeMethod)="filterLocalities($event)" field="name" optionLabel="name" [minLength]="2"
+                  (completeMethod)="filterLocalities($event)" (onSelect)="onAddressSelect($event)" field="description" optionLabel="description" [minLength]="2"
                   placeholder="Start typing address" styleClass="w-full search-bar-autocomplete"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
-                  <ng-template pTemplate="item" let-loc>
+                  <ng-template pTemplate="item" let-addr>
                     <div class="flex items-center gap-2 px-2 py-1.5">
-                      <lucide-icon [name]="loc.isAirport ? 'plane' : 'map-pin'" [size]="14"
-                        [class]="loc.isAirport ? 'text-primary shrink-0' : 'text-slate-400 shrink-0'"></lucide-icon>
-                      <span class="text-sm">{{ loc.name }}</span>
+                      <lucide-icon name="map-pin" [size]="14" class="text-orange-500 shrink-0"></lucide-icon>
+                      <div class="min-w-0">
+                        <span class="text-sm font-medium block truncate">{{ addr.main_text || addr.description }}</span>
+                        <span *ngIf="addr.secondary_text" class="text-[10px] text-slate-400 block truncate">{{ addr.secondary_text }}</span>
+                      </div>
                     </div>
                   </ng-template>
                 </p-autoComplete>

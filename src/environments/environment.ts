@@ -24,6 +24,9 @@ export const environment = {
   /** Payment API: Razorpay order/verify via PHP (proxied to b2bcab.betasavaari.com) */
   paymentApiBaseUrl: '/payment-api',
 
+  /** Address API: autocomplete + place_id (proxied to apiext.betasavaari.com) */
+  addressApiBaseUrl: '/address-api',
+
   /** Razorpay test key for wallet top-up */
   razorpayKeyId: 'rzp_test_dsrBANLbHxlwZb',
 

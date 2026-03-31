@@ -193,6 +193,7 @@
                                     name="pickupAddress"
                                     [suggestions]="pickupSuggestions"
                                     (completeMethod)="searchPickupAddress($event)"
+                                    (onSelect)="onPickupAddressSelect($event)"
                                     [minLength]="2"
                                     [delay]="250"
                                     placeholder="Pickup locality or address"
@@ -224,6 +225,7 @@
                                     name="dropAddress"
                                     [suggestions]="dropSuggestions"
                                     (completeMethod)="searchDropAddress($event)"
+                                    (onSelect)="onDropAddressSelect($event)"
                                     [minLength]="2"
                                     [delay]="250"
                                     placeholder="Drop locality or address"
@@ -338,6 +340,9 @@
                             <p class="text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-widest">Trip Fare</p>
                             <p class="text-[13px] sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5 leading-snug">
                                 {{ itinerary?.fromCity || 'Source' }}
+                                <ng-container *ngIf="itinerary?.extraDestinations?.length">
+                                    <ng-container *ngFor="let stop of itinerary?.extraDestinations"> → <span class="text-orange-600 dark:text-orange-400">{{stop.cityOnly || stop.cityName}}</span></ng-container>
+                                </ng-container>
                                 <ng-container *ngIf="itinerary?.toCity"> → {{ itinerary?.toCity }}</ng-container>
                             </p>
                             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -627,6 +632,16 @@
                                 <lucide-icon name="map-pin" [size]="12" class="text-primary shrink-0"></lucide-icon>
                                 <span class="text-sm font-bold text-slate-900 dark:text-white">{{itinerary?.fromCity || 'Bangalore'}}</span>
                             </div>
+                            <!-- Intermediate stops for multicity round trip -->
+                            <ng-container *ngIf="itinerary?.extraDestinations?.length">
+                                <ng-container *ngFor="let stop of itinerary?.extraDestinations">
+                                    <div class="h-3 w-px bg-orange-300 dark:bg-orange-600 ml-[5px]"></div>
+                                    <div class="flex items-center gap-2">
+                                        <lucide-icon name="map-pin" [size]="12" class="text-orange-500 shrink-0"></lucide-icon>
+                                        <span class="text-sm font-bold text-orange-600 dark:text-orange-400">{{stop.cityOnly || stop.cityName}}</span>
+                                    </div>
+                                </ng-container>
+                            </ng-container>
                             <div class="h-3 w-px bg-slate-300 dark:bg-slate-600 ml-[5px]"></div>
                             <div class="flex items-center gap-2">
                                 <lucide-icon name="map-pin" [size]="12" class="text-rose-500 shrink-0"></lucide-icon>
@@ -914,6 +929,13 @@
                 <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-primary flex-shrink-0"></div>
                     <span class="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">{{itinerary?.fromCity}}</span>
+                    <ng-container *ngIf="itinerary?.extraDestinations?.length">
+                        <ng-container *ngFor="let stop of itinerary?.extraDestinations">
+                            <lucide-icon name="arrow-right" [size]="12" class="text-orange-300 flex-shrink-0 sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
+                            <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-400 flex-shrink-0"></div>
+                            <span class="text-xs sm:text-sm font-semibold text-orange-600 dark:text-orange-400">{{stop.cityOnly || stop.cityName}}</span>
+                        </ng-container>
+                    </ng-container>
                     <lucide-icon name="arrow-right" [size]="12" class="text-slate-300 flex-shrink-0 sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
                     <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-500 flex-shrink-0"></div>
                     <span class="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">{{itinerary?.toCity}}</span>

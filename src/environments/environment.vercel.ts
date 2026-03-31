@@ -13,6 +13,7 @@ export const environment = {
   b2bApiBaseUrl: '/b2b-api',
   walletApiBaseUrl: '/wallet-api',
   paymentApiBaseUrl: '/payment-api',
+  addressApiBaseUrl: '/address-api',
 
   /** Razorpay — not used in mock mode */
   razorpayKeyId: '',

@@ -45,6 +45,8 @@ export class AvailabilityService {
       pickupDateTime: request.pickupDateTime,
       duration: request.duration,
       destinationCity: request.destinationCity,
+      // Multicity intermediate stops for round trip (e.g. Bangalore → Mysore → Ooty)
+      ...(request.multicityId && { multicityId: request.multicityId }),
       // Airport-specific params (confirmed by Shubhendu — required for airport pricing)
       ...(isAirport && {
         terminalId: request.terminalId || '',

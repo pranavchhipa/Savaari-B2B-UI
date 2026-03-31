@@ -25,6 +25,8 @@ if (preg_match('#^/partner-api/(.*)$#', $uri, $m)) {
     $target = 'https://api23.betasavaari.com/' . $m[1];
 } elseif (preg_match('#^/wallet-api/(.*)$#', $uri, $m)) {
     $target = 'https://apiext.betasavaari.com/wallet/public/' . $m[1];
+} elseif (preg_match('#^/address-api/(.*)$#', $uri, $m)) {
+    $target = 'https://apiext.betasavaari.com/' . $m[1];
 } else {
     http_response_code(404);
     echo json_encode(['error' => 'Unknown API route']);

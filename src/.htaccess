@@ -16,7 +16,7 @@ RewriteEngine On
 # ── API Proxy via PHP (no mod_proxy needed) ──
 # Routes API calls to proxy.php which forwards to beta/staging servers
 
-RewriteCond %{REQUEST_URI} ^/(partner-api|b2b-api|wallet-api)/
+RewriteCond %{REQUEST_URI} ^/(partner-api|b2b-api|wallet-api|address-api)/
 RewriteRule ^(.*)$ /proxy.php [L,QSA]
 
 # ── SPA Fallback ──
