@@ -37,6 +37,7 @@ export interface City {
   cityOnly?: string;         // "Bangalore" (short name for display)
   state?: string;            // "Karnataka"
   isAirport?: boolean;
+  aid?: string;              // Airport ID from source-cities API (e.g. "10" for Bangalore Airport)
 }
 
 /** GET /localities — required for Airport transfers */
@@ -54,5 +55,6 @@ export function toCity(raw: SavaariCity): City {
     cityOnly: raw.cityOnly,
     state: raw.stateOnly,
     isAirport: raw.is_airport === '1',
+    aid: raw.aid,
   };
 }

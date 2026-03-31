@@ -871,7 +871,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         dropAirport: selectedAirport?.name || val.dropAirport || '',
         airportName: selectedAirport?.name || this.airportLocalityName || '',
         airportCityId: selectedAirport?.id,
-        airportId: this.airportLocalityId || undefined,
+        airportId: selectedAirport?.aid ? Number(selectedAirport.aid) : (this.airportLocalityId || undefined),
+        custShortAddress: (typeof val.pickupAddress === 'object' ? val.pickupAddress?.name : val.pickupAddress) || '',
       })
     };
 
@@ -887,9 +888,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       ...((!isLocal && !isAirport) && { destinationCity: toCityId }),
       duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
       ...(isAirport && this.airportLocalityId && { localityId: this.airportLocalityId }),
-      // Airport-specific params (confirmed by Shubhendu)
+      // Airport-specific params (confirmed by Shubhendu — aid from source-cities API)
       ...(isAirport && {
-        airport_id: this.airportLocalityId || undefined,
+        airport_id: selectedAirport?.aid ? Number(selectedAirport.aid) : (this.airportLocalityId || undefined),
         airport_name: selectedAirport?.name || this.airportLocalityName || '',
         terminalId: '',
         selectPlaceId: '',
