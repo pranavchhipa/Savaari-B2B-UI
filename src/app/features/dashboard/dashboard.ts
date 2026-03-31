@@ -869,7 +869,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         airportSubType: val.tripType || 'drop',
         pickupAddress: val.pickupAddress || '',
         dropAirport: selectedAirport?.name || val.dropAirport || '',
-        airportName: this.airportLocalityName || selectedAirport?.cityOnly || selectedAirport?.name || '',
+        airportName: selectedAirport?.name || this.airportLocalityName || '',
         airportCityId: selectedAirport?.id,
         airportId: this.airportLocalityId || undefined,
       })
@@ -890,7 +890,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       // Airport-specific params (confirmed by Shubhendu)
       ...(isAirport && {
         airport_id: this.airportLocalityId || undefined,
-        airport_name: this.airportLocalityName || selectedAirport?.name || '',
+        airport_name: selectedAirport?.name || this.airportLocalityName || '',
         terminalId: '',
         selectPlaceId: '',
         custShortAddress: val.pickupAddress || '',
