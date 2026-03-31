@@ -16,6 +16,12 @@ export interface AvailabilityRequest {
   pickupDateTime: string;      // Format: DD-MM-YYYY HH:MM
   duration?: number;           // Days — always required (1 for oneWay)
   localityId?: number;         // Required for airport transfers
+  // Airport-specific params (confirmed by Shubhendu)
+  terminalId?: string;
+  selectPlaceId?: string;      // Google Place ID
+  custShortAddress?: string;   // Short address label
+  airport_id?: number;         // Airport locality ID
+  airport_name?: string;       // Full airport/terminal name
 }
 
 /**

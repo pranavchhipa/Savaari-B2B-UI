@@ -887,6 +887,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       ...((!isLocal && !isAirport) && { destinationCity: toCityId }),
       duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
       ...(isAirport && this.airportLocalityId && { localityId: this.airportLocalityId }),
+      // Airport-specific params (confirmed by Shubhendu)
+      ...(isAirport && {
+        airport_id: this.airportLocalityId || undefined,
+        airport_name: this.airportLocalityName || selectedAirport?.name || '',
+        terminalId: '',
+        selectPlaceId: '',
+        custShortAddress: val.pickupAddress || '',
+      }),
     };
 
     // Show loading, call availability API, then navigate

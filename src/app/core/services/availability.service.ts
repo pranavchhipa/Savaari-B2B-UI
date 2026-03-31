@@ -33,6 +33,8 @@ export class AvailabilityService {
     // rate_type=premium only for outstation trips (confirmed by Shubhendu + live site)
     const isOutstation = request.tripType === 'outstation';
 
+    const isAirport = request.tripType === 'airport';
+
     return this.api.partnerGet<RawAvailabilityResponse>('availabilities', {
       rate_source: 'web',
       ...(isOutstation && { rate_type: 'premium' }),
@@ -43,6 +45,14 @@ export class AvailabilityService {
       pickupDateTime: request.pickupDateTime,
       duration: request.duration,
       destinationCity: request.destinationCity,
+      // Airport-specific params (confirmed by Shubhendu — required for airport pricing)
+      ...(isAirport && {
+        terminalId: request.terminalId || '',
+        selectPlaceId: request.selectPlaceId || '',
+        custShortAddress: request.custShortAddress || '',
+        airport_id: request.airport_id || '',
+        airport_name: request.airport_name || '',
+      }),
       token: this.auth.getPartnerToken(),
       agentId: btoa(this.auth.getAgentId()),
       api_source: 'b2b',
