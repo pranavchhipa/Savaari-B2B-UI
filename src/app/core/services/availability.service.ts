@@ -30,8 +30,12 @@ export class AvailabilityService {
       return of(MOCK_AVAILABILITY_RESPONSE);
     }
 
+    // rate_type=premium only for outstation trips (confirmed by Shubhendu + live site)
+    const isOutstation = request.tripType === 'outstation';
+
     return this.api.partnerGet<RawAvailabilityResponse>('availabilities', {
       rate_source: 'web',
+      ...(isOutstation && { rate_type: 'premium' }),
       customerLatLong: '',
       sourceCity: request.sourceCity,
       tripType: request.tripType,

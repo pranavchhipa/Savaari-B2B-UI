@@ -125,13 +125,14 @@ export class ApiService {
   }
 
   /**
-   * Strip undefined/null/empty values and convert everything to strings.
+   * Strip undefined/null values and convert everything to strings.
    * HttpParams requires all values to be strings.
+   * Empty strings are KEPT — live site sends empty params like subTripType=&customerLatLong=
    */
   private cleanParams(params: Record<string, string | number | boolean | undefined | null>): Record<string, string> {
     const cleaned: Record<string, string> = {};
     for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null) {
         cleaned[key] = String(value);
       }
     }

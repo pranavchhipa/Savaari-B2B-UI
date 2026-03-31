@@ -37,7 +37,7 @@ export class TripTypeService {
     }
 
     if (!this.tripTypesCache$) {
-      this.tripTypesCache$ = this.api.partnerGet<TripType[]>('web-trip-types', {
+      this.tripTypesCache$ = this.api.partnerGet<TripType[]>('trip-types', {
         token: this.auth.getPartnerToken(),
       }).pipe(
         shareReplay(1),

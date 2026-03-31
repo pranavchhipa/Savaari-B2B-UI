@@ -305,9 +305,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.initForm();
     this.restoreSearchState();
-    this.loadSourceCities();
-    this.loadBanners();
-    this.loadDashboardStats();
+
+    // Refresh partner token first (prevents stale token errors), then load data
+    this.authService.fetchPartnerToken().subscribe({
+      next: () => {
+        this.loadSourceCities();
+        this.loadBanners();
+        this.loadDashboardStats();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // Even if token refresh fails, try loading with existing token
+        this.loadSourceCities();
+        this.loadBanners();
+        this.loadDashboardStats();
+      }
+    });
+
     this.startLiveStats();
     // Track page load after 2s (mirrors savaari.com behaviour)
     setTimeout(() => this.analytics.trackPageLoad(), 2000);
@@ -858,13 +872,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.bookingState.setItinerary(itinerary);
 
     // Build availability request
+    // Live site sends empty subTripType for local (package chosen on select-car page)
     const availabilityRequest: AvailabilityRequest = {
       sourceCity: fromCityId,
       tripType: apiParams.tripType,
-      subTripType: apiParams.subTripType,
+      subTripType: isLocal ? '' : apiParams.subTripType,
       pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
       ...((!isLocal && !isAirport) && { destinationCity: toCityId }),
-      duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : isLocal ? 8 : 1,
+      duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
       ...(isAirport && this.airportLocalityId && { localityId: this.airportLocalityId }),
     };
 
