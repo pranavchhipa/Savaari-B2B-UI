@@ -34,10 +34,12 @@ export interface CreateBookingRequest {
 
   // Airport-specific
   localityId?: number;
+  terminalId?: string;           // Terminal ID
   terminalname?: string;
-  airport_id?: string;
-  airport_name?: string;
+  airport_id?: string;           // Airport locality ID
+  airport_name?: string;         // Full airport/terminal name
   flight_no?: string;
+  custShortAddress?: string;     // Short address label for customer location
 
   // Customer details
   customerTitle?: string;        // 'Mr' | 'Mrs' | 'Ms'

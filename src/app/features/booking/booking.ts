@@ -851,6 +851,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   /** Build a CreateBookingRequest from current form state */
   private buildBookingRequest(apiParams: { tripType: string; subTripType: string }, prePaymentAmount: number): CreateBookingRequest {
     const pickupLocality = typeof this.pickupAddress === 'string' ? this.pickupAddress : String(this.pickupAddress || '');
+    const isAirport = apiParams.tripType === 'airport';
 
     return {
       sourceCity: this.itinerary!.fromCityId || 377,
@@ -874,6 +875,14 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       invoicePayer: this.commissionService.getInvoicePayer(),
       ...(this.itinerary!.toCityId && { destinationCity: this.itinerary!.toCityId }),
       ...(this.itinerary!.localityId && { localityId: this.itinerary!.localityId }),
+      // Airport-specific params (confirmed missing by Shubhendu — required for airport flow)
+      ...(isAirport && {
+        airport_id: this.itinerary!.airportId ? String(this.itinerary!.airportId) : '',
+        airport_name: this.itinerary!.airportName || '',
+        terminalId: this.itinerary!.terminalId || '',
+        selectPlaceId: this.itinerary!.selectPlaceId || '',
+        custShortAddress: pickupLocality || this.itinerary!.pickupAddress || '',
+      }),
       ...(this.isBookingUrgent() && { Urgent_booking: '1' }),
       ...(this.needsGstInvoice && this.agentGstNumber && { gst_invoice_required: '1', gst_number: this.agentGstNumber }),
     };

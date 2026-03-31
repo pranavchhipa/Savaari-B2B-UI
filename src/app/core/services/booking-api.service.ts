@@ -79,10 +79,12 @@ export class BookingApiService {
       device: request.device || 'DESKTOP',
       // Airport-specific
       localityId: request.localityId,
+      terminalId: request.terminalId,
       terminalname: request.terminalname,
       airport_id: request.airport_id,
       airport_name: request.airport_name,
       flight_no: request.flight_no,
+      custShortAddress: request.custShortAddress,
       Urgent_booking: request.Urgent_booking,
       fixed_amount: request.fixed_amount,
     };

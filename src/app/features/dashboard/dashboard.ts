@@ -228,6 +228,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   selectedAirportCity: City | null = null;
   /** Locality ID for the selected airport (required by availability API) */
   airportLocalityId: number | null = null;
+  airportLocalityName: string = '';
 
   /** One-way conversion popup for airport bookings */
   showConversionPopup = false;
@@ -283,11 +284,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const city: City = event.value || event;
     this.selectedAirportCity = city;
     this.airportLocalityId = null;
-    // Load localities for this city and find the airport locality ID
+    this.airportLocalityName = '';
+    // Load localities for this city and find the airport locality ID + name
     if (city?.id) {
       this.localityService.getAirports(city.id).subscribe(airports => {
         if (airports.length > 0) {
           this.airportLocalityId = airports[0].id;
+          this.airportLocalityName = airports[0].name;
         }
         this.cdr.markForCheck();
       });
@@ -556,6 +559,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         pickupTime: form.pickupTime ? new Date(form.pickupTime).toISOString() : null,
         selectedAirportCity: this.selectedAirportCity,
         airportLocalityId: this.airportLocalityId,
+        airportLocalityName: this.airportLocalityName,
         extraDestinations: this.extraDestinations,
       };
       sessionStorage.setItem(this.SEARCH_STATE_KEY, JSON.stringify(state));
@@ -589,6 +593,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       // Restore airport state
       if (state.selectedAirportCity) this.selectedAirportCity = state.selectedAirportCity;
       if (state.airportLocalityId) this.airportLocalityId = state.airportLocalityId;
+      if (state.airportLocalityName) this.airportLocalityName = state.airportLocalityName;
 
       // Restore extra destinations
       if (state.extraDestinations?.length) this.extraDestinations = state.extraDestinations;
@@ -864,8 +869,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         airportSubType: val.tripType || 'drop',
         pickupAddress: val.pickupAddress || '',
         dropAirport: selectedAirport?.name || val.dropAirport || '',
-        airportName: selectedAirport?.cityOnly || selectedAirport?.name || '',
+        airportName: this.airportLocalityName || selectedAirport?.cityOnly || selectedAirport?.name || '',
         airportCityId: selectedAirport?.id,
+        airportId: this.airportLocalityId || undefined,
       })
     };
 

@@ -19,6 +19,12 @@ export interface Itinerary {
     pickupAddress?: string;   // Airport / booking address
     dropAirport?: string;     // Airport only
     localityId?: number;      // Savaari locality ID for airport transfers
+    airportId?: number;       // Airport locality ID (same as localityId, sent as airport_id)
+    airportName?: string;     // Full airport/terminal name e.g. "Terminal 1, Kempegowda International Airport, Bangalore"
+    airportCityId?: number;   // City ID of the selected airport city
+    selectPlaceId?: string;   // Google Place ID for the pickup/drop address
+    custShortAddress?: string; // Short address label for the customer location
+    terminalId?: string;      // Terminal ID (if applicable)
 }
 
 export interface SelectedCar {
