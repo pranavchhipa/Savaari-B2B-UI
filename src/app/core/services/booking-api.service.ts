@@ -72,10 +72,11 @@ export class BookingApiService {
       premiumFlag: request.premiumFlag ?? 0,
       destinationCity: request.destinationCity,
       prePayment: request.prePayment,
+      locality: request.locality,
       agentId: btoa(this.auth.getAgentId()),
       api_source: 'b2b',
-      source: request.source || 'b2b',
-      device: request.device || 'web',
+      source: request.source || 'WEB',
+      device: request.device || 'DESKTOP',
       // Airport-specific
       localityId: request.localityId,
       terminalname: request.terminalname,
@@ -95,13 +96,11 @@ export class BookingApiService {
         const bookingId = dataItem?.booking_id || dataItem?.bookingId || response.booking_id || response.bookingId || '';
         const reservationId = dataItem?.reservation_id || dataItem?.reservationId || response.reservation_id || '';
 
-        if (bookingId && reservationId) {
-          return this.updateInvoicePayerInfo({
-            booking_id: String(bookingId),
-            reservation_id: String(reservationId),
-            invoice_payer_name: request.customerSecondaryEmail ? request.customerName : undefined,
-            invoice_payer_email: request.customerSecondaryEmail,
-          }).pipe(
+        if (bookingId) {
+          return this.updateInvoicePayerInfo(
+            String(bookingId),
+            request.invoicePayer || 'pay_by_customer',
+          ).pipe(
             map(() => response),
             catchError(() => of(response)) // Don't fail booking if invoice update fails
           );
@@ -125,15 +124,17 @@ export class BookingApiService {
   /**
    * Update invoice payer info after booking creation.
    * POST /booking/update_invoice_payer_info?token=<partnerJWT>
+   *
+   * Confirmed from Postman (March 2026):
+   *   Body: { booking_id, invoice_payer: "pay_by_customer" | "pay_by_agent" }
+   *   Token passed in body as urlencoded field.
    */
-  private updateInvoicePayerInfo(request: UpdateInvoicePayerRequest): Observable<unknown> {
+  updateInvoicePayerInfo(bookingId: string, invoicePayer: string): Observable<unknown> {
     const token: string = this.auth.getPartnerToken() ?? '';
     return this.api.partnerPostForm('booking/update_invoice_payer_info', {
-      booking_id: request.booking_id,
-      reservation_id: request.reservation_id,
-      invoice_payer_name: request.invoice_payer_name,
-      invoice_payer_email: request.invoice_payer_email,
-      invoice_payer_phone: request.invoice_payer_phone,
+      booking_id: bookingId,
+      invoice_payer: invoicePayer,
+      token,
     }, { token });
   }
 
@@ -185,6 +186,28 @@ export class BookingApiService {
       agentId: btoa(this.auth.getAgentId()),
     }, { token }).pipe(
       catchError(err => this.errorHandler.handleApiError(err, 'BookingApiService.cancelBooking'))
+    );
+  }
+
+  /**
+   * Send booking confirmation email.
+   * POST /email_sent → api.savaari.com/partner_api/public/email_sent
+   * Body: { booking_id } (form-encoded)
+   *
+   * Confirmed from Postman: called after successful booking + payment.
+   */
+  sendBookingEmail(bookingId: string): Observable<unknown> {
+    if (environment.useMockData) {
+      return of({ status: 'success', message: 'Mock email sent' });
+    }
+
+    return this.api.partnerPostForm('email_sent', {
+      booking_id: bookingId,
+    }).pipe(
+      catchError(err => {
+        console.warn('[BOOKING] Failed to send booking email for', bookingId, err);
+        return of({ status: 'error' }); // Non-blocking
+      })
     );
   }
 

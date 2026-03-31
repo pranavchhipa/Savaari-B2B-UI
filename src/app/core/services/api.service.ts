@@ -43,6 +43,16 @@ export class ApiService {
   }
 
   /**
+   * POST to the B2B API with raw string body and custom Content-Type.
+   * Used for: user/autologin (Content-Type: text/plain per Postman)
+   */
+  b2bPostRaw<T>(endpoint: string, body: string, contentType: string): Observable<T> {
+    return this.http.post<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, body, {
+      headers: { 'Content-Type': contentType }
+    });
+  }
+
+  /**
    * GET from the Partner API with no params.
    * Used for: auth/webtoken (no auth required)
    */
@@ -79,6 +89,28 @@ export class ApiService {
     return this.http.post<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, formBody.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
+  }
+
+  /**
+   * POST to the Payment PHP API (b2bcab.betasavaari.com).
+   * Used for: advance_payment_check.php, razor_createorder.php,
+   *           razor_checkhash.php, payment_confirmation/confirmation.php
+   *
+   * Confirmed from Postman: all PHP endpoints use form-encoded body.
+   */
+  paymentPost<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`${environment.paymentApiBaseUrl}/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }
+    });
+  }
+
+  /**
+   * POST to the Payment PHP API with FormData (multipart/form-data).
+   * Used for: razor_checkhash.php (confirmed from Postman)
+   */
+  paymentPostFormData<T>(endpoint: string, formData: FormData): Observable<T> {
+    return this.http.post<T>(`${environment.paymentApiBaseUrl}/${endpoint}`, formData);
   }
 
   /**

@@ -10,9 +10,9 @@ import { LucideAngularModule } from 'lucide-angular';
 })
 export class OverviewComponent {
     stats = [
-        { value: "17+", label: "Years of Experience", icon: "trending-up" },
+        { value: "20+", label: "Years of Experience", icon: "calendar-check" },
         { value: "2,000+", label: "Cities Covered", icon: "map-pin" },
-        { value: "5L+", label: "Routes Served", icon: "route" },
-        { value: "500+", label: "Enterprise Clients", icon: "users" },
+        { value: "15L+", label: "Routes Served", icon: "route" },
+        { value: "55+", label: "NPS Every Month", icon: "star" },
     ];
 }

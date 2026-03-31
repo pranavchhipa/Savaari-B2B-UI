@@ -32,14 +32,13 @@ export class AvailabilityService {
 
     return this.api.partnerGet<RawAvailabilityResponse>('availabilities', {
       rate_source: 'web',
-      rate_type: 'premium',
+      customerLatLong: '',
       sourceCity: request.sourceCity,
       tripType: request.tripType,
       subTripType: request.subTripType,
-      destinationCity: request.destinationCity,
       pickupDateTime: request.pickupDateTime,
       duration: request.duration,
-      localityId: request.localityId,
+      destinationCity: request.destinationCity,
       token: this.auth.getPartnerToken(),
       agentId: btoa(this.auth.getAgentId()),
       api_source: 'b2b',

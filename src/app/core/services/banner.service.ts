@@ -45,8 +45,6 @@ export class BannerService {
     this.cache$ = this.api.b2bGet<any>('banner-images-list', {
       sourceCity: sourceCity ?? '',
       seoType: 500,
-      userEmail: this.auth.getUserEmail(),
-      token: this.auth.getB2bToken(),
     }).pipe(
       map(response => {
         // API may return array directly or wrapped in data/bannerImages

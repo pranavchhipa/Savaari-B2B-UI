@@ -23,7 +23,8 @@ import {
   TrendingUp, TrendingDown, Menu, LayoutDashboard, Headphones, CheckCircle2,
   Crosshair, AlertCircle, RefreshCw, Inbox,
   CalendarCheck, BarChart3, Percent, ChevronLeft,
-  Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal} from 'lucide-angular';
+  Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal,
+  Package, Tag} from 'lucide-angular';
 
 import { routes } from './app.routes';
 
@@ -60,7 +61,8 @@ export const appConfig: ApplicationConfig = {
         TrendingUp, TrendingDown, Menu, LayoutDashboard, Headphones, CheckCircle2,
         Crosshair, AlertCircle, RefreshCw, Inbox,
         CalendarCheck, BarChart3, Percent, ChevronLeft,
-        Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal      })
+        Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal,
+        Package, Tag      })
     }
   ]
 };

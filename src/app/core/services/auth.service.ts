@@ -65,7 +65,45 @@ export class AuthService {
     );
   }
 
-  /** Fetch the Partner HMAC token (GET /auth/webtoken, no auth required). */
+  /**
+   * Auto-login with stored token (session restore).
+   * POST /user/autologin → api23.betasavaari.com
+   * Body: { userEmail, logintoken, isAgent: true }
+   * Content-Type: text/plain (confirmed from Postman)
+   */
+  autoLogin(): Observable<UserProfile | null> {
+    if (environment.useMockData) return of(this.user);
+    if (!this.b2bToken || !this.user?.email) return of(null);
+
+    return this.api.b2bPostRaw<LoginResponse>('user/autologin', JSON.stringify({
+      userEmail: this.user.email,
+      logintoken: this.b2bToken,
+      isAgent: true,
+    }), 'text/plain').pipe(
+      tap(resp => {
+        if (resp.statusCode === 200 && resp.token) {
+          this.b2bToken = resp.token;
+          this.user = resp.user;
+          this.userGst = resp.userGst || null;
+          localStorage.setItem(AuthService.STORAGE_B2B_TOKEN, resp.token);
+          localStorage.setItem(AuthService.STORAGE_USER, JSON.stringify(resp.user));
+          if (resp.userGst) localStorage.setItem(AuthService.STORAGE_GST, JSON.stringify(resp.userGst));
+          if (!environment.production) console.log('[AUTH] Auto-login successful for', resp.user.email);
+        }
+      }),
+      switchMap(() => this.fetchPartnerToken()),
+      map(() => this.user),
+      catchError(err => {
+        console.warn('[AUTH] Auto-login failed:', err?.status ?? err?.message);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * Fetch the Partner HMAC token (GET /auth/webtoken, no auth required).
+   * Also calls /date_time for server time sync (confirmed from Postman).
+   */
   fetchPartnerToken(): Observable<string> {
     if (environment.useMockData) return of('MOCK_PARTNER_TOKEN');
 
@@ -73,7 +111,16 @@ export class AuthService {
       tap(resp => {
         this.partnerToken = resp.data.token;
         localStorage.setItem(AuthService.STORAGE_PARTNER_TOKEN, resp.data.token);
-        console.log('[AUTH] Partner token obtained');
+        if (!environment.production) console.log('[AUTH] Partner token obtained');
+      }),
+      // Also fetch server date_time (non-blocking, for time sync)
+      tap(() => {
+        this.api.partnerGetNoParams<any>('date_time').subscribe({
+          next: dt => {
+            if (!environment.production) console.log('[AUTH] Server time:', dt);
+          },
+          error: () => {} // Ignore date_time errors
+        });
       }),
       map(resp => resp.data.token)
     );

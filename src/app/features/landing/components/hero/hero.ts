@@ -11,8 +11,8 @@ import { RouterLink } from '@angular/router';
 })
 export class HeroComponent {
     stats = [
-        { icon: 'map-pin', label: "2,000+ Cities", sub: "Pan-India coverage" },
-        { icon: 'shield', label: "Zero Cancellations", sub: "Guaranteed rides" },
-        { icon: 'clock', label: "20+ Years", sub: "Industry expertise" },
+        { icon: 'route', number: "15L+", text: "Routes Served", label: "15L+ Routes Served", sub: "Pan-India coverage" },
+        { icon: 'shield-check', number: "99.7%", text: "Trips Executed", label: "99.7% Trips Executed", sub: "" },
+        { icon: 'car', number: "100%", text: "Verified Fleet", label: "100% Verified Fleet", sub: "" },
     ];
 }

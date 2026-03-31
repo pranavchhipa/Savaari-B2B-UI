@@ -48,10 +48,7 @@ export class CountryCodeService {
       return this.inFlight$;
     }
 
-    this.inFlight$ = this.api.b2bGet<any>('country-code', {
-      userEmail: this.auth.getUserEmail(),
-      token: this.auth.getB2bToken(),
-    }).pipe(
+    this.inFlight$ = this.api.b2bGet<any>('country-code', {}).pipe(
       map(response => {
         if (!response?.countryCode) return this.defaultCodes();
 

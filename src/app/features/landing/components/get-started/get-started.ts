@@ -13,18 +13,18 @@ export class GetStartedComponent {
     steps = [
         {
             number: 1,
-            title: 'Create Your Agent Account',
-            description: 'Sign up in under 2 minutes with your business details — name, city, and contact info. No paperwork needed.'
+            title: 'Register Your Agent Account',
+            description: 'Sign up in under 2 minutes with your name, city, and contact details. No paperwork required.'
         },
         {
             number: 2,
-            title: 'Set Your Mark-up & Preferences',
-            description: 'Configure your commission mark-ups, preferred routes, and customer defaults from the dashboard.'
+            title: 'Choose Trip & Route',
+            description: 'Pick from 4 trip types and explore 15L+ routes across India.'
         },
         {
             number: 3,
-            title: 'Start Booking & Earning',
-            description: 'Search availability across 2,000+ cities, book cabs instantly, and earn on every trip you create.'
+            title: 'Confirm Your Booking',
+            description: 'Complete your booking with 3 simple and flexible payment options.'
         }
     ];
 }

@@ -29,6 +29,9 @@ export interface CreateBookingRequest {
   dropLocality?: string;
   selectPlaceId?: string;        // Google Place ID
 
+  // Locality (area name, e.g. "HAL 2nd Stage-Indiranagar")
+  locality?: string;
+
   // Airport-specific
   localityId?: number;
   terminalname?: string;
@@ -60,6 +63,9 @@ export interface CreateBookingRequest {
   device?: string;               // Device type
   affiliateId?: string;
   Urgent_booking?: string;       // Urgent booking flag
+
+  // Invoice payer (from commission settings)
+  invoicePayer?: string;         // 'pay_by_customer' | 'pay_by_agent'
 }
 
 /**
@@ -94,13 +100,13 @@ export interface CreateBookingResponse {
   [key: string]: unknown;
 }
 
-/** POST /booking/update_invoice_payer_info request body (form-encoded) */
+/**
+ * POST /booking/update_invoice_payer_info request body (form-encoded).
+ * Confirmed from Postman: only booking_id and invoice_payer are needed.
+ */
 export interface UpdateInvoicePayerRequest {
   booking_id: string;
-  reservation_id: string;
-  invoice_payer_name?: string;
-  invoice_payer_email?: string;
-  invoice_payer_phone?: string;
+  invoice_payer: string;  // 'pay_by_customer' | 'pay_by_agent'
 }
 
 export interface CancelBookingRequest {

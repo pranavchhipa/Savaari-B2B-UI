@@ -1,4 +1,11 @@
 {
+  "/payment-api": {
+    "target": "https://b2bcab.betasavaari.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/payment-api": "" },
+    "logLevel": "debug"
+  },
   "/partner-api": {
     "target": "https://api.betasavaari.com/partner_api/public",
     "secure": true,

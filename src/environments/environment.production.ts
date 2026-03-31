@@ -18,6 +18,9 @@ export const environment = {
   /** Wallet API: balance, topup, history (proxied via .htaccess) */
   walletApiBaseUrl: '/wallet-api',
 
+  /** Payment API: Razorpay order/verify via PHP (proxied via .htaccess) */
+  paymentApiBaseUrl: '/payment-api',
+
   /** Razorpay test key */
   razorpayKeyId: 'rzp_test_dsrBANLbHxlwZb',
 
