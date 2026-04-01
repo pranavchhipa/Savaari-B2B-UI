@@ -185,8 +185,8 @@
                         <div class="px-3 py-2.5">
                             <div class="flex items-start justify-between mb-1.5">
                                 <div class="min-w-0">
-                                    <h2 class="text-[13px] font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">{{car.name}}</h2>
-                                    <p class="text-[10px] text-slate-400">{{car.subtitle}}</p>
+                                    <h2 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-normal truncate">{{car.name.replace(' or Equivalent', '')}}</h2>
+                                    <p class="text-[11px] text-amber-600 dark:text-amber-400 font-medium italic">{{car.subtitle}}</p>
                                 </div>
                                 <div class="shrink-0 ml-2 flex items-center gap-1 text-[9px] text-primary font-bold">
                                     <span>Tap to select</span>
@@ -224,9 +224,9 @@
                         </div>
                         <!-- Car Info -->
                         <div class="flex-1 flex flex-col justify-center min-w-0">
-                            <h2 class="text-xl md:text-2xl font-bold text-primary group-hover:text-sky-600 transition-colors leading-tight mb-1 truncate">
-                                {{car.name}}</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{{car.subtitle}}</p>
+                            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-slate-900 transition-colors leading-normal mb-0.5 truncate">
+                                {{car.name.replace(' or Equivalent', '')}}</h2>
+                            <p class="text-sm text-amber-600 dark:text-amber-400 font-medium italic mb-3">{{car.subtitle}}</p>
                             <div class="flex flex-wrap gap-2">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
                                     <lucide-icon name="gauge" [size]="13" class="mr-1"></lucide-icon>
@@ -282,13 +282,12 @@
                                 <div class="flex items-center gap-2">
                                     <div
                                         class="w-6 h-6 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                                        <lucide-icon name="banknote" [size]="12" class="text-emerald-500"></lucide-icon>
+                                        <lucide-icon name="route" [size]="12" class="text-emerald-500"></lucide-icon>
                                     </div>
                                     <div class="flex flex-col">
                                         <span
                                             class="text-[9px] text-slate-400 uppercase font-bold tracking-tight">Included</span>
-                                        <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Base
-                                            Fare</span>
+                                        <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">{{ getCarKms(car.kmsIncluded) }} km</span>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -372,6 +371,13 @@
                                 <div *ngFor="let line of car.tc" class="flex items-start gap-1.5">
                                     <div class="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0"></div>
                                     <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">{{line}}</p>
+                                </div>
+                                <div class="pt-2 border-t border-slate-200 dark:border-slate-600 mt-2">
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                        For detailed terms and conditions,
+                                        <a [routerLink]="['/tnc', tncSlug]" target="_blank"
+                                           class="text-primary hover:underline font-semibold">Click Here</a>
+                                    </p>
                                 </div>
                             </div>
                         </div>

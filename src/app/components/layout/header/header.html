@@ -11,12 +11,17 @@
           [routerLink]="isPublicRoute ? '/' : '/dashboard'">
           <!-- Agent uploaded logo -->
           <img *ngIf="agentLogo" [src]="agentLogo" alt="Company Logo"
-            class="h-9 max-w-[140px] object-contain rounded" />
+            class="h-10 sm:h-12 md:h-14 max-w-[180px] object-contain rounded" />
           <!-- Default B2B CAB logo (shown when no agent logo) -->
           <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo-white.webp" [alt]="brandName"
             class="h-14 sm:h-16 md:h-20 lg:h-24 object-contain" />
         </div>
 
+        <!-- Company Name (shown when logged in) -->
+        <span *ngIf="!isPublicRoute && companyName"
+          class="hidden md:inline text-sm lg:text-base font-semibold text-white/80 truncate max-w-[200px]">
+          {{ companyName }}
+        </span>
       </div>
 
       <!-- Customer Care 24x7 pill — centered -->

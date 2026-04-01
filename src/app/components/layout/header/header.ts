@@ -45,6 +45,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
     return this.userName.charAt(0).toUpperCase();
   }
+  get companyName(): string {
+    const u = this.authService.getUserProfile() as any;
+    return u?.companyname || '';
+  }
   get agentLogo(): string | null {
     return localStorage.getItem('agentLogo');
   }
@@ -94,7 +98,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   toggleDarkMode() {
     if (typeof document !== 'undefined') {
-      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
   }
 

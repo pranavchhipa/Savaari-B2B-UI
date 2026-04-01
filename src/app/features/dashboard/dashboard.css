@@ -69,6 +69,23 @@
   color: #64748b !important;
 }
 
+/* Dark mode overrides */
+:host-context(.dark) ::ng-deep .search-bar-autocomplete .p-autocomplete-input {
+  color: #f1f5f9 !important;
+}
+:host-context(.dark) ::ng-deep .search-bar-datepicker input {
+  color: #f1f5f9 !important;
+}
+:host-context(.dark) ::ng-deep .search-bar-select .p-select-label {
+  color: #f1f5f9 !important;
+}
+:host-context(.dark) ::ng-deep .search-bar-autocomplete .p-autocomplete-input::placeholder {
+  color: #64748b !important;
+}
+:host-context(.dark) ::ng-deep .search-bar-select .p-placeholder {
+  color: #64748b !important;
+}
+
 /* Desktop overrides (sm: 640px+) */
 @media (min-width: 640px) {
   :host ::ng-deep .search-bar-autocomplete .p-autocomplete-input {

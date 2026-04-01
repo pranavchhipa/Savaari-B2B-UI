@@ -155,15 +155,7 @@
                   placeholder="Enter 15-digit GSTIN"
                   class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition uppercase tracking-wider font-mono" />
 
-                <!-- Decoded info -->
-                <div *ngIf="gstDecodedInfo?.isValidFormat" class="mt-2 p-2.5 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
-                  <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-sky-700 dark:text-sky-300">
-                    <span class="font-semibold">{{ gstDecodedInfo!.stateName }}</span>
-                    <span>&bull; {{ gstDecodedInfo!.entityType }}</span>
-                    <span>&bull; PAN: <span class="font-mono">{{ gstDecodedInfo!.pan }}</span></span>
-                    <span>&bull; Initial: {{ gstDecodedInfo!.nameInitial }}</span>
-                  </div>
-                </div>
+                <!-- Decoded info (hidden — used internally for validation only) -->
                 <p *ngIf="!gstLocked && profile.gstNumber?.length === 15 && gstDecodedInfo && !gstDecodedInfo.isValidFormat"
                   class="mt-1 text-xs text-red-500">Invalid GSTIN format</p>
 
@@ -251,12 +243,28 @@
               </div>
             </div>
 
-            <!-- Save Button -->
-            <div class="mt-4 sm:mt-6 flex justify-end">
-              <button (click)="updateProfile()"
-                class="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-primary hover:bg-sky-600 shadow-lg shadow-primary/30 rounded-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
-                <lucide-icon name="check" [size]="14" class="sm:!w-[16px] sm:!h-[16px]"></lucide-icon>
-                Update Profile
+            <!-- Save Button + Inline Feedback -->
+            <div class="mt-4 sm:mt-6 flex flex-col sm:flex-row items-end sm:items-center justify-end gap-3">
+              <!-- Inline success message -->
+              <div *ngIf="profileSuccess"
+                class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium animate-fade-in">
+                <lucide-icon name="check-circle" [size]="16"></lucide-icon>
+                Profile updated successfully!
+              </div>
+              <!-- Inline error message -->
+              <div *ngIf="profileError"
+                class="flex items-center gap-2 text-red-500 text-sm font-medium">
+                <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+                {{ profileError }}
+              </div>
+              <button (click)="updateProfile()" [disabled]="isSaving"
+                class="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-primary hover:bg-sky-600 shadow-lg shadow-primary/30 rounded-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+                <lucide-icon *ngIf="!isSaving" name="check" [size]="14" class="sm:!w-[16px] sm:!h-[16px]"></lucide-icon>
+                <svg *ngIf="isSaving" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                  <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-75"></path>
+                </svg>
+                {{ isSaving ? 'Saving...' : 'Update Profile' }}
               </button>
             </div>
 

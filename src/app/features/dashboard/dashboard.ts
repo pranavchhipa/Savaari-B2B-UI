@@ -1003,11 +1003,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   getStatusClasses(status: string): Record<string, boolean> {
     const s = (status || '').toLowerCase();
     return {
-      'bg-emerald-100 text-emerald-700': s === 'completed' || s === 'billed',
-      'bg-sky-100 text-sky-700': s === 'upcoming' || s === 'confirmed' || s === 'assigned',
-      'bg-amber-100 text-amber-700': s === 'in progress' || s === 'in_progress',
-      'bg-red-100 text-red-600': s === 'cancel' || s === 'cancelled' || s === 'canceled',
-      'bg-slate-100 text-slate-600': !['completed','billed','upcoming','confirmed','assigned','in progress','in_progress','cancel','cancelled','canceled'].includes(s),
+      'text-emerald-600 dark:text-emerald-400': s === 'completed' || s === 'billed',
+      'text-sky-600 dark:text-sky-400': s === 'upcoming' || s === 'confirmed' || s === 'assigned',
+      'text-amber-600 dark:text-amber-400': s === 'in progress' || s === 'in_progress',
+      'text-red-500 dark:text-red-400': s === 'cancel' || s === 'cancelled' || s === 'canceled',
+      'text-slate-500 dark:text-slate-400': !['completed','billed','upcoming','confirmed','assigned','in progress','in_progress','cancel','cancelled','canceled'].includes(s),
     };
   }
 

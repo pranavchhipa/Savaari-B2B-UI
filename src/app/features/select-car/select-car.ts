@@ -141,13 +141,8 @@ export class SelectCarComponent implements OnInit {
     // Prefer local assets over API URLs for consistent branding
     const image = this.getLocalCarImage(car.carName, typeId);
 
-    // Use real T&C from API if available, else generate sensible defaults
-    const tc = car.tncData?.length ? car.tncData : [
-      `Kms limit is ${kmsInc} km. Extra kms will be charged at \u20B9${extraKm}/km.`,
-      'Airport Entry/Parking charges extra at actuals.',
-      'One pick up and one drop only. Within city travel not included.',
-      'Cancellation is free up to 6 hours before pickup.'
-    ];
+    // Use T&C from API as-is
+    const tc = car.tncData?.length ? car.tncData : [];
 
     const hoursInc = car.hoursIncluded ?? 0;
 
@@ -356,6 +351,23 @@ export class SelectCarComponent implements OnInit {
   get airportSubTypeLabel(): string {
     const sub = this.itinerary?.airportSubType;
     return sub === 'pickup' ? 'Pickup from Airport' : 'Drop to Airport';
+  }
+
+  /** Returns the T&C page slug based on trip type and city */
+  get tncSlug(): string {
+    const tripType = this.itinerary?.tripType;
+    const sourceCity = (this.itinerary?.fromCity || '').toLowerCase();
+    const metros = ['bangalore', 'bengaluru', 'mumbai', 'delhi', 'new delhi', 'chennai', 'hyderabad', 'kolkata', 'pune', 'ahmedabad'];
+
+    if (tripType === 'One Way') return 'oneway-outstation-trip';
+    if (tripType === 'Round Trip') return 'outstation-trip';
+    if (tripType === 'Local') {
+      return metros.includes(sourceCity) ? 'local-trip-metros' : 'local-trip';
+    }
+    if (tripType === 'Airport') {
+      return (sourceCity === 'bangalore' || sourceCity === 'bengaluru') ? 'bangalore-airport-trip' : 'airport-trip';
+    }
+    return 'outstation-trip'; // fallback
   }
 
   /** Cars to show — sorted by price (low to high) */
