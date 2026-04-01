@@ -102,42 +102,46 @@ export class AddressAutocompleteService {
   }
 
   /**
-   * Parse autocomplete API response into AddressSuggestion[].
-   * Response format TBD — adapt once we see actual response.
+   * Parse autocomplete API response.
+   *
+   * Confirmed response format (tested April 2026):
+   * { "response": [{ "place_id": "...", "address": "...", "main_text": "...", "secondary_text": "..." }], "source": "Redis" }
    */
   private parseAutocompleteResponse(response: any): AddressSuggestion[] {
     if (!response) return [];
 
-    // Handle array response (most likely)
-    const predictions = response.predictions || response.data || response.results || response;
+    const predictions = response.response || response.predictions || response.data || response.results;
     if (!Array.isArray(predictions)) return [];
 
     return predictions.map((p: any) => ({
-      description: p.description || p.formatted_address || p.name || '',
+      description: p.address || p.description || p.formatted_address || '',
       place_id: p.place_id || p.placeId || '',
-      main_text: p.structured_formatting?.main_text || p.main_text || p.name || '',
-      secondary_text: p.structured_formatting?.secondary_text || p.secondary_text || '',
+      main_text: p.main_text || p.name || '',
+      secondary_text: p.secondary_text || '',
     })).filter((s: AddressSuggestion) => s.description && s.place_id);
   }
 
   /**
-   * Parse place_id API response into PlaceDetails.
-   * Response format TBD — adapt once we see actual response.
+   * Parse place_id API response.
+   *
+   * Confirmed response format (tested April 2026):
+   * { "status": "OK", "placeId": "...", "place_name": "...", "formattedAddress": "...",
+   *   "location": { "lat": 12.96, "long": 77.57 },
+   *   "source_city_map_info": { "city_id": 377, ... },
+   *   "destination_city_map_info": { "city_id": 1076, ... },
+   *   "token": "..." }
    */
   private parsePlaceResponse(response: any): PlaceDetails | null {
     if (!response) return null;
 
-    const result = response.result || response.data || response;
-    if (!result) return null;
-
-    const location = result.geometry?.location || result.location || result;
+    const location = response.location || response.geometry?.location || {};
 
     return {
-      place_id: result.place_id || result.placeId || '',
-      name: result.name || result.short_name || '',
-      formatted_address: result.formatted_address || result.address || result.name || '',
+      place_id: response.placeId || response.place_id || '',
+      name: response.place_name || response.name || response.addressLocality || '',
+      formatted_address: response.formattedAddress || response.formatted_address || '',
       lat: Number(location.lat) || 0,
-      lng: Number(location.lng) || 0,
+      lng: Number(location.long || location.lng) || 0,
     };
   }
 }
