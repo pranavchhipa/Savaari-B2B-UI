@@ -249,9 +249,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
       return;
     }
-    const cityName = this.selectedAirportCity?.cityOnly || this.selectedAirportCity?.name || '';
+    const cityName = this.selectedAirportCity?.cityOnly || this.selectedAirportCity?.name?.split(',')[0]?.trim() || '';
+    const ll = this.selectedAirportCity?.ll?.split(',') || [];
+    const lat = ll[0] || '';
+    const lng = ll[1] || '';
     const request = this.bookingForm.get('tripType')?.value === 'pickup' ? 'to' : 'from';
-    this.addressAutocomplete.searchAddress(q, request, cityName).subscribe(suggestions => {
+    this.addressAutocomplete.searchAddress(q, request, cityName, lat, lng).subscribe(suggestions => {
       this.filteredLocalities = suggestions;
       this.cdr.markForCheck();
     });
@@ -905,6 +908,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       airportSubType: val.tripType
     });
 
+    // Extract city lat/lng for autocomplete API (SavaariCity.ll = "12.966,77.606")
+    const fromCityLL = typeof fromCityObj === 'object' ? (fromCityObj as City)?.ll : undefined;
+    const toCityLL = typeof toCityObj === 'object' ? (toCityObj as City)?.ll : undefined;
+
     // Build and save itinerary
     const itinerary = {
       fromCity: fromCityName,
@@ -912,6 +919,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       toCity: toCityName,
       toCityId: toCityId,
       toCitySourceId: toCitySourceId,
+      fromCityLL: fromCityLL,
+      toCityLL: toCityLL,
       pickupDate: pickupDate,
       pickupTime: pickupTimeStr,
       tripType: tripType,

@@ -35,6 +35,8 @@ export interface Itinerary {
     terminalId?: string;      // Terminal ID (if applicable)
     airportConvertedToOneWay?: boolean;  // True when airport trip was auto-converted to One Way
     aliasDestCityId?: number;  // Airport city ID (sent as alias_dest_city_id in booking create)
+    fromCityLL?: string;       // Source city lat,lng e.g. "12.966,77.606" — passed to autocomplete API
+    toCityLL?: string;         // Destination city lat,lng — passed to autocomplete API
 }
 
 export interface SelectedCar {

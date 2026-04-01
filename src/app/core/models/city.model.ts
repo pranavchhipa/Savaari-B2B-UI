@@ -38,6 +38,7 @@ export interface City {
   state?: string;            // "Karnataka"
   isAirport?: boolean;
   aid?: string;              // Airport ID from source-cities API (e.g. "10" for Bangalore Airport)
+  ll?: string;               // "12.966,77.606" (lat,lng from SavaariCity)
 }
 
 /** GET /localities — required for Airport transfers */
@@ -56,5 +57,6 @@ export function toCity(raw: SavaariCity): City {
     state: raw.stateOnly,
     isAirport: raw.is_airport === '1',
     aid: raw.aid,
+    ll: raw.ll,
   };
 }

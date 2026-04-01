@@ -291,10 +291,22 @@
 
                         <div class="flex justify-center pt-2 sm:pt-1">
                             <button type="button" (click)="proceedToPayment()"
-                                class="w-full sm:w-auto bg-gradient-to-r from-primary to-sky-500 hover:from-sky-600 hover:to-sky-700 text-white font-bold py-3 sm:py-2.5 px-10 rounded-xl sm:rounded-full shadow-lg shadow-sky-200/50 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2">
-                                Proceed to Next Step
-                                <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+                                [disabled]="isCreatingBooking"
+                                class="w-full sm:w-auto bg-gradient-to-r from-primary to-sky-500 hover:from-sky-600 hover:to-sky-700 text-white font-bold py-3 sm:py-2.5 px-10 rounded-xl sm:rounded-full shadow-lg shadow-sky-200/50 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                                @if (isCreatingBooking) {
+                                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                    Creating Booking...
+                                } @else {
+                                    Proceed to Next Step
+                                    <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+                                }
                             </button>
+                            @if (bookingError && !step1Complete) {
+                                <div class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-2 w-full">
+                                    <lucide-icon name="alert-circle" [size]="16" class="text-red-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                                    <span class="text-xs text-red-600 dark:text-red-400 leading-relaxed">{{ bookingError }}</span>
+                                </div>
+                            }
                         </div>
                     </form>
                 </div>

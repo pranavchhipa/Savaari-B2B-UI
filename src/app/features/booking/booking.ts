@@ -77,6 +77,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   paymentMethod: 'wallet' | 'razorpay' = 'wallet';
   isProcessingRazorpay = false;
   razorpayProcessingStage: 'payment' | 'booking' = 'payment'; // For showing different messages
+  isCreatingBooking = false;  // Loading state for "Proceed to Next" button
 
   // Info tooltip toggle (0 = none, 1/2/3 = which payment option's info is shown)
   showInfo: number = 0;
@@ -108,6 +109,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   topUpPresets = [5000, 10000, 25000, 50000];
   showTopUpConfirm = false;
   showTopUpModal = false;
+
+  // Stored from advance_payment_check + booking create (fired on "Proceed to Next")
+  private advanceAmount = 0;
+  private encodedAmount = '';
+  private savaariPayId = '';
 
   // Fare recalculation (One Way drop address)
   showFareChangePopup = false;
@@ -263,11 +269,133 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Save passenger details before proceeding
     this.savePassengerState();
 
-    this.step1Complete = true;
-    // Push history state so browser back button can be intercepted
-    history.pushState({ step: 'payment' }, '', this.router.url);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Mock mode: skip API calls, go straight to payment page
+    if (environment.useMockData) {
+      this.bookingId = 'MOCK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      this.advanceAmount = this.getPayNowAmount(1); // default 25%
+      this.step1Complete = true;
+      history.pushState({ step: 'payment' }, '', this.router.url);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // Live flow (HAR-confirmed): booking create fires on "Proceed to Next"
+    // 1. Refresh partner token
+    // 2. advance_payment_check → get advance amount
+    // 3. POST /booking → create booking (returns booking_id)
+    // 4. Show payment page with booking already created
+    this.isCreatingBooking = true;
+    this.bookingError = '';
     this.cdr.markForCheck();
+
+    this.auth.fetchPartnerToken().subscribe({
+      next: () => this.executeBookingOnProceed(),
+      error: () => this.executeBookingOnProceed(),
+    });
+  }
+
+  /**
+   * HAR-confirmed: booking create fires on "Proceed to Next" (BEFORE payment page).
+   * Steps: advance_payment_check → booking create → show payment page.
+   */
+  private executeBookingOnProceed() {
+    if (!this.itinerary || !this.selectedCar) return;
+
+    const apiParams = this.tripTypeService.mapUiTabToApiParams(this.itinerary.tripType, {
+      localPackage: this.itinerary.localPackage,
+      airportSubType: this.itinerary.airportSubType,
+    });
+
+    // Use 25% minimum prepayment as default (payment option not yet selected)
+    const prePayBase = Math.max(this.selectedCar.regularPrice || this.selectedCar.price, this.selectedCar.price);
+    const defaultPrePayment = Math.round(prePayBase * 0.25);
+    const request = this.buildBookingRequest(apiParams, defaultPrePayment);
+
+    // HAR-confirmed IDs
+    const tripTypeMap: Record<string, number> = { outstation: 1, local: 3, airport: 5 };
+    const subTripTypeMap: Record<string, number> = { oneWay: 7, roundTrip: 1, '880': 4 };
+
+    // Step 1: advance_payment_check
+    this.paymentService.checkAdvancePayment({
+      t_id: tripTypeMap[apiParams.tripType] || 3,
+      t_s_id: subTripTypeMap[apiParams.subTripType] || 4,
+      c_id: this.itinerary!.fromCityId || 377,
+      pick_date: request.pickupDateTime?.split(' ')[0] || '',
+      car_id: this.selectedCar!.carTypeId || 43,
+      package_id: this.selectedCar!.packageId || '',
+      tot_amt: this.selectedCar!.price,
+      b_src: 0,
+      pick_time: request.pickupDateTime?.split(' ')[1] || '12:00',
+      IsPremium: 0,
+      drop_city_id: this.itinerary!.toCityId || '',
+      reverse_dynamic_oneway: 0,
+    }).subscribe({
+      next: (advanceResp) => {
+        this.advanceAmount = advanceResp.advance_amount || defaultPrePayment;
+        this.encodedAmount = (advanceResp as any).encoded_amount || '';
+
+        // Step 2: Create booking
+        this.bookingApi.createBooking(request).subscribe({
+          next: (response) => {
+            const bkId = response.bookingId || response.booking_id || '';
+            if (!bkId) {
+              this.isCreatingBooking = false;
+              this.bookingError = 'Booking creation failed. Please try again.';
+              this.cdr.markForCheck();
+              return;
+            }
+
+            this.bookingId = bkId;
+            this.savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
+            this.registerBookingData(bkId, response, request, defaultPrePayment, 'razorpay');
+
+            // Booking created → show payment page
+            this.isCreatingBooking = false;
+            this.step1Complete = true;
+            history.pushState({ step: 'payment' }, '', this.router.url);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            this.cdr.markForCheck();
+          },
+          error: (err) => {
+            this.isCreatingBooking = false;
+            this.bookingError = err?.message || 'Booking creation failed. Please try again.';
+            this.cdr.markForCheck();
+          }
+        });
+      },
+      error: () => {
+        // advance_payment_check failed — still try to create booking with default amount
+        this.advanceAmount = defaultPrePayment;
+
+        this.bookingApi.createBooking(request).subscribe({
+          next: (response) => {
+            const bkId = response.bookingId || response.booking_id || '';
+            if (!bkId) {
+              this.isCreatingBooking = false;
+              this.bookingError = 'Booking creation failed. Please try again.';
+              this.cdr.markForCheck();
+              return;
+            }
+
+            this.bookingId = bkId;
+            this.savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
+            this.registerBookingData(bkId, response, request, defaultPrePayment, 'razorpay');
+
+            this.isCreatingBooking = false;
+            this.step1Complete = true;
+            history.pushState({ step: 'payment' }, '', this.router.url);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            this.cdr.markForCheck();
+          },
+          error: (err) => {
+            this.isCreatingBooking = false;
+            this.bookingError = err?.message || 'Booking creation failed. Please try again.';
+            this.cdr.markForCheck();
+          }
+        });
+      }
+    });
   }
 
   get filteredCountryCodes(): CountryCodeEntry[] {
@@ -297,9 +425,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /** PrimeNG AutoComplete: search pickup address via Savaari autocomplete API */
   searchPickupAddress(event: AutoCompleteCompleteEvent): void {
-    const city = this.itinerary?.fromCity || '';
+    // Pass city name (short form) + lat/lng from source city to autocomplete API (matches live site)
+    const cityName = this.itinerary?.fromCity?.split(',')[0]?.trim() || '';
+    const ll = this.itinerary?.fromCityLL?.split(',') || [];
+    const lat = ll[0] || '';
+    const lng = ll[1] || '';
     if (!event.query || event.query.length < 2) { this.pickupSuggestions = []; this.pickupSuggestionsRaw = []; return; }
-    this.addressAutocomplete.searchAddress(event.query, 'from', city).subscribe(results => {
+    this.addressAutocomplete.searchAddress(event.query, 'from', cityName, lat, lng).subscribe(results => {
       this.pickupSuggestionsRaw = results;
       this.pickupSuggestions = results.map(r => r.description);
       this.cdr.markForCheck();
@@ -308,9 +440,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /** PrimeNG AutoComplete: search drop address via Savaari autocomplete API */
   searchDropAddress(event: AutoCompleteCompleteEvent): void {
-    const city = this.itinerary?.toCity || '';
+    // Pass city name (short form) + lat/lng from destination city to autocomplete API
+    const cityName = this.itinerary?.toCity?.split(',')[0]?.trim() || '';
+    const ll = this.itinerary?.toCityLL?.split(',') || [];
+    const lat = ll[0] || '';
+    const lng = ll[1] || '';
     if (!event.query || event.query.length < 2) { this.dropSuggestions = []; this.dropSuggestionsRaw = []; return; }
-    this.addressAutocomplete.searchAddress(event.query, 'to', city).subscribe(results => {
+    this.addressAutocomplete.searchAddress(event.query, 'to', cityName, lat, lng).subscribe(results => {
       this.dropSuggestionsRaw = results;
       this.dropSuggestions = results.map(r => r.description);
       this.cdr.markForCheck();
@@ -632,18 +768,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   bookNow() {
     this.bookingError = '';
 
-    if (!this.isPickupDetailsValid()) {
-      this.bookingError = 'Please fill in all required pickup details.';
-      this.cdr.markForCheck();
-      return;
-    }
-
-    if (!this.isBookingWindowValid()) {
-      this.bookingError = 'Bookings must be made at least 6 hours before pickup time.';
-      this.cdr.markForCheck();
-      return;
-    }
-
     if (this.paymentOption === 0) {
       this.bookingError = 'Please select a payment option.';
       this.cdr.markForCheck();
@@ -653,263 +777,169 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     const payNow = this.getPayNowAmount();
 
     if (this.paymentMethod === 'razorpay') {
-      // Direct Razorpay payment — no wallet balance check needed
-      this.processRazorpayBooking(payNow);
+      // Booking already created on "Proceed to Next" — just handle Razorpay payment
+      this.processRazorpayPayment(payNow);
     } else {
-      // Wallet payment — check balance
+      // Wallet payment — booking already created, just deduct wallet
       const currentBalance = this.walletService.getCurrentBalance();
       if (payNow > 0 && currentBalance < payNow) {
         this.bookingError = `Insufficient wallet balance. You need ₹${payNow.toLocaleString('en-IN')} but have ₹${currentBalance.toLocaleString('en-IN')}. Please top up your wallet or switch to Razorpay.`;
         this.cdr.markForCheck();
         return;
       }
-      this.processBooking();
+      this.processWalletPayment(payNow);
     }
   }
 
   /**
-   * Process booking with Razorpay payment via PHP endpoints.
+   * Process Razorpay payment for already-created booking.
    *
-   * HAR-confirmed flow from live beta site (b2bcab.betasavaari.com):
-   *   1. advance_payment_check.php → get advance amount + encoded_amount
-   *   2. POST /booking → create booking (returns booking_id)
-   *   3. POST /update_invoice_payer_info → set invoice payer
-   *   4. razor_createorder.php → get Razorpay order_id
-   *   5. Open Razorpay SDK → user pays
-   *   6. razor_checkhash.php → verify signature
-   *   7. email_sent → send booking confirmation email
-   *   8. confirmation.php → final payment confirmation
+   * HAR-confirmed: booking is already created on "Proceed to Next".
+   * This method handles:
+   *   1. razor_createorder.php → create Razorpay order
+   *   2. Razorpay SDK popup → user pays
+   *   3. razor_checkhash.php → verify payment signature
+   *   4. email_sent → send confirmation email
+   *   5. confirmation.php → final payment confirmation
    */
-  private processRazorpayBooking(amount: number) {
-    if (!this.itinerary || !this.selectedCar) return;
+  private processRazorpayPayment(amount: number) {
+    if (!this.bookingId) {
+      this.bookingError = 'No booking found. Please go back and try again.';
+      this.cdr.markForCheck();
+      return;
+    }
 
     this.isProcessingRazorpay = true;
-    this.razorpayProcessingStage = 'booking';
+    this.razorpayProcessingStage = 'payment';
     this.bookingError = '';
     this.cdr.markForCheck();
 
     // Mock mode: skip Razorpay, simulate payment success
     if (environment.useMockData) {
       setTimeout(() => {
-        this.onRazorpayBookingSuccess(
-          { razorpay_order_id: 'mock_order', razorpay_payment_id: 'mock_pay', razorpay_signature: 'mock_sig' },
-          amount
-        );
+        this.isProcessingRazorpay = false;
+        this.bookingConfirmed = true;
+        this.clearPassengerState();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.cdr.markForCheck();
       }, 1500);
       return;
     }
 
-    // Step 1: First create the booking, then handle payment
-    this.auth.fetchPartnerToken().subscribe({
-      next: () => this.executeRazorpayFlow(amount),
-      error: () => this.executeRazorpayFlow(amount),
-    });
-  }
+    const bkId = this.bookingId;
+    const advanceAmount = this.advanceAmount || amount;
+    const savaariPayId = this.savaariPayId || this.paymentService.generateSavaariPaymentId(bkId);
 
-  /**
-   * Execute the full Razorpay payment flow.
-   *
-   * HAR-confirmed sequence (live beta site):
-   *   1. advance_payment_check.php → get advance amount + encoded_amount
-   *   2. POST /booking → create booking (returns booking_id)
-   *   3. POST /update_invoice_payer_info → set invoice payer
-   *   4. razor_createorder.php → create Razorpay order
-   *   5. Razorpay SDK popup → user pays
-   *   6. razor_checkhash.php → verify payment signature
-   *   7. email_sent → send confirmation email
-   *   8. confirmation.php → final payment confirmation
-   */
-  private executeRazorpayFlow(prePaymentAmount: number) {
-    if (!this.itinerary || !this.selectedCar) return;
-
-    const apiParams = this.tripTypeService.mapUiTabToApiParams(this.itinerary.tripType, {
-      localPackage: this.itinerary.localPackage,
-      airportSubType: this.itinerary.airportSubType,
-    });
-
-    const request = this.buildBookingRequest(apiParams, prePaymentAmount);
-
-    // HAR-confirmed IDs: outstation=1, local=3, airport=5
-    const tripTypeMap: Record<string, number> = { outstation: 1, local: 3, airport: 5 };
-    // HAR-confirmed: oneWay=7, roundTrip=1, local 880=4
-    const subTripTypeMap: Record<string, number> = { oneWay: 7, roundTrip: 1, '880': 4 };
-
-    // Step 1: advance_payment_check FIRST (matches HAR sequence)
-    this.paymentService.checkAdvancePayment({
-      t_id: tripTypeMap[apiParams.tripType] || 3,
-      t_s_id: subTripTypeMap[apiParams.subTripType] || 4,
-      c_id: this.itinerary!.fromCityId || 377,
-      pick_date: request.pickupDateTime?.split(' ')[0] || '',
-      car_id: this.selectedCar!.carTypeId || 43,
-      package_id: this.selectedCar!.packageId || '',
-      tot_amt: this.selectedCar!.price,
-      b_src: 0,
-      pick_time: request.pickupDateTime?.split(' ')[1] || '12:00',
-      IsPremium: 0,
-      drop_city_id: this.itinerary!.toCityId || '',
-      reverse_dynamic_oneway: 0,
+    // Step 1: Create Razorpay order via PHP
+    this.paymentService.createRazorpayOrder({
+      amount: advanceAmount,
+      encoded_amount: this.encodedAmount,
+      savaari_payment_id: savaariPayId,
     }).subscribe({
-      next: (advanceResp) => {
-        const advanceAmount = advanceResp.advance_amount || prePaymentAmount;
-        const encodedAmount = (advanceResp as any).encoded_amount || '';
+      next: (orderResp) => {
+        if (!orderResp) {
+          this.isProcessingRazorpay = false;
+          this.bookingError = 'Failed to create payment order. Please try again.';
+          this.cdr.markForCheck();
+          return;
+        }
 
-        // Step 2: Create booking
-        this.bookingApi.createBooking(request).subscribe({
-          next: (response) => {
-            const bkId = response.bookingId || response.booking_id || '';
-            if (!bkId) {
-              this.isProcessingRazorpay = false;
-              this.bookingError = 'Booking creation failed. Please try again.';
-              this.cdr.markForCheck();
-              return;
-            }
+        const razorpayOrderId = orderResp.razorpay_order_id || orderResp.order_id || '';
 
-            this.bookingId = bkId;
-            this.registerBookingData(bkId, response, request, prePaymentAmount, 'razorpay');
-
-            // Step 3 (update_invoice_payer_info) is handled inside createBooking
-
-            // Step 4: Create Razorpay order via PHP
-            this.razorpayProcessingStage = 'payment';
-            this.cdr.markForCheck();
-
-            const savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
-
-            this.paymentService.createRazorpayOrder({
-              amount: advanceAmount,
-              encoded_amount: encodedAmount,
-              savaari_payment_id: savaariPayId,
+        // Step 2: Open Razorpay SDK
+        const options: any = {
+          key: environment.razorpayKeyId,
+          amount: advanceAmount * 100, // Razorpay expects paise
+          currency: 'INR',
+          name: environment.brandName,
+          description: `Booking #${bkId} - ₹${advanceAmount}`,
+          order_id: razorpayOrderId,
+          handler: (rzpResponse: any) => {
+            // Step 3: Verify hash via PHP (razor_checkhash)
+            this.paymentService.verifyRazorpayPayment({
+              razorpay_order_id: rzpResponse.razorpay_order_id,
+              razorpay_payment_id: rzpResponse.razorpay_payment_id,
+              razorpay_signature: rzpResponse.razorpay_signature,
+              savaari_pay_id: savaariPayId,
+              selectedAmount: advanceAmount,
             }).subscribe({
-              next: (orderResp) => {
-                if (!orderResp) {
+              next: (verified) => {
+                if (!verified) {
                   this.isProcessingRazorpay = false;
-                  this.bookingError = 'Failed to create payment order. Please try again.';
+                  this.bookingError = 'Payment verification failed. Contact support.';
                   this.cdr.markForCheck();
                   return;
                 }
 
-                const razorpayOrderId = orderResp.razorpay_order_id || orderResp.order_id || '';
-
-                // Step 5: Open Razorpay SDK
-                const options: any = {
-                  key: environment.razorpayKeyId,
-                  amount: advanceAmount * 100, // Razorpay expects paise
-                  currency: 'INR',
-                  name: environment.brandName,
-                  description: `Booking #${bkId} - ₹${advanceAmount}`,
-                  order_id: razorpayOrderId,
-                  handler: (rzpResponse: any) => {
-                    // Step 6: Verify hash via PHP (razor_checkhash)
-                    this.paymentService.verifyRazorpayPayment({
-                      razorpay_order_id: rzpResponse.razorpay_order_id,
-                      razorpay_payment_id: rzpResponse.razorpay_payment_id,
-                      razorpay_signature: rzpResponse.razorpay_signature,
-                      savaari_pay_id: savaariPayId,
-                      selectedAmount: advanceAmount,
+                // Step 4: Send booking confirmation email (email_sent)
+                this.paymentService.sendConfirmationEmail(bkId).subscribe({
+                  next: () => {
+                    // Step 5: Final payment confirmation (confirmation.php)
+                    this.paymentService.confirmPayment({
+                      advancedAmount: advanceAmount,
+                      orderId: savaariPayId,
+                      paymentId: rzpResponse.razorpay_payment_id,
+                      paymentmode: 'savaariwebsite',
                     }).subscribe({
-                      next: (verified) => {
-                        if (!verified) {
-                          this.isProcessingRazorpay = false;
-                          this.bookingError = 'Payment verification failed. Contact support.';
-                          this.cdr.markForCheck();
-                          return;
-                        }
-
-                        // Step 7: Send booking confirmation email (email_sent)
-                        this.paymentService.sendConfirmationEmail(bkId).subscribe({
-                          next: () => {
-                            // Step 8: Final payment confirmation (confirmation.php)
-                            this.paymentService.confirmPayment({
-                              advancedAmount: advanceAmount,
-                              orderId: savaariPayId,
-                              paymentId: rzpResponse.razorpay_payment_id,
-                              paymentmode: 'savaariwebsite',
-                            }).subscribe({
-                              next: () => {
-                                this.isProcessingRazorpay = false;
-                                this.bookingConfirmed = true;
-                                this.clearPassengerState();
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                this.cdr.markForCheck();
-                              },
-                              error: () => {
-                                // confirmation API failed — still show success (payment already done)
-                                this.isProcessingRazorpay = false;
-                                this.bookingConfirmed = true;
-                                this.clearPassengerState();
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                                this.cdr.markForCheck();
-                              }
-                            });
-                          },
-                          error: () => {
-                            // Email failed — still proceed with confirmation + show success
-                            this.paymentService.confirmPayment({
-                              advancedAmount: advanceAmount,
-                              orderId: savaariPayId,
-                              paymentId: rzpResponse.razorpay_payment_id,
-                              paymentmode: 'savaariwebsite',
-                            }).subscribe();
-                            this.isProcessingRazorpay = false;
-                            this.bookingConfirmed = true;
-                            this.clearPassengerState();
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                            this.cdr.markForCheck();
-                          }
-                        });
+                      next: () => {
+                        this.isProcessingRazorpay = false;
+                        this.bookingConfirmed = true;
+                        this.clearPassengerState();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        this.cdr.markForCheck();
                       },
                       error: () => {
+                        // confirmation API failed — still show success (payment already done)
                         this.isProcessingRazorpay = false;
-                        this.bookingError = 'Payment verification error. Contact support if money was deducted.';
+                        this.bookingConfirmed = true;
+                        this.clearPassengerState();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                         this.cdr.markForCheck();
                       }
                     });
                   },
-                  modal: {
-                    ondismiss: () => {
-                      this.isProcessingRazorpay = false;
-                      this.cdr.markForCheck();
-                    }
-                  },
-                  prefill: { email: this.auth.getUserEmail() },
-                  theme: { color: '#00ace6' },
-                };
-
-                const rzp = new (window as any).Razorpay(options);
-                rzp.open();
+                  error: () => {
+                    // Email failed — still proceed with confirmation + show success
+                    this.paymentService.confirmPayment({
+                      advancedAmount: advanceAmount,
+                      orderId: savaariPayId,
+                      paymentId: rzpResponse.razorpay_payment_id,
+                      paymentmode: 'savaariwebsite',
+                    }).subscribe();
+                    this.isProcessingRazorpay = false;
+                    this.bookingConfirmed = true;
+                    this.clearPassengerState();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    this.cdr.markForCheck();
+                  }
+                });
               },
               error: () => {
                 this.isProcessingRazorpay = false;
-                this.bookingError = 'Failed to create payment order.';
+                this.bookingError = 'Payment verification error. Contact support if money was deducted.';
                 this.cdr.markForCheck();
               }
             });
           },
-          error: (err) => {
-            this.isProcessingRazorpay = false;
-            this.bookingError = err?.message || 'Booking creation failed.';
-            this.cdr.markForCheck();
-          }
-        });
+          modal: {
+            ondismiss: () => {
+              this.isProcessingRazorpay = false;
+              this.cdr.markForCheck();
+            }
+          },
+          prefill: { email: this.auth.getUserEmail() },
+          theme: { color: '#00ace6' },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
       },
       error: () => {
         this.isProcessingRazorpay = false;
-        this.bookingError = 'Failed to check advance payment.';
+        this.bookingError = 'Failed to create payment order.';
         this.cdr.markForCheck();
       }
     });
-  }
-
-  /** Called after mock Razorpay payment succeeds in mock mode */
-  private onRazorpayBookingSuccess(_razorpayResponse: any, prePaymentAmount: number) {
-    const mockId = 'MOCK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    this.bookingId = mockId;
-    this.bookingRegistry.addBookingId(mockId);
-    this.isProcessingRazorpay = false;
-    this.bookingConfirmed = true;
-    this.clearPassengerState();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    this.cdr.markForCheck();
   }
 
   /** Build a CreateBookingRequest from current form state */
@@ -1006,87 +1036,51 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
-  /** Build API request and create booking — refreshes partner token first */
-  private processBooking() {
-    if (!this.itinerary || !this.selectedCar) return;
+  /**
+   * Process wallet payment for already-created booking.
+   * Booking was already created on "Proceed to Next" — just deduct wallet + confirm.
+   */
+  private processWalletPayment(payNow: number) {
+    if (!this.bookingId) {
+      this.bookingError = 'No booking found. Please go back and try again.';
+      this.cdr.markForCheck();
+      return;
+    }
 
     this.isProcessingWallet = true;
     this.bookingError = '';
     this.cdr.markForCheck();
 
-    // Always refresh the partner token before booking to avoid 404 from expired tokens
-    this.auth.fetchPartnerToken().subscribe({
-      next: () => {
-        console.log('[BOOKING] Partner token refreshed, proceeding with booking...');
-        this.executeBookingRequest();
-      },
-      error: (err) => {
-        console.error('[BOOKING] Failed to refresh partner token:', err);
-        // Try anyway with existing token
-        this.executeBookingRequest();
-      }
-    });
-  }
+    const bkId = this.bookingId;
 
-  /** Actually send the booking request to the API (wallet payment flow) */
-  private executeBookingRequest() {
-    if (!this.itinerary || !this.selectedCar) return;
-
-    const apiParams = this.tripTypeService.mapUiTabToApiParams(this.itinerary.tripType, {
-      localPackage: this.itinerary.localPackage,
-      airportSubType: this.itinerary.airportSubType,
-    });
-
-    const prePaymentAmount = this.getPayNowAmount();
-    const request = this.buildBookingRequest(apiParams, prePaymentAmount);
-
-    console.log('[BOOKING] Sending request:', JSON.stringify(request, null, 2));
-
-    this.bookingApi.createBooking(request).subscribe({
-      next: (response) => {
-        const bkId = response.bookingId || response.booking_id || '';
-        this.bookingId = bkId;
-
-        this.registerBookingData(bkId, response, request, prePaymentAmount, 'wallet');
-
-        // Deduct wallet balance for booking payment
-        if (bkId && prePaymentAmount > 0) {
-          this.walletService.payForBooking(bkId, prePaymentAmount, this.paymentOption as 1 | 2 | 3).subscribe({
-            next: (success) => {
-              if (success) {
-                console.log(`[BOOKING] Wallet deducted ₹${prePaymentAmount} for booking #${bkId}`);
-              } else {
-                console.warn(`[BOOKING] Wallet deduction failed for booking #${bkId}`);
-              }
-              this.walletService.loadBalance();
-            },
-            error: (err) => {
-              console.warn('[BOOKING] Wallet deduction error:', err);
-              this.walletService.loadBalance();
-            }
-          });
-        } else {
+    // Deduct wallet balance for booking payment
+    if (payNow > 0) {
+      this.walletService.payForBooking(bkId, payNow, this.paymentOption as 1 | 2 | 3).subscribe({
+        next: (success) => {
+          if (success) {
+            console.log(`[BOOKING] Wallet deducted ₹${payNow} for booking #${bkId}`);
+          } else {
+            console.warn(`[BOOKING] Wallet deduction failed for booking #${bkId}`);
+          }
+          this.walletService.loadBalance();
+        },
+        error: (err) => {
+          console.warn('[BOOKING] Wallet deduction error:', err);
           this.walletService.loadBalance();
         }
+      });
+    } else {
+      this.walletService.loadBalance();
+    }
 
-        // Send booking confirmation email (fire-and-forget)
-        if (bkId) {
-          this.paymentService.sendConfirmationEmail(bkId).subscribe();
-        }
+    // Send booking confirmation email (fire-and-forget)
+    this.paymentService.sendConfirmationEmail(bkId).subscribe();
 
-        this.isProcessingWallet = false;
-        this.bookingConfirmed = true;
-        this.clearPassengerState();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        this.cdr.markForCheck();
-      },
-      error: (err) => {
-        this.isProcessingWallet = false;
-        this.bookingError = err?.message || 'Booking failed. Please try again.';
-        console.error('[BOOKING] Failed:', err?.status, err?.message);
-        this.cdr.markForCheck();
-      }
-    });
+    this.isProcessingWallet = false;
+    this.bookingConfirmed = true;
+    this.clearPassengerState();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.cdr.markForCheck();
   }
 
   /** Save passenger form state to sessionStorage */
