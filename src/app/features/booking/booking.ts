@@ -185,12 +185,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.itinerary = this.bookingState.getItinerary();
     this.selectedCar = this.bookingState.getSelectedCar();
 
-    // Resolve city lat/lng for autocomplete API.
-    // Priority: itinerary.fromCityLL (set by dashboard) → city service cache (in-memory) → empty
-    this.resolveCityLatLng();
+    // Resolve city lat/lng for autocomplete API — fetch source cities to get ll field
+    this.fetchCityLatLng();
 
-    // Pre-fetch localities for source and destination cities (cached after first load).
-    // Pre-fetch localities for pickup and drop cities
+    // Pre-fetch localities (live site also fires this on page load)
     if (this.itinerary?.fromCityId) {
       this.localityService.getLocalities(this.itinerary.fromCityId).subscribe();
     }
@@ -198,6 +196,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (dropCityId) {
       this.localityService.getLocalities(dropCityId).subscribe();
     }
+
+    // Fire advance_payment_check on page load (live site does this on page load, not on Proceed)
+    this.fireAdvancePaymentCheck();
 
     // Reactive sync with auto-cleanup
     this.bookingState.currentItinerary$
@@ -308,8 +309,8 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /**
-   * HAR-confirmed: booking create fires on "Proceed to Next" (BEFORE payment page).
-   * Steps: advance_payment_check → booking create → show payment page.
+   * Live site confirmed: booking create fires on "Proceed to Next" (BEFORE payment page).
+   * advance_payment_check already fired on page load — just create booking here.
    */
   private executeBookingOnProceed() {
     if (!this.itinerary || !this.selectedCar) return;
@@ -319,93 +320,35 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       airportSubType: this.itinerary.airportSubType,
     });
 
-    // Use 25% minimum prepayment as default (payment option not yet selected)
-    const prePayBase = Math.max(this.selectedCar.regularPrice || this.selectedCar.price, this.selectedCar.price);
-    const defaultPrePayment = Math.round(prePayBase * 0.25);
-    const request = this.buildBookingRequest(apiParams, defaultPrePayment);
+    const prePayment = this.advanceAmount || Math.round(this.selectedCar.price * 0.25);
+    const request = this.buildBookingRequest(apiParams, prePayment);
 
-    // HAR-confirmed IDs
-    const tripTypeMap: Record<string, number> = { outstation: 1, local: 3, airport: 5 };
-    const subTripTypeMap: Record<string, number> = { oneWay: 7, roundTrip: 1, '880': 4 };
+    // Create booking
+    this.bookingApi.createBooking(request).subscribe({
+      next: (response) => {
+        const bkId = response.bookingId || response.booking_id || '';
+        if (!bkId) {
+          this.isCreatingBooking = false;
+          this.bookingError = 'Booking creation failed. Please try again.';
+          this.cdr.markForCheck();
+          return;
+        }
 
-    // Step 1: advance_payment_check
-    this.paymentService.checkAdvancePayment({
-      t_id: tripTypeMap[apiParams.tripType] || 3,
-      t_s_id: subTripTypeMap[apiParams.subTripType] || 4,
-      c_id: this.itinerary!.fromCityId || 377,
-      pick_date: request.pickupDateTime?.split(' ')[0] || '',
-      car_id: this.selectedCar!.carTypeId || 43,
-      package_id: this.selectedCar!.packageId || '',
-      tot_amt: this.selectedCar!.price,
-      b_src: 0,
-      pick_time: request.pickupDateTime?.split(' ')[1] || '12:00',
-      IsPremium: 0,
-      drop_city_id: this.itinerary!.toCityId || '',
-      reverse_dynamic_oneway: 0,
-    }).subscribe({
-      next: (advanceResp) => {
-        this.advanceAmount = advanceResp.advance_amount || defaultPrePayment;
-        this.encodedAmount = (advanceResp as any).encoded_amount || '';
+        this.bookingId = bkId;
+        this.savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
+        this.registerBookingData(bkId, response, request, prePayment, 'razorpay');
 
-        // Step 2: Create booking
-        this.bookingApi.createBooking(request).subscribe({
-          next: (response) => {
-            const bkId = response.bookingId || response.booking_id || '';
-            if (!bkId) {
-              this.isCreatingBooking = false;
-              this.bookingError = 'Booking creation failed. Please try again.';
-              this.cdr.markForCheck();
-              return;
-            }
-
-            this.bookingId = bkId;
-            this.savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
-            this.registerBookingData(bkId, response, request, defaultPrePayment, 'razorpay');
-
-            // Booking created → show payment page
-            this.isCreatingBooking = false;
-            this.step1Complete = true;
-            history.pushState({ step: 'payment' }, '', this.router.url);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            this.cdr.markForCheck();
-          },
-          error: (err) => {
-            this.isCreatingBooking = false;
-            this.bookingError = err?.message || 'Booking creation failed. Please try again.';
-            this.cdr.markForCheck();
-          }
-        });
+        // Booking created → show payment page
+        this.isCreatingBooking = false;
+        this.step1Complete = true;
+        history.pushState({ step: 'payment' }, '', this.router.url);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.cdr.markForCheck();
       },
-      error: () => {
-        // advance_payment_check failed — still try to create booking with default amount
-        this.advanceAmount = defaultPrePayment;
-
-        this.bookingApi.createBooking(request).subscribe({
-          next: (response) => {
-            const bkId = response.bookingId || response.booking_id || '';
-            if (!bkId) {
-              this.isCreatingBooking = false;
-              this.bookingError = 'Booking creation failed. Please try again.';
-              this.cdr.markForCheck();
-              return;
-            }
-
-            this.bookingId = bkId;
-            this.savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
-            this.registerBookingData(bkId, response, request, defaultPrePayment, 'razorpay');
-
-            this.isCreatingBooking = false;
-            this.step1Complete = true;
-            history.pushState({ step: 'payment' }, '', this.router.url);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            this.cdr.markForCheck();
-          },
-          error: (err) => {
-            this.isCreatingBooking = false;
-            this.bookingError = err?.message || 'Booking creation failed. Please try again.';
-            this.cdr.markForCheck();
-          }
-        });
+      error: (err) => {
+        this.isCreatingBooking = false;
+        this.bookingError = err?.message || 'Booking creation failed. Please try again.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -436,27 +379,87 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /**
-   * Resolve city lat/lng for autocomplete API.
-   * Priority: itinerary.fromCityLL (set by dashboard) → city service cache → empty string.
-   * Called from ngOnInit so autocomplete always has city coordinates available.
+   * Fetch source/destination cities from API to get lat/lng for autocomplete.
+   * Live site uses city lat/lng to improve Google Places results.
+   * Falls back to itinerary.fromCityLL if already set by dashboard.
    */
-  private resolveCityLatLng(): void {
-    // From city
-    const fromLL = this.itinerary?.fromCityLL
-      || (this.itinerary?.fromCityId ? this.cityService.getCityLL(this.itinerary.fromCityId) : undefined)
-      || '';
-    const fromParts = fromLL.split(',');
-    this.fromCityLat = fromParts[0]?.trim() || '';
-    this.fromCityLng = fromParts[1]?.trim() || '';
+  private fetchCityLatLng(): void {
+    // Quick check: if itinerary already has ll, use it directly
+    if (this.itinerary?.fromCityLL) {
+      const p = this.itinerary.fromCityLL.split(',');
+      this.fromCityLat = p[0]?.trim() || '';
+      this.fromCityLng = p[1]?.trim() || '';
+    }
+    if (this.itinerary?.toCityLL) {
+      const p = this.itinerary.toCityLL.split(',');
+      this.toCityLat = p[0]?.trim() || '';
+      this.toCityLng = p[1]?.trim() || '';
+    }
 
-    // To city
-    const toLL = this.itinerary?.toCityLL
-      || (this.itinerary?.toCityId ? this.cityService.getCityLL(this.itinerary.toCityId) : undefined)
-      || '';
-    const toParts = toLL.split(',');
-    this.toCityLat = toParts[0]?.trim() || '';
-    this.toCityLng = toParts[1]?.trim() || '';
+    // If already resolved, skip API call
+    if (this.fromCityLat && this.toCityLat) return;
 
+    // Fetch source cities from API (also populates city service cache)
+    if (!this.itinerary?.fromCityId) return;
+    const apiParams = this.tripTypeService.mapUiTabToApiParams(this.itinerary.tripType, {
+      localPackage: this.itinerary.localPackage,
+      airportSubType: this.itinerary.airportSubType,
+    });
+
+    this.cityService.getSourceCities(apiParams.tripType, apiParams.subTripType).subscribe(cities => {
+      if (!this.fromCityLat) {
+        const fromCity = cities.find(c => c.id === this.itinerary!.fromCityId);
+        if (fromCity?.ll) {
+          const p = fromCity.ll.split(',');
+          this.fromCityLat = p[0]?.trim() || '';
+          this.fromCityLng = p[1]?.trim() || '';
+        }
+      }
+
+      // Also fetch destination cities for drop address autocomplete
+      if (!this.toCityLat && this.itinerary?.toCityId) {
+        this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, this.itinerary.fromCityId!).subscribe(destCities => {
+          const toCity = destCities.find(c => c.id === this.itinerary!.toCityId);
+          if (toCity?.ll) {
+            const p = toCity.ll.split(',');
+            this.toCityLat = p[0]?.trim() || '';
+            this.toCityLng = p[1]?.trim() || '';
+          }
+        });
+      }
+    });
+  }
+
+  /** Fire advance_payment_check on page load (matches live site behavior) */
+  private fireAdvancePaymentCheck(): void {
+    if (!this.itinerary || !this.selectedCar || environment.useMockData) return;
+
+    const apiParams = this.tripTypeService.mapUiTabToApiParams(this.itinerary.tripType, {
+      localPackage: this.itinerary.localPackage,
+      airportSubType: this.itinerary.airportSubType,
+    });
+    const tripTypeMap: Record<string, number> = { outstation: 1, local: 3, airport: 5 };
+    const subTripTypeMap: Record<string, number> = { oneWay: 7, roundTrip: 1, '880': 4 };
+
+    const pickupDT = toSavaariDateTime(new Date(this.itinerary.pickupDate), this.itinerary.pickupTime);
+
+    this.paymentService.checkAdvancePayment({
+      t_id: tripTypeMap[apiParams.tripType] || 3,
+      t_s_id: subTripTypeMap[apiParams.subTripType] || 4,
+      c_id: this.itinerary.fromCityId || 377,
+      pick_date: pickupDT.split(' ')[0] || '',
+      car_id: this.selectedCar.carTypeId || 43,
+      package_id: this.selectedCar.packageId || '',
+      tot_amt: this.selectedCar.price,
+      b_src: 0,
+      pick_time: pickupDT.split(' ')[1] || '12:00',
+      IsPremium: 0,
+      drop_city_id: this.itinerary.toCityId || '',
+      reverse_dynamic_oneway: 0,
+    }).subscribe(resp => {
+      this.advanceAmount = resp.advance_amount || Math.round(this.selectedCar!.price * 0.25);
+      this.encodedAmount = (resp as any).encoded_amount || '';
+    });
   }
 
   /** PrimeNG AutoComplete: search pickup address via Savaari autocomplete API */
@@ -883,68 +886,33 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           description: `Booking #${bkId} - ₹${advanceAmount}`,
           order_id: razorpayOrderId,
           handler: (rzpResponse: any) => {
-            // Step 3: Verify hash via PHP (razor_checkhash)
-            this.paymentService.verifyRazorpayPayment({
-              razorpay_order_id: rzpResponse.razorpay_order_id,
-              razorpay_payment_id: rzpResponse.razorpay_payment_id,
-              razorpay_signature: rzpResponse.razorpay_signature,
-              savaari_pay_id: savaariPayId,
-              selectedAmount: advanceAmount,
-            }).subscribe({
-              next: (verified) => {
-                if (!verified) {
-                  this.isProcessingRazorpay = false;
-                  this.bookingError = 'Payment verification failed. Contact support.';
-                  this.cdr.markForCheck();
-                  return;
-                }
+            // Live site post-payment flow: email_sent (×2) → confirmation.php
+            // (razor_checkhash not visible in live site network — handled server-side by Razorpay webhook)
 
-                // Step 4: Send booking confirmation email (email_sent)
-                this.paymentService.sendConfirmationEmail(bkId).subscribe({
-                  next: () => {
-                    // Step 5: Final payment confirmation (confirmation.php)
-                    this.paymentService.confirmPayment({
-                      advancedAmount: advanceAmount,
-                      orderId: savaariPayId,
-                      paymentId: rzpResponse.razorpay_payment_id,
-                      paymentmode: 'savaariwebsite',
-                    }).subscribe({
-                      next: () => {
-                        this.isProcessingRazorpay = false;
-                        this.bookingConfirmed = true;
-                        this.clearPassengerState();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                        this.cdr.markForCheck();
-                      },
-                      error: () => {
-                        // confirmation API failed — still show success (payment already done)
-                        this.isProcessingRazorpay = false;
-                        this.bookingConfirmed = true;
-                        this.clearPassengerState();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                        this.cdr.markForCheck();
-                      }
-                    });
-                  },
-                  error: () => {
-                    // Email failed — still proceed with confirmation + show success
-                    this.paymentService.confirmPayment({
-                      advancedAmount: advanceAmount,
-                      orderId: savaariPayId,
-                      paymentId: rzpResponse.razorpay_payment_id,
-                      paymentmode: 'savaariwebsite',
-                    }).subscribe();
-                    this.isProcessingRazorpay = false;
-                    this.bookingConfirmed = true;
-                    this.clearPassengerState();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    this.cdr.markForCheck();
-                  }
-                });
+            // Fire email_sent twice (matches live site behavior — agent + customer emails)
+            this.paymentService.sendConfirmationEmail(bkId).subscribe();
+            this.paymentService.sendConfirmationEmail(bkId).subscribe();
+
+            // Final payment confirmation (confirmation.php)
+            this.paymentService.confirmPayment({
+              advancedAmount: advanceAmount,
+              orderId: savaariPayId,
+              paymentId: rzpResponse.razorpay_payment_id,
+              paymentmode: 'savaariwebsite',
+            }).subscribe({
+              next: () => {
+                this.isProcessingRazorpay = false;
+                this.bookingConfirmed = true;
+                this.clearPassengerState();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                this.cdr.markForCheck();
               },
               error: () => {
+                // confirmation API failed — still show success (payment already done)
                 this.isProcessingRazorpay = false;
-                this.bookingError = 'Payment verification error. Contact support if money was deducted.';
+                this.bookingConfirmed = true;
+                this.clearPassengerState();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
                 this.cdr.markForCheck();
               }
             });

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
@@ -38,8 +38,15 @@ export interface AdvancePaymentCheckRequest {
 
 export interface AdvancePaymentCheckResponse {
   status?: string;
-  advance_amount?: number;
-  advance_percentage?: number;
+  advance_payment_status?: number;  // 1 = advance required
+  advance_percent?: number[];       // e.g. [25] — percentage options
+  advance_percent_ids?: number[];   // e.g. [8] — rule IDs
+  fixed_pay_amount?: number;
+  fixed_pay_flag?: number;
+  rule_set_no?: number;
+  advance_amount?: number;          // Computed: tot_amt * advance_percent[0] / 100
+  advance_percentage?: number;      // Computed: advance_percent[0]
+  encoded_amount?: string;          // SHA1 hash for razor_createorder
   [key: string]: unknown;
 }
 
@@ -113,13 +120,24 @@ export class PaymentService {
         reverse_dynamic_oneway: request.reverse_dynamic_oneway ?? 0,
       }
     ).pipe(
+      map(resp => {
+        // Live API returns: { advance_payment_status: 1, advance_percent: [25], advance_percent_ids: [8] }
+        // Compute advance_amount from percentage if not directly provided
+        const pct = resp.advance_percent?.[0] || resp.advance_percentage || 25;
+        const computedAmount = resp.advance_amount || Math.round(request.tot_amt * pct / 100);
+        return {
+          ...resp,
+          advance_amount: computedAmount,
+          advance_percentage: pct,
+        };
+      }),
       catchError(err => {
         console.error('[PAYMENT] advance_payment_check failed:', err);
-        // Fallback: 20% advance
+        // Fallback: 25% advance (matches live site default)
         return of({
           status: 'error',
-          advance_amount: Math.round(request.tot_amt * 0.2),
-          advance_percentage: 20,
+          advance_amount: Math.round(request.tot_amt * 0.25),
+          advance_percentage: 25,
         });
       })
     );
