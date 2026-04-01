@@ -16,7 +16,7 @@ import { CommissionService } from '../../core/services/commission.service';
 import { CountryCodeService, CountryCodeEntry } from '../../core/services/country-code.service';
 import { LocalityService } from '../../core/services/locality.service';
 import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
-import { AvailabilityService } from '../../core/services/availability.service';
+// AvailabilityService removed — fare recalculation is now client-side (Haversine distance)
 import { CreateBookingRequest } from '../../core/models';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
 import { decodeGSTIN, GSTINDecodeResult } from '../../core/utils/gstin-decoder';
@@ -121,7 +121,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   private paymentService = inject(PaymentService);
   private commissionService = inject(CommissionService);
   private localityService = inject(LocalityService);
-  private availabilityService = inject(AvailabilityService);
+  // availabilityService removed — fare recalc is now client-side
   private addressAutocomplete = inject(AddressAutocompleteService);
 
   // Confetti canvas
@@ -325,12 +325,17 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.addressAutocomplete.getPlaceDetails(match.place_id, 'from').subscribe(details => {
         if (details) {
           this.pickupLatLng = { lat: details.lat, lng: details.lng };
+          // If drop address is already resolved, recalculate fare
+          if (this.dropLatLng) {
+            this.dropAddressProcessed = ''; // Reset to allow recalc
+            this.recalculateFareForDrop();
+          }
         }
       });
     }
   }
 
-  /** When user selects a drop address → call place_id API (2nd API) to get lat/lng */
+  /** When user selects a drop address → call place_id API (2nd API) to get lat/lng, then recalculate fare */
   onDropAddressSelect(event: any): void {
     const selected: string = event.value || event;
     const match = this.dropSuggestionsRaw.find(s => s.description === selected);
@@ -338,90 +343,84 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.addressAutocomplete.getPlaceDetails(match.place_id, 'to').subscribe(details => {
         if (details) {
           this.dropLatLng = { lat: details.lat, lng: details.lng };
+          // Trigger fare recalculation after lat/lng is resolved
+          this.recalculateFareForDrop();
         }
       });
     }
   }
 
-  /** Triggered when user selects a drop address from autocomplete (One Way) */
-  onDropAddressSelected(_event: any): void {
-    this.recalculateFareForDrop();
-  }
-
-  /** Triggered when drop address field loses focus (One Way) — catches free-text entry */
+  /** Triggered when drop address field loses focus (One Way) — no-op, fare recalc triggers on lat/lng resolution */
   onDropAddressBlur(): void {
-    const addr = (typeof this.dropAddress === 'string' ? this.dropAddress : String(this.dropAddress || '')).trim();
-    if (addr.length >= 3 && addr !== this.dropAddressProcessed) {
-      this.recalculateFareForDrop();
-    }
+    // Fare recalculation now triggers when place_id API resolves lat/lng in onDropAddressSelect
   }
 
   /**
-   * Recalculate fare based on drop address for One Way trips.
-   * Uses the availability API to get updated pricing with the drop location.
-   * If the API returns a different fare, shows a popup to inform the user.
+   * Recalculate fare based on pickup/drop addresses for One Way trips.
+   *
+   * HAR-confirmed: NO separate API call. The availability response contains
+   * kmsIncluded + extraKmRate per car. Frontend calculates actual road distance
+   * from pickup/drop lat/lng (Haversine * 1.3 road factor) and adds extra KM
+   * charges client-side.
+   *
+   * Live site shows: "Your fare has been updated based on the pickup & drop
+   * location entered. The minimum package fare is ₹2493."
+   * KMs display: "185 (150 + 35) km"
    */
   private recalculateFareForDrop(): void {
     if (!this.selectedCar || !this.itinerary || this.itinerary.tripType !== 'One Way') return;
     const addr = (typeof this.dropAddress === 'string' ? this.dropAddress : String(this.dropAddress || '')).trim();
     if (addr.length < 3 || addr === this.dropAddressProcessed) return;
 
+    // Need both pickup and drop lat/lng for distance calculation
+    if (!this.pickupLatLng || !this.dropLatLng) return;
+
     this.dropAddressProcessed = addr;
-    this.isRecalculatingFare = true;
     this.previousFare = this.selectedCar.price;
+
+    // Calculate road distance from lat/lng
+    const straightLineKm = this.haversineDistance(
+      this.pickupLatLng.lat, this.pickupLatLng.lng,
+      this.dropLatLng.lat, this.dropLatLng.lng
+    );
+    // Road distance ≈ straight-line × 1.3 (road winding factor)
+    const estimatedRoadKm = Math.round(straightLineKm * 1.3);
+
+    // Parse included KMs from string like "150 km"
+    const includedKms = parseInt(this.selectedCar.kmsIncluded) || 0;
+    const extraKmRate = this.selectedCar.extraKmRate || 0;
+
+    if (estimatedRoadKm > includedKms && extraKmRate > 0) {
+      const extraKms = estimatedRoadKm - includedKms;
+      const extraCharge = Math.round(extraKms * extraKmRate);
+      const baseFare = this.selectedCar.originalPrice || this.selectedCar.price;
+      const newFare = baseFare + extraCharge;
+
+      // Update the selectedCar
+      this.selectedCar.price = newFare;
+      this.selectedCar.kmsIncluded = `${estimatedRoadKm} (${includedKms} + ${extraKms}) km`;
+      this.bookingState.setSelectedCar(this.selectedCar);
+
+      // Show fare change popup
+      this.fareChangeAmount = newFare - this.previousFare;
+      this.showFareChangePopup = true;
+      this.autoFillTopUpShortfall();
+    }
     this.cdr.markForCheck();
+  }
 
-    // Re-check availability with the same parameters to get updated fare
-    const apiParams = this.tripTypeService.mapUiTabToApiParams(this.itinerary.tripType, {
-      localPackage: this.itinerary.localPackage,
-      airportSubType: this.itinerary.airportSubType,
-    });
-
-    this.availabilityService.checkAvailability({
-      sourceCity: this.itinerary.fromCityId || 377,
-      tripType: apiParams.tripType,
-      subTripType: apiParams.subTripType,
-      destinationCity: this.itinerary.toCityId,
-      pickupDateTime: toSavaariDateTime(
-        new Date(this.itinerary.pickupDate),
-        this.itinerary.pickupTime
-      ),
-      duration: this.itinerary.duration || 1,
-    }).subscribe({
-      next: (response) => {
-        this.isRecalculatingFare = false;
-        // Find the same car type in the response
-        const updatedCar = response.cars.find(c => String(c.carId) === String(this.selectedCar!.id) || c.carTypeId === this.selectedCar!.carTypeId);
-        if (updatedCar && updatedCar.fare !== this.previousFare) {
-          const oldPrice = this.previousFare;
-          // Update the selectedCar price
-          this.selectedCar!.price = updatedCar.fare;
-          this.selectedCar!.originalPrice = updatedCar.fare;
-          if (updatedCar.originalFare) {
-            this.selectedCar!.regularPrice = updatedCar.originalFare;
-          }
-          // Update booking state
-          this.bookingState.setSelectedCar(this.selectedCar!);
-
-          // Show fare change popup
-          this.fareChangeAmount = updatedCar.fare - oldPrice;
-          this.showFareChangePopup = true;
-          // Re-calculate wallet top-up shortfall
-          this.autoFillTopUpShortfall();
-        } else {
-          // Fare unchanged — show brief confirmation
-          this.fareChangeAmount = 0;
-          this.showFareChangePopup = true;
-        }
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.isRecalculatingFare = false;
-        // Silently continue with existing fare if recalculation fails
-        console.warn('[BOOKING] Fare recalculation failed, keeping original fare');
-        this.cdr.markForCheck();
-      }
-    });
+  /**
+   * Haversine formula: calculate straight-line distance between two lat/lng points in km.
+   */
+  private haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 
   /** Dismiss the fare change popup */
@@ -671,14 +670,15 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   /**
    * Process booking with Razorpay payment via PHP endpoints.
    *
-   * Confirmed flow from Postman (Shubhendu's extraction):
-   *   1. Create booking → get booking_id
-   *   2. advance_payment_check.php → get advance amount + encoded_amount
-   *   3. razor_createorder.php → get Razorpay order_id
-   *   4. Open Razorpay SDK → user pays
-   *   5. razor_checkhash.php → verify signature
-   *   6. confirmation.php → confirm payment in backend
+   * HAR-confirmed flow from live beta site (b2bcab.betasavaari.com):
+   *   1. advance_payment_check.php → get advance amount + encoded_amount
+   *   2. POST /booking → create booking (returns booking_id)
+   *   3. POST /update_invoice_payer_info → set invoice payer
+   *   4. razor_createorder.php → get Razorpay order_id
+   *   5. Open Razorpay SDK → user pays
+   *   6. razor_checkhash.php → verify signature
    *   7. email_sent → send booking confirmation email
+   *   8. confirmation.php → final payment confirmation
    */
   private processRazorpayBooking(amount: number) {
     if (!this.itinerary || !this.selectedCar) return;
@@ -706,7 +706,19 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  /** Execute the full Razorpay payment flow after booking creation */
+  /**
+   * Execute the full Razorpay payment flow.
+   *
+   * HAR-confirmed sequence (live beta site):
+   *   1. advance_payment_check.php → get advance amount + encoded_amount
+   *   2. POST /booking → create booking (returns booking_id)
+   *   3. POST /update_invoice_payer_info → set invoice payer
+   *   4. razor_createorder.php → create Razorpay order
+   *   5. Razorpay SDK popup → user pays
+   *   6. razor_checkhash.php → verify payment signature
+   *   7. email_sent → send confirmation email
+   *   8. confirmation.php → final payment confirmation
+   */
   private executeRazorpayFlow(prePaymentAmount: number) {
     if (!this.itinerary || !this.selectedCar) return;
 
@@ -717,45 +729,52 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     const request = this.buildBookingRequest(apiParams, prePaymentAmount);
 
-    // Step 1: Create booking
-    this.bookingApi.createBooking(request).subscribe({
-      next: (response) => {
-        const bkId = response.bookingId || response.booking_id || '';
-        if (!bkId) {
-          this.isProcessingRazorpay = false;
-          this.bookingError = 'Booking creation failed. Please try again.';
-          this.cdr.markForCheck();
-          return;
-        }
+    // HAR-confirmed IDs: outstation=1, local=3, airport=5
+    const tripTypeMap: Record<string, number> = { outstation: 1, local: 3, airport: 5 };
+    // HAR-confirmed: oneWay=7, roundTrip=1, local 880=4
+    const subTripTypeMap: Record<string, number> = { oneWay: 7, roundTrip: 1, '880': 4 };
 
-        this.bookingId = bkId;
-        this.registerBookingData(bkId, response, request, prePaymentAmount, 'razorpay');
+    // Step 1: advance_payment_check FIRST (matches HAR sequence)
+    this.paymentService.checkAdvancePayment({
+      t_id: tripTypeMap[apiParams.tripType] || 3,
+      t_s_id: subTripTypeMap[apiParams.subTripType] || 4,
+      c_id: this.itinerary!.fromCityId || 377,
+      pick_date: request.pickupDateTime?.split(' ')[0] || '',
+      car_id: this.selectedCar!.carTypeId || 43,
+      package_id: this.selectedCar!.packageId || '',
+      tot_amt: this.selectedCar!.price,
+      b_src: 0,
+      pick_time: request.pickupDateTime?.split(' ')[1] || '12:00',
+      IsPremium: 0,
+      drop_city_id: this.itinerary!.toCityId || '',
+      reverse_dynamic_oneway: 0,
+    }).subscribe({
+      next: (advanceResp) => {
+        const advanceAmount = advanceResp.advance_amount || prePaymentAmount;
+        const encodedAmount = (advanceResp as any).encoded_amount || '';
 
-        // Step 2: Get advance payment details from PHP
-        this.razorpayProcessingStage = 'payment';
-        this.cdr.markForCheck();
+        // Step 2: Create booking
+        this.bookingApi.createBooking(request).subscribe({
+          next: (response) => {
+            const bkId = response.bookingId || response.booking_id || '';
+            if (!bkId) {
+              this.isProcessingRazorpay = false;
+              this.bookingError = 'Booking creation failed. Please try again.';
+              this.cdr.markForCheck();
+              return;
+            }
 
-        const tripTypeMap: Record<string, number> = { outstation: 1, local: 3, airport: 5 };
-        const subTripTypeMap: Record<string, number> = { oneWay: 2, roundTrip: 1, '880': 4 };
+            this.bookingId = bkId;
+            this.registerBookingData(bkId, response, request, prePaymentAmount, 'razorpay');
 
-        this.paymentService.checkAdvancePayment({
-          t_id: tripTypeMap[apiParams.tripType] || 3,
-          t_s_id: subTripTypeMap[apiParams.subTripType] || 4,
-          c_id: this.itinerary!.fromCityId || 377,
-          pick_date: request.pickupDateTime?.split(' ')[0] || '',
-          car_id: this.selectedCar!.carTypeId || 43,
-          tot_amt: this.selectedCar!.price,
-          b_src: 0,
-          pick_time: request.pickupDateTime?.split(' ')[1] || '12:00',
-          IsPremium: 0,
-          drop_city_id: this.itinerary!.toCityId || '',
-        }).subscribe({
-          next: (advanceResp) => {
-            const advanceAmount = advanceResp.advance_amount || prePaymentAmount;
-            const encodedAmount = (advanceResp as any).encoded_amount || '';
+            // Step 3 (update_invoice_payer_info) is handled inside createBooking
+
+            // Step 4: Create Razorpay order via PHP
+            this.razorpayProcessingStage = 'payment';
+            this.cdr.markForCheck();
+
             const savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
 
-            // Step 3: Create Razorpay order via PHP
             this.paymentService.createRazorpayOrder({
               amount: advanceAmount,
               encoded_amount: encodedAmount,
@@ -771,7 +790,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
                 const razorpayOrderId = orderResp.razorpay_order_id || orderResp.order_id || '';
 
-                // Step 4: Open Razorpay SDK
+                // Step 5: Open Razorpay SDK
                 const options: any = {
                   key: environment.razorpayKeyId,
                   amount: advanceAmount * 100, // Razorpay expects paise
@@ -780,7 +799,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   description: `Booking #${bkId} - ₹${advanceAmount}`,
                   order_id: razorpayOrderId,
                   handler: (rzpResponse: any) => {
-                    // Step 5: Verify hash via PHP
+                    // Step 6: Verify hash via PHP (razor_checkhash)
                     this.paymentService.verifyRazorpayPayment({
                       razorpay_order_id: rzpResponse.razorpay_order_id,
                       razorpay_payment_id: rzpResponse.razorpay_payment_id,
@@ -796,26 +815,41 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                           return;
                         }
 
-                        // Step 6: Confirm payment in backend
-                        this.paymentService.confirmPayment({
-                          advancedAmount: advanceAmount,
-                          orderId: savaariPayId,
-                          paymentId: rzpResponse.razorpay_payment_id,
-                          paymentmode: 'savaariwebsite',
-                        }).subscribe({
+                        // Step 7: Send booking confirmation email (email_sent)
+                        this.paymentService.sendConfirmationEmail(bkId).subscribe({
                           next: () => {
-                            // Step 7: Send booking email (fire-and-forget)
-                            this.bookingApi.sendBookingEmail(bkId).subscribe();
-
-                            this.isProcessingRazorpay = false;
-                            this.bookingConfirmed = true;
-                            this.clearPassengerState();
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                            this.cdr.markForCheck();
+                            // Step 8: Final payment confirmation (confirmation.php)
+                            this.paymentService.confirmPayment({
+                              advancedAmount: advanceAmount,
+                              orderId: savaariPayId,
+                              paymentId: rzpResponse.razorpay_payment_id,
+                              paymentmode: 'savaariwebsite',
+                            }).subscribe({
+                              next: () => {
+                                this.isProcessingRazorpay = false;
+                                this.bookingConfirmed = true;
+                                this.clearPassengerState();
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                this.cdr.markForCheck();
+                              },
+                              error: () => {
+                                // confirmation API failed — still show success (payment already done)
+                                this.isProcessingRazorpay = false;
+                                this.bookingConfirmed = true;
+                                this.clearPassengerState();
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                this.cdr.markForCheck();
+                              }
+                            });
                           },
                           error: () => {
-                            // Payment confirmed but confirmation API failed — still show success
-                            this.bookingApi.sendBookingEmail(bkId).subscribe();
+                            // Email failed — still proceed with confirmation + show success
+                            this.paymentService.confirmPayment({
+                              advancedAmount: advanceAmount,
+                              orderId: savaariPayId,
+                              paymentId: rzpResponse.razorpay_payment_id,
+                              paymentmode: 'savaariwebsite',
+                            }).subscribe();
                             this.isProcessingRazorpay = false;
                             this.bookingConfirmed = true;
                             this.clearPassengerState();
@@ -851,16 +885,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               }
             });
           },
-          error: () => {
+          error: (err) => {
             this.isProcessingRazorpay = false;
-            this.bookingError = 'Failed to check advance payment.';
+            this.bookingError = err?.message || 'Booking creation failed.';
             this.cdr.markForCheck();
           }
         });
       },
-      error: (err) => {
+      error: () => {
         this.isProcessingRazorpay = false;
-        this.bookingError = err?.message || 'Booking creation failed.';
+        this.bookingError = 'Failed to check advance payment.';
         this.cdr.markForCheck();
       }
     });
@@ -903,6 +937,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       carType: this.selectedCar!.carTypeId || 4,
       premiumFlag: 0,
       prePayment: prePaymentAmount,
+      alias_dest_city_id: this.itinerary!.aliasDestCityId || 0,
+      app_user_id: Number(this.auth.getAgentId()) || undefined,
+      couponCode: '',
+      device: /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'MOBILE' : 'DESKTOP',
       invoicePayer: this.commissionService.getInvoicePayer(),
       ...(this.itinerary!.toCityId && { destinationCity: this.itinerary!.toCityId }),
       ...(this.itinerary!.extraDestinations?.length && {
@@ -1033,7 +1071,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         // Send booking confirmation email (fire-and-forget)
         if (bkId) {
-          this.bookingApi.sendBookingEmail(bkId).subscribe();
+          this.paymentService.sendConfirmationEmail(bkId).subscribe();
         }
 
         this.isProcessingWallet = false;

@@ -47,7 +47,7 @@ export interface CreateBookingRequest {
   customerName: string;
   customerEmail?: string;
   customerMobile: string;        // 10-digit mobile number
-  countryCode?: string;          // '+91'
+  countryCode?: string;          // '91|IND' format (NOT '+91' — causes 402 error)
   customerSecondaryEmail?: string; // Agent email
 
   // Car details
@@ -58,6 +58,10 @@ export interface CreateBookingRequest {
   prePayment?: number;           // Amount paid upfront
   couponCode?: string;
   fixed_amount?: number;
+
+  // Destination alias & user
+  alias_dest_city_id?: number;   // Alias destination city ID (0 for most bookings)
+  app_user_id?: number;          // Agent/user ID (numeric)
 
   // Agent/source
   agentId?: string;              // Base64-encoded agent ID

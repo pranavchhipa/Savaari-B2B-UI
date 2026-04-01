@@ -32,7 +32,7 @@ export const SUB_TRIP_TYPE_VALUES = {
   LOCAL_8HR_80KM_P2D: '880P2D',
   LOCAL_4HR_40KM: '440',
   LOCAL_12HR_120KM: '12120',
-  AIRPORT_PICKUP: 'pick_airport',
+  AIRPORT_PICKUP: 'pickup_airport',
   AIRPORT_DROP: 'drop_airport',
 } as const;
 

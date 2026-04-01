@@ -31,7 +31,10 @@ export interface Itinerary {
     airportCityId?: number;   // City ID of the selected airport city
     selectPlaceId?: string;   // Google Place ID for the pickup/drop address
     custShortAddress?: string; // Short address label for the customer location
+    customerLatLong?: string;  // "lat,lng" from place_id API (airport)
     terminalId?: string;      // Terminal ID (if applicable)
+    airportConvertedToOneWay?: boolean;  // True when airport trip was auto-converted to One Way
+    aliasDestCityId?: number;  // Airport city ID (sent as alias_dest_city_id in booking create)
 }
 
 export interface SelectedCar {
@@ -49,6 +52,7 @@ export interface SelectedCar {
     type: string;             // e.g. 'SEDAN', 'SUV'
     extraKmRate?: number;     // Rate per extra km from availability API
     nightAllowance?: number;  // Driver night allowance from availability API
+    packageId?: string;       // Package ID from availability (for advance_payment_check)
 }
 
 @Injectable({

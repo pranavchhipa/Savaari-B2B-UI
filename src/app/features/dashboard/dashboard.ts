@@ -934,6 +934,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         airportCityId: selectedAirport?.id,
         airportId: selectedAirport?.aid ? Number(selectedAirport.aid) : (this.airportLocalityId || undefined),
         custShortAddress: (typeof val.pickupAddress === 'object' ? (val.pickupAddress?.description || val.pickupAddress?.main_text || val.pickupAddress?.name) : val.pickupAddress) || '',
+        // Pass resolved place details for booking page to use
+        selectPlaceId: this.selectedPlaceDetails?.place_id || '',
+        customerLatLong: this.selectedPlaceDetails ? `${this.selectedPlaceDetails.lat},${this.selectedPlaceDetails.lng}` : '',
       })
     };
 
@@ -957,12 +960,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
       duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
       ...(isAirport && this.airportLocalityId && { localityId: this.airportLocalityId }),
       // Airport-specific params (confirmed by Shubhendu — aid from source-cities API)
+      // HAR: selectPlaceId = actual place_id from autocomplete, customerLatLong = "lat,lng" from place_id API
       ...(isAirport && {
         airport_id: selectedAirport?.aid ? Number(selectedAirport.aid) : (this.airportLocalityId || undefined),
         airport_name: selectedAirport?.name || this.airportLocalityName || '',
         terminalId: '',
-        selectPlaceId: '',
+        selectPlaceId: this.selectedPlaceDetails?.place_id || '',
         custShortAddress: (typeof val.pickupAddress === 'object' ? (val.pickupAddress?.description || val.pickupAddress?.main_text || val.pickupAddress?.name) : val.pickupAddress) || '',
+        customerLatLong: this.selectedPlaceDetails ? `${this.selectedPlaceDetails.lat},${this.selectedPlaceDetails.lng}` : '',
       }),
     };
 
@@ -972,31 +977,103 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.availabilityService.checkAvailability(availabilityRequest).subscribe({
       next: (response) => {
+        if (isAirport && (!response.cars || response.cars.length === 0)) {
+          // Airport returned no cars → convert to One Way (HAR-confirmed behavior)
+          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr);
+          return;
+        }
         this.bookingState.setAvailabilityResponse(response);
         this.isSearching = false;
         this.cdr.markForCheck();
         this.router.navigate(['/select-car']);
       },
       error: (err) => {
+        if (isAirport) {
+          // Airport availability failed → convert to One Way (HAR-confirmed behavior)
+          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr);
+          return;
+        }
         this.isSearching = false;
         this.formSubmitted = false;
         this.showError = true;
-        this.errorMessage = isAirport
-          ? 'Airport cab service is temporarily unavailable. This may be a server issue — please try again later.'
-          : (err?.message || 'Failed to fetch cab availability. Please try again.');
+        this.errorMessage = err?.message || 'Failed to fetch cab availability. Please try again.';
         this.cdr.markForCheck();
       }
     });
   }
 
   /**
-   * Convert a failed airport booking to One Way.
-   * Fetches availability with One Way params and shows a conversion popup.
+   * Convert an airport booking to One Way.
+   *
+   * HAR-confirmed: When airport availability fails or returns no cars,
+   * the live site retries as outstation/oneWay with:
+   *   - sourceCity = airport city ID
+   *   - destinationCity = airport's aliased city (from HAR: alias_dest_city_id)
+   *   - tripType=outstation, subTripType=oneWay
+   * Shows popup: "Based on your pickup and drop details, your trip has been updated to One way service."
    */
-  /** User clicks OK on the conversion popup → close popup */
+  private convertAirportToOneWay(
+    originalItinerary: any,
+    fromCityId: number,
+    pickupDate: Date,
+    pickupTimeStr: string
+  ) {
+    const selectedAirport = this.selectedAirportCity;
+    const airportCityId = selectedAirport?.id || fromCityId;
+
+    // Build One Way availability request
+    const oneWayRequest: AvailabilityRequest = {
+      sourceCity: fromCityId,
+      tripType: 'outstation',
+      subTripType: 'oneWay',
+      destinationCity: airportCityId,
+      pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
+      duration: 1,
+    };
+
+    this.availabilityService.checkAvailability(oneWayRequest).subscribe({
+      next: (response) => {
+        if (!response.cars || response.cars.length === 0) {
+          this.isSearching = false;
+          this.formSubmitted = false;
+          this.showError = true;
+          this.errorMessage = 'No cabs available for this route. Please try a different date or city.';
+          this.cdr.markForCheck();
+          return;
+        }
+
+        // Update itinerary to reflect One Way conversion
+        const convertedItinerary = {
+          ...originalItinerary,
+          tripType: 'One Way',
+          subTripType: 'oneWay',
+          // Store airport city ID for alias_dest_city_id in booking create
+          airportConvertedToOneWay: true,
+          aliasDestCityId: airportCityId,
+        };
+
+        this.bookingState.setItinerary(convertedItinerary);
+        this.bookingState.setAvailabilityResponse(response);
+
+        this.isSearching = false;
+        this.showConversionPopup = true;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.isSearching = false;
+        this.formSubmitted = false;
+        this.showError = true;
+        this.errorMessage = 'No cabs available for this route. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** User clicks OK on the conversion popup → navigate to select-car */
   onConversionPopupOk() {
     this.showConversionPopup = false;
     this.cdr.markForCheck();
+    this.router.navigate(['/select-car']);
   }
 
   /** CSS classes for booking status badges */

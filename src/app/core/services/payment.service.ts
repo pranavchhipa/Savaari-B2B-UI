@@ -222,6 +222,29 @@ export class PaymentService {
   }
 
   /**
+   * Step 5: Send booking confirmation email.
+   * POST /email_sent (Partner API, form-encoded)
+   *
+   * Called after payment confirmation succeeds.
+   * From HAR: Body: booking_id=2361628
+   * Response: {"status":"success","data":{"sentemail":"","payment_gateway":"16"}}
+   */
+  sendConfirmationEmail(bookingId: string): Observable<unknown> {
+    if (environment.useMockData) {
+      return of({ status: 'success', data: { sentemail: '', payment_gateway: '16' } });
+    }
+
+    return this.api.partnerPostForm('email_sent', {
+      booking_id: bookingId,
+    }).pipe(
+      catchError(err => {
+        console.error('[PAYMENT] email_sent failed:', err);
+        return of({ status: 'error' }); // Non-blocking — booking already created
+      })
+    );
+  }
+
+  /**
    * Generate the Savaari payment ID format.
    * Format from Postman: SW{agentId}S{MMYY}-{bookingId}
    * Example: SW69851S0326-2361490

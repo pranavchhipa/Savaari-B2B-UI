@@ -300,6 +300,18 @@
                 </div>
             </div>
 
+            <!-- Fare Recalculation Banner (One Way — shows after pickup+drop lat/lng resolved) -->
+            <div *ngIf="showFareChangePopup"
+                class="relative bg-amber-900 text-white rounded-xl px-4 py-3 flex items-center justify-between shadow-md">
+                <p class="text-sm font-medium">
+                    Your fare has been updated based on the pickup &amp; drop location entered.
+                    The minimum package fare is <span class="font-bold">₹{{selectedCar?.price | number}}</span>.
+                </p>
+                <button (click)="dismissFareChangePopup()" class="text-white/80 hover:text-white ml-3 shrink-0">
+                    <lucide-icon name="x" [size]="18"></lucide-icon>
+                </button>
+            </div>
+
             <!-- STEP 1 COMPLETED: Collapsed View -->
             <div [hidden]="!step1Complete"
                 class="hidden sm:block bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden opacity-60">

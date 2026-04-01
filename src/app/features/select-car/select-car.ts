@@ -31,6 +31,7 @@ interface DisplayCar {
   type: string;
   extraKmRate: number;
   nightAllowance: number;
+  packageId?: string;
   tc: string[];
 }
 
@@ -162,6 +163,7 @@ export class SelectCarComponent implements OnInit {
       type: car.carType || 'SEDAN',
       extraKmRate: extraKm,
       nightAllowance: nightAllow,
+      packageId: car.packageId ? String(car.packageId) : undefined,
       tc
     };
   }
@@ -486,6 +488,7 @@ export class SelectCarComponent implements OnInit {
       type: car.type,
       extraKmRate: car.extraKmRate,
       nightAllowance: car.nightAllowance,
+      packageId: car.packageId,
     };
     this.bookingState.setSelectedCar(selectedCar);
     this.router.navigate(['/booking']);

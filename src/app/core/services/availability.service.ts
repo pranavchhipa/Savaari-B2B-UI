@@ -30,35 +30,65 @@ export class AvailabilityService {
       return of(MOCK_AVAILABILITY_RESPONSE);
     }
 
-    // rate_type=premium only for outstation trips (confirmed by Shubhendu + live site)
     const isOutstation = request.tripType === 'outstation';
-
+    const isLocal = request.tripType === 'local';
     const isAirport = request.tripType === 'airport';
 
-    return this.api.partnerGet<RawAvailabilityResponse>('availabilities', {
-      rate_source: 'web',
-      ...(isOutstation && { rate_type: 'premium' }),
-      customerLatLong: '',
-      sourceCity: request.sourceCity,
-      tripType: request.tripType,
-      subTripType: request.subTripType,
-      pickupDateTime: request.pickupDateTime,
-      duration: request.duration,
-      destinationCity: request.destinationCity,
-      // Multicity intermediate stops for round trip (e.g. Bangalore → Mysore → Ooty)
-      ...(request.multicityId && { multicityId: request.multicityId }),
-      // Airport-specific params (confirmed by Shubhendu — required for airport pricing)
-      ...(isAirport && {
-        terminalId: request.terminalId || '',
-        selectPlaceId: request.selectPlaceId || '',
-        custShortAddress: request.custShortAddress || '',
-        airport_id: request.airport_id || '',
-        airport_name: request.airport_name || '',
-      }),
-      token: this.auth.getPartnerToken(),
-      agentId: btoa(this.auth.getAgentId()),
-      api_source: 'b2b',
-    }).pipe(
+    // Build params per trip type to match live site HAR:
+    // - rate_source: 'web' for outstation + local only (NOT airport)
+    // - rate_type: 'premium' for outstation only
+    // - customerLatLong: actual lat/lng for airport; empty string for local/outstation
+    // - destinationCity: sent for outstation + local (empty for local); NOT sent for airport
+    const params: Record<string, string | number | boolean | null | undefined> = {};
+
+    // rate_source sent for outstation & local, NOT airport
+    if (!isAirport) {
+      params['rate_source'] = 'web';
+    }
+
+    // rate_type=premium only for outstation (confirmed by Shubhendu + live site)
+    if (isOutstation) {
+      params['rate_type'] = 'premium';
+    }
+
+    // customerLatLong: actual coords for airport, empty for others
+    if (isAirport) {
+      params['customerLatLong'] = request.customerLatLong || '';
+    } else {
+      params['customerLatLong'] = '';
+    }
+
+    params['sourceCity'] = request.sourceCity;
+    params['tripType'] = request.tripType;
+    params['subTripType'] = request.subTripType;
+    params['pickupDateTime'] = request.pickupDateTime;
+    params['duration'] = request.duration;
+
+    // destinationCity: sent for outstation & local, NOT for airport
+    // For local, HAR shows empty string destinationCity= (cleanParams keeps empty strings)
+    if (!isAirport) {
+      params['destinationCity'] = request.destinationCity ?? '';
+    }
+
+    // Multicity intermediate stops for round trip (e.g. Bangalore → Mysore → Ooty)
+    if (request.multicityId) {
+      params['multicityId'] = request.multicityId;
+    }
+
+    // Airport-specific params (confirmed by Shubhendu — required for airport pricing)
+    if (isAirport) {
+      params['terminalId'] = request.terminalId || '';
+      params['selectPlaceId'] = request.selectPlaceId || '';
+      params['custShortAddress'] = request.custShortAddress || '';
+      params['airport_id'] = request.airport_id || '';
+      params['airport_name'] = request.airport_name || '';
+    }
+
+    params['token'] = this.auth.getPartnerToken();
+    params['agentId'] = btoa(this.auth.getAgentId());
+    params['api_source'] = 'b2b';
+
+    return this.api.partnerGet<RawAvailabilityResponse>('availabilities', params).pipe(
       map(raw => this.normalizeResponse(raw)),
       catchError(err => this.errorHandler.handleApiError(err, 'AvailabilityService'))
     );
@@ -101,6 +131,7 @@ export class AvailabilityService {
       carImage: raw.carImage,
       carImageLarge: raw.carImageLarge,
       tncData: raw.tnc_data,
+      packageId: raw.package ? String(raw.package) : undefined,
     };
   }
 }

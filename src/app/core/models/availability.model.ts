@@ -16,6 +16,7 @@ export interface AvailabilityRequest {
   multicityId?: string;        // Comma-separated intermediate city IDs for round trip multicity
   pickupDateTime: string;      // Format: DD-MM-YYYY HH:MM
   duration?: number;           // Days — always required (1 for oneWay)
+  customerLatLong?: string;    // lat,lng — sent for airport; empty string for local/outstation
   localityId?: number;         // Required for airport transfers
   // Airport-specific params (confirmed by Shubhendu)
   terminalId?: string;
@@ -47,6 +48,7 @@ export interface AvailableCar {
   carImage?: string;           // URL from API
   carImageLarge?: string;      // URL from API
   tncData?: string[];          // Terms and conditions
+  packageId?: string;          // Package ID from API (sent to advance_payment_check)
   [key: string]: unknown;
 }
 
