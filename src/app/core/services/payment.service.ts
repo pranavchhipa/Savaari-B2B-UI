@@ -73,10 +73,16 @@ export interface RazorpayVerifyRequest {
 }
 
 export interface PaymentConfirmationRequest {
-  advancedAmount: number;
-  orderId: string;                 // savaari_payment_id
-  paymentId: string;               // razorpay_payment_id
-  paymentmode: string;             // 'savaariwebsite'
+  // Razorpay flow params
+  advancedAmount?: number;
+  orderId?: string;                // savaari_payment_id
+  paymentId?: string;              // razorpay_payment_id
+  paymentmode?: string;            // 'savaariwebsite'
+  // Wallet flow params (from Jibin's confirmation callback doc)
+  source?: string;                 // 'B2B_WALLET' for wallet payments
+  booking_id?: string;             // booking ID
+  payment_option?: number;         // 1=25% driver collects, 2=25% auto-deduct, 3=100% full
+  transaction_id?: string;         // wallet transaction ID from pay-booking response
 }
 
 @Injectable({ providedIn: 'root' })
@@ -212,21 +218,33 @@ export class PaymentService {
    * Step 4: Confirm payment in backend.
    * POST /payment_confirmation/confirmation.php
    *
-   * Called after Razorpay verification succeeds.
+   * Two flows:
+   *   Razorpay: advancedAmount, orderId, paymentId, paymentmode
+   *   Wallet:   source=B2B_WALLET, booking_id, payment_option, transaction_id
    */
   confirmPayment(request: PaymentConfirmationRequest): Observable<boolean> {
     if (environment.useMockData) {
       return of(true);
     }
 
+    // Build params based on flow type (wallet vs razorpay)
+    const body: Record<string, any> = request.source === 'B2B_WALLET'
+      ? {
+          source: 'B2B_WALLET',
+          booking_id: request.booking_id,
+          payment_option: request.payment_option,
+          transaction_id: request.transaction_id,
+        }
+      : {
+          advancedAmount: request.advancedAmount,
+          orderId: request.orderId,
+          paymentId: request.paymentId,
+          paymentmode: request.paymentmode || 'savaariwebsite',
+        };
+
     return this.api.paymentPost<any>(
       'payment_confirmation/confirmation.php',
-      {
-        advancedAmount: request.advancedAmount,
-        orderId: request.orderId,
-        paymentId: request.paymentId,
-        paymentmode: request.paymentmode || 'savaariwebsite',
-      }
+      body
     ).pipe(
       map(response => {
         if (!environment.production) console.log('[PAYMENT] Payment confirmed:', response);

@@ -110,6 +110,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   topUpPresets = [5000, 10000, 25000, 50000];
   showTopUpConfirm = false;
   showTopUpModal = false;
+  showWalletConfirm = false;
 
   // Stored from advance_payment_check (fired on page load)
   private advancePercent = 25; // from advance_payment_check response
@@ -1153,6 +1154,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   /**
    * Process wallet payment for already-created booking.
    * Booking was already created on "Proceed to Next" — just deduct wallet + confirm.
+   *
+   * Flow (from Jibin's confirmation callback doc):
+   *   1. POST /wallet/pay-booking → deduct wallet, get transaction_id
+   *   2. POST /confirmation.php → source=B2B_WALLET, booking_id, payment_option, transaction_id
+   *   3. email_sent × 2 → confirmation emails
    */
   private processWalletPayment(payNow: number) {
     if (!this.bookingId) {
@@ -1167,34 +1173,50 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     const bkId = this.bookingId;
 
-    // Deduct wallet balance for booking payment
     if (payNow > 0) {
+      // Step 1: Deduct wallet balance
       this.walletService.payForBooking(bkId, payNow, this.paymentOption as 1 | 2 | 3).subscribe({
-        next: (success) => {
-          if (success) {
-            console.log(`[BOOKING] Wallet deducted ₹${payNow} for booking #${bkId}`);
+        next: (result) => {
+          if (result.success) {
+            // Step 2: Call confirmation.php with wallet-specific params
+            this.paymentService.confirmPayment({
+              source: 'B2B_WALLET',
+              booking_id: bkId,
+              payment_option: this.paymentOption,
+              transaction_id: result.transactionId || '',
+            } as any).subscribe();
+
+            // Step 3: Send confirmation emails (fire-and-forget)
+            this.paymentService.sendConfirmationEmail(bkId).subscribe();
+            this.paymentService.sendConfirmationEmail(bkId).subscribe();
+
+            this.isProcessingWallet = false;
+            this.bookingConfirmed = true;
+            this.clearPassengerState();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            this.cdr.markForCheck();
           } else {
-            console.warn(`[BOOKING] Wallet deduction failed for booking #${bkId}`);
+            this.isProcessingWallet = false;
+            this.bookingError = 'Wallet payment failed. Please try again or switch to Razorpay.';
+            this.cdr.markForCheck();
           }
-          this.walletService.loadBalance();
         },
-        error: (err) => {
-          console.warn('[BOOKING] Wallet deduction error:', err);
-          this.walletService.loadBalance();
+        error: () => {
+          this.isProcessingWallet = false;
+          this.bookingError = 'Wallet payment failed. Please try again.';
+          this.cdr.markForCheck();
         }
       });
     } else {
-      this.walletService.loadBalance();
+      // Zero payment — just confirm
+      this.paymentService.sendConfirmationEmail(bkId).subscribe();
+      this.paymentService.sendConfirmationEmail(bkId).subscribe();
+      this.isProcessingWallet = false;
+      this.bookingConfirmed = true;
+      this.clearPassengerState();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.markForCheck();
     }
-
-    // Send booking confirmation email (fire-and-forget)
-    this.paymentService.sendConfirmationEmail(bkId).subscribe();
-
-    this.isProcessingWallet = false;
-    this.bookingConfirmed = true;
-    this.clearPassengerState();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    this.cdr.markForCheck();
   }
 
   /** Save passenger form state to sessionStorage */

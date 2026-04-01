@@ -24,7 +24,7 @@ import {
   Crosshair, AlertCircle, RefreshCw, Inbox,
   CalendarCheck, BarChart3, Percent, ChevronLeft,
   Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal,
-  Package, Tag, Wrench} from 'lucide-angular';
+  Package, Tag, Wrench, Smartphone, Landmark, Award} from 'lucide-angular';
 
 import { routes } from './app.routes';
 
@@ -62,7 +62,7 @@ export const appConfig: ApplicationConfig = {
         Crosshair, AlertCircle, RefreshCw, Inbox,
         CalendarCheck, BarChart3, Percent, ChevronLeft,
         Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal,
-        Package, Tag, Wrench      })
+        Package, Tag, Wrench, Smartphone, Landmark, Award      })
     }
   ]
 };

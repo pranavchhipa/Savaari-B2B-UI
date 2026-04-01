@@ -238,6 +238,7 @@
                                 <span *ngIf="booking.carName"> · {{ booking.carName }}</span>
                                 <span *ngIf="booking.pickupDate"> · {{ booking.pickupDate | date:'dd MMM' }}, {{ booking.pickupTime }}</span>
                             </p>
+                            <p *ngIf="booking.bookedAt" class="text-[11px] text-slate-400/70 mt-0.5">Booked on {{ booking.bookedAt | date:'dd MMM yyyy, hh:mm a' }}</p>
                         </div>
                         <!-- Payment Info (center — lg only) -->
                         <div class="hidden lg:flex flex-col items-center w-52 shrink-0">
@@ -266,9 +267,9 @@
                                 <span class="text-[10px] font-bold text-emerald-600 leading-tight">No dues</span>
                             </div>
                             <div *ngIf="booking.paymentOption === 1 && booking.prePayment"
-                                class="mt-2 flex items-center gap-1.5 bg-sky-50 border border-sky-200 rounded-lg px-3 py-1.5">
-                                <lucide-icon name="info" [size]="13" class="text-sky-500"></lucide-icon>
-                                <span class="text-[10px] font-bold text-sky-600 leading-tight">Remaining + extras paid to driver</span>
+                                class="mt-2 flex items-center gap-1.5 bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1.5 max-w-[200px]">
+                                <lucide-icon name="info" [size]="13" class="text-sky-500 shrink-0"></lucide-icon>
+                                <span class="text-[10px] font-bold text-sky-600 leading-tight truncate">Rest paid to driver</span>
                             </div>
                         </div>
                         <!-- Amount -->
@@ -346,6 +347,7 @@
                                     {{ booking.customerName }}
                                     <span *ngIf="booking.carName"> · {{ booking.carName }}</span>
                                 </p>
+                                <p *ngIf="booking.bookedAt" class="text-[9px] text-slate-400/60 mt-0.5">Booked {{ booking.bookedAt | date:'dd MMM, hh:mm a' }}</p>
                             </div>
                             <div class="shrink-0 text-right">
                                 <p class="text-base font-black text-slate-800 dark:text-white leading-tight">₹{{ booking.fare | number:'1.0-0' }}</p>

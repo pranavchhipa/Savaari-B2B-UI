@@ -10,6 +10,7 @@ import { AnalyticsService } from '../../core/services/analytics.service';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { TripTypeService } from '../../core/services/trip-type.service';
 import { AvailableCar } from '../../core/models';
+import { CAR_DISPLAY_INFO } from '../../core/mocks/mock-cars';
 
 import { FooterComponent } from '../../components/layout/footer/footer';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -160,7 +161,7 @@ export class SelectCarComponent implements OnInit {
       seats,
       bags,
       ac: 'AC',
-      type: car.carType || 'SEDAN',
+      type: car.carType || CAR_DISPLAY_INFO[typeId]?.type || 'SEDAN',
       extraKmRate: extraKm,
       nightAllowance: nightAllow,
       packageId: car.packageId ? String(car.packageId) : undefined,

@@ -336,34 +336,32 @@ export class WalletService {
    * Call this AFTER booking creation and BEFORE confirmation.
    * Returns false if wallet balance is insufficient.
    */
-  payForBooking(bookingId: string, amount: number, paymentOption: 1 | 2 | 3 = 1): Observable<boolean> {
+  payForBooking(bookingId: string, amount: number, paymentOption: 1 | 2 | 3 = 1): Observable<{ success: boolean; transactionId?: string }> {
     if (environment.useMockData) {
-      return of(this.deductForBooking(amount, bookingId));
+      const success = this.deductForBooking(amount, bookingId);
+      return of({ success, transactionId: success ? 'mock_txn_' + Date.now() : undefined });
     }
 
-    const currentBalance = this.balanceSubject.getValue();
-    if (currentBalance < amount) {
-      console.warn(`[WALLET] Insufficient balance: ₹${currentBalance} < ₹${amount}`);
-      return of(false);
-    }
-
+    // Let the server validate balance — client-side check can be stale
     const payload = this.buildPayload({ booking_id: bookingId, amount, payment_option: paymentOption });
 
     return this.api.walletPost<any>('pay-booking', payload, this.getWalletToken()).pipe(
       map(response => {
         if (response?.statusCode === 200 || response?.status === 'success') {
-          if (!environment.production) console.log(`[WALLET] ₹${amount} deducted for booking #${bookingId} (option ${paymentOption})`);
+          const data = response.data ?? response;
+          const transactionId = data.transaction_id ?? data.transactionId ?? '';
+          if (!environment.production) console.log(`[WALLET] ₹${amount} deducted for booking #${bookingId} (option ${paymentOption}, txn: ${transactionId})`);
           this.loadBalance();
           this.loadHistory();
-          return true;
+          return { success: true, transactionId };
         }
         console.warn('[WALLET] payForBooking failed:', response?.message);
-        return false;
+        return { success: false };
       }),
       catchError(err => {
         const msg = err?.error?.message ?? err?.message ?? 'Unknown error';
         console.warn(`[WALLET] payForBooking error: ${msg}`);
-        return of(false);
+        return of({ success: false });
       })
     );
   }

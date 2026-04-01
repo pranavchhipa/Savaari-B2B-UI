@@ -599,7 +599,7 @@ export class BookingsComponent implements OnInit {
             kmsIncluded: b.kms_included || b.kmsIncluded || '',
             duration: parseInt(b.duration) || 0,
             extraKmRate: parseFloat(b.extra_km_rate || b.extraKmRate) || 0,
-            bookedAt: b._storedAt ? new Date(b._storedAt) : null,
+            bookedAt: b.created_at ? new Date(b.created_at) : b.createdAt ? new Date(b.createdAt) : b._storedAt ? new Date(b._storedAt) : null,
             pickupCountdown,
             billFlag: Number(b.bill_flag) || 0,
             billUrl: b.bill_url || '',

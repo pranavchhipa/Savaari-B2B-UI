@@ -1,113 +1,169 @@
 <app-landing-navbar></app-landing-navbar>
-<div class="flex-1 bg-slate-900 flex flex-col pt-6 pb-12 sm:px-6 lg:px-8 relative overflow-hidden">
-  <!-- Dynamic Background elements (matching landing page aesthetic) -->
-  <div class="absolute inset-0">
-    <img alt="Premium Chauffeur Driven Car" class="w-full h-full object-cover opacity-80"
-      src="assets/images/login-bg.png" />
-    <div class="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-slate-900/80"></div>
-  </div>
+<div class="flex-1 flex flex-col lg:flex-row lg:min-h-[calc(100vh-140px)]">
 
-  <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-    <div class="text-center mb-6">
-      <h2 class="text-3xl font-display font-bold text-white tracking-tight">Sign in to your account</h2>
-      <p class="mt-2 text-sm text-slate-300">
-        Or
-        <a routerLink="/register" class="font-medium text-primary hover:text-primary-light transition-colors">
-          create a new agent account
-        </a>
-      </p>
+  <!-- Left Panel — branding + stats (hidden on mobile, shows on lg+) -->
+  <div class="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden flex-col justify-center px-12 xl:px-16">
+    <!-- Decorative elements -->
+    <div class="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4"></div>
+    <div class="absolute bottom-0 left-0 w-64 h-64 bg-amber/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4"></div>
+    <div class="absolute inset-0 opacity-[0.03]"
+      style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0); background-size: 32px 32px;">
+    </div>
+
+    <div class="relative z-10 max-w-md">
+      <div class="mb-8">
+        <h1 class="text-3xl xl:text-4xl font-display font-bold text-white leading-tight">
+          India's Largest<br/>
+          <span class="text-primary">Inter-City Cab Network</span>
+        </h1>
+        <p class="mt-4 text-slate-400 text-sm xl:text-base leading-relaxed">
+          Book cabs across 2,000+ cities. Trusted by thousands of travel agents nationwide.
+        </p>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+          <lucide-icon name="map-pin" [size]="20" class="text-primary mb-2"></lucide-icon>
+          <div class="text-2xl xl:text-3xl font-bold text-primary">2,000+</div>
+          <div class="text-xs xl:text-sm text-slate-400 mt-1">Cities Covered</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+          <lucide-icon name="award" [size]="20" class="text-amber mb-2"></lucide-icon>
+          <div class="text-2xl xl:text-3xl font-bold text-amber">20+</div>
+          <div class="text-xs xl:text-sm text-slate-400 mt-1">Years of Trust</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+          <lucide-icon name="users" [size]="20" class="text-emerald-400 mb-2"></lucide-icon>
+          <div class="text-2xl xl:text-3xl font-bold text-emerald-400">5K+</div>
+          <div class="text-xs xl:text-sm text-slate-400 mt-1">Happy Agents</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+          <lucide-icon name="headphones" [size]="20" class="text-violet-400 mb-2"></lucide-icon>
+          <div class="text-2xl xl:text-3xl font-bold text-violet-400">24/7</div>
+          <div class="text-xs xl:text-sm text-slate-400 mt-1">Support Available</div>
+        </div>
+      </div>
+
+      <!-- Trust line -->
+      <div class="mt-8 flex items-center gap-3 text-slate-500">
+        <lucide-icon name="shield-check" [size]="16" class="text-primary/60"></lucide-icon>
+        <span class="text-xs">Secure platform powered by Savaari Car Rentals Pvt Ltd</span>
+      </div>
     </div>
   </div>
 
-  <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-    <div
-      class="bg-surface-light dark:bg-surface-dark py-8 px-4 shadow-2xl rounded-2xl sm:px-10 border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
-      <form class="space-y-6" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+  <!-- Right Panel — login form -->
+  <div class="flex-1 bg-slate-50 dark:bg-slate-900 flex flex-col pt-6 sm:pt-10 lg:justify-center lg:pt-0 px-4 sm:px-6 lg:px-12 xl:px-16 pb-8 sm:pb-12 relative">
+    <!-- Mobile-only subtle bg -->
+    <div class="absolute inset-0 lg:hidden bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900"></div>
+    <!-- Dot grid (desktop right panel) -->
+    <div class="absolute inset-0 hidden lg:block opacity-[0.03]"
+      style="background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.2) 1px, transparent 0); background-size: 24px 24px;">
+    </div>
 
-        <!-- Email -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="email">Email
-            Address <span class="text-red-500">*</span></label>
-          <div class="relative mt-1 rounded-md shadow-sm">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <lucide-icon name="mail" [size]="18" class="text-slate-400"></lucide-icon>
+    <div class="mx-auto w-full max-w-sm sm:max-w-md relative z-10">
+      <div class="text-center mb-6 sm:mb-8">
+        <h2 class="text-2xl sm:text-3xl font-display font-bold text-white lg:text-slate-900 dark:text-white tracking-tight">
+          Sign in to your account
+        </h2>
+        <p class="mt-2 text-xs sm:text-sm text-slate-300 lg:text-slate-500 dark:text-slate-400">
+          Or
+          <a routerLink="/register" class="font-medium text-primary hover:text-primary-light lg:hover:text-primary-dark transition-colors">
+            create a new agent account
+          </a>
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-slate-800 py-6 sm:py-8 px-5 sm:px-8 shadow-xl lg:shadow-lg rounded-2xl border border-slate-200 dark:border-slate-700">
+        <form class="space-y-5" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+          <!-- Email -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" for="email">Email
+              Address <span class="text-red-500">*</span></label>
+            <div class="relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <lucide-icon name="mail" [size]="18" class="text-slate-400"></lucide-icon>
+              </div>
+              <input formControlName="email" id="email" type="email" autocomplete="email" placeholder="name@company.com"
+                class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': loginForm.get('email')?.invalid && loginForm.get('email')?.touched}" />
             </div>
-            <input formControlName="email" id="email" type="email" autocomplete="email" placeholder="name@company.com"
-              class="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
-              [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': loginForm.get('email')?.invalid && loginForm.get('email')?.touched}" />
+            <p *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+              class="mt-2 text-sm text-red-600 dark:text-red-400">
+              Please enter a valid email address.
+            </p>
           </div>
-          <p *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-            class="mt-2 text-sm text-red-600 dark:text-red-400">
-            Please enter a valid email address.
-          </p>
-        </div>
 
-        <!-- Password -->
-        <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" for="password">Password
-            <span class="text-red-500">*</span></label>
-          <div class="relative mt-1 rounded-md shadow-sm">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <lucide-icon name="lock" [size]="18" class="text-slate-400"></lucide-icon>
+          <!-- Password -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" for="password">Password
+              <span class="text-red-500">*</span></label>
+            <div class="relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <lucide-icon name="lock" [size]="18" class="text-slate-400"></lucide-icon>
+              </div>
+              <input formControlName="password" id="password" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password"
+                placeholder="••••••••"
+                class="pl-10 pr-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
+                [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': loginForm.get('password')?.invalid && loginForm.get('password')?.touched}" />
+              <button type="button" (click)="showPassword.set(!showPassword())"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer bg-transparent border-0">
+                <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18" class="text-slate-400 hover:text-slate-600"></lucide-icon>
+              </button>
             </div>
-            <input formControlName="password" id="password" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password"
-              placeholder="••••••••"
-              class="pl-10 pr-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary sm:text-sm py-2.5 transition-shadow"
-              [ngClass]="{'border-red-500 focus:ring-red-500 focus:border-red-500': loginForm.get('password')?.invalid && loginForm.get('password')?.touched}" />
-            <button type="button" (click)="showPassword.set(!showPassword())"
-              class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer bg-transparent border-0">
-              <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18" class="text-slate-400 hover:text-slate-600"></lucide-icon>
+            <p *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+              class="mt-2 text-sm text-red-600 dark:text-red-400">
+              Password must be at least 6 characters.
+            </p>
+          </div>
+
+          <!-- Forgot Password + Remember Me -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <input formControlName="rememberMe" id="remember-me" type="checkbox"
+                class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer" />
+              <label class="ml-2 block text-sm text-slate-600 dark:text-slate-400 cursor-pointer" for="remember-me">
+                Remember me
+              </label>
+            </div>
+
+            <div class="text-sm">
+              <a href="#" class="font-medium text-primary hover:text-primary-dark transition-colors">
+                Forgot password?
+              </a>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          @if (errorMessage()) {
+            <div class="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-200 dark:border-red-800">
+              <div class="flex items-center">
+                <lucide-icon name="alert-circle" [size]="18" class="text-red-500 mr-2 flex-shrink-0"></lucide-icon>
+                <p class="text-sm text-red-700 dark:text-red-400">{{ errorMessage() }}</p>
+              </div>
+            </div>
+          }
+
+          <!-- Buttons -->
+          <div class="flex gap-3 pt-1">
+            <a routerLink="/register"
+              class="flex-1 flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-500 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all">
+              Register
+            </a>
+            <button type="submit" [disabled]="isLoading()"
+              class="flex-1 flex justify-center items-center py-3 px-4 border-0 rounded-lg text-sm font-bold text-white bg-amber hover:bg-amber-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber transition-all shadow-amber disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
+              @if (isLoading()) {
+                Signing in...
+              } @else {
+                Login <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
+              }
             </button>
           </div>
-          <p *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-            class="mt-2 text-sm text-red-600 dark:text-red-400">
-            Password must be at least 6 characters.
-          </p>
-        </div>
-
-        <!-- Forgot Password + Remember Me -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <input formControlName="rememberMe" id="remember-me" type="checkbox"
-              class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer" />
-            <label class="ml-2 block text-sm text-slate-600 dark:text-slate-400 cursor-pointer" for="remember-me">
-              Remember me
-            </label>
-          </div>
-
-          <div class="text-sm">
-            <a href="#" class="font-medium text-primary hover:text-primary-dark transition-colors">
-              Forgot your password?
-            </a>
-          </div>
-        </div>
-
-        <!-- Error Message -->
-        @if (errorMessage()) {
-          <div class="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-200 dark:border-red-800">
-            <div class="flex items-center">
-              <lucide-icon name="alert-circle" [size]="18" class="text-red-500 mr-2 flex-shrink-0"></lucide-icon>
-              <p class="text-sm text-red-700 dark:text-red-400">{{ errorMessage() }}</p>
-            </div>
-          </div>
-        }
-
-        <!-- Buttons: Register (gray) + Sign In (blue) -->
-        <div class="flex gap-3">
-          <a routerLink="/register"
-            class="flex-1 flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-500 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all">
-            Register
-          </a>
-          <button type="submit" [disabled]="isLoading()"
-            class="flex-1 flex justify-center items-center py-3 px-4 border-0 rounded-lg text-sm font-bold text-white bg-amber hover:bg-amber-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber transition-all shadow-amber disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
-            @if (isLoading()) {
-              Signing in...
-            } @else {
-              Login <lucide-icon name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
-            }
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 </div>

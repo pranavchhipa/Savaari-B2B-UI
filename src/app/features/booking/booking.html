@@ -31,36 +31,20 @@
                 <span class="text-[10px] font-bold text-emerald-700">9.5/10 Rated</span>
             </div>
         </div>
-        <div class="hidden md:flex items-center gap-4">
-            <div
-                class="flex items-center gap-3 pl-2 pr-5 py-2 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] border border-slate-100 dark:border-slate-800">
-                <div class="w-10 h-10 bg-amber-50 dark:bg-amber-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <lucide-icon name="clock" [size]="20" class="text-amber-600"></lucide-icon>
-                </div>
-                <div class="flex flex-col">
-                    <span class="text-[10px] font-black text-amber-700 dark:text-amber-500 uppercase tracking-widest leading-none mb-1">Legacy</span>
-                    <span class="text-[13px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight leading-none">Since 2006</span>
-                </div>
+        <div class="hidden md:flex items-center gap-6 text-slate-600 dark:text-slate-300">
+            <div class="flex items-center gap-2">
+                <lucide-icon name="shield-check" [size]="18" class="text-primary"></lucide-icon>
+                <span class="text-sm font-bold">Trusted Since 2006</span>
             </div>
-            <div
-                class="flex items-center gap-3 pl-2 pr-5 py-2 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] border border-slate-100 dark:border-slate-800">
-                <div class="w-10 h-10 bg-sky-50 dark:bg-sky-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <lucide-icon name="user-check" [size]="20" class="text-sky-600"></lucide-icon>
-                </div>
-                <div class="flex flex-col">
-                    <span class="text-[10px] font-black text-sky-700 dark:text-sky-500 uppercase tracking-widest leading-none mb-1">Quality</span>
-                    <span class="text-[13px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight leading-none">Expert Staff</span>
-                </div>
+            <div class="h-4 w-px bg-slate-300 dark:bg-slate-600"></div>
+            <div class="flex items-center gap-2">
+                <lucide-icon name="users" [size]="18" class="text-primary"></lucide-icon>
+                <span class="text-sm font-bold">Expert Staff</span>
             </div>
-            <div
-                class="flex items-center gap-3 pl-2 pr-5 py-2 bg-white dark:bg-slate-900 rounded-2xl shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] border border-slate-100 dark:border-slate-800">
-                <div class="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <lucide-icon name="star" [size]="20" class="text-emerald-600"></lucide-icon>
-                </div>
-                <div class="flex flex-col">
-                    <span class="text-[10px] font-black text-emerald-700 dark:text-emerald-500 uppercase tracking-widest leading-none mb-1">Safety</span>
-                    <span class="text-[13px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight leading-none">9.5/10 Rated</span>
-                </div>
+            <div class="h-4 w-px bg-slate-300 dark:bg-slate-600"></div>
+            <div class="flex items-center gap-2">
+                <lucide-icon name="star" [size]="18" class="text-primary"></lucide-icon>
+                <span class="text-sm font-bold">9.5/10 Rated</span>
             </div>
         </div>
     </div>
@@ -384,26 +368,6 @@
                     </div>
                 </div>
 
-                <!-- ═══════════════════════════════════════════════ -->
-                <!-- 48-HOUR TIMING BANNER                          -->
-                <!-- ═══════════════════════════════════════════════ -->
-                <div class="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 mb-1.5 sm:mb-2 rounded-lg border"
-                    [ngClass]="isBookingUrgent()
-                        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                        : 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800'">
-                    <lucide-icon [name]="isBookingUrgent() ? 'alert-triangle' : 'clock'" [size]="14"
-                        [ngClass]="isBookingUrgent() ? 'text-amber-600' : 'text-sky-600'" class="shrink-0"></lucide-icon>
-                    <div>
-                        <span class="text-[10px] font-bold"
-                            [ngClass]="isBookingUrgent() ? 'text-amber-800 dark:text-amber-300' : 'text-sky-800 dark:text-sky-300'">
-                            {{ isBookingUrgent() ? 'Urgent Booking' : 'Advance Booking' }} —
-                        </span>
-                        <span class="text-[10px]"
-                            [ngClass]="isBookingUrgent() ? 'text-amber-700 dark:text-amber-400' : 'text-sky-700 dark:text-sky-400'">
-                            {{ isBookingUrgent() ? 'Full payment required upfront.' : 'Pay min 25% now, rest auto-deducted before trip.' }}
-                        </span>
-                    </div>
-                </div>
 
                 <!-- ═══════════════════════════════════════════════ -->
                 <!-- PAYMENT OPTIONS HEADING                        -->
@@ -424,7 +388,7 @@
                             ? 'border-primary bg-white dark:bg-slate-900 shadow-lg shadow-primary/10'
                             : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
 
-                        <div class="flex items-center px-3 py-2 gap-3">
+                        <div class="flex items-center px-4 py-3 gap-3">
                             <!-- Radio -->
                             <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center shrink-0"
                                 [ngClass]="paymentOption === 1 ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'">
@@ -432,14 +396,14 @@
                             </div>
                             <!-- Text -->
                             <div class="flex-1 min-w-0">
-                                <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Pay any amount now</h4>
-                                <p class="text-[9px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Pay {{ option1SliderPercent }}% now (₹{{ getPayNowAmount(1) | number:'1.0-0' }}). Remaining fare & extras (toll, parking, extra KMs) paid to driver.
+                                <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Pay Any Amount Now</h4>
+                                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Pay {{ option1SliderPercent }}% now (₹{{ getPayNowAmount(1) | number:'1.0-0' }}). Remaining fare & extras (toll, parking, extra KMs) payable to driver.
                                 </p>
                             </div>
                             <!-- Amount badge -->
                             <div class="text-right shrink-0">
-                                <p class="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">₹{{ getPayNowAmount(1) | number:'1.0-0' }}</p>
+                                <p class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">₹{{ getPayNowAmount(1) | number:'1.0-0' }}</p>
                                 <p class="text-[10px] text-slate-400">{{ option1SliderPercent }}% of fare</p>
                             </div>
                         </div>
@@ -461,12 +425,12 @@
                                     <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{{ option1SliderPercent }}%</span>
                                 </div>
                                 <!-- Compact breakdown -->
-                                <div class="flex items-center justify-between mt-2 text-[9px] sm:text-[11px]">
+                                <div class="flex items-center justify-between mt-2 text-[11px] sm:text-xs">
                                     <span class="text-emerald-600 font-semibold">You pay ₹{{ getPayNowAmount(1) | number:'1.0-0' }}</span>
                                     <span class="text-slate-400">|</span>
                                     <span class="text-slate-600 font-semibold">Driver collects ₹{{ getDriverCollectsAmount() | number:'1.0-0' }} + extras</span>
                                 </div>
-                                <p class="text-[10px] text-slate-400 mt-1">Remaining fare + extras (toll, parking, extra KMs) — paid directly to driver</p>
+                                <p class="text-[10px] text-slate-400 mt-1">Remaining fare + extras (toll, parking, extra KMs) — payable directly to driver</p>
                             </div>
                         </div>
                     </div>
@@ -481,27 +445,26 @@
                             ? 'border-primary bg-white dark:bg-slate-900 shadow-lg shadow-primary/10'
                             : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
 
-                        <div class="flex items-center px-3 py-2 gap-3">
+                        <div class="flex items-center px-4 py-3 gap-3">
                             <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center shrink-0"
                                 [ngClass]="paymentOption === 2 ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'">
                                 <div class="w-2 h-2 rounded-full bg-white" *ngIf="paymentOption === 2"></div>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Pay 25% now, rest auto-deducted</h4>
-                                <p class="text-[9px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Pay 25% now (₹{{ getPayNowAmount(2) | number:'1.0-0' }}). Remaining auto-deducted 48h before trip. Extras paid to driver.
+                                <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Pay 25% Now, Rest Auto-Deducted</h4>
+                                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Pay 25% now (₹{{ getPayNowAmount(2) | number:'1.0-0' }}). Remaining will be auto-deducted 48h before trip. Extras payable to driver.
                                 </p>
                             </div>
                             <div class="text-right shrink-0">
-                                <p class="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">₹{{ getPayNowAmount(2) | number:'1.0-0' }}</p>
-                                <p class="text-[10px] text-slate-400">now</p>
+                                <p class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">₹{{ getPayNowAmount(2) | number:'1.0-0' }}</p>
                             </div>
                         </div>
 
                         <!-- Expanded Details -->
                         <div *ngIf="paymentOption === 2"
                             class="px-3 sm:px-4 pb-3 sm:pb-4 pt-0" (click)="$event.stopPropagation()">
-                            <div class="border-t border-slate-100 dark:border-slate-800 pt-2 sm:pt-3 space-y-1 sm:space-y-1.5 text-[9px] sm:text-[11px]">
+                            <div class="border-t border-slate-100 dark:border-slate-800 pt-2 sm:pt-3 space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs">
                                 <div class="flex justify-between">
                                     <span class="text-emerald-600 font-semibold">Pay now (25%)</span>
                                     <span class="font-bold text-emerald-600">₹{{ getPayNowAmount(2) | number:'1.0-0' }}</span>
@@ -509,7 +472,7 @@
                                 <div class="flex justify-between">
                                     <span class="text-amber-600 font-semibold flex items-center gap-1">
                                         <lucide-icon name="clock" [size]="10"></lucide-icon>
-                                        Remaining 75% auto-deducted from wallet 48h before trip
+                                        Remaining 75% will be auto-deducted from wallet 48h before trip
                                     </span>
                                     <span class="font-bold text-amber-600">₹{{ getDeferredAmount(2) | number:'1.0-0' }}</span>
                                 </div>
@@ -517,7 +480,7 @@
                                     <span class="font-semibold">Customer pays driver</span>
                                     <span class="font-bold">Extras only</span>
                                 </div>
-                                <p class="text-[10px] text-slate-400">Extras include toll, parking & extra KMs — paid directly to driver</p>
+                                <p class="text-[10px] text-slate-400">Extras include toll, parking & extra KMs — payable directly to driver</p>
                                 <div class="mt-2 space-y-1">
                                     <p class="text-[10px] text-sky-600">
                                         <lucide-icon name="info" [size]="10" class="inline-block mr-0.5"></lucide-icon>
@@ -541,29 +504,28 @@
                             ? 'border-primary bg-white dark:bg-slate-900 shadow-lg shadow-primary/10'
                             : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
 
-                        <div class="flex items-center px-3 py-2 gap-3">
+                        <div class="flex items-center px-4 py-3 gap-3">
                             <div class="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center shrink-0"
                                 [ngClass]="paymentOption === 3 ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'">
                                 <div class="w-2 h-2 rounded-full bg-white" *ngIf="paymentOption === 3"></div>
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-1.5 flex-wrap">
-                                    <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Zero cash — full wallet</h4>
+                                    <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Zero Cash — Full Wallet</h4>
                                     <span class="px-1.5 py-px bg-emerald-100 text-emerald-700 text-[7px] font-bold uppercase tracking-wider rounded border border-emerald-200">Recommended</span>
                                     <span class="px-1.5 py-px bg-amber-100 text-amber-700 text-[7px] font-bold uppercase tracking-wider rounded border border-amber-200">Best Value</span>
                                 </div>
-                                <p class="text-[9px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                     <ng-container *ngIf="!isBookingUrgent()">
-                                        Pay 25% now (₹{{ getPayNowAmount(3) | number:'1.0-0' }}). Remaining ₹{{ getDeferredAmount(3) | number:'1.0-0' }} (75% fare + 20% buffer) auto-deducted 48h before trip. Unutilized buffer refunded after trip &amp; invoice.
+                                        Pay 25% now (₹{{ getPayNowAmount(3) | number:'1.0-0' }}). Remaining ₹{{ getDeferredAmount(3) | number:'1.0-0' }} (75% fare + 20% refundable deposit) will be auto-deducted 48h before trip. Unutilized deposit will be refunded after trip &amp; invoice.
                                     </ng-container>
                                     <ng-container *ngIf="isBookingUrgent()">
-                                        Full fare + 20% buffer (₹{{ getPayNowAmount(3) | number:'1.0-0' }}) required now. Trip within 48h. Unutilized buffer refunded after trip &amp; invoice.
+                                        Full fare + 20% refundable deposit (₹{{ getPayNowAmount(3) | number:'1.0-0' }}) required now. Trip is within 48h. Unutilized deposit will be refunded after trip &amp; invoice.
                                     </ng-container>
                                 </p>
                             </div>
                             <div class="text-right shrink-0">
-                                <p class="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">₹{{ getPayNowAmount(3) | number:'1.0-0' }}</p>
-                                <p class="text-[10px] text-slate-400">now</p>
+                                <p class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">₹{{ getPayNowAmount(3) | number:'1.0-0' }}</p>
                             </div>
                         </div>
 
@@ -576,15 +538,15 @@
                                     <span class="font-bold text-slate-700">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-slate-500">20% buffer (extra KM/toll)</span>
+                                    <span class="text-slate-500">20% refundable deposit (extra KM/toll)</span>
                                     <span class="font-bold text-slate-700">₹{{ getOption3BufferAmount() | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-emerald-600 font-semibold">Pay now ({{ isBookingUrgent() ? '100% + buffer' : '25%' }})</span>
+                                    <span class="text-emerald-600 font-semibold">Pay now ({{ isBookingUrgent() ? '100% + deposit' : '25%' }})</span>
                                     <span class="font-bold text-emerald-600">₹{{ getPayNowAmount(3) | number:'1.0-0' }}</span>
                                 </div>
                                 <div *ngIf="!isBookingUrgent()" class="flex justify-between">
-                                    <span class="text-amber-600 font-semibold">Auto-deducted 48h before (75% + buffer)</span>
+                                    <span class="text-amber-600 font-semibold">Auto-deducted 48h before (75% + deposit)</span>
                                     <span class="font-bold text-amber-600">₹{{ getDeferredAmount(3) | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between pt-0.5 border-t border-slate-100 dark:border-slate-700">
@@ -593,11 +555,11 @@
                                 </div>
                                 <p class="text-[9px] text-emerald-600 font-medium">
                                     <lucide-icon name="info" [size]="9" class="inline-block mr-0.5"></lucide-icon>
-                                    Unutilized buffer refunded to wallet after trip ends &amp; invoice generated.
+                                    Unutilized deposit will be refunded to wallet after trip ends &amp; invoice is generated.
                                 </p>
                                 <p *ngIf="!isBookingUrgent()" class="text-[9px] text-red-500 font-medium">
                                     <lucide-icon name="alert-triangle" [size]="9" class="inline-block mr-0.5"></lucide-icon>
-                                    Insufficient wallet at auto-deduction = auto-cancel. Keep ₹{{ getDeferredAmount(3) | number:'1.0-0' }} ready.
+                                    If wallet balance is insufficient at auto-deduction time, booking will be auto-cancelled. Keep ₹{{ getDeferredAmount(3) | number:'1.0-0' }} ready.
                                 </p>
                             </div>
                         </div>
@@ -615,22 +577,22 @@
 
 
         <!-- RIGHT SIDEBAR -->
-        <div class="lg:col-span-4 space-y-3 sm:space-y-4">
+        <div class="lg:col-span-4 space-y-3 sm:space-y-4 lg:mt-8">
 
             <!-- Booking Summary Sticky Card — hidden on mobile during Step 1, always visible on desktop -->
             <div class="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden sticky top-2"
                 [ngClass]="{'hidden lg:block': !step1Complete}">
-                <div class="bg-slate-900 px-5 py-2.5">
-                    <h3 class="text-white font-semibold flex items-center gap-2 text-sm">
+                <div class="bg-slate-900 py-2.5" [ngClass]="step1Complete ? 'px-4' : 'px-5 py-3'">
+                    <h3 class="text-white font-semibold flex items-center gap-2" [ngClass]="step1Complete ? 'text-sm' : 'text-base'">
                         <lucide-icon name="receipt-text" [size]="16" class="text-primary"></lucide-icon>
                         Booking Summary
                     </h3>
                 </div>
 
-                <div class="p-4 space-y-2.5">
+                <div [ngClass]="step1Complete ? 'px-4 py-3 space-y-2.5' : 'px-5 py-5 space-y-4'">
                     <!-- Itinerary -->
                     <div>
-                        <span class="text-[10px] font-bold text-primary uppercase tracking-widest">Itinerary</span>
+                        <span class="font-bold text-primary uppercase tracking-widest" [ngClass]="step1Complete ? 'text-[10px]' : 'text-[11px]'">Itinerary</span>
 
                         <!-- LOCAL -->
                         <div *ngIf="itinerary?.tripType === 'Local'" class="mt-1.5">
@@ -651,45 +613,45 @@
                         </div>
 
                         <!-- ONE WAY / ROUND TRIP -->
-                        <div *ngIf="itinerary?.tripType !== 'Local' && itinerary?.tripType !== 'Airport'" class="mt-1.5 flex flex-col gap-0.5">
-                            <div class="flex items-center gap-2">
-                                <lucide-icon name="map-pin" [size]="12" class="text-primary shrink-0"></lucide-icon>
-                                <span class="text-sm font-bold text-slate-900 dark:text-white">{{itinerary?.fromCity || 'Bangalore'}}</span>
+                        <div *ngIf="itinerary?.tripType !== 'Local' && itinerary?.tripType !== 'Airport'" class="flex flex-col" [ngClass]="step1Complete ? 'mt-1.5 gap-0.5' : 'mt-2 gap-1'">
+                            <div class="flex items-center" [ngClass]="step1Complete ? 'gap-2' : 'gap-2.5'">
+                                <lucide-icon name="map-pin" [size]="step1Complete ? 12 : 14" class="text-primary shrink-0"></lucide-icon>
+                                <span class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{itinerary?.fromCity || 'Bangalore'}}</span>
                             </div>
                             <!-- Intermediate stops for multicity round trip -->
                             <ng-container *ngIf="itinerary?.extraDestinations?.length">
                                 <ng-container *ngFor="let stop of itinerary?.extraDestinations">
-                                    <div class="h-3 w-px bg-orange-300 dark:bg-orange-600 ml-[5px]"></div>
-                                    <div class="flex items-center gap-2">
-                                        <lucide-icon name="map-pin" [size]="12" class="text-orange-500 shrink-0"></lucide-icon>
-                                        <span class="text-sm font-bold text-orange-600 dark:text-orange-400">{{stop.cityOnly || stop.cityName}}</span>
+                                    <div class="w-px bg-orange-300 dark:bg-orange-600" [ngClass]="step1Complete ? 'h-3 ml-[5px]' : 'h-4 ml-[6px]'"></div>
+                                    <div class="flex items-center" [ngClass]="step1Complete ? 'gap-2' : 'gap-2.5'">
+                                        <lucide-icon name="map-pin" [size]="step1Complete ? 12 : 14" class="text-orange-500 shrink-0"></lucide-icon>
+                                        <span class="font-bold text-orange-600 dark:text-orange-400" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{stop.cityOnly || stop.cityName}}</span>
                                     </div>
                                 </ng-container>
                             </ng-container>
-                            <div class="h-3 w-px bg-slate-300 dark:bg-slate-600 ml-[5px]"></div>
-                            <div class="flex items-center gap-2">
-                                <lucide-icon name="map-pin" [size]="12" class="text-rose-500 shrink-0"></lucide-icon>
-                                <span class="text-sm font-bold text-slate-900 dark:text-white">{{itinerary?.toCity || 'Mysore'}}</span>
+                            <div class="w-px bg-slate-300 dark:bg-slate-600" [ngClass]="step1Complete ? 'h-3 ml-[5px]' : 'h-4 ml-[6px]'"></div>
+                            <div class="flex items-center" [ngClass]="step1Complete ? 'gap-2' : 'gap-2.5'">
+                                <lucide-icon name="map-pin" [size]="step1Complete ? 12 : 14" class="text-rose-500 shrink-0"></lucide-icon>
+                                <span class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{itinerary?.toCity || 'Mysore'}}</span>
                             </div>
                             <ng-container *ngIf="itinerary?.tripType === 'Round Trip'">
-                                <div class="h-3 w-px bg-slate-300 dark:bg-slate-600 ml-[5px]"></div>
-                                <div class="flex items-center gap-2">
-                                    <lucide-icon name="map-pin" [size]="12" class="text-emerald-500 shrink-0"></lucide-icon>
-                                    <span class="text-sm font-bold text-slate-900 dark:text-white">{{itinerary?.fromCity || 'Bangalore'}}</span>
+                                <div class="w-px bg-slate-300 dark:bg-slate-600" [ngClass]="step1Complete ? 'h-3 ml-[5px]' : 'h-4 ml-[6px]'"></div>
+                                <div class="flex items-center" [ngClass]="step1Complete ? 'gap-2' : 'gap-2.5'">
+                                    <lucide-icon name="map-pin" [size]="step1Complete ? 12 : 14" class="text-emerald-500 shrink-0"></lucide-icon>
+                                    <span class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{itinerary?.fromCity || 'Bangalore'}}</span>
                                 </div>
                             </ng-container>
                         </div>
                     </div>
 
                     <!-- Date/Time row -->
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-2" [ngClass]="step1Complete ? 'gap-2' : 'gap-3'">
                         <div>
-                            <span class="text-[10px] font-bold text-primary uppercase tracking-widest">Pickup Date</span>
-                            <p class="text-sm font-bold text-slate-900 dark:text-white">{{itinerary?.pickupDate ? (itinerary?.pickupDate | date:'dd MMM yyyy') : 'Tomorrow'}}</p>
+                            <span class="font-bold text-primary uppercase tracking-widest" [ngClass]="step1Complete ? 'text-[9px]' : 'text-[10px]'">Pickup Date</span>
+                            <p class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-xs' : 'text-sm mt-0.5'">{{itinerary?.pickupDate ? (itinerary?.pickupDate | date:'dd MMM yyyy') : 'Tomorrow'}}</p>
                         </div>
                         <div>
-                            <span class="text-[10px] font-bold text-primary uppercase tracking-widest">Pickup Time</span>
-                            <p class="text-sm font-bold text-slate-900 dark:text-white">{{itinerary?.pickupTime || '09:30 PM'}}</p>
+                            <span class="font-bold text-primary uppercase tracking-widest" [ngClass]="step1Complete ? 'text-[9px]' : 'text-[10px]'">Pickup Time</span>
+                            <p class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-xs' : 'text-sm mt-0.5'">{{itinerary?.pickupTime || '09:30 PM'}}</p>
                         </div>
                     </div>
 
@@ -708,20 +670,18 @@
                     </div>
 
                     <!-- Car + KMs -->
-                    <div class="flex justify-between items-center py-2 border-y border-slate-100 dark:border-slate-700">
-                        <div class="flex items-center gap-2">
-                            <lucide-icon name="car" [size]="16" class="text-slate-400"></lucide-icon>
-                            <span class="text-xs font-bold text-slate-800 dark:text-slate-200">{{selectedCar?.name || 'Wagon R'}}</span>
-                            <span class="text-[9px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-black uppercase">{{selectedCar?.type || 'SEDAN'}}</span>
-                        </div>
-                        <span class="text-xs font-bold text-slate-600">{{selectedCar?.kmsIncluded || '145 km'}}</span>
+                    <div class="flex items-center gap-2 border-y border-slate-100 dark:border-slate-700" [ngClass]="step1Complete ? 'py-2' : 'py-3'">
+                        <lucide-icon name="car" [size]="15" class="text-slate-400 shrink-0"></lucide-icon>
+                        <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{{selectedCar?.name || 'Wagon R'}}</span>
+                        <span class="text-[9px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-black uppercase shrink-0 whitespace-nowrap">{{selectedCar?.type || 'SEDAN'}}</span>
+                        <span class="text-xs text-slate-500 ml-auto shrink-0 whitespace-nowrap">{{selectedCar?.kmsIncluded || '145 km'}}</span>
                     </div>
 
                     <!-- Fare — prominent -->
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estimated Total Fare</p>
-                            <p class="text-xl font-black text-slate-900 dark:text-white tracking-tight">₹ {{(selectedCar?.price || 0) | number:'1.0-0'}}</p>
+                            <p class="font-bold text-slate-400 uppercase tracking-widest" [ngClass]="step1Complete ? 'text-[9px]' : 'text-[10px]'">Estimated Total Fare</p>
+                            <p class="font-black text-slate-900 dark:text-white tracking-tight" [ngClass]="step1Complete ? 'text-lg' : 'text-xl'">₹ {{(selectedCar?.price || 0) | number:'1.0-0'}}</p>
                         </div>
                         <span class="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-black uppercase tracking-tighter">ALL INCLUSIVE</span>
                     </div>
@@ -750,29 +710,31 @@
                         </div>
 
                         <!-- Pay Via toggle -->
-                        <div *ngIf="paymentOption !== 0" class="grid grid-cols-2 gap-1.5">
+                        <div *ngIf="paymentOption !== 0" class="grid grid-cols-2 gap-2">
                             <button (click)="paymentMethod = 'wallet'" type="button"
-                                class="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border-2 transition-all cursor-pointer text-center"
+                                class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl border-2 transition-all cursor-pointer"
                                 [ngClass]="paymentMethod === 'wallet'
-                                    ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                                    ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm shadow-primary/10'
                                     : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'">
-                                <lucide-icon name="wallet" [size]="14"
-                                    [ngClass]="paymentMethod === 'wallet' ? 'text-primary' : 'text-slate-400'"></lucide-icon>
-                                <span class="text-[11px] font-bold"
-                                    [ngClass]="paymentMethod === 'wallet' ? 'text-primary' : 'text-slate-500'">Wallet</span>
+                                <div class="w-9 h-9 rounded-lg bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center">
+                                    <lucide-icon name="wallet" [size]="20" class="text-sky-500"></lucide-icon>
+                                </div>
+                                <span class="text-xs font-bold mt-0.5"
+                                    [ngClass]="paymentMethod === 'wallet' ? 'text-slate-800 dark:text-white' : 'text-slate-600'">B2B Wallet</span>
                             </button>
                             <button (click)="paymentMethod = 'razorpay'" type="button"
-                                class="flex flex-col items-center justify-center gap-0 py-1.5 rounded-lg border-2 transition-all cursor-pointer text-center"
+                                class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl border-2 transition-all cursor-pointer"
                                 [ngClass]="paymentMethod === 'razorpay'
-                                    ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                                    ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm shadow-primary/10'
                                     : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'">
-                                <div class="flex items-center gap-1.5">
-                                    <lucide-icon name="credit-card" [size]="14"
-                                        [ngClass]="paymentMethod === 'razorpay' ? 'text-primary' : 'text-slate-400'"></lucide-icon>
-                                    <span class="text-[11px] font-bold"
-                                        [ngClass]="paymentMethod === 'razorpay' ? 'text-primary' : 'text-slate-500'">Razorpay</span>
+                                <div class="flex items-center gap-0.5">
+                                    <img src="assets/icons/visa.svg" alt="Visa" class="h-[14px] w-auto rounded-sm">
+                                    <img src="assets/icons/mastercard.svg" alt="Mastercard" class="h-[14px] w-auto rounded-sm">
+                                    <img src="assets/icons/upi.svg" alt="UPI" class="h-[14px] w-auto rounded-sm">
+                                    <img src="assets/icons/rupay.svg" alt="RuPay" class="h-[14px] w-auto rounded-sm">
                                 </div>
-                                <span class="text-[8px] text-slate-400">Card / UPI / NetBanking</span>
+                                <span class="text-xs font-bold mt-0.5"
+                                    [ngClass]="paymentMethod === 'razorpay' ? 'text-slate-800 dark:text-white' : 'text-slate-600'">Card / UPI / Bank</span>
                             </button>
                         </div>
 
@@ -808,38 +770,49 @@
                                 Top Up Wallet
                             </button>
 
-                            <!-- Wallet: sufficient — Pay via Wallet -->
-                            <button *ngIf="!isProcessingWallet && !isProcessingRazorpay && paymentMethod === 'wallet' && hasSufficientWalletBalance(sidebarWallet.balance)"
-                                (click)="bookNow()"
+                            <!-- Wallet: sufficient — Pay via Wallet (with confirmation) -->
+                            <button *ngIf="!isProcessingWallet && !isProcessingRazorpay && paymentMethod === 'wallet' && hasSufficientWalletBalance(sidebarWallet.balance) && !showWalletConfirm"
+                                (click)="showWalletConfirm = true"
                                 class="w-full py-2 rounded-xl font-bold text-xs bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
                                 <lucide-icon name="wallet" [size]="14"></lucide-icon>
                                 Pay ₹{{ getPayNowAmount() | number:'1.0-0' }} via Wallet
                             </button>
+                            <!-- Wallet confirmation step -->
+                            <div *ngIf="showWalletConfirm && !isProcessingWallet && !isProcessingRazorpay && paymentMethod === 'wallet'"
+                                class="w-full rounded-xl border-2 border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-3 space-y-2">
+                                <p class="text-xs font-semibold text-slate-700 dark:text-slate-300 text-center">
+                                    Confirm payment of <span class="font-black text-slate-900 dark:text-white">₹{{ getPayNowAmount() | number:'1.0-0' }}</span> from wallet?
+                                </p>
+                                <div class="flex gap-2">
+                                    <button (click)="showWalletConfirm = false" type="button"
+                                        class="flex-1 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer">
+                                        Cancel
+                                    </button>
+                                    <button (click)="showWalletConfirm = false; bookNow()" type="button"
+                                        class="flex-1 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1">
+                                        <lucide-icon name="check" [size]="12"></lucide-icon>
+                                        Confirm & Pay
+                                    </button>
+                                </div>
+                            </div>
 
                             <!-- Razorpay — Pay via Razorpay -->
                             <button *ngIf="!isProcessingWallet && !isProcessingRazorpay && paymentMethod === 'razorpay'"
                                 (click)="bookNow()"
                                 class="w-full py-2 rounded-xl font-bold text-xs bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
                                 <lucide-icon name="credit-card" [size]="14"></lucide-icon>
-                                Pay ₹{{ getPayNowAmount() | number:'1.0-0' }} via Razorpay
+                                Pay ₹{{ getPayNowAmount() | number:'1.0-0' }}
                             </button>
                         </div>
 
                         <!-- Security note -->
                         <p *ngIf="paymentOption !== 0" class="text-[9px] text-slate-400 text-center mt-0.5">
                             <lucide-icon name="shield-check" [size]="9" class="inline-block mr-0.5"></lucide-icon>
-                            Secure {{ paymentMethod === 'razorpay' ? 'Razorpay' : 'wallet' }} transaction · GST invoice included
+                            Secure {{ paymentMethod === 'razorpay' ? 'payment' : 'wallet' }} transaction
                         </p>
                     </div>
                 </div>
 
-                <!-- Footer Note -->
-                <div class="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 border-t border-slate-100 dark:border-slate-700">
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400 flex items-start gap-1.5">
-                        <lucide-icon name="shield-check" [size]="12" class="text-emerald-500 shrink-0 mt-px"></lucide-icon>
-                        Price includes fuel, driver allowance, and basic toll. Parking and extra KMs billed as actuals.
-                    </p>
-                </div>
             </div>
         </div> <!-- Ends Sidebar -->
     </div> <!-- Ends Main Grid -->
@@ -1012,7 +985,7 @@
                         <span class="text-slate-500">Via</span>
                         <span class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                             <ng-container *ngIf="paymentMethod === 'razorpay'">
-                                <lucide-icon name="credit-card" [size]="12" class="text-primary"></lucide-icon> Razorpay
+                                <lucide-icon name="credit-card" [size]="12" class="text-primary"></lucide-icon> Card / UPI / Bank
                             </ng-container>
                             <ng-container *ngIf="paymentMethod !== 'razorpay'">
                                 <lucide-icon name="wallet" [size]="12" class="text-primary"></lucide-icon> Wallet

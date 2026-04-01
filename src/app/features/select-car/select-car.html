@@ -102,16 +102,16 @@
             <div *ngIf="showPriceAlert"
                 class="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-[2px] p-4 animate-fade-in">
                 <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-100 dark:border-slate-800 text-center">
-                    <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center">
-                        <lucide-icon name="info" [size]="24" class="text-primary"></lucide-icon>
+                    <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                        <lucide-icon name="route" [size]="24" class="text-emerald-500"></lucide-icon>
                     </div>
-                    <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 mb-2">Please Note</h3>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 mb-2">Fare Estimate</h3>
                     <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-5">
-                        The fares shown here are base fares. The final amount may vary slightly depending on your exact pickup and drop-off locations.
+                        These fares are estimated for your route. Final billing is based on actual distance traveled.
                     </p>
                     <button (click)="closeAlert()"
                         class="w-full py-2.5 bg-primary hover:bg-sky-600 text-white font-bold text-sm rounded-xl transition-all cursor-pointer">
-                        OK, Got it
+                        Continue
                     </button>
                 </div>
             </div>
