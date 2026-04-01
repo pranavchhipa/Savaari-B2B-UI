@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, of, map } from 'rxjs';
+import { Observable, of, map, catchError, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
@@ -59,16 +59,22 @@ export class AddressAutocompleteService {
 
     if (!query || query.length < 2) return of([]);
 
+    const token = this.auth.getPartnerToken();
+
     return this.api.addressGet<any>('autocomplete/info.php', {
       query,
       lat: lat || '',
       lng: lng || '',
       city: city || '',
       request,
-      token: this.auth.getPartnerToken(),
+      token,
       rsource: 'b2b',
     }).pipe(
-      map(response => this.parseAutocompleteResponse(response))
+      map(response => this.parseAutocompleteResponse(response)),
+      catchError(err => {
+        console.error('[Autocomplete] API error:', err?.status, err?.message);
+        return of([]);
+      })
     );
   }
 

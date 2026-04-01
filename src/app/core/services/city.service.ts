@@ -113,6 +113,23 @@ export class CityService {
     return cities.find(c => c.name.toLowerCase() === normalized);
   }
 
+  /**
+   * Get the lat,lng string for a city by ID from any cached city list.
+   * Used by booking page to get city coordinates for autocomplete API.
+   * Returns undefined if city not found in cache.
+   */
+  getCityLL(cityId: number): string | undefined {
+    for (const cities of this.sourceCitiesCache.values()) {
+      const city = cities.find(c => c.id === cityId);
+      if (city?.ll) return city.ll;
+    }
+    for (const cities of this.destinationCitiesCache.values()) {
+      const city = cities.find(c => c.id === cityId);
+      if (city?.ll) return city.ll;
+    }
+    return undefined;
+  }
+
   /** Clear all cached data (e.g. on logout). */
   clearCache(): void {
     this.sourceCitiesCache.clear();

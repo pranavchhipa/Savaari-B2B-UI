@@ -16,6 +16,7 @@ import { CommissionService } from '../../core/services/commission.service';
 import { CountryCodeService, CountryCodeEntry } from '../../core/services/country-code.service';
 import { LocalityService } from '../../core/services/locality.service';
 import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
+import { CityService } from '../../core/services/city.service';
 // AvailabilityService removed — fare recalculation is now client-side (Haversine distance)
 import { CreateBookingRequest } from '../../core/models';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
@@ -129,6 +130,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   private localityService = inject(LocalityService);
   // availabilityService removed — fare recalc is now client-side
   private addressAutocomplete = inject(AddressAutocompleteService);
+  private cityService = inject(CityService);
 
   // Confetti canvas
   @ViewChild('confettiCanvas') confettiCanvas!: ElementRef<HTMLCanvasElement>;
@@ -151,6 +153,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Lat/lng resolved from place_id API (2nd API) after address selection
   private pickupLatLng: { lat: number; lng: number } | null = null;
   private dropLatLng: { lat: number; lng: number } | null = null;
+
+  // City-level lat/lng for autocomplete API (from SavaariCity.ll via city service cache)
+  private fromCityLat = '';
+  private fromCityLng = '';
+  private toCityLat = '';
+  private toCityLng = '';
 
   ngOnInit() {
     this.walletBalance$ = this.walletService.balance$;
@@ -176,6 +184,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Initial sync
     this.itinerary = this.bookingState.getItinerary();
     this.selectedCar = this.bookingState.getSelectedCar();
+
+    // Resolve city lat/lng for autocomplete API.
+    // Priority: itinerary.fromCityLL (set by dashboard) → city service cache (in-memory) → empty
+    this.resolveCityLatLng();
 
     // Pre-fetch localities for source and destination cities (cached after first load).
     // Pre-fetch localities for pickup and drop cities
@@ -423,15 +435,35 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
+  /**
+   * Resolve city lat/lng for autocomplete API.
+   * Priority: itinerary.fromCityLL (set by dashboard) → city service cache → empty string.
+   * Called from ngOnInit so autocomplete always has city coordinates available.
+   */
+  private resolveCityLatLng(): void {
+    // From city
+    const fromLL = this.itinerary?.fromCityLL
+      || (this.itinerary?.fromCityId ? this.cityService.getCityLL(this.itinerary.fromCityId) : undefined)
+      || '';
+    const fromParts = fromLL.split(',');
+    this.fromCityLat = fromParts[0]?.trim() || '';
+    this.fromCityLng = fromParts[1]?.trim() || '';
+
+    // To city
+    const toLL = this.itinerary?.toCityLL
+      || (this.itinerary?.toCityId ? this.cityService.getCityLL(this.itinerary.toCityId) : undefined)
+      || '';
+    const toParts = toLL.split(',');
+    this.toCityLat = toParts[0]?.trim() || '';
+    this.toCityLng = toParts[1]?.trim() || '';
+
+  }
+
   /** PrimeNG AutoComplete: search pickup address via Savaari autocomplete API */
   searchPickupAddress(event: AutoCompleteCompleteEvent): void {
-    // Pass city name (short form) + lat/lng from source city to autocomplete API (matches live site)
     const cityName = this.itinerary?.fromCity?.split(',')[0]?.trim() || '';
-    const ll = this.itinerary?.fromCityLL?.split(',') || [];
-    const lat = ll[0] || '';
-    const lng = ll[1] || '';
     if (!event.query || event.query.length < 2) { this.pickupSuggestions = []; this.pickupSuggestionsRaw = []; return; }
-    this.addressAutocomplete.searchAddress(event.query, 'from', cityName, lat, lng).subscribe(results => {
+    this.addressAutocomplete.searchAddress(event.query, 'from', cityName, this.fromCityLat, this.fromCityLng).subscribe(results => {
       this.pickupSuggestionsRaw = results;
       this.pickupSuggestions = results.map(r => r.description);
       this.cdr.markForCheck();
@@ -440,13 +472,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /** PrimeNG AutoComplete: search drop address via Savaari autocomplete API */
   searchDropAddress(event: AutoCompleteCompleteEvent): void {
-    // Pass city name (short form) + lat/lng from destination city to autocomplete API
     const cityName = this.itinerary?.toCity?.split(',')[0]?.trim() || '';
-    const ll = this.itinerary?.toCityLL?.split(',') || [];
-    const lat = ll[0] || '';
-    const lng = ll[1] || '';
     if (!event.query || event.query.length < 2) { this.dropSuggestions = []; this.dropSuggestionsRaw = []; return; }
-    this.addressAutocomplete.searchAddress(event.query, 'to', cityName, lat, lng).subscribe(results => {
+    this.addressAutocomplete.searchAddress(event.query, 'to', cityName, this.toCityLat, this.toCityLng).subscribe(results => {
       this.dropSuggestionsRaw = results;
       this.dropSuggestions = results.map(r => r.description);
       this.cdr.markForCheck();
