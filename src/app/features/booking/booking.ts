@@ -111,10 +111,20 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   showTopUpConfirm = false;
   showTopUpModal = false;
 
-  // Stored from advance_payment_check + booking create (fired on "Proceed to Next")
-  private advanceAmount = 0;
-  private encodedAmount = '';
-  private savaariPayId = '';
+  // Stored from advance_payment_check (fired on page load)
+  private advancePercent = 25; // from advance_payment_check response
+
+  // Stored from booking create response (fired on "Proceed to Next")
+  private advanceAmount = 0;     // from paymentOptions[*].parameters.amount25per
+  private encodedAmount = '';    // from paymentOptions[*].parametersEncoded.amount25perEncoded
+  private savaariPayId = '';     // from data.order_id
+
+  // From place_id API responses — used in booking create
+  private pickupPlaceName = '';        // place_name → locality
+  private pickupAliasSourceCityId = 0; // source_city_map_info.city_id → alias_source_city_id
+  private dropPlaceName = '';          // place_name for drop
+  private dropSublocality = '';        // sublocality → dropLocality
+  private dropAliasDestCityId = 0;     // destination_city_map_info.city_id → alias_dest_city_id
 
   // Fare recalculation (One Way drop address)
   showFareChangePopup = false;
@@ -335,7 +345,26 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         }
 
         this.bookingId = bkId;
-        this.savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
+
+        // CRITICAL (FLOW.md Fix #3 + #7): Extract payment values from booking create response
+        // These come from the API response, NOT from advance_payment_check or client generation
+        const raw = response.data as any;
+        const dataItem = Array.isArray(raw) ? raw[0] : raw;
+        if (dataItem) {
+          // order_id = savaari_payment_id (e.g. "SW35004S0426-2361706")
+          this.savaariPayId = dataItem.order_id || '';
+          // paymentOptions[0].parameters.amount25per = advance amount
+          const payOpts = dataItem.paymentOptions || [];
+          if (payOpts.length > 0) {
+            this.advanceAmount = payOpts[0]?.parameters?.amount25per || payOpts[0]?.parameters?.amountAdv || this.advanceAmount;
+            this.encodedAmount = payOpts[0]?.parametersEncoded?.amount25perEncoded || payOpts[0]?.parametersEncoded?.amountAdvEncoded || this.encodedAmount;
+          }
+        }
+        // Fallback: generate savaari_payment_id if API didn't return one
+        if (!this.savaariPayId) {
+          this.savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
+        }
+
         this.registerBookingData(bkId, response, request, prePayment, 'razorpay');
 
         // Booking created → show payment page
@@ -438,7 +467,8 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       localPackage: this.itinerary.localPackage,
       airportSubType: this.itinerary.airportSubType,
     });
-    const tripTypeMap: Record<string, number> = { outstation: 1, local: 3, airport: 5 };
+    // HAR-confirmed (FLOW.md): outstation=3, local=3, airport=5
+    const tripTypeMap: Record<string, number> = { outstation: 3, local: 3, airport: 5 };
     const subTripTypeMap: Record<string, number> = { oneWay: 7, roundTrip: 1, '880': 4 };
 
     const pickupDT = toSavaariDateTime(new Date(this.itinerary.pickupDate), this.itinerary.pickupTime);
@@ -488,15 +518,29 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   onPickupAddressSelect(event: any): void {
     const selected: string = event.value || event;
     const match = this.pickupSuggestionsRaw.find(s => s.description === selected);
-    if (match?.place_id) {
+    if (!match) return;
+
+    // Fallback results (city-level) have latlng directly — no place_id API call needed
+    if (match.isFallback && match.latlng) {
+      const [lat, lng] = match.latlng.split(',').map(Number);
+      if (lat && lng) {
+        this.pickupLatLng = { lat, lng };
+        if (this.dropLatLng) { this.dropAddressProcessed = ''; this.recalculateFareForDrop(); }
+      }
+      return;
+    }
+
+    if (match.place_id && !match.place_id.startsWith('city_')) {
       this.addressAutocomplete.getPlaceDetails(match.place_id, 'from').subscribe(details => {
         if (details) {
           this.pickupLatLng = { lat: details.lat, lng: details.lng };
-          // If drop address is already resolved, recalculate fare
-          if (this.dropLatLng) {
-            this.dropAddressProcessed = ''; // Reset to allow recalc
-            this.recalculateFareForDrop();
+          // Store alias city ID and place_name for booking create
+          this.pickupPlaceName = details.name || '';           // → locality
+          this.pickupAliasSourceCityId = details.aliasSourceCityId || 0;
+          if (!environment.production) {
+            console.log('[Booking] pickup place_id resolved:', details.name, 'aliasSourceCityId:', details.aliasSourceCityId);
           }
+          if (this.dropLatLng) { this.dropAddressProcessed = ''; this.recalculateFareForDrop(); }
         }
       });
     }
@@ -506,11 +550,29 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   onDropAddressSelect(event: any): void {
     const selected: string = event.value || event;
     const match = this.dropSuggestionsRaw.find(s => s.description === selected);
-    if (match?.place_id) {
+    if (!match) return;
+
+    // Fallback results (city-level) have latlng directly
+    if (match.isFallback && match.latlng) {
+      const [lat, lng] = match.latlng.split(',').map(Number);
+      if (lat && lng) {
+        this.dropLatLng = { lat, lng };
+        this.recalculateFareForDrop();
+      }
+      return;
+    }
+
+    if (match.place_id && !match.place_id.startsWith('city_')) {
       this.addressAutocomplete.getPlaceDetails(match.place_id, 'to').subscribe(details => {
         if (details) {
           this.dropLatLng = { lat: details.lat, lng: details.lng };
-          // Trigger fare recalculation after lat/lng is resolved
+          // Store alias city ID and sublocality for booking create
+          this.dropPlaceName = details.name || '';
+          this.dropSublocality = details.sublocality || details.name || ''; // → dropLocality
+          this.dropAliasDestCityId = details.aliasDestCityId || 0;
+          if (!environment.production) {
+            console.log('[Booking] drop place_id resolved:', details.name, 'sublocality:', details.sublocality, 'aliasDestCityId:', details.aliasDestCityId);
+          }
           this.recalculateFareForDrop();
         }
       });
@@ -886,34 +948,81 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           description: `Booking #${bkId} - ₹${advanceAmount}`,
           order_id: razorpayOrderId,
           handler: (rzpResponse: any) => {
-            // Live site post-payment flow: email_sent (×2) → confirmation.php
-            // (razor_checkhash not visible in live site network — handled server-side by Razorpay webhook)
+            // HAR-confirmed post-payment flow (FLOW.md):
+            //   1. razor_checkhash.php → verify payment signature (multipart/form-data)
+            //   2. autologin → refresh B2B JWT (may have expired during Razorpay flow)
+            //   3. email_sent × 2 → send confirmation emails
+            //   4. confirmation.php → mark booking as paid
 
-            // Fire email_sent twice (matches live site behavior — agent + customer emails)
-            this.paymentService.sendConfirmationEmail(bkId).subscribe();
-            this.paymentService.sendConfirmationEmail(bkId).subscribe();
+            const razorpayPaymentId = rzpResponse.razorpay_payment_id || '';
+            const rzpOrderId = rzpResponse.razorpay_order_id || razorpayOrderId;
+            const razorpaySignature = rzpResponse.razorpay_signature || '';
 
-            // Final payment confirmation (confirmation.php)
-            this.paymentService.confirmPayment({
-              advancedAmount: advanceAmount,
-              orderId: savaariPayId,
-              paymentId: rzpResponse.razorpay_payment_id,
-              paymentmode: 'savaariwebsite',
+            // Step 1: Verify payment hash (razor_checkhash.php)
+            this.paymentService.verifyRazorpayPayment({
+              razorpay_order_id: rzpOrderId,
+              razorpay_payment_id: razorpayPaymentId,
+              razorpay_signature: razorpaySignature,
+              savaari_pay_id: savaariPayId,
+              selectedAmount: advanceAmount,
             }).subscribe({
               next: () => {
-                this.isProcessingRazorpay = false;
-                this.bookingConfirmed = true;
-                this.clearPassengerState();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                this.cdr.markForCheck();
+                // Step 2: Refresh B2B JWT via autologin
+                this.auth.autoLogin().subscribe();
+
+                // Step 3: Fire email_sent twice (matches live site — agent + customer emails)
+                this.paymentService.sendConfirmationEmail(bkId).subscribe();
+                this.paymentService.sendConfirmationEmail(bkId).subscribe();
+
+                // Step 4: Final payment confirmation (confirmation.php)
+                this.paymentService.confirmPayment({
+                  advancedAmount: advanceAmount,
+                  orderId: savaariPayId,
+                  paymentId: razorpayPaymentId,
+                  paymentmode: 'savaariwebsite',
+                }).subscribe({
+                  next: () => {
+                    this.isProcessingRazorpay = false;
+                    this.bookingConfirmed = true;
+                    this.clearPassengerState();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    this.cdr.markForCheck();
+                  },
+                  error: () => {
+                    // confirmation API failed — still show success (payment already done)
+                    this.isProcessingRazorpay = false;
+                    this.bookingConfirmed = true;
+                    this.clearPassengerState();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    this.cdr.markForCheck();
+                  }
+                });
               },
               error: () => {
-                // confirmation API failed — still show success (payment already done)
-                this.isProcessingRazorpay = false;
-                this.bookingConfirmed = true;
-                this.clearPassengerState();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                this.cdr.markForCheck();
+                // checkhash failed — still attempt confirmation (payment was taken by Razorpay)
+                this.paymentService.sendConfirmationEmail(bkId).subscribe();
+                this.paymentService.sendConfirmationEmail(bkId).subscribe();
+                this.paymentService.confirmPayment({
+                  advancedAmount: advanceAmount,
+                  orderId: savaariPayId,
+                  paymentId: razorpayPaymentId,
+                  paymentmode: 'savaariwebsite',
+                }).subscribe({
+                  next: () => {
+                    this.isProcessingRazorpay = false;
+                    this.bookingConfirmed = true;
+                    this.clearPassengerState();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    this.cdr.markForCheck();
+                  },
+                  error: () => {
+                    this.isProcessingRazorpay = false;
+                    this.bookingConfirmed = true;
+                    this.clearPassengerState();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    this.cdr.markForCheck();
+                  }
+                });
               }
             });
           },
@@ -938,10 +1047,17 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  /** Build a CreateBookingRequest from current form state */
+  /** Build a CreateBookingRequest from current form state
+   * Field mapping matches FLOW.md exactly (from HAR analysis of b2bcab.betasavaari.com)
+   */
   private buildBookingRequest(apiParams: { tripType: string; subTripType: string }, prePaymentAmount: number): CreateBookingRequest {
-    const pickupLocality = typeof this.pickupAddress === 'string' ? this.pickupAddress : String(this.pickupAddress || '');
+    const pickupAddr = typeof this.pickupAddress === 'string' ? this.pickupAddress : String(this.pickupAddress || '');
     const isAirport = apiParams.tripType === 'airport';
+
+    // locality = place_name from place_id API (e.g. "Koramangala"), NOT full address
+    // dropLocality = sublocality from place_id API (e.g. "Chamrajpura"), NOT full address
+    const locality = this.pickupPlaceName || pickupAddr.split(',')[0]?.trim() || '';
+    const dropLocality = this.dropSublocality || this.dropPlaceName || '';
 
     return {
       sourceCity: this.itinerary!.fromCityId || 377,
@@ -949,11 +1065,14 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       subTripType: apiParams.subTripType,
       pickupDateTime: toSavaariDateTime(new Date(this.itinerary!.pickupDate), this.itinerary!.pickupTime),
       duration: this.itinerary!.duration || 1,
-      pickupAddress: pickupLocality || this.itinerary!.pickupAddress || '',
+      pickupAddress: pickupAddr || this.itinerary!.pickupAddress || '',
       customerLatLong: this.pickupLatLng ? `${this.pickupLatLng.lat},${this.pickupLatLng.lng}` : '',
-      locality: pickupLocality,
+      locality,
+      alias_source_city_id: this.pickupAliasSourceCityId || 0,
       dropAddress: this.dropAddress || '',
       dropLatLong: this.dropLatLng ? `${this.dropLatLng.lat},${this.dropLatLng.lng}` : '',
+      dropLocality,
+      alias_dest_city_id: this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || 0,
       customerTitle: 'Mr',
       customerName: this.guestName,
       customerEmail: this.guestEmail || this.agentEmail || undefined,
@@ -963,23 +1082,22 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       carType: this.selectedCar!.carTypeId || 4,
       premiumFlag: 0,
       prePayment: prePaymentAmount,
-      alias_dest_city_id: this.itinerary!.aliasDestCityId || 0,
       app_user_id: Number(this.auth.getAgentId()) || undefined,
       couponCode: '',
-      device: /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'MOBILE' : 'DESKTOP',
+      device: 'MOBILE',
       invoicePayer: this.commissionService.getInvoicePayer(),
       ...(this.itinerary!.toCityId && { destinationCity: this.itinerary!.toCityId }),
       ...(this.itinerary!.extraDestinations?.length && {
         multicityId: this.itinerary!.extraDestinations.map(s => s.cityId).join(',')
       }),
       ...(this.itinerary!.localityId && { localityId: this.itinerary!.localityId }),
-      // Airport-specific params (confirmed missing by Shubhendu — required for airport flow)
+      // Airport-specific params
       ...(isAirport && {
         airport_id: this.itinerary!.airportId ? String(this.itinerary!.airportId) : '',
         airport_name: this.itinerary!.airportName || '',
         terminalId: this.itinerary!.terminalId || '',
         selectPlaceId: this.itinerary!.selectPlaceId || '',
-        custShortAddress: pickupLocality || this.itinerary!.pickupAddress || '',
+        custShortAddress: locality || this.itinerary!.pickupAddress || '',
       }),
       ...(this.isBookingUrgent() && { Urgent_booking: '1' }),
       ...(this.needsGstInvoice && this.agentGstNumber && { gst_invoice_required: '1', gst_number: this.agentGstNumber }),

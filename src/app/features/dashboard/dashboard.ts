@@ -244,7 +244,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Filter addresses using Savaari autocomplete API (replaces Google Maps Places) */
   filterLocalities(event: AutoCompleteCompleteEvent) {
     const q = event.query || '';
-    if (q.length < 2) {
+    if (q.length < 3) {
       this.filteredLocalities = [];
       this.cdr.markForCheck();
       return;

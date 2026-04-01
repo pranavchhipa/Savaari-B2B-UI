@@ -21,17 +21,22 @@ import { environment } from '../../../environments/environment';
 
 export interface AddressSuggestion {
   description: string;     // Full address text
-  place_id: string;        // Savaari place ID (use in place_id API)
+  place_id: string;        // Savaari place ID (use in place_id API), or 'city_{id}' for fallback
   main_text?: string;      // Primary text (e.g. street name)
   secondary_text?: string; // Secondary text (e.g. city, state)
+  latlng?: string;         // Direct lat,lng from fallback results (e.g. "12.966,77.606")
+  isFallback?: boolean;    // true if from fallback (city-level, no place_id API needed)
 }
 
 export interface PlaceDetails {
   place_id: string;
-  name: string;            // Short name
+  name: string;            // place_name from API (e.g. "Koramangala") — used as locality
   formatted_address: string;
   lat: number;
   lng: number;
+  aliasSourceCityId: number;  // source_city_map_info.city_id — for booking create
+  aliasDestCityId: number;    // destination_city_map_info.city_id — for booking create
+  sublocality: string;        // sublocality_level_1 from address_components — used as dropLocality
 }
 
 @Injectable({ providedIn: 'root' })
@@ -70,6 +75,11 @@ export class AddressAutocompleteService {
       token,
       rsource: 'b2b',
     }).pipe(
+      tap(response => {
+        if (!environment.production) {
+          console.log('[Autocomplete] raw response:', response?.source, response);
+        }
+      }),
       map(response => this.parseAutocompleteResponse(response)),
       catchError(err => {
         console.error('[Autocomplete] API error:', err?.status, err?.message);
@@ -92,6 +102,9 @@ export class AddressAutocompleteService {
         formatted_address: 'Mock Address, Bangalore, Karnataka',
         lat: 12.9716,
         lng: 77.5946,
+        aliasSourceCityId: 377,
+        aliasDestCityId: 0,
+        sublocality: 'Koramangala',
       });
     }
 
@@ -110,8 +123,12 @@ export class AddressAutocompleteService {
   /**
    * Parse autocomplete API response.
    *
-   * Confirmed response format (tested April 2026):
-   * { "response": [{ "place_id": "...", "address": "...", "main_text": "...", "secondary_text": "..." }], "source": "Redis" }
+   * API has 3 response modes (tested April 2026):
+   *   1. source:"Redis"      → {response: [{place_id, address, main_text, secondary_text}]}
+   *   2. source:"Google_api" → {response: [{place_id, address, main_text, secondary_text}]}
+   *      (or empty: {query, token, cacheKey, source} with NO response array = cache miss)
+   *   3. source:"fallback"   → {response: [{city_id, address, main_text, secondary_text, latlng}]}
+   *      (city-level results — no place_id, but has latlng like "12.966,77.606")
    */
   private parseAutocompleteResponse(response: any): AddressSuggestion[] {
     if (!response) return [];
@@ -119,12 +136,22 @@ export class AddressAutocompleteService {
     const predictions = response.response || response.predictions || response.data || response.results;
     if (!Array.isArray(predictions)) return [];
 
-    return predictions.map((p: any) => ({
-      description: p.address || p.description || p.formatted_address || '',
-      place_id: p.place_id || p.placeId || '',
-      main_text: p.main_text || p.name || '',
-      secondary_text: p.secondary_text || '',
-    })).filter((s: AddressSuggestion) => s.description && s.place_id);
+    const source = response.source || '';
+
+    return predictions.map((p: any) => {
+      const placeId = p.place_id || p.placeId || '';
+      const cityId = p.city_id;
+      const isFallback = !placeId && !!cityId;
+
+      return {
+        description: p.address || p.description || p.formatted_address || '',
+        place_id: placeId || (cityId ? `city_${cityId}` : ''),
+        main_text: p.main_text || p.name || '',
+        secondary_text: p.secondary_text || '',
+        latlng: p.latlng || '',
+        isFallback,
+      };
+    }).filter((s: AddressSuggestion) => s.description && s.place_id);
   }
 
   /**
@@ -142,12 +169,26 @@ export class AddressAutocompleteService {
 
     const location = response.location || response.geometry?.location || {};
 
+    // Extract sublocality from address_components (used as dropLocality in booking create)
+    let sublocality = '';
+    const components = response.address_components || [];
+    for (const comp of components) {
+      const types: string[] = comp.types || [];
+      if (types.includes('sublocality_level_1') || types.includes('sublocality')) {
+        sublocality = comp.longText || comp.long_name || '';
+        break;
+      }
+    }
+
     return {
       place_id: response.placeId || response.place_id || '',
       name: response.place_name || response.name || response.addressLocality || '',
       formatted_address: response.formattedAddress || response.formatted_address || '',
       lat: Number(location.lat) || 0,
       lng: Number(location.long || location.lng) || 0,
+      aliasSourceCityId: Number(response.source_city_map_info?.city_id) || 0,
+      aliasDestCityId: Number(response.destination_city_map_info?.city_id) || 0,
+      sublocality: sublocality || response.addressLocality || '',
     };
   }
 }

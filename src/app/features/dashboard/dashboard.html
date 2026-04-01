@@ -465,7 +465,7 @@
                   {{ bookingForm.get('tripType')?.value === 'pickup' ? 'Drop Address' : 'Pickup Address' }}
                 </span>
                 <p-autoComplete formControlName="pickupAddress" [suggestions]="filteredLocalities"
-                  (completeMethod)="filterLocalities($event)" (onSelect)="onAddressSelect($event)" field="description" optionLabel="description" [minLength]="2"
+                  (completeMethod)="filterLocalities($event)" (onSelect)="onAddressSelect($event)" field="description" optionLabel="description" [minLength]="3"
                   placeholder="Start typing address" styleClass="w-full search-bar-autocomplete"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">

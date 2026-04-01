@@ -59,8 +59,9 @@ export interface CreateBookingRequest {
   couponCode?: string;
   fixed_amount?: number;
 
-  // Destination alias & user
-  alias_dest_city_id?: number;   // Alias destination city ID (0 for most bookings)
+  // City alias IDs (from place_id API response)
+  alias_source_city_id?: number; // source_city_map_info.city_id (e.g. 414 for Koramangala)
+  alias_dest_city_id?: number;   // destination_city_map_info.city_id (e.g. 280 for Mysore)
   app_user_id?: number;          // Agent/user ID (numeric)
 
   // Agent/source
@@ -78,16 +79,27 @@ export interface CreateBookingRequest {
 /**
  * POST /booking → 201 Created response.
  *
- * Confirmed shape from live Savaari Partner API (March 2026):
- *   { "status": "success", "data": [{ "booking_id": "...", "reservation_id": "...", ... }] }
+ * Confirmed shape from live beta HAR (April 2026):
+ *   prePayment=0 → { "status": "success", "data": { "bookingId": 2361706, "reservationId": "S0426-2361706", ... } }
+ *   prePayment>0 → { "status": "success", "data": [{ "booking_id": "...", ... }] }
  *
- * The booking_id and reservation_id are nested inside data[0], NOT at the top level.
- * Error responses (still 201) look like:
- *   { "status": "success", "data": [{ "status_code": 402, "status_error": "..." }] }
+ * CRITICAL fields from data:
+ *   - bookingId / booking_id → booking ID
+ *   - order_id → savaari_payment_id (e.g. "SW35004S0426-2361706")
+ *   - paymentOptions[*].parameters.amount25per → advance amount
+ *   - paymentOptions[*].parametersEncoded.amount25perEncoded → encoded amount for razor_createorder
  */
 export interface CreateBookingResponseData {
   booking_id?: string;
+  bookingId?: number;
   reservation_id?: string;
+  reservationId?: string;
+  travelId?: number;
+  order_id?: string;           // savaari_payment_id (e.g. "SW35004S0426-2361706")
+  totalFare?: number;
+  prePayment?: number;
+  cashToCollect?: number;
+  paymentOptions?: PaymentOption[];
   booking_key?: string;
   // Error fields (present when booking fails despite 201)
   status_code?: number;
@@ -96,10 +108,35 @@ export interface CreateBookingResponseData {
   [key: string]: unknown;
 }
 
+export interface PaymentOption {
+  payment_gateway_code: number;
+  title: string;
+  vendor?: string;
+  parameters?: {
+    amountFull?: number;
+    amountAdv?: number;
+    amount20per?: number;
+    amount25per?: number;
+    amount30per?: number;
+    amount50per?: number;
+    [key: string]: unknown;
+  };
+  parametersEncoded?: {
+    amountFullEncoded?: string;
+    amount20perEncoded?: string;
+    amount25perEncoded?: string;
+    amount30perEncoded?: string;
+    amount50perEncoded?: string;
+    amountAdvEncoded?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export interface CreateBookingResponse {
   status?: string;
-  data?: CreateBookingResponseData[];
-  // Legacy top-level fields (kept for safety, not present in real API)
+  data?: CreateBookingResponseData | CreateBookingResponseData[];
+  // Legacy top-level fields (kept for safety)
   booking_id?: string;
   bookingId?: string;
   reservation_id?: string;
