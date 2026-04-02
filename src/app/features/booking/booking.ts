@@ -14,7 +14,7 @@ import { WalletService } from '../../core/services/wallet.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { CommissionService } from '../../core/services/commission.service';
 import { CountryCodeService, CountryCodeEntry } from '../../core/services/country-code.service';
-import { LocalityService, Locality } from '../../core/services/locality.service';
+import { LocalityService } from '../../core/services/locality.service';
 import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
 import { CityService } from '../../core/services/city.service';
 // AvailabilityService removed — fare recalculation is now client-side (Haversine distance)
@@ -158,8 +158,8 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   dropSuggestions: string[] = [];
 
   // Full locality objects (kept to look up locality ID when user selects)
-  private pickupSuggestionsRaw: Locality[] = [];
-  private dropSuggestionsRaw: Locality[] = [];
+  private pickupSuggestionsRaw: AddressSuggestion[] = [];
+  private dropSuggestionsRaw: AddressSuggestion[] = [];
 
   // Lat/lng resolved from place_id API (2nd API) after address selection
   private pickupLatLng: { lat: number; lng: number } | null = null;
@@ -495,55 +495,87 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /** PrimeNG AutoComplete: search pickup address via localities API (matches live beta site) */
   searchPickupAddress(event: AutoCompleteCompleteEvent): void {
-    const cityId = this.itinerary?.fromCityId;
-    if (!cityId || !event.query || event.query.length < 2) {
-      this.pickupSuggestions = []; this.pickupSuggestionsRaw = []; return;
+    const query = event.query?.trim() || '';
+    if (!query || query.length < 2) {
+      this.pickupSuggestions = [];
+      this.pickupSuggestionsRaw = [];
+      return;
     }
-    this.localityService.searchLocalities(cityId, event.query).subscribe(results => {
-      this.pickupSuggestionsRaw = results;
-      this.pickupSuggestions = results.map(r => r.name);
-      this.cdr.markForCheck();
-    });
+
+    const city = this.itinerary?.fromCity || '';
+    this.addressAutocomplete
+      .searchAddress(query, 'from', city, this.fromCityLat || undefined, this.fromCityLng || undefined)
+      .subscribe(results => {
+        this.pickupSuggestionsRaw = results;
+        this.pickupSuggestions = results.map(r => r.description);
+        this.cdr.markForCheck();
+      });
   }
 
   /** PrimeNG AutoComplete: search drop address via localities API (matches live beta site) */
   searchDropAddress(event: AutoCompleteCompleteEvent): void {
-    const cityId = this.itinerary?.toCitySourceId || this.itinerary?.toCityId;
-    if (!cityId || !event.query || event.query.length < 2) {
-      this.dropSuggestions = []; this.dropSuggestionsRaw = []; return;
+    const query = event.query?.trim() || '';
+    if (!query || query.length < 2) {
+      this.dropSuggestions = [];
+      this.dropSuggestionsRaw = [];
+      return;
     }
-    this.localityService.searchLocalities(cityId, event.query).subscribe(results => {
-      this.dropSuggestionsRaw = results;
-      this.dropSuggestions = results.map(r => r.name);
-      this.cdr.markForCheck();
-    });
+
+    const city = this.itinerary?.toCity || '';
+    this.addressAutocomplete
+      .searchAddress(query, 'to', city, this.toCityLat || undefined, this.toCityLng || undefined)
+      .subscribe(results => {
+        this.dropSuggestionsRaw = results;
+        this.dropSuggestions = results.map(r => r.description);
+        this.cdr.markForCheck();
+      });
   }
 
   /** When user selects a pickup address from localities list */
   onPickupAddressSelect(event: any): void {
-    const selected: string = event.value || event;
-    const match = this.pickupSuggestionsRaw.find(s => s.name === selected);
-    if (!match) return;
+    const selected: string = event?.value || event;
+    const match = this.pickupSuggestionsRaw.find(s => s.description === selected);
+    if (!match?.place_id) return;
 
-    // Store locality name for booking create (→ locality field)
-    this.pickupPlaceName = match.name;
-    if (!environment.production) {
-      console.log('[Booking] pickup locality selected:', match.name, 'id:', match.id);
-    }
+    // Resolve place_id to get place_name (locality) + lat/lng for fare calc + alias IDs for booking create.
+    this.addressAutocomplete.getPlaceDetails(match.place_id, 'from').subscribe(details => {
+      if (!details) return;
+
+      this.pickupPlaceName = details.name;
+      this.pickupLatLng = { lat: details.lat, lng: details.lng };
+      this.pickupAliasSourceCityId = details.aliasSourceCityId;
+
+      // If drop is already selected, we can immediately recalculate the fare.
+      if (this.itinerary?.tripType === 'One Way' && this.dropLatLng) {
+        this.recalculateFareForDrop();
+      }
+
+      this.cdr.markForCheck();
+    });
   }
 
   /** When user selects a drop address from localities list */
   onDropAddressSelect(event: any): void {
-    const selected: string = event.value || event;
-    const match = this.dropSuggestionsRaw.find(s => s.name === selected);
-    if (!match) return;
+    const selected: string = event?.value || event;
+    const match = this.dropSuggestionsRaw.find(s => s.description === selected);
+    if (!match?.place_id) return;
 
-    // Store locality name for booking create (→ dropLocality field)
-    this.dropPlaceName = match.name;
-    this.dropSublocality = match.name;
-    if (!environment.production) {
-      console.log('[Booking] drop locality selected:', match.name, 'id:', match.id);
-    }
+    // Resolve place_id to get place_name + sublocality + lat/lng for fare calc + alias IDs for booking create.
+    this.addressAutocomplete.getPlaceDetails(match.place_id, 'to').subscribe(details => {
+      if (!details) return;
+
+      this.dropPlaceName = details.name;
+      this.dropSublocality = details.sublocality;
+      this.dropLatLng = { lat: details.lat, lng: details.lng };
+      this.dropAliasDestCityId = details.aliasDestCityId;
+
+      // One Way: update fare when we have both pickup & drop lat/lng.
+      if (this.itinerary?.tripType === 'One Way' && this.pickupLatLng) {
+        this.recalculateFareForDrop();
+      }
+
+      this.cdr.markForCheck();
+    });
   }
 
   /** Triggered when drop address field loses focus (One Way) — no-op, fare recalc triggers on lat/lng resolution */
