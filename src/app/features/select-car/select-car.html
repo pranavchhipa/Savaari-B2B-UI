@@ -223,93 +223,110 @@
                         </div>
 
                         <!-- Car Info + Tabs -->
-                        <div class="flex flex-col justify-center min-w-0">
+                        <div class="flex flex-col justify-between min-w-0">
                             <!-- Name + subtitle + pills -->
-                            <div>
+                            <div class="pt-3">
                                 <div class="flex items-baseline gap-2.5 mb-2.5">
                                     <h2 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight truncate">{{car.name.replace(' or Equivalent', '')}}</h2>
                                     <span class="text-sm text-amber-600 dark:text-amber-400 font-medium italic shrink-0">{{car.subtitle}}</span>
                                 </div>
                                 <div class="flex flex-wrap gap-2.5">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                        <lucide-icon name="gauge" [size]="13" class="mr-1"></lucide-icon> {{ getCarKms(car.kmsIncluded) }}
+                                        <lucide-icon name="gauge" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{ getCarKms(car.kmsIncluded) }}
                                     </span>
-                                    <span *ngIf="car.hoursIncluded" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                                        <lucide-icon name="clock" [size]="13" class="mr-1"></lucide-icon> {{car.hoursIncluded}}
-                                    </span>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                        <lucide-icon name="users" [size]="13" class="mr-1"></lucide-icon> {{car.seats}}
+                                    <span *ngIf="car.hoursIncluded" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                        <lucide-icon name="clock" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{car.hoursIncluded}}
                                     </span>
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                        <lucide-icon name="briefcase" [size]="13" class="mr-1"></lucide-icon> {{car.bags}}
+                                        <lucide-icon name="users" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{car.seats}}
                                     </span>
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                        <lucide-icon name="snowflake" [size]="13" class="mr-1"></lucide-icon> {{car.ac}}
+                                        <lucide-icon name="briefcase" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{car.bags}}
+                                    </span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                        <lucide-icon name="snowflake" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{car.ac}}
                                     </span>
                                 </div>
                             </div>
 
+                            <!-- Tabs below name+pills -->
+                            <div class="mt-1 border-t border-slate-100 dark:border-slate-800 pt-0.5">
+                                <div class="flex overflow-x-auto scrollbar-hide">
+                                    <button *ngFor="let tab of ['Inclusions', 'Exclusions', 'Facilities', 'T&C']"
+                                        (click)="toggleTab(car.id, tab === 'T&C' ? 'tc' : tab.toLowerCase())" [ngClass]="{
+                                            'border-b-2 border-sky-500 text-sky-500 dark:text-sky-400 font-semibold': activeTab[car.id] === (tab === 'T&C' ? 'tc' : tab.toLowerCase()),
+                                            'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium': activeTab[car.id] !== (tab === 'T&C' ? 'tc' : tab.toLowerCase())
+                                        }" class="px-3.5 py-1 text-[11px] transition-all whitespace-nowrap bg-transparent cursor-pointer">
+                                        {{tab}}
+                                    </button>
+                                </div>
+                                <div *ngIf="activeTab[car.id]" class="pt-1 pb-0.5">
+                                    <!-- Inclusions -->
+                                    <div [hidden]="activeTab[car.id] !== 'inclusions'" class="flex flex-wrap gap-x-8 gap-y-1">
+                                        <div *ngFor="let item of car.inclusions" class="flex items-center gap-1.5">
+                                            <div class="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                                                <lucide-icon name="check" [size]="12" class="text-emerald-600 dark:text-emerald-400" [strokeWidth]="3"></lucide-icon>
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[8px] text-slate-400 uppercase font-bold tracking-tight leading-none">Included</span>
+                                                <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">{{item}}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Exclusions -->
+                                    <div [hidden]="activeTab[car.id] !== 'exclusions'" class="flex flex-wrap gap-x-8 gap-y-1">
+                                        <div *ngFor="let item of car.exclusions" class="flex items-center gap-1.5">
+                                            <div class="w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center">
+                                                <lucide-icon name="x" [size]="12" class="text-orange-600 dark:text-orange-400" [strokeWidth]="3"></lucide-icon>
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[8px] text-slate-400 uppercase font-bold tracking-tight leading-none">On Actuals</span>
+                                                <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">{{item}}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Facilities -->
+                                    <div [hidden]="activeTab[car.id] !== 'facilities'" class="flex flex-wrap gap-x-8 gap-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <div class="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                                <lucide-icon name="snowflake" [size]="10" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">Air Conditioning</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <div class="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                                <lucide-icon name="users" [size]="10" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{{car.seats}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- T&C -->
+                                    <div [hidden]="activeTab[car.id] !== 'tc'" class="space-y-1">
+                                        <div *ngFor="let line of car.tc" class="flex items-start gap-1.5">
+                                            <div class="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0"></div>
+                                            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">{{line}}</p>
+                                        </div>
+                                        <div class="pt-2 border-t border-slate-200 dark:border-slate-600 mt-2">
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                                For detailed terms and conditions,
+                                                <a [routerLink]="['/tnc', tncSlug]" target="_blank" class="text-primary hover:underline font-semibold">Click Here</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
 
                         <!-- Spacer -->
                         <div class="flex-1"></div>
                         <!-- Price & CTA -->
-                        <div class="w-[180px] flex-shrink-0 flex flex-col items-end justify-center border-l border-slate-100 dark:border-slate-700 pl-5">
+                        <div class="w-[180px] flex-shrink-0 flex flex-col items-center justify-center border-l border-slate-100 dark:border-slate-700 pl-5">
                             <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹ {{ getCarPrice(car.price) | number:'1.0-0' }}</span>
                             <p class="text-[10px] text-slate-400 mb-3">Inclusive of GST</p>
                             <button (click)="onSelectCar(car)"
                                 class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-7 rounded-lg shadow-sm transition-all active:scale-95 text-[12px] uppercase tracking-wider cursor-pointer whitespace-nowrap">
                                 SELECT CAR
                             </button>
-                        </div>
-                    </div>
-                    <!-- Tabs section (below card, doesn't affect card height) -->
-                    <div class="hidden md:block border-t border-slate-100 dark:border-slate-800">
-                        <div class="flex px-4 overflow-x-auto scrollbar-hide">
-                            <button *ngFor="let tab of ['Inclusions', 'Exclusions', 'Facilities', 'T&C']"
-                                (click)="toggleTab(car.id, tab === 'T&C' ? 'tc' : tab.toLowerCase())" [ngClass]="{
-                                    'border-b-2 border-sky-500 text-sky-500 dark:text-sky-400 font-semibold': activeTab[car.id] === (tab === 'T&C' ? 'tc' : tab.toLowerCase()),
-                                    'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium': activeTab[car.id] !== (tab === 'T&C' ? 'tc' : tab.toLowerCase())
-                                }" class="px-3 py-1 text-[10px] transition-all whitespace-nowrap bg-transparent cursor-pointer">
-                                {{tab}}
-                            </button>
-                        </div>
-                        <div *ngIf="activeTab[car.id]" class="px-4 py-1.5 border-t border-slate-50 dark:border-slate-800">
-                            <!-- Inclusions -->
-                            <div [hidden]="activeTab[car.id] !== 'inclusions'" class="flex flex-wrap gap-x-6 gap-y-1">
-                                <div *ngFor="let item of car.inclusions" class="flex items-center gap-1.5">
-                                    <lucide-icon name="check" [size]="10" class="text-emerald-500"></lucide-icon>
-                                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{{item}}</span>
-                                </div>
-                            </div>
-                            <!-- Exclusions -->
-                            <div [hidden]="activeTab[car.id] !== 'exclusions'" class="flex flex-wrap gap-x-6 gap-y-1">
-                                <div *ngFor="let item of car.exclusions" class="flex items-center gap-1.5">
-                                    <lucide-icon name="x" [size]="10" class="text-orange-500"></lucide-icon>
-                                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{{item}}</span>
-                                </div>
-                            </div>
-                            <!-- Facilities -->
-                            <div [hidden]="activeTab[car.id] !== 'facilities'" class="flex flex-wrap gap-x-6 gap-y-1">
-                                <div class="flex items-center gap-1.5">
-                                    <lucide-icon name="snowflake" [size]="10" class="text-blue-500"></lucide-icon>
-                                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">Air Conditioning</span>
-                                </div>
-                                <div class="flex items-center gap-1.5">
-                                    <lucide-icon name="users" [size]="10" class="text-blue-500"></lucide-icon>
-                                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{{car.seats}}</span>
-                                </div>
-                            </div>
-                            <!-- T&C -->
-                            <div [hidden]="activeTab[car.id] !== 'tc'" class="space-y-0.5">
-                                <div *ngFor="let line of car.tc" class="flex items-start gap-1">
-                                    <div class="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0"></div>
-                                    <p class="text-[10px] text-slate-600 dark:text-slate-400 leading-snug">{{line}}</p>
-                                </div>
-                                <p class="text-[10px] text-slate-400 pt-1">
-                                    For detailed terms, <a [routerLink]="['/tnc', tncSlug]" target="_blank" class="text-primary hover:underline font-semibold">Click Here</a>
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>

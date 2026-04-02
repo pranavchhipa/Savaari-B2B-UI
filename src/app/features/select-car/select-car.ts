@@ -175,12 +175,17 @@ export class SelectCarComponent implements OnInit {
       nightAllowance: nightAllow,
       packageId: car.packageId ? String(car.packageId) : undefined,
       tc,
-      inclusions: car.inclusions?.length ? car.inclusions : ['Fuel Charges', 'Driver Allowance', `${kmsInc} KMs`],
-      exclusions: car.exclusions?.length ? car.exclusions : ['Tolls & Parking', 'State Taxes']
+      inclusions: car.inclusions?.length ? car.inclusions.map(t => this.decodeUnicode(t)) : ['Fuel Charges', 'Driver Allowance', `${kmsInc} KMs`],
+      exclusions: car.exclusions?.length ? car.exclusions.map(t => this.decodeUnicode(t)) : ['Tolls & Parking', 'State Taxes']
     };
   }
 
   /** Map car name to studio-quality car photo, with type ID fallback */
+  /** Decode unicode escapes like \u20B9 → ₹ in API strings */
+  private decodeUnicode(text: string): string {
+    return text.replace(/\\u([0-9A-Fa-f]{4})/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
+  }
+
   private getLocalCarImage(carName: string, typeId: number): string {
     const base = 'assets/cars/';
     const n = (carName || '').toLowerCase();
