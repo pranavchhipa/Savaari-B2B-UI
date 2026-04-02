@@ -14,7 +14,7 @@ import { WalletService } from '../../core/services/wallet.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { CommissionService } from '../../core/services/commission.service';
 import { CountryCodeService, CountryCodeEntry } from '../../core/services/country-code.service';
-import { LocalityService } from '../../core/services/locality.service';
+import { LocalityService, Locality } from '../../core/services/locality.service';
 import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
 import { CityService } from '../../core/services/city.service';
 // AvailabilityService removed — fare recalculation is now client-side (Haversine distance)
@@ -153,13 +153,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Session storage key for passenger details
   private readonly PASSENGER_STATE_KEY = 'b2b_passenger_state';
 
-  // Address autocomplete suggestions (Savaari autocomplete API replaces Google Maps)
+  // Address autocomplete suggestions (localities API — matches live beta site)
   pickupSuggestions: string[] = [];
   dropSuggestions: string[] = [];
 
-  // Full suggestion objects (kept to look up place_id when user selects)
-  private pickupSuggestionsRaw: AddressSuggestion[] = [];
-  private dropSuggestionsRaw: AddressSuggestion[] = [];
+  // Full locality objects (kept to look up locality ID when user selects)
+  private pickupSuggestionsRaw: Locality[] = [];
+  private dropSuggestionsRaw: Locality[] = [];
 
   // Lat/lng resolved from place_id API (2nd API) after address selection
   private pickupLatLng: { lat: number; lng: number } | null = null;
@@ -493,90 +493,56 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  /** PrimeNG AutoComplete: search pickup address via Savaari autocomplete API */
+  /** PrimeNG AutoComplete: search pickup address via localities API (matches live beta site) */
   searchPickupAddress(event: AutoCompleteCompleteEvent): void {
-    const cityName = this.itinerary?.fromCity?.split(',')[0]?.trim() || '';
-    if (!event.query || event.query.length < 2) { this.pickupSuggestions = []; this.pickupSuggestionsRaw = []; return; }
-    this.addressAutocomplete.searchAddress(event.query, 'from', cityName, this.fromCityLat, this.fromCityLng).subscribe(results => {
+    const cityId = this.itinerary?.fromCityId;
+    if (!cityId || !event.query || event.query.length < 2) {
+      this.pickupSuggestions = []; this.pickupSuggestionsRaw = []; return;
+    }
+    this.localityService.searchLocalities(cityId, event.query).subscribe(results => {
       this.pickupSuggestionsRaw = results;
-      this.pickupSuggestions = results.map(r => r.description);
+      this.pickupSuggestions = results.map(r => r.name);
       this.cdr.markForCheck();
     });
   }
 
-  /** PrimeNG AutoComplete: search drop address via Savaari autocomplete API */
+  /** PrimeNG AutoComplete: search drop address via localities API (matches live beta site) */
   searchDropAddress(event: AutoCompleteCompleteEvent): void {
-    const cityName = this.itinerary?.toCity?.split(',')[0]?.trim() || '';
-    if (!event.query || event.query.length < 2) { this.dropSuggestions = []; this.dropSuggestionsRaw = []; return; }
-    this.addressAutocomplete.searchAddress(event.query, 'to', cityName, this.toCityLat, this.toCityLng).subscribe(results => {
+    const cityId = this.itinerary?.toCitySourceId || this.itinerary?.toCityId;
+    if (!cityId || !event.query || event.query.length < 2) {
+      this.dropSuggestions = []; this.dropSuggestionsRaw = []; return;
+    }
+    this.localityService.searchLocalities(cityId, event.query).subscribe(results => {
       this.dropSuggestionsRaw = results;
-      this.dropSuggestions = results.map(r => r.description);
+      this.dropSuggestions = results.map(r => r.name);
       this.cdr.markForCheck();
     });
   }
 
-  /** When user selects a pickup address → call place_id API (2nd API) to get lat/lng */
+  /** When user selects a pickup address from localities list */
   onPickupAddressSelect(event: any): void {
     const selected: string = event.value || event;
-    const match = this.pickupSuggestionsRaw.find(s => s.description === selected);
+    const match = this.pickupSuggestionsRaw.find(s => s.name === selected);
     if (!match) return;
 
-    // Fallback results (city-level) have latlng directly — no place_id API call needed
-    if (match.isFallback && match.latlng) {
-      const [lat, lng] = match.latlng.split(',').map(Number);
-      if (lat && lng) {
-        this.pickupLatLng = { lat, lng };
-        if (this.dropLatLng) { this.dropAddressProcessed = ''; this.recalculateFareForDrop(); }
-      }
-      return;
-    }
-
-    if (match.place_id && !match.place_id.startsWith('city_')) {
-      this.addressAutocomplete.getPlaceDetails(match.place_id, 'from').subscribe(details => {
-        if (details) {
-          this.pickupLatLng = { lat: details.lat, lng: details.lng };
-          // Store alias city ID and place_name for booking create
-          this.pickupPlaceName = details.name || '';           // → locality
-          this.pickupAliasSourceCityId = details.aliasSourceCityId || 0;
-          if (!environment.production) {
-            console.log('[Booking] pickup place_id resolved:', details.name, 'aliasSourceCityId:', details.aliasSourceCityId);
-          }
-          if (this.dropLatLng) { this.dropAddressProcessed = ''; this.recalculateFareForDrop(); }
-        }
-      });
+    // Store locality name for booking create (→ locality field)
+    this.pickupPlaceName = match.name;
+    if (!environment.production) {
+      console.log('[Booking] pickup locality selected:', match.name, 'id:', match.id);
     }
   }
 
-  /** When user selects a drop address → call place_id API (2nd API) to get lat/lng, then recalculate fare */
+  /** When user selects a drop address from localities list */
   onDropAddressSelect(event: any): void {
     const selected: string = event.value || event;
-    const match = this.dropSuggestionsRaw.find(s => s.description === selected);
+    const match = this.dropSuggestionsRaw.find(s => s.name === selected);
     if (!match) return;
 
-    // Fallback results (city-level) have latlng directly
-    if (match.isFallback && match.latlng) {
-      const [lat, lng] = match.latlng.split(',').map(Number);
-      if (lat && lng) {
-        this.dropLatLng = { lat, lng };
-        this.recalculateFareForDrop();
-      }
-      return;
-    }
-
-    if (match.place_id && !match.place_id.startsWith('city_')) {
-      this.addressAutocomplete.getPlaceDetails(match.place_id, 'to').subscribe(details => {
-        if (details) {
-          this.dropLatLng = { lat: details.lat, lng: details.lng };
-          // Store alias city ID and sublocality for booking create
-          this.dropPlaceName = details.name || '';
-          this.dropSublocality = details.sublocality || details.name || ''; // → dropLocality
-          this.dropAliasDestCityId = details.aliasDestCityId || 0;
-          if (!environment.production) {
-            console.log('[Booking] drop place_id resolved:', details.name, 'sublocality:', details.sublocality, 'aliasDestCityId:', details.aliasDestCityId);
-          }
-          this.recalculateFareForDrop();
-        }
-      });
+    // Store locality name for booking create (→ dropLocality field)
+    this.dropPlaceName = match.name;
+    this.dropSublocality = match.name;
+    if (!environment.production) {
+      console.log('[Booking] drop locality selected:', match.name, 'id:', match.id);
     }
   }
 

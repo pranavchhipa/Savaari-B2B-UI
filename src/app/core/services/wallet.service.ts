@@ -347,10 +347,12 @@ export class WalletService {
 
     return this.api.walletPost<any>('pay-booking', payload, this.getWalletToken()).pipe(
       map(response => {
+        // DEBUG: log full response to trace transaction_id extraction
+        console.log('[WALLET] pay-booking raw response:', JSON.stringify(response));
         if (response?.statusCode === 200 || response?.status === 'success') {
           const data = response.data ?? response;
           const transactionId = data.transaction_id ?? data.transactionId ?? '';
-          if (!environment.production) console.log(`[WALLET] ₹${amount} deducted for booking #${bookingId} (option ${paymentOption}, txn: ${transactionId})`);
+          console.log('[WALLET] extracted transactionId:', transactionId, 'from data:', JSON.stringify(data));
           this.loadBalance();
           this.loadHistory();
           return { success: true, transactionId };
