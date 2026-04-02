@@ -1184,6 +1184,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               booking_id: bkId,
               payment_option: this.paymentOption,
               transaction_id: result.transactionId || '',
+              advancedAmount: payNow,
             } as any).subscribe();
 
             // Step 3: Send confirmation emails (fire-and-forget)

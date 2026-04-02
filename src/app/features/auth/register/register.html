@@ -2,110 +2,106 @@
 
 <div class="flex flex-col lg:flex-row min-h-[calc(100vh-64px)]">
 
-  <!-- ========== LEFT SIDE — 50% ========== -->
-  <div class="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden self-stretch">
-    <!-- Subtle grid -->
-    <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px); background-size: 28px 28px;"></div>
+  <!-- ========== LEFT SIDE — 45% ========== -->
+  <div class="hidden lg:flex lg:w-[45%] relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
     <!-- Glow orbs -->
-    <div class="absolute top-16 right-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px]"></div>
-    <div class="absolute bottom-20 left-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-[60px]"></div>
+    <div class="absolute top-10 right-16 w-56 h-56 bg-primary/8 rounded-full blur-[80px]"></div>
+    <div class="absolute bottom-16 left-8 w-40 h-40 bg-cyan-500/8 rounded-full blur-[60px]"></div>
 
-    <div class="relative z-10 flex flex-col justify-center h-full w-full px-4 sm:px-6 md:px-10 xl:px-14 py-6 sm:py-12 gap-8">
+    <div class="relative z-10 flex flex-col justify-start h-full w-full px-8 xl:px-12 pt-8">
+      <div class="space-y-6">
 
-      <!-- Top: Badge + Heading -->
-      <div class="animate-slide-up">
-        <div class="inline-flex items-center gap-3 bg-slate-800/80 backdrop-blur-md border border-white/15 rounded-full px-6 py-3 shadow-lg mb-6">
-          <lucide-icon name="badge-check" [size]="26" class="text-amber-400"></lucide-icon>
-          <span class="text-sm font-extrabold text-white uppercase tracking-widest">Trusted by 5,000+ Agents</span>
+        <!-- Heading -->
+        <div>
+          <h1 class="text-2xl xl:text-[28px] font-extrabold text-white leading-snug">
+            Grow Your Travel<br>Business with
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-primary">B2B CAB</span>.
+          </h1>
+          <p class="text-slate-400 text-[13px] mt-3 leading-relaxed max-w-sm">
+            Join India's largest inter-city cab network. Book across 2,000+ cities with zero cancellations.
+          </p>
         </div>
 
-        <h1 class="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-extrabold text-white leading-tight">
-          Grow Your Travel<br>Business with
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-primary">B2B CAB</span>.
-        </h1>
-        <p class="text-slate-400 text-sm mt-4 leading-relaxed max-w-md">
-          Join India's largest cab rental network. Book outstation, airport & local cabs across 2,000+ cities with zero cancellations.
-        </p>
-      </div>
-
-      <!-- Stats Row -->
-      <div class="grid grid-cols-3 gap-4 animate-count-up">
-        <div class="text-center bg-white/5 border border-white/8 rounded-xl py-4 px-2">
-          <div class="text-2xl font-extrabold text-white">2,000+</div>
-          <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-1">Cities</div>
-        </div>
-        <div class="text-center bg-white/5 border border-white/8 rounded-xl py-4 px-2">
-          <div class="text-2xl font-extrabold text-white">5,000+</div>
-          <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-1">Agents</div>
-        </div>
-        <div class="text-center bg-white/5 border border-white/8 rounded-xl py-4 px-2">
-          <div class="text-2xl font-extrabold text-white">20+</div>
-          <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-1">Years</div>
-        </div>
-      </div>
-
-      <!-- Value Props -->
-      <div class="space-y-4">
-        <div class="flex items-start gap-4 animate-slide-up-delay-1">
-          <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0">
-            <lucide-icon name="indian-rupee" [size]="24" class="text-cyan-400"></lucide-icon>
+        <!-- Stats — horizontal pills -->
+        <div class="flex gap-3">
+          <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+            <lucide-icon name="map-pin" [size]="14" class="text-primary"></lucide-icon>
+            <span class="text-sm font-bold text-white">2,000+</span>
+            <span class="text-[10px] text-slate-400">Cities</span>
           </div>
-          <div>
-            <h3 class="text-sm font-bold text-white">Earn on Every Booking</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Book a cab, earn money. Simple. Every trip pays you a commission.</p>
+          <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+            <lucide-icon name="users" [size]="14" class="text-emerald-400"></lucide-icon>
+            <span class="text-sm font-bold text-white">5,000+</span>
+            <span class="text-[10px] text-slate-400">Agents</span>
+          </div>
+          <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+            <lucide-icon name="award" [size]="14" class="text-amber-400"></lucide-icon>
+            <span class="text-sm font-bold text-white">20+</span>
+            <span class="text-[10px] text-slate-400">Years</span>
           </div>
         </div>
 
-        <div class="flex items-start gap-4 animate-slide-up-delay-2">
-          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-            <lucide-icon name="zap" [size]="24" class="text-emerald-400"></lucide-icon>
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-white">Free to Join. Always Free.</h3>
-            <p class="text-xs text-slate-400 mt-0.5">No fees. No targets. Sign up and start booking whenever you want.</p>
-          </div>
-        </div>
+        <!-- Divider -->
+        <div class="w-12 h-px bg-white/10"></div>
 
-        <div class="flex items-start gap-4 animate-slide-up-delay-3">
-          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-            <lucide-icon name="shield-check" [size]="24" class="text-amber-400"></lucide-icon>
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-white">Zero Cancellations</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Guaranteed rides. GST-ready invoices. Commissions paid on time, every time.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Testimonial Carousel -->
-      <div class="bg-white/5 border border-white/10 rounded-2xl p-6 relative">
-        <div class="absolute top-4 right-5 text-cyan-500/20 text-3xl sm:text-5xl font-serif leading-none">"</div>
-        <div *ngFor="let t of testimonials; let i = index">
-          <div *ngIf="i === activeTestimonial" class="animate-fade-scale">
-            <!-- Stars -->
-            <div class="flex gap-0.5 mb-3">
-              <span *ngFor="let s of [1,2,3,4,5]" class="text-amber-400 text-sm">{{ s <= t.rating ? '★' : '☆' }}</span>
+        <!-- Value Props -->
+        <div class="space-y-3">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <lucide-icon name="indian-rupee" [size]="16" class="text-cyan-400"></lucide-icon>
             </div>
-            <p class="text-sm text-slate-300 leading-relaxed italic pr-6">"{{ t.text }}"</p>
-            <div class="mt-4 flex items-center gap-3">
+            <div>
+              <h3 class="text-[13px] font-bold text-white">Earn on Every Booking</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Book a cab, earn commission. Every trip pays you.</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <lucide-icon name="zap" [size]="16" class="text-emerald-400"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-[13px] font-bold text-white">Free to Join. Always Free.</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">No fees. No targets. Start booking whenever you want.</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <lucide-icon name="shield-check" [size]="16" class="text-amber-400"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-[13px] font-bold text-white">Zero Cancellations</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Guaranteed rides. GST invoices. On-time payouts.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="w-12 h-px bg-white/10"></div>
+
+        <!-- Testimonial -->
+        <div class="flex items-start gap-3">
+          <div *ngFor="let t of testimonials; let i = index">
+            <div *ngIf="i === activeTestimonial" class="flex items-start gap-3">
               <img [src]="t.avatar" [alt]="t.name"
-                class="w-14 h-14 rounded-full object-cover ring-[3px] ring-cyan-400 shadow-lg shadow-cyan-500/30" />
+                class="w-10 h-10 rounded-full object-cover ring-2 ring-cyan-500/40 flex-shrink-0" />
               <div>
-                <p class="text-sm font-semibold text-white">{{ t.name }}</p>
-                <p class="text-xs text-slate-500">Travel Agent, {{ t.city }}</p>
+                <div class="flex gap-0.5 mb-1">
+                  <span *ngFor="let s of [1,2,3,4,5]" class="text-amber-400 text-[10px]">{{ s <= t.rating ? '★' : '☆' }}</span>
+                </div>
+                <p class="text-[12px] text-slate-300 italic leading-relaxed">"{{ t.text }}"</p>
+                <p class="text-[11px] font-semibold text-white mt-1.5">{{ t.name }} <span class="text-slate-500 font-normal">— {{ t.city }}</span></p>
               </div>
             </div>
           </div>
         </div>
-        <!-- Dots -->
-        <div class="flex gap-2 mt-5">
+        <div class="flex gap-1.5">
           <span *ngFor="let t of testimonials; let i = index"
             (click)="activeTestimonial = i"
-            class="h-1.5 rounded-full transition-all duration-300 cursor-pointer"
-            [ngClass]="i === activeTestimonial ? 'bg-cyan-400 w-6' : 'bg-slate-600 w-1.5'"></span>
+            class="h-1 rounded-full transition-all duration-300 cursor-pointer"
+            [ngClass]="i === activeTestimonial ? 'bg-cyan-400 w-5' : 'bg-slate-600 w-1.5'"></span>
         </div>
-      </div>
 
+      </div>
     </div>
   </div>
 
@@ -236,7 +232,7 @@
         <!-- Submit -->
         <button type="submit" [disabled]="isSubmitting"
           class="w-full flex justify-center items-center py-3.5 px-4 border-0 rounded-xl text-base font-bold text-white bg-gradient-to-r from-primary to-cyan-600 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
-          <span *ngIf="!isSubmitting">Sign Up</span>
+          <span *ngIf="!isSubmitting">Register</span>
           <span *ngIf="isSubmitting">Creating Account...</span>
           <lucide-icon *ngIf="!isSubmitting" name="arrow-right" [size]="18" class="ml-2"></lucide-icon>
         </button>
@@ -250,8 +246,8 @@
         <!-- Terms -->
         <p class="text-center text-[10px] text-slate-400 uppercase tracking-wider leading-relaxed">
           By registering, you agree to our
-          <a href="#" class="text-primary hover:underline">Terms of Service</a> and
-          <a href="#" class="text-primary hover:underline">Privacy Policy</a>.
+          <a routerLink="/terms-conditions" class="text-primary hover:underline">Terms of Service</a> and
+          <a routerLink="/privacy-policy" class="text-primary hover:underline">Privacy Policy</a>.
         </p>
       </form>
     </div>

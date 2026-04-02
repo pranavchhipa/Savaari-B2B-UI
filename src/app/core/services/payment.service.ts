@@ -234,6 +234,7 @@ export class PaymentService {
           booking_id: request.booking_id,
           payment_option: request.payment_option,
           transaction_id: request.transaction_id,
+          advancedAmount: request.advancedAmount,
         }
       : {
           advancedAmount: request.advancedAmount,
