@@ -35,6 +35,8 @@ interface DisplayCar {
   nightAllowance: number;
   packageId?: string;
   tc: string[];
+  inclusions: string[];
+  exclusions: string[];
 }
 
 @Component({
@@ -172,7 +174,9 @@ export class SelectCarComponent implements OnInit {
       extraKmRate: extraKm,
       nightAllowance: nightAllow,
       packageId: car.packageId ? String(car.packageId) : undefined,
-      tc
+      tc,
+      inclusions: car.inclusions?.length ? car.inclusions : ['Fuel Charges', 'Driver Allowance', `${kmsInc} KMs`],
+      exclusions: car.exclusions?.length ? car.exclusions : ['Tolls & Parking', 'State Taxes']
     };
   }
 

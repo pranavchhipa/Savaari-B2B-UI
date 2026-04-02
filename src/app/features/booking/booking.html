@@ -345,7 +345,7 @@
                 <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-3 sm:px-4 py-2.5 sm:py-3 mb-2 shadow-sm">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-widest">Trip Fare</p>
+                            <p class="text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-widest">Trip Details</p>
                             <p class="text-[13px] sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5 leading-snug">
                                 {{ itinerary?.fromCity || 'Source' }}
                                 <ng-container *ngIf="itinerary?.extraDestinations?.length">
@@ -488,7 +488,7 @@
                                     </p>
                                     <p class="text-[10px] text-red-500 font-medium">
                                         <lucide-icon name="alert-triangle" [size]="10" class="inline-block mr-0.5"></lucide-icon>
-                                        If wallet balance is insufficient at auto-deduction time, booking will be auto-cancelled. Keep ₹{{ getDeferredAmount(2) | number:'1.0-0' }} ready.
+                                        Remaining amount will be auto-deducted from wallet 48 hours before trip. If wallet balance is insufficient, booking will be auto-cancelled. Keep ₹{{ getDeferredAmount(2) | number:'1.0-0' }} ready.
                                     </p>
                                 </div>
                             </div>
@@ -512,8 +512,8 @@
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Zero Cash — Full Wallet</h4>
-                                    <span class="px-1.5 py-px bg-emerald-100 text-emerald-700 text-[7px] font-bold uppercase tracking-wider rounded border border-emerald-200">Recommended</span>
-                                    <span class="px-1.5 py-px bg-amber-100 text-amber-700 text-[7px] font-bold uppercase tracking-wider rounded border border-amber-200">Best Value</span>
+                                    <span class="px-2 py-0.5 text-[7px] font-bold uppercase tracking-wider rounded text-emerald-50 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_0_8px_rgba(16,185,129,0.4)] animate-pulse">Recommended</span>
+                                    <span class="px-2 py-0.5 text-[7px] font-bold uppercase tracking-wider rounded text-amber-50 bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.4)] animate-pulse">Best Value</span>
                                 </div>
                                 <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                     <ng-container *ngIf="!isBookingUrgent()">
@@ -546,7 +546,7 @@
                                     <span class="font-bold text-emerald-600">₹{{ getPayNowAmount(3) | number:'1.0-0' }}</span>
                                 </div>
                                 <div *ngIf="!isBookingUrgent()" class="flex justify-between">
-                                    <span class="text-amber-600 font-semibold">Auto-deducted 48h before (75% + deposit)</span>
+                                    <span class="text-amber-600 font-semibold">Auto-deducted 48h before (75% + 20%)</span>
                                     <span class="font-bold text-amber-600">₹{{ getDeferredAmount(3) | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between pt-0.5 border-t border-slate-100 dark:border-slate-700">
@@ -559,7 +559,7 @@
                                 </p>
                                 <p *ngIf="!isBookingUrgent()" class="text-[9px] text-red-500 font-medium">
                                     <lucide-icon name="alert-triangle" [size]="9" class="inline-block mr-0.5"></lucide-icon>
-                                    If wallet balance is insufficient at auto-deduction time, booking will be auto-cancelled. Keep ₹{{ getDeferredAmount(3) | number:'1.0-0' }} ready.
+                                    Full amount will be auto-deducted from wallet 48 hours before trip. If wallet balance is insufficient, booking will be auto-cancelled. Keep ₹{{ getDeferredAmount(3) | number:'1.0-0' }} ready.
                                 </p>
                             </div>
                         </div>
