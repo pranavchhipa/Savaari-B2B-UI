@@ -1,9 +1,14 @@
 {
-  "/payment-api": {
+  "/payment_confirmation": {
     "target": "https://b2bcab.betasavaari.com",
     "secure": true,
     "changeOrigin": true,
-    "pathRewrite": { "^/payment-api": "" },
+    "logLevel": "debug"
+  },
+  "/razor_": {
+    "target": "https://b2bcab.betasavaari.com",
+    "secure": true,
+    "changeOrigin": true,
     "logLevel": "debug"
   },
   "/partner-api": {

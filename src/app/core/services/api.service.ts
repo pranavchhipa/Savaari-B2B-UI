@@ -100,15 +100,17 @@ export class ApiService {
   }
 
   /**
-   * POST to the Payment PHP API (b2bcab.betasavaari.com).
-   * Used for: advance_payment_check.php, razor_createorder.php,
-   *           razor_checkhash.php, payment_confirmation/confirmation.php
+   * POST to the Payment PHP API.
+   * Used for: payment_confirmation/advance_payment_check.php,
+   *           payment_confirmation/confirmation.php,
+   *           razor_createorder.php, razor_checkhash.php
    *
-   * Confirmed from Postman: all PHP endpoints use form-encoded body.
+   * Endpoints are relative paths — PHP files live on the same server.
+   * No environment prefix needed (per Shubhendu).
    */
   paymentPost<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
     const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
-    return this.http.post<T>(`${environment.paymentApiBaseUrl}/${endpoint}`, formBody.toString(), {
+    return this.http.post<T>(endpoint, formBody.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }
     });
   }
@@ -118,7 +120,7 @@ export class ApiService {
    * Used for: razor_checkhash.php (confirmed from Postman)
    */
   paymentPostFormData<T>(endpoint: string, formData: FormData): Observable<T> {
-    return this.http.post<T>(`${environment.paymentApiBaseUrl}/${endpoint}`, formData);
+    return this.http.post<T>(endpoint, formData);
   }
 
   /**
