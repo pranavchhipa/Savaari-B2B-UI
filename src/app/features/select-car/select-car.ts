@@ -6,6 +6,7 @@ import { LucideAngularModule, Fuel, UserCheck, Moon, Receipt, FileText, Banknote
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BookingStateService, Itinerary, SelectedCar } from '../../core/services/booking-state.service';
 import { MarkupService } from '../../core/services/markup.service';
+import { CommissionService } from '../../core/services/commission.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { TripTypeService } from '../../core/services/trip-type.service';
@@ -56,6 +57,7 @@ export class SelectCarComponent implements OnInit {
   public router = inject(Router);
   private bookingState = inject(BookingStateService);
   private markupService = inject(MarkupService);
+  private commissionService = inject(CommissionService);
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
   private location = inject(Location);
@@ -94,6 +96,11 @@ export class SelectCarComponent implements OnInit {
     // Load cars from availability response
     this.loadCarsFromAvailability();
     this.initializeTabs();
+
+    // Fetch agent commission data (matches beta site — 2x get-commission calls)
+    this.commissionService.getCommission()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
 
     // Track page-load (mirrors savaari.com select-car page behaviour, 2s delay)
     setTimeout(() => {
@@ -442,11 +449,9 @@ export class SelectCarComponent implements OnInit {
     return `${dd}-${mm}-${yyyy} ${String(hours).padStart(2, '0')}:${minutes}`;
   }
 
-  /** Returns car price with agent markup applied, doubled for round trip */
+  /** Returns car price — raw API fare, doubled for round trip */
   getCarPrice(baseFare: number): number {
-    const tripTypeForMarkup = this.isLocal ? 'local' : this.isAirport ? 'airport' : 'outstation';
-    const withMarkup = this.markupService.applyMarkup(baseFare, tripTypeForMarkup);
-    return this.isRoundTrip ? withMarkup * 2 : withMarkup;
+    return this.isRoundTrip ? baseFare * 2 : baseFare;
   }
 
   /** Returns KMs label adjusted for trip type */
