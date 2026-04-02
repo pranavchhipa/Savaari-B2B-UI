@@ -81,6 +81,14 @@ export class ApiService {
   }
 
   /**
+   * POST to the B2B API with multipart/form-data (FormData).
+   * Used for: user (registration) — confirmed from beta site HAR
+   */
+  b2bPostFormData<T>(endpoint: string, formData: FormData): Observable<T> {
+    return this.http.post<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, formData);
+  }
+
+  /**
    * POST to the B2B API with form-encoded body.
    * Used for: user/update-profile (confirmed from beta site — sends form data, not JSON)
    */

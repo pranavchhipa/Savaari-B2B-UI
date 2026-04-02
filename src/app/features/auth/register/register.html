@@ -182,13 +182,31 @@
               class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm"
               [ngClass]="{'!border-red-400': registerForm.get('companyName')?.invalid && registerForm.get('companyName')?.touched}" />
           </div>
-          <div>
+          <div class="relative">
             <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">
               City <span class="text-red-400">*</span>
             </label>
-            <input formControlName="companyCity" type="text" placeholder="Select your city"
-              class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm"
-              [ngClass]="{'!border-red-400': registerForm.get('companyCity')?.invalid && registerForm.get('companyCity')?.touched}" />
+            <div class="relative">
+              <input formControlName="companyCity" type="text" placeholder="Search city..."
+                autocomplete="off"
+                (input)="filterCities($event)"
+                (focus)="onCityFocus()"
+                (blur)="onCityBlur()"
+                class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 pr-9 transition-all placeholder:text-slate-400 shadow-sm"
+                [ngClass]="{'!border-red-400': registerForm.get('companyCity')?.invalid && registerForm.get('companyCity')?.touched}" />
+              <lucide-icon name="map-pin" [size]="14" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
+            </div>
+            <!-- City Dropdown -->
+            <div *ngIf="showCityDropdown && filteredCities.length > 0"
+              class="absolute z-50 left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+              <button *ngFor="let city of filteredCities" type="button"
+                (mousedown)="selectCity(city)"
+                class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer flex items-center gap-2">
+                <lucide-icon name="map-pin" [size]="12" class="text-slate-400 flex-shrink-0"></lucide-icon>
+                <span class="font-medium">{{ city.cityOnly || city.name }}</span>
+                <span *ngIf="city.state" class="text-xs text-slate-400 ml-auto">{{ city.state }}</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -198,19 +216,31 @@
             <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">
               Password <span class="text-red-400">*</span>
             </label>
-            <input formControlName="password" type="password" placeholder="••••••••"
-              class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm"
-              [ngClass]="{'!border-red-400': registerForm.get('password')?.invalid && registerForm.get('password')?.touched}" />
+            <div class="relative">
+              <input formControlName="password" [type]="showPassword ? 'text' : 'password'" placeholder="••••••••"
+                class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 pr-10 transition-all placeholder:text-slate-400 shadow-sm"
+                [ngClass]="{'!border-red-400': registerForm.get('password')?.invalid && registerForm.get('password')?.touched}" />
+              <button type="button" (click)="showPassword = !showPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <lucide-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
+              </button>
+            </div>
             <p *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
-              class="mt-1 text-xs text-red-500">Min 6 characters</p>
+              class="mt-1 text-xs text-red-500">Min 8 chars, 1 uppercase, 1 lowercase, 1 number</p>
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">
               Confirm Password <span class="text-red-400">*</span>
             </label>
-            <input formControlName="confirmPassword" type="password" placeholder="••••••••"
-              class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm"
-              [ngClass]="{'!border-red-400': (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch')) && registerForm.get('confirmPassword')?.touched}" />
+            <div class="relative">
+              <input formControlName="confirmPassword" [type]="showConfirmPassword ? 'text' : 'password'" placeholder="••••••••"
+                class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 pr-10 transition-all placeholder:text-slate-400 shadow-sm"
+                [ngClass]="{'!border-red-400': (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch')) && registerForm.get('confirmPassword')?.touched}" />
+              <button type="button" (click)="showConfirmPassword = !showConfirmPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <lucide-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
+              </button>
+            </div>
             <p *ngIf="registerForm.hasError('mismatch') && registerForm.get('confirmPassword')?.touched"
               class="mt-1 text-xs text-red-500">Passwords don't match</p>
           </div>

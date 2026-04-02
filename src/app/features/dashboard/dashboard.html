@@ -102,7 +102,7 @@
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
                       <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
-                      <span class="text-sm text-slate-700">{{ city.name }}</span>
+                      <span class="text-sm text-slate-700 dark:text-slate-200">{{ city.name }}</span>
                     </div>
                   </ng-template>
                 </p-autoComplete>
@@ -136,7 +136,7 @@
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
                       <lucide-icon name="map-pin" [size]="14" class="text-orange-500 shrink-0"></lucide-icon>
-                      <span class="text-sm text-slate-700">{{ city.name }}</span>
+                      <span class="text-sm text-slate-700 dark:text-slate-200">{{ city.name }}</span>
                     </div>
                   </ng-template>
                 </p-autoComplete>
@@ -208,7 +208,7 @@
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
                       <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
-                      <span class="text-sm text-slate-700">{{ city.name }}</span>
+                      <span class="text-sm text-slate-700 dark:text-slate-200">{{ city.name }}</span>
                     </div>
                   </ng-template>
                 </p-autoComplete>
@@ -238,7 +238,7 @@
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
                       <lucide-icon name="map-pin" [size]="14" class="text-orange-500 shrink-0"></lucide-icon>
-                      <span class="text-sm text-slate-700">{{ city.name }}</span>
+                      <span class="text-sm text-slate-700 dark:text-slate-200">{{ city.name }}</span>
                     </div>
                   </ng-template>
                 </p-autoComplete>
@@ -264,7 +264,7 @@
                     <ng-template pTemplate="item" let-city>
                       <div class="flex items-center gap-2 px-2 py-1.5">
                         <lucide-icon name="map-pin" [size]="14" class="text-orange-500 shrink-0"></lucide-icon>
-                        <span class="text-sm">{{ city.name }}</span>
+                        <span class="text-sm text-slate-700 dark:text-slate-200">{{ city.name }}</span>
                       </div>
                     </ng-template>
                   </p-autoComplete>
@@ -374,7 +374,7 @@
                 <ng-template pTemplate="item" let-city>
                   <div class="flex items-center gap-2 px-2 py-1.5">
                     <lucide-icon name="map-pin" [size]="14" class="text-primary shrink-0"></lucide-icon>
-                    <span class="text-sm">{{ city.name }}</span>
+                    <span class="text-sm text-slate-700 dark:text-slate-200">{{ city.name }}</span>
                   </div>
                 </ng-template>
               </p-autoComplete>
@@ -448,7 +448,7 @@
                   <ng-template pTemplate="item" let-airport>
                     <div class="flex items-center gap-2 px-2 py-1.5">
                       <lucide-icon name="plane" [size]="14" class="text-primary shrink-0"></lucide-icon>
-                      <span class="text-sm">{{ airport.name }}</span>
+                      <span class="text-sm text-slate-700 dark:text-slate-200">{{ airport.name }}</span>
                     </div>
                   </ng-template>
                 </p-autoComplete>
@@ -473,7 +473,7 @@
                     <div class="flex items-center gap-2 px-2 py-1.5">
                       <lucide-icon name="map-pin" [size]="14" class="text-orange-500 shrink-0"></lucide-icon>
                       <div class="min-w-0">
-                        <span class="text-sm font-medium block truncate">{{ addr.main_text || addr.description }}</span>
+                        <span class="text-sm font-medium block truncate text-slate-700 dark:text-slate-200">{{ addr.main_text || addr.description }}</span>
                         <span *ngIf="addr.secondary_text" class="text-[10px] text-slate-400 block truncate">{{ addr.secondary_text }}</span>
                       </div>
                     </div>

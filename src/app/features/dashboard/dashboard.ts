@@ -239,8 +239,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Address suggestions for airport pickup/drop (from Savaari autocomplete API) */
   filteredLocalities: AddressSuggestion[] = [];
 
-  /** Resolved place details (lat, lng) from 2nd API after user selects an address */
-  selectedPlaceDetails: { lat: number; lng: number; name: string; place_id: string } | null = null;
+  /** Resolved place details from 2nd API (place_id) — includes aliasSourceCityId for airport conversion */
+  selectedPlaceDetails: { lat: number; lng: number; name: string; place_id: string; aliasSourceCityId?: number; aliasDestCityId?: number } | null = null;
 
   /** Filter addresses using Savaari autocomplete API (replaces Google Maps Places) */
   filterLocalities(event: AutoCompleteCompleteEvent) {
@@ -262,7 +262,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** When user selects an address from autocomplete → call 2nd API (place_id) to get lat/lng */
+  /** When user selects an address from autocomplete → call 2nd API (place_id) to get lat/lng + city IDs */
   onAddressSelect(event: any) {
     const suggestion: AddressSuggestion = event.value || event;
     if (!suggestion?.place_id) return;
@@ -270,8 +270,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const request = this.bookingForm.get('tripType')?.value === 'pickup' ? 'to' : 'from';
     this.addressAutocomplete.getPlaceDetails(suggestion.place_id, request).subscribe(details => {
       if (details) {
-        this.selectedPlaceDetails = details;
-        console.log('[Dashboard] Place details resolved:', details.name, details.lat, details.lng);
+        this.selectedPlaceDetails = {
+          lat: details.lat,
+          lng: details.lng,
+          name: details.name,
+          place_id: details.place_id,
+          aliasSourceCityId: details.aliasSourceCityId,
+          aliasDestCityId: details.aliasDestCityId,
+        };
+        if (!environment.production) {
+          console.log('[Dashboard] Place details resolved:', details.name, 'sourceCity:', details.aliasSourceCityId, 'destCity:', details.aliasDestCityId);
+        }
       }
       this.cdr.markForCheck();
     });
@@ -978,6 +987,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.bookingState.setItinerary(itinerary);
 
+    // ── Airport → One Way upfront conversion (confirmed by Shubhendu) ──
+    // Compare address city (source_city_info.city_id from place_id API) with airport city.
+    // If different → user is in a different city from the airport → convert to one-way directly.
+    if (isAirport && this.selectedPlaceDetails?.aliasSourceCityId) {
+      const addressCityId = this.selectedPlaceDetails.aliasSourceCityId;
+      const airportCityId = selectedAirport?.id || fromCityId;
+
+      if (addressCityId !== airportCityId) {
+        if (!environment.production) {
+          console.log('[Dashboard] Airport city mismatch: address city', addressCityId, '!= airport city', airportCityId, '→ converting to One Way');
+        }
+        // Determine source/destination based on trip direction
+        const isPickupFromAirport = val.tripType === 'pickup';
+        const oneWaySource = isPickupFromAirport ? airportCityId : addressCityId;
+        const oneWayDest = isPickupFromAirport ? addressCityId : airportCityId;
+
+        this.isSearching = true;
+        this.cdr.markForCheck();
+        this.convertAirportToOneWay(itinerary, oneWaySource, pickupDate, pickupTimeStr, oneWayDest);
+        return;
+      }
+    }
+
     // Build availability request
     // Live site sends empty subTripType for local (package chosen on select-car page)
     const availabilityRequest: AvailabilityRequest = {
@@ -1052,17 +1084,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
     originalItinerary: any,
     fromCityId: number,
     pickupDate: Date,
-    pickupTimeStr: string
+    pickupTimeStr: string,
+    destinationCityId?: number
   ) {
     const selectedAirport = this.selectedAirportCity;
-    const airportCityId = selectedAirport?.id || fromCityId;
+    const destId = destinationCityId || selectedAirport?.id || fromCityId;
 
     // Build One Way availability request
     const oneWayRequest: AvailabilityRequest = {
       sourceCity: fromCityId,
       tripType: 'outstation',
       subTripType: 'oneWay',
-      destinationCity: airportCityId,
+      destinationCity: destId,
       pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
       duration: 1,
     };
@@ -1083,9 +1116,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
           ...originalItinerary,
           tripType: 'One Way',
           subTripType: 'oneWay',
-          // Store airport city ID for alias_dest_city_id in booking create
+          toCityId: destId,
+          fromCityId: fromCityId,
           airportConvertedToOneWay: true,
-          aliasDestCityId: airportCityId,
+          aliasDestCityId: destId,
         };
 
         this.bookingState.setItinerary(convertedItinerary);
