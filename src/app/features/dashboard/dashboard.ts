@@ -70,6 +70,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // City autocomplete data
   sourceCities: City[] = [];
+  airportList: City[] = [];
   destinationCities: City[] = [];
   filteredSourceCities: City[] = [];
   filteredDestinationCities: City[] = [];
@@ -249,6 +250,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
       return;
     }
+    console.log('selectedAirportCity', this.selectedAirportCity);
     const cityName = this.selectedAirportCity?.cityOnly || this.selectedAirportCity?.name?.split(',')[0]?.trim() || '';
     const ll = this.selectedAirportCity?.ll?.split(',') || [];
     const lat = ll[0] || '';
@@ -275,26 +277,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Search airports when user types in the airport autocomplete.
-   *  Source cities already contain airport entries (isAirport: true) with
-   *  names like "Kempegowda International Airport, Bangalore" or "Mumbai Airport, Mumbai".
-   *  Searching "Mumbai" shows all Mumbai airports; searching "CSMT" shows that terminal.
-   */
+  /** Search airports from GET /airport-list (CityService.getAirportList). */
   filterAirports(event: AutoCompleteCompleteEvent) {
     const q = (event.query || '').toLowerCase();
-    const airportCities = this.sourceCities.filter(c => c.isAirport);
+    const airports = this.airportList;
     if (!q) {
-      this.filteredAirports = airportCities.slice(0, 20);
+      this.filteredAirports = airports.slice(0, 20);
     } else {
-      // Prefix matches first, then substring
       const prefix: City[] = [];
       const substring: City[] = [];
-      for (const c of airportCities) {
+      for (const c of airports) {
         const name = c.name.toLowerCase();
         const cityOnly = (c.cityOnly || '').toLowerCase();
-        if (cityOnly.startsWith(q) || name.startsWith(q)) {
+        const kw = (c.airportSearchKeywords || '').toLowerCase();
+        const keywordPrefix = kw.split(',').some(k => {
+          const t = k.trim();
+          return t.length > 0 && t.startsWith(q);
+        });
+        const keywordSub = kw.split(',').some(k => {
+          const t = k.trim();
+          return t.length > 0 && t.includes(q);
+        });
+        if (cityOnly.startsWith(q) || name.startsWith(q) || keywordPrefix) {
           prefix.push(c);
-        } else if (name.includes(q) || cityOnly.includes(q)) {
+        } else if (name.includes(q) || cityOnly.includes(q) || kw.includes(q) || keywordSub) {
           substring.push(c);
         }
       }
@@ -337,6 +343,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.authService.fetchPartnerToken().subscribe({
       next: () => {
         this.loadSourceCities();
+        this.loadDestinationCities();
+        this.loadAirportList();
         this.loadBanners();
         this.loadDashboardStats();
         this.cdr.markForCheck();
@@ -344,6 +352,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: () => {
         // Even if token refresh fails, try loading with existing token
         this.loadSourceCities();
+        this.loadDestinationCities();
+        this.loadAirportList();
         this.loadBanners();
         this.loadDashboardStats();
       }
@@ -672,10 +682,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Load airport list from CityService */
+  private loadAirportList() { 
+    this.cityService.getAirportList().subscribe({
+      next: (cities) => {
+        this.airportList = cities;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load airport list:', err);
+        this.airportList = [];
+        this.cdr.markForCheck();
+      }
+    });
+  }
+  
+
   /** Load destination cities based on selected source city */
-  private loadDestinationCities(sourceCityId: number) {
+  private loadDestinationCities() {
     const apiParams = this.getApiParams();
-    this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, sourceCityId).subscribe({
+    this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, 377).subscribe({
       next: (cities) => {
         this.destinationCities = cities;
         this.cdr.markForCheck();
@@ -731,7 +757,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   onSourceCitySelect(event: any) {
     const city: City = event.value || event;
     if (city?.id) {
-      this.loadDestinationCities(city.id);
+      this.loadDestinationCities();
     }
   }
 
@@ -772,7 +798,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
 
     // Load destination cities for the new source, then find and set the old "from" as "to"
-    this.loadDestinationCities(matchedSource.id);
+    this.loadDestinationCities();
     const oldFromName = (from.cityOnly || from.name || '').toLowerCase();
 
     // Wait for destination cities to load, then match
@@ -800,6 +826,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.extraDestinations = [];
     this.bookingForm.updateValueAndValidity();
     this.loadSourceCities();
+    this.loadDestinationCities();
     this.saveSearchState();
     this.cdr.markForCheck();
     this.analytics.trackSwitchTripType(prevSubtype, this.getAnalyticsSubtype(tab));

@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, map, catchError, tap } from 'rxjs';
 import { ApiService } from './api.service';
-import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
 
 /**
@@ -13,7 +12,8 @@ import { environment } from '../../../environments/environment';
  *
  * Confirmed by Shubhendu (March 2026):
  *   - rsource = b2b
- *   - token = partner session token (valid 20 min, refreshes on place_id call)
+ *   - token = 32-char random session token; expires after 20 min or when place_id is called
+ *     (if place_id response includes `token`, that value is used until the next expiry/place_id)
  *   - request = 'from' | 'to'
  *   - query aligned with city and state if city is set
  *   - lat/lng/city filled on booking page (3rd step)
@@ -42,8 +42,57 @@ export interface PlaceDetails {
 @Injectable({ providedIn: 'root' })
 export class AddressAutocompleteService {
 
+  private static readonly TOKEN_TTL_MS = 20 * 60 * 1000;
+  private static readonly TOKEN_LENGTH = 32;
+
   private api = inject(ApiService);
-  private auth = inject(AuthService);
+
+  /** Current autocomplete/place_id session token; null forces a new one on next use. */
+  private sessionToken: string | null = null;
+  private sessionTokenIssuedAt: number | null = null;
+
+  /**
+   * 32-character hex string from secure random bytes.
+   */
+  private generateToken32(): string {
+    const bytes = new Uint8Array(AddressAutocompleteService.TOKEN_LENGTH / 2);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  private isSessionExpired(): boolean {
+    if (!this.sessionToken || this.sessionTokenIssuedAt == null) return true;
+    return Date.now() - this.sessionTokenIssuedAt > AddressAutocompleteService.TOKEN_TTL_MS;
+  }
+
+  /**
+   * Token for autocomplete and place_id: reused until 20 min elapse or place_id response rotates it.
+   */
+  private getSessionToken(): string {
+    if (this.isSessionExpired()) {
+      this.sessionToken = this.generateToken32();
+      this.sessionTokenIssuedAt = Date.now();
+    }
+    return this.sessionToken!;
+  }
+
+  private clearSessionToken(): void {
+    this.sessionToken = null;
+    this.sessionTokenIssuedAt = null;
+  }
+
+  /**
+   * After place_id: server may return a new `token`; otherwise invalidate so the next call gets a fresh 32-char token.
+   */
+  private applyTokenFromPlaceResponse(response: any): void {
+    const t = response?.token;
+    if (typeof t === 'string' && t.length > 0) {
+      this.sessionToken = t;
+      this.sessionTokenIssuedAt = Date.now();
+    } else {
+      this.clearSessionToken();
+    }
+  }
 
   /**
    * Search addresses using Savaari autocomplete API.
@@ -64,7 +113,10 @@ export class AddressAutocompleteService {
 
     if (!query || query.length < 2) return of([]);
 
-    const token = this.auth.getPartnerToken();
+    const token = this.getSessionToken();
+    query = city ? `${city} ${query.trim()}` : query.trim();
+    query = query.trim();
+    if (!query) return of([]);
 
     return this.api.addressGet<any>('autocomplete/info.php', {
       query,
@@ -110,13 +162,16 @@ export class AddressAutocompleteService {
 
     if (!placeId) return of(null);
 
+    const token = this.getSessionToken();
+
     return this.api.addressGet<any>('place_id/info.php', {
       place_id: placeId,
       request,
-      token: this.auth.getPartnerToken(),
+      token,
       rsource: 'b2b',
     }).pipe(
-      map(response => this.parsePlaceResponse(response))
+      tap((response) => this.applyTokenFromPlaceResponse(response)),
+      map((response) => this.parsePlaceResponse(response))
     );
   }
 

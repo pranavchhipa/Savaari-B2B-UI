@@ -4,9 +4,9 @@ import { tap, map, shareReplay, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { ErrorHandlerService } from './error-handler.service';
-import { City, CityApiResponse, toCity, Locality } from '../models';
+import { City, CityApiResponse, toCity, toAirportListCity, AirportListRow, Locality } from '../models';
 import { environment } from '../../../environments/environment';
-import { MOCK_SOURCE_CITIES, MOCK_DESTINATION_CITIES, MOCK_LOCALITIES } from '../mocks/mock-cities';
+import { MOCK_SOURCE_CITIES, MOCK_DESTINATION_CITIES, MOCK_LOCALITIES, MOCK_AIRPORT_LIST } from '../mocks/mock-cities';
 
 /**
  * Service for city and locality lookups.
@@ -20,6 +20,7 @@ import { MOCK_SOURCE_CITIES, MOCK_DESTINATION_CITIES, MOCK_LOCALITIES } from '..
 @Injectable({ providedIn: 'root' })
 export class CityService {
   private sourceCitiesCache = new Map<string, City[]>();
+  private airportListCache = new Map<string, City[]>();
   private destinationCitiesCache = new Map<string, City[]>();
   private localitiesCache: Locality[] | null = null;
 
@@ -27,7 +28,7 @@ export class CityService {
     private api: ApiService,
     private auth: AuthService,
     private errorHandler: ErrorHandlerService
-  ) {}
+  ) { }
 
   /**
    * Get source cities for a given trip type.
@@ -38,7 +39,7 @@ export class CityService {
       return of(MOCK_SOURCE_CITIES);
     }
 
-    const cacheKey = `${tripType}:${subTripType}`;
+    const cacheKey = `sourceCities`;
     if (this.sourceCitiesCache.has(cacheKey)) {
       return of(this.sourceCitiesCache.get(cacheKey)!);
     }
@@ -55,6 +56,24 @@ export class CityService {
     );
   }
 
+  getAirportList(): Observable<City[]> {
+    if (environment.useMockData) {
+      return of(MOCK_AIRPORT_LIST.map(row => toAirportListCity(row as AirportListRow)));
+    }
+    const cacheKey = `airportList`;
+    if (this.airportListCache.has(cacheKey)) {
+      return of(this.airportListCache.get(cacheKey)!);
+    }
+    return this.api.partnerGet<CityApiResponse>('airport-list', {
+      token: this.auth.getPartnerToken(),
+    }).pipe(
+      map(response => response.data.map(row => toAirportListCity(row as AirportListRow))),
+      tap(cities => { this.airportListCache.set(cacheKey, cities); }),
+      shareReplay(1),
+      catchError(err => this.errorHandler.handleApiError(err, 'CityService.getAirportList'))
+    );
+  }
+
   /**
    * Get destination cities for a given source city and trip type.
    * GET /destination-cities?tripType=...&subTripType=...&sourceCity=...&token=...
@@ -64,7 +83,7 @@ export class CityService {
       return of(MOCK_DESTINATION_CITIES);
     }
 
-    const cacheKey = `${tripType}:${subTripType}:${sourceCityId}`;
+    const cacheKey = `destinationCities`;
     if (this.destinationCitiesCache.has(cacheKey)) {
       return of(this.destinationCitiesCache.get(cacheKey)!);
     }
@@ -72,7 +91,7 @@ export class CityService {
     return this.api.partnerGet<CityApiResponse>('destination-cities', {
       tripType,
       subTripType,
-      sourceCity: sourceCityId,
+      sourceCity: 377, // Bangalore
       token: this.auth.getPartnerToken(),
     }).pipe(
       map(response => response.data.map(toCity)),
@@ -135,5 +154,6 @@ export class CityService {
     this.sourceCitiesCache.clear();
     this.destinationCitiesCache.clear();
     this.localitiesCache = null;
+    this.airportListCache?.clear();
   }
 }

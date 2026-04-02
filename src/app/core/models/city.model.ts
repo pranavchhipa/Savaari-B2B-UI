@@ -39,6 +39,25 @@ export interface City {
   isAirport?: boolean;
   aid?: string;              // Airport ID from source-cities API (e.g. "10" for Bangalore Airport)
   ll?: string;               // "12.966,77.606" (lat,lng from SavaariCity)
+  /** Comma-separated tokens from GET /airport-list (e.g. IATA, area names) for autocomplete */
+  airportSearchKeywords?: string;
+}
+
+/** Raw row from GET /airport-list (terminal-level or legacy SavaariCity shape). */
+export interface AirportListRow {
+  cityId?: number | string;
+  cityName?: string;
+  cityOnly?: string;
+  stateOnly?: string;
+  airportAddress?: string;
+  airportLatLong?: string;
+  airportId?: number | string;
+  searchKeyword?: string;
+  is_airport?: string;
+  aid?: string;
+  ll?: string;
+  top_dest_ids?: string;
+  [key: string]: unknown;
 }
 
 /** GET /localities — required for Airport transfers */
@@ -59,4 +78,24 @@ export function toCity(raw: SavaariCity): City {
     aid: raw.aid,
     ll: raw.ll,
   };
+}
+
+/** Normalize airport-list API rows to City (handles terminal rows with airportAddress + searchKeyword). */
+export function toAirportListCity(raw: AirportListRow | SavaariCity): City {
+  const r = raw as AirportListRow;
+  if (r.airportAddress != null && String(r.airportAddress).trim() !== '') {
+    const cityId = Number(r.cityId);
+    const cityName = r.cityName != null ? String(r.cityName) : '';
+    return {
+      id: Number.isFinite(cityId) ? cityId : 0,
+      name: String(r.airportAddress),
+      cityOnly: r.cityOnly ?? (cityName ? cityName.split(',')[0].trim() : undefined),
+      state: r.stateOnly ?? (cityName.includes(',') ? cityName.split(',').slice(1).join(',').trim() : undefined),
+      isAirport: true,
+      aid: r.airportId != null ? String(r.airportId) : r.aid,
+      ll: (r.airportLatLong ?? r.ll) as string | undefined,
+      airportSearchKeywords: typeof r.searchKeyword === 'string' ? r.searchKeyword : undefined,
+    };
+  }
+  return toCity(raw as SavaariCity);
 }

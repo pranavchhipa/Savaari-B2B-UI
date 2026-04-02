@@ -441,14 +441,14 @@
                 </span>
                 <p-autoComplete formControlName="airportLocality" [suggestions]="filteredAirports"
                   (completeMethod)="filterAirports($event)" (onSelect)="onAirportSelect($event)"
-                  field="cityOnly" optionLabel="cityOnly" [minLength]="0" placeholder="Search airport"
+                  field="name" optionLabel="name" [minLength]="0" placeholder="Search airport"
                   styleClass="w-full search-bar-autocomplete"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-airport>
                     <div class="flex items-center gap-2 px-2 py-1.5">
                       <lucide-icon name="plane" [size]="14" class="text-primary shrink-0"></lucide-icon>
-                      <span class="text-sm">{{ airport.cityOnly || airport.name }}</span>
+                      <span class="text-sm">{{ airport.name }}</span>
                     </div>
                   </ng-template>
                 </p-autoComplete>
