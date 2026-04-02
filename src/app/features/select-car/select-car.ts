@@ -156,7 +156,7 @@ export class SelectCarComponent implements OnInit {
       image: image,
       price: car.fare,
       regularFare: car.originalFare,
-      kmsIncluded: `${kmsInc} km`,
+      kmsIncluded: `${kmsInc} KMs`,
       hoursIncluded: hoursInc > 0 ? `${hoursInc} hrs` : undefined,
       seats,
       bags,
@@ -453,7 +453,7 @@ export class SelectCarComponent implements OnInit {
   getCarKms(baseKms: string): string {
     if (!this.isRoundTrip) return baseKms;
     const num = parseInt(baseKms, 10);
-    return isNaN(num) ? baseKms : `${num * 2} km`;
+    return isNaN(num) ? baseKms : `${num * 2} KMs`;
   }
 
   setTab(carId: string, tab: string) {
