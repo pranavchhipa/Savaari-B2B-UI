@@ -7,8 +7,9 @@
   <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16 relative">
       <div class="flex items-center gap-2 sm:gap-4 md:gap-8">
-        <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer group"
-          [routerLink]="isPublicRoute ? '/' : '/dashboard'">
+        <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer group outline-none focus:outline-none"
+          [routerLink]="isPublicRoute ? '/' : '/dashboard'"
+          tabindex="-1">
           <!-- Agent uploaded logo -->
           <img *ngIf="agentLogo" [src]="agentLogo" alt="Company Logo"
             class="h-10 sm:h-12 md:h-14 max-w-[180px] object-contain rounded" />
