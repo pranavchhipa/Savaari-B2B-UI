@@ -964,15 +964,49 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           description: `Booking #${bkId} - ₹${advanceAmount}`,
           order_id: razorpayOrderId,
           handler: (rzpResponse: any) => {
-            // HAR-confirmed post-payment flow (FLOW.md):
-            //   1. razor_checkhash.php → verify payment signature (multipart/form-data)
-            //   2. autologin → refresh B2B JWT (may have expired during Razorpay flow)
+            // Post-payment flow (HAR-confirmed + Jibin's settlement-payment doc):
+            //   1. razor_checkhash.php → verify payment signature
+            //   2. autologin → refresh B2B JWT
             //   3. email_sent × 2 → send confirmation emails
             //   4. confirmation.php → mark booking as paid
+            //   5. settlement-payment → update booking as Pre Paid, remove from auto-pay cron
 
             const razorpayPaymentId = rzpResponse.razorpay_payment_id || '';
             const rzpOrderId = rzpResponse.razorpay_order_id || razorpayOrderId;
             const razorpaySignature = rzpResponse.razorpay_signature || '';
+
+            /** Common post-payment steps after checkhash (success or fail) */
+            const finishRazorpayPayment = () => {
+              // Refresh B2B JWT via autologin
+              this.auth.autoLogin().subscribe();
+
+              // Send confirmation emails (fire-and-forget)
+              this.paymentService.sendConfirmationEmail(bkId).subscribe();
+              this.paymentService.sendConfirmationEmail(bkId).subscribe();
+
+              // confirmation.php
+              this.paymentService.confirmPayment({
+                advancedAmount: advanceAmount,
+                orderId: savaariPayId,
+                paymentId: razorpayPaymentId,
+                paymentmode: 'savaariwebsite',
+              }).subscribe();
+
+              // Settlement payment — mark booking as Pre Paid, remove from auto-pay cron
+              this.paymentService.settlementPayment({
+                bookingId: bkId,
+                paymentAmount: advanceAmount,
+                paymentMethod: 'Razorpay',
+                transactionId: rzpOrderId,
+                paymentId: razorpayPaymentId,
+              }).subscribe();
+
+              this.isProcessingRazorpay = false;
+              this.bookingConfirmed = true;
+              this.clearPassengerState();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              this.cdr.markForCheck();
+            };
 
             // Step 1: Verify payment hash (razor_checkhash.php)
             this.paymentService.verifyRazorpayPayment({
@@ -982,64 +1016,8 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               savaari_pay_id: savaariPayId,
               selectedAmount: advanceAmount,
             }).subscribe({
-              next: () => {
-                // Step 2: Refresh B2B JWT via autologin
-                this.auth.autoLogin().subscribe();
-
-                // Step 3: Fire email_sent twice (matches live site — agent + customer emails)
-                this.paymentService.sendConfirmationEmail(bkId).subscribe();
-                this.paymentService.sendConfirmationEmail(bkId).subscribe();
-
-                // Step 4: Final payment confirmation (confirmation.php)
-                this.paymentService.confirmPayment({
-                  advancedAmount: advanceAmount,
-                  orderId: savaariPayId,
-                  paymentId: razorpayPaymentId,
-                  paymentmode: 'savaariwebsite',
-                }).subscribe({
-                  next: () => {
-                    this.isProcessingRazorpay = false;
-                    this.bookingConfirmed = true;
-                    this.clearPassengerState();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    this.cdr.markForCheck();
-                  },
-                  error: () => {
-                    // confirmation API failed — still show success (payment already done)
-                    this.isProcessingRazorpay = false;
-                    this.bookingConfirmed = true;
-                    this.clearPassengerState();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    this.cdr.markForCheck();
-                  }
-                });
-              },
-              error: () => {
-                // checkhash failed — still attempt confirmation (payment was taken by Razorpay)
-                this.paymentService.sendConfirmationEmail(bkId).subscribe();
-                this.paymentService.sendConfirmationEmail(bkId).subscribe();
-                this.paymentService.confirmPayment({
-                  advancedAmount: advanceAmount,
-                  orderId: savaariPayId,
-                  paymentId: razorpayPaymentId,
-                  paymentmode: 'savaariwebsite',
-                }).subscribe({
-                  next: () => {
-                    this.isProcessingRazorpay = false;
-                    this.bookingConfirmed = true;
-                    this.clearPassengerState();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    this.cdr.markForCheck();
-                  },
-                  error: () => {
-                    this.isProcessingRazorpay = false;
-                    this.bookingConfirmed = true;
-                    this.clearPassengerState();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    this.cdr.markForCheck();
-                  }
-                });
-              }
+              next: () => finishRazorpayPayment(),
+              error: () => finishRazorpayPayment(), // checkhash failed — still proceed (payment was taken by Razorpay)
             });
           },
           modal: {
@@ -1167,10 +1145,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
    * Process wallet payment for already-created booking.
    * Booking was already created on "Proceed to Next" — just deduct wallet + confirm.
    *
-   * Flow (from Jibin's confirmation callback doc):
+   * Flow (from Jibin's confirmation callback doc + settlement-payment API):
    *   1. POST /wallet/pay-booking → deduct wallet, get transaction_id
    *   2. POST /confirmation.php → source=B2B_WALLET, booking_id, payment_option, transaction_id
-   *   3. email_sent × 2 → confirmation emails
+   *   3. POST /booking/settlement-payment → mark booking as Pre Paid, remove from auto-pay cron
+   *   4. email_sent × 2 → confirmation emails
    */
   private processWalletPayment(payNow: number) {
     if (!this.bookingId) {
@@ -1190,16 +1169,26 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.walletService.payForBooking(bkId, payNow, this.paymentOption as 1 | 2 | 3).subscribe({
         next: (result) => {
           if (result.success) {
+            const txnId = result.transactionId || '';
+
             // Step 2: Call confirmation.php with wallet-specific params
             this.paymentService.confirmPayment({
               source: 'B2B_WALLET',
               booking_id: bkId,
               payment_option: this.paymentOption,
-              transaction_id: result.transactionId || '',
+              transaction_id: txnId,
               advancedAmount: payNow,
             } as any).subscribe();
 
-            // Step 3: Send confirmation emails (fire-and-forget)
+            // Step 3: Settlement payment — mark booking as Pre Paid, remove from auto-pay cron
+            this.paymentService.settlementPayment({
+              bookingId: bkId,
+              paymentAmount: payNow,
+              paymentMethod: 'Wallet',
+              transactionId: txnId,
+            }).subscribe();
+
+            // Step 4: Send confirmation emails (fire-and-forget)
             this.paymentService.sendConfirmationEmail(bkId).subscribe();
             this.paymentService.sendConfirmationEmail(bkId).subscribe();
 

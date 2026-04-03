@@ -282,6 +282,51 @@ export class PaymentService {
   }
 
   /**
+   * Step 6: Settlement payment — update booking as fully paid.
+   * POST /booking/settlement-payment (Partner API, form-encoded)
+   *
+   * From Jibin's doc (April 2026):
+   *   Sets pay_bal_amt=0, payment_status='Pre Paid', made_payment=2
+   *   Removes booking from auto-pay cron queue (sv_booking_wallet_payment.balance_paid_status=1)
+   *   Records payment in sv_advance_payment for auditing
+   *
+   * Call this AFTER wallet deduction + confirmation.php (or Razorpay verify + confirmation.php).
+   */
+  settlementPayment(params: {
+    bookingId: string;
+    paymentAmount: number;
+    paymentMethod: 'Wallet' | 'Razorpay';
+    transactionId: string;
+    paymentId?: string;
+  }): Observable<boolean> {
+    if (environment.useMockData) {
+      return of(true);
+    }
+
+    const token = this.auth.getPartnerToken() ?? '';
+    const body: Record<string, any> = {
+      bookingId: params.bookingId,
+      paymentAmount: params.paymentAmount,
+      paymentMethod: params.paymentMethod,
+      transactionId: params.transactionId,
+    };
+    if (params.paymentId) {
+      body['paymentId'] = params.paymentId;
+    }
+
+    return this.api.partnerPostForm<any>('booking/settlement-payment', body, { token }).pipe(
+      map(response => {
+        if (!environment.production) console.log('[PAYMENT] Settlement payment:', response);
+        return response?.status === true || response?.status === 'success';
+      }),
+      catchError(err => {
+        console.error('[PAYMENT] settlement-payment failed:', err);
+        return of(false); // Non-blocking — booking already created and paid
+      })
+    );
+  }
+
+  /**
    * Generate the Savaari payment ID format.
    * Format from Postman: SW{agentId}S{MMYY}-{bookingId}
    * Example: SW69851S0326-2361490
