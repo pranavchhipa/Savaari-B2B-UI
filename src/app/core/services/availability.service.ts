@@ -135,6 +135,7 @@ export class AvailabilityService {
       carImageLarge: raw.carImageLarge,
       tncData: raw.tnc_data,
       packageId: raw.package ? String(raw.package) : undefined,
+      urgentBookingFlag: (raw as any).urgent_booking_flag ?? 0,
     };
   }
 }

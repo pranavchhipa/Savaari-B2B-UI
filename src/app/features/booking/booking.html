@@ -298,14 +298,13 @@
                 </div>
             </div>
 
-            <!-- Fare Recalculation Banner (One Way — shows after pickup+drop lat/lng resolved) -->
-            <div *ngIf="showFareChangePopup"
+            <!-- Surge Banner (shows real data from booking API response after "Proceed to Next") -->
+            <div *ngIf="showSurgeBanner && surgeDetails"
                 class="relative bg-amber-900 text-white rounded-xl px-4 py-3 flex items-center justify-between shadow-md">
                 <p class="text-sm font-medium">
-                    Your fare has been updated based on the pickup &amp; drop location entered.
-                    The minimum package fare is <span class="font-bold">₹{{selectedCar?.price | number}}</span>.
+                    {{ surgeDetails.message || 'Your fare has been updated based on the pickup & drop location entered. The final price is ₹' + (surgeDetails.newPrice | number) }}
                 </p>
-                <button (click)="dismissFareChangePopup()" class="text-white/80 hover:text-white ml-3 shrink-0">
+                <button (click)="showSurgeBanner = false" class="text-white/80 hover:text-white ml-3 shrink-0">
                     <lucide-icon name="x" [size]="18"></lucide-icon>
                 </button>
             </div>
@@ -365,7 +364,23 @@
                         </div>
                         <div class="text-right shrink-0">
                             <p class="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</p>
+                            <p *ngIf="surgeDetails && surgeDetails.surge > 0" class="text-[10px] text-slate-500 font-semibold">({{surgeDetails.oldPrice | number:'1.0-0'}} + {{surgeDetails.surge | number:'1.0-0'}})</p>
                             <p class="text-[9px] sm:text-[10px] text-emerald-500 font-semibold">All inclusive</p>
+                        </div>
+                    </div>
+                    <!-- Surge breakdown details (KMs + Fare) — matches beta -->
+                    <div *ngIf="surgeDetails && surgeDetails.surge > 0" class="border-t border-slate-100 dark:border-slate-700 mt-2 pt-2 space-y-1.5 px-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-400">KMs Included :</span>
+                            <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                                {{surgeDetails.newKm}} ({{surgeDetails.oldKm}} + {{surgeDetails.newKm - surgeDetails.oldKm}}) km
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Total Fare :</span>
+                            <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                                ₹ {{surgeDetails.newPrice | number:'1.0-0'}} ({{surgeDetails.oldPrice | number:'1.0-0'}} + {{surgeDetails.surge | number:'1.0-0'}})
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -676,14 +691,24 @@
                         <lucide-icon name="car" [size]="15" class="text-slate-400 shrink-0"></lucide-icon>
                         <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{{selectedCar?.name || 'Wagon R'}}</span>
                         <span class="text-[9px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-black uppercase shrink-0 whitespace-nowrap">{{selectedCar?.type || 'SEDAN'}}</span>
-                        <span class="text-xs text-slate-500 ml-auto shrink-0 whitespace-nowrap">{{selectedCar?.kmsIncluded || '145 km'}}</span>
+                        <span class="text-xs text-slate-500 ml-auto shrink-0 whitespace-nowrap">
+                            <ng-container *ngIf="surgeDetails && surgeDetails.newKm > surgeDetails.oldKm; else normalKms">
+                                {{surgeDetails.newKm}} ({{surgeDetails.oldKm}} + {{surgeDetails.newKm - surgeDetails.oldKm}}) km
+                            </ng-container>
+                            <ng-template #normalKms>{{selectedCar?.kmsIncluded || '145 KMs'}}</ng-template>
+                        </span>
                     </div>
 
                     <!-- Fare — prominent -->
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="font-bold text-slate-400 uppercase tracking-widest" [ngClass]="step1Complete ? 'text-[9px]' : 'text-[10px]'">Estimated Total Fare</p>
-                            <p class="font-black text-slate-900 dark:text-white tracking-tight" [ngClass]="step1Complete ? 'text-lg' : 'text-xl'">₹ {{(selectedCar?.price || 0) | number:'1.0-0'}}</p>
+                            <p class="font-black text-slate-900 dark:text-white tracking-tight" [ngClass]="step1Complete ? 'text-lg' : 'text-xl'">
+                                ₹ {{(selectedCar?.price || 0) | number:'1.0-0'}}
+                            </p>
+                            <p *ngIf="surgeDetails && surgeDetails.surge > 0" class="text-[10px] text-slate-500 font-semibold">
+                                ({{surgeDetails.oldPrice | number:'1.0-0'}} + {{surgeDetails.surge | number:'1.0-0'}})
+                            </p>
                         </div>
                         <span class="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-black uppercase tracking-tighter">ALL INCLUSIVE</span>
                     </div>

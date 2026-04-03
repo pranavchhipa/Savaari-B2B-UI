@@ -127,7 +127,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   private dropSublocality = '';        // sublocality → dropLocality
   private dropAliasDestCityId = 0;     // destination_city_map_info.city_id → alias_dest_city_id
 
-  // Fare recalculation (One Way drop address)
+  // Surge from booking API response (real data, not mockup)
+  showSurgeBanner = false;
+  surgeDetails: { oldPrice: number; newPrice: number; surge: number; message: string; oldKm: number; newKm: number } | null = null;
+
+  // Fare recalculation (One Way drop address) — kept for state tracking
   showFareChangePopup = false;
   fareChangeAmount = 0;
   previousFare = 0;
@@ -366,6 +370,26 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
         }
 
+        // Handle oneway surge from booking API response (real data, not mockup)
+        if (dataItem?.oneway_surge_flag === 1 && dataItem?.oneway_surge_details) {
+          const surge = dataItem.oneway_surge_details;
+          this.surgeDetails = {
+            oldPrice: surge.oldPrice || 0,
+            newPrice: surge.newPrice || 0,
+            surge: surge.surge || 0,
+            message: surge.message || '',
+            oldKm: surge.old_km || 0,
+            newKm: surge.new_km || 0,
+          };
+          // Update fare with real surge price from API
+          if (surge.newPrice && this.selectedCar) {
+            this.previousFare = this.selectedCar.price;
+            this.selectedCar.price = surge.newPrice;
+            this.bookingState.setSelectedCar(this.selectedCar);
+          }
+          this.showSurgeBanner = true;
+        }
+
         this.registerBookingData(bkId, response, request, prePayment, 'razorpay');
 
         // Booking created → show payment page
@@ -481,7 +505,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       pick_date: pickupDT.split(' ')[0] || '',
       car_id: this.selectedCar.carTypeId || 43,
       package_id: this.selectedCar.packageId || '',
-      tot_amt: this.selectedCar.price,
+      tot_amt: this.selectedCar.regularPrice || this.selectedCar.price,
       b_src: 0,
       pick_time: pickupDT.split(' ')[1] || '12:00',
       IsPremium: 0,
@@ -545,11 +569,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.pickupLatLng = { lat: details.lat, lng: details.lng };
       this.pickupAliasSourceCityId = details.aliasSourceCityId;
 
-      // If drop is already selected, we can immediately recalculate the fare.
-      if (this.itinerary?.tripType === 'One Way' && this.dropLatLng) {
-        this.recalculateFareForDrop();
-      }
-
       this.cdr.markForCheck();
     });
   }
@@ -560,7 +579,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     const match = this.dropSuggestionsRaw.find(s => s.description === selected);
     if (!match?.place_id) return;
 
-    // Resolve place_id to get place_name + sublocality + lat/lng for fare calc + alias IDs for booking create.
+    // Resolve place_id to get place_name + sublocality + lat/lng + alias IDs for booking create.
     this.addressAutocomplete.getPlaceDetails(match.place_id, 'to').subscribe(details => {
       if (!details) return;
 
@@ -569,10 +588,8 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.dropLatLng = { lat: details.lat, lng: details.lng };
       this.dropAliasDestCityId = details.aliasDestCityId;
 
-      // One Way: update fare when we have both pickup & drop lat/lng.
-      if (this.itinerary?.tripType === 'One Way' && this.pickupLatLng) {
-        this.recalculateFareForDrop();
-      }
+      // Surge/fare recalculation happens server-side on booking create (not client-side).
+      // Real surge data comes from booking API response's oneway_surge_details.
 
       this.cdr.markForCheck();
     });
@@ -1071,7 +1088,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       dropAddress: this.dropAddress || '',
       dropLatLong: this.dropLatLng ? `${this.dropLatLng.lat},${this.dropLatLng.lng}` : '',
       dropLocality,
-      alias_dest_city_id: this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || 0,
+      alias_dest_city_id: (apiParams.subTripType === 'oneWay') ? 0 : (this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || 0),
       customerTitle: 'Mr',
       customerName: this.guestName,
       customerEmail: this.guestEmail || this.agentEmail || undefined,
@@ -1083,12 +1100,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       prePayment: prePaymentAmount,
       app_user_id: Number(this.auth.getAgentId()) || undefined,
       couponCode: '',
-      device: 'MOBILE',
+      device: 'DESKTOP',
       invoicePayer: this.commissionService.getInvoicePayer(),
       ...(this.itinerary!.toCityId && { destinationCity: this.itinerary!.toCityId }),
-      ...(this.itinerary!.extraDestinations?.length && {
-        multicityId: this.itinerary!.extraDestinations.map(s => s.cityId).join(',')
-      }),
       ...(this.itinerary!.localityId && { localityId: this.itinerary!.localityId }),
       // Airport-specific params
       ...(isAirport && {
@@ -1098,7 +1112,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         selectPlaceId: this.itinerary!.selectPlaceId || '',
         custShortAddress: locality || this.itinerary!.pickupAddress || '',
       }),
-      ...(this.isBookingUrgent() && { Urgent_booking: '1' }),
+      ...(this.selectedCar!.urgentBookingFlag === 1 && { Urgent_booking: '1' }),
       ...(this.needsGstInvoice && this.agentGstNumber && { gst_invoice_required: '1', gst_number: this.agentGstNumber }),
     };
   }

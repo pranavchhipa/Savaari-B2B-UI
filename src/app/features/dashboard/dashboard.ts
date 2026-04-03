@@ -630,8 +630,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (state.dropAirport) this.bookingForm.patchValue({ dropAirport: state.dropAirport }, { emitEvent: false });
       if (state.airportLocality) this.bookingForm.patchValue({ airportLocality: state.airportLocality }, { emitEvent: false });
       if (state.airportCity) this.bookingForm.patchValue({ airportCity: state.airportCity }, { emitEvent: false });
-      if (state.pickupDate) this.bookingForm.patchValue({ pickupDate: new Date(state.pickupDate) }, { emitEvent: false });
-      if (state.returnDate) this.bookingForm.patchValue({ returnDate: new Date(state.returnDate) }, { emitEvent: false });
+      if (state.pickupDate) {
+        const restored = new Date(state.pickupDate);
+        // Only restore if date is valid and not in the past
+        if (!isNaN(restored.getTime()) && restored >= this.minPickupDate) {
+          this.bookingForm.patchValue({ pickupDate: restored }, { emitEvent: false });
+        }
+      }
+      if (state.returnDate) {
+        const restored = new Date(state.returnDate);
+        if (!isNaN(restored.getTime()) && restored >= this.minPickupDate) {
+          this.bookingForm.patchValue({ returnDate: restored }, { emitEvent: false });
+        }
+      }
       if (state.pickupTime) this.bookingForm.patchValue({ pickupTime: new Date(state.pickupTime) }, { emitEvent: false });
 
       // Restore airport state

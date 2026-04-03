@@ -55,6 +55,7 @@ export interface SelectedCar {
     extraKmRate?: number;     // Rate per extra km from availability API
     nightAllowance?: number;  // Driver night allowance from availability API
     packageId?: string;       // Package ID from availability (for advance_payment_check)
+    urgentBookingFlag?: number; // 1 if urgent booking, from API's urgent_booking_flag
 }
 
 @Injectable({

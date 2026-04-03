@@ -71,7 +71,6 @@ export class BookingApiService {
       carType: request.carType,
       premiumFlag: request.premiumFlag ?? 0,
       destinationCity: request.destinationCity,
-      multicityId: request.multicityId,
       prePayment: request.prePayment,
       locality: request.locality,
       alias_source_city_id: request.alias_source_city_id ?? 0,
@@ -81,7 +80,7 @@ export class BookingApiService {
       agentId: btoa(this.auth.getAgentId()),
       api_source: 'b2b',
       source: request.source || 'WEB',
-      device: request.device || 'MOBILE',
+      device: request.device || 'DESKTOP',
       // Airport-specific
       localityId: request.localityId,
       terminalId: request.terminalId,

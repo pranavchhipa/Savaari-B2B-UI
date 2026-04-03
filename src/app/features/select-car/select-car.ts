@@ -39,6 +39,7 @@ interface DisplayCar {
   extraKmRate: number;
   nightAllowance: number;
   packageId?: string;
+  urgentBookingFlag?: number;
   tc: string[];
   inclusions: string[];
   exclusions: string[];
@@ -200,6 +201,7 @@ export class SelectCarComponent implements OnInit {
       extraKmRate: extraKm,
       nightAllowance: nightAllow,
       packageId: car.packageId ? String(car.packageId) : undefined,
+      urgentBookingFlag: car.urgentBookingFlag,
       tc,
       inclusions: car.inclusions?.length ? car.inclusions.map(t => this.decodeUnicode(t)) : ['Fuel Charges', 'Driver Allowance', `${kmsInc} KMs`],
       exclusions: car.exclusions?.length ? car.exclusions.map(t => this.decodeUnicode(t)) : ['Tolls & Parking', 'State Taxes']
@@ -616,6 +618,7 @@ export class SelectCarComponent implements OnInit {
       extraKmRate: car.extraKmRate,
       nightAllowance: car.nightAllowance,
       packageId: car.packageId,
+      urgentBookingFlag: car.urgentBookingFlag,
     };
     this.bookingState.setSelectedCar(selectedCar);
     this.router.navigate(['/booking']);

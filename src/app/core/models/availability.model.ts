@@ -48,6 +48,7 @@ export interface AvailableCar {
   carImageLarge?: string;      // URL from API
   tncData?: string[];          // Terms and conditions
   packageId?: string;          // Package ID from API (sent to advance_payment_check)
+  urgentBookingFlag?: number;  // 1 if urgent booking, from API's urgent_booking_flag
   [key: string]: unknown;
 }
 
