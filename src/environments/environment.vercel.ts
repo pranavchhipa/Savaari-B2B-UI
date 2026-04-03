@@ -34,6 +34,9 @@ export const environment = {
   supportPhoneTel: 'tel:09045450000',
   supportEmail: 'info@savaari.com',
 
+  /** New multi-step registration wizard */
+  newRegistrationFlow: true,
+
   /** Dashboard background images */
   dashboardImages: {
     oneWay: '/dashboard-oneway.jpg',

@@ -1,0 +1,44 @@
+/* Step enter animation — fires when @switch creates a new element */
+@keyframes stepFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Success checkmark scale-in */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.3); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Single pulse for the check circle */
+@keyframes pulseOnce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* Badge reveal with rotation */
+@keyframes badgeReveal {
+  0% { opacity: 0; transform: scale(0.3) rotate(-20deg); }
+  60% { transform: scale(1.1) rotate(5deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* Simple fade in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* OTP digit fill animation */
+@keyframes digitPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.wizard-step { animation: stepFadeIn 0.35s ease-out; }
+.animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.animate-pulse-once { animation: pulseOnce 0.6s ease-out 0.3s; }
+.animate-badge-reveal { animation: badgeReveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }

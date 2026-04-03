@@ -3,11 +3,18 @@ import { LandingComponent } from './features/landing/landing';
 import { bookingGuard } from './core/guards/booking.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
+import { environment } from '../environments/environment';
 
 export const routes: Routes = [
     { path: '', component: LandingComponent, canActivate: [guestGuard] },
     { path: 'login', canActivate: [guestGuard], loadComponent: () => import('./features/auth/login/login').then(m => m.LoginComponent) },
-    { path: 'register', canActivate: [guestGuard], loadComponent: () => import('./features/auth/register/register').then(m => m.RegisterComponent) },
+    {
+      path: 'register',
+      canActivate: [guestGuard],
+      loadComponent: () => environment.newRegistrationFlow
+        ? import('./features/auth/register-wizard/register-wizard').then(m => m.RegisterWizardComponent)
+        : import('./features/auth/register/register').then(m => m.RegisterComponent)
+    },
     { path: 'dashboard', canActivate: [authGuard], loadComponent: () => import('./features/dashboard/dashboard').then(m => m.DashboardComponent) },
     { path: 'bookings', canActivate: [authGuard], loadComponent: () => import('./features/bookings/bookings').then(m => m.BookingsComponent) },
     { path: 'markup-settings', canActivate: [authGuard], loadComponent: () => import('./features/markup-settings/markup-settings').then(m => m.MarkupSettingsComponent) },
