@@ -113,6 +113,9 @@ export class SelectCarComponent implements OnInit {
 
   ngOnInit() {
     this.itinerary = this.bookingState.getItinerary();
+    if (this.itinerary?.localPackage === '12hr/120km') {
+      this.selectedLocalPackage = '12hr';
+    }
     this.initModifyForm();
 
     // Load cars from availability response
@@ -536,9 +539,14 @@ export class SelectCarComponent implements OnInit {
     return 'outstation-trip'; // fallback
   }
 
-  /** Cars to show — sorted by price (low to high) */
+  /** Cars to show — sorted by price (low to high), filtered by local package */
   get carsToDisplay(): DisplayCar[] {
-    return [...this.availableCars].sort((a, b) => a.price - b.price);
+    let cars = [...this.availableCars];
+    if (this.isLocal) {
+      const targetHours = this.selectedLocalPackage === '8hr' ? '8 hrs' : '12 hrs';
+      cars = cars.filter(c => c.hoursIncluded === targetHours);
+    }
+    return cars.sort((a, b) => a.price - b.price);
   }
 
   get localPackageLabel(): string {
@@ -548,8 +556,6 @@ export class SelectCarComponent implements OnInit {
   selectLocalPackage(pkg: '8hr' | '12hr') {
     if (this.selectedLocalPackage === pkg) return;
     this.selectedLocalPackage = pkg;
-    this.isLoading = true;
-    this.cdr.markForCheck();
 
     // Update itinerary with new local package
     const localPackage = pkg === '8hr' ? '8hr/80km' : '12hr/120km';
@@ -558,51 +564,9 @@ export class SelectCarComponent implements OnInit {
       this.bookingState.setItinerary(this.itinerary);
     }
 
-    // Re-fetch availability with new package
-    const apiParams = this.tripTypeService.mapUiTabToApiParams('Local', { localPackage });
-    const request = {
-      sourceCity: this.itinerary?.fromCityId || 377,
-      tripType: apiParams.tripType,
-      subTripType: apiParams.subTripType,
-      pickupDateTime: this.itinerary?.pickupDate
-        ? this.formatPickupDateTime(new Date(this.itinerary.pickupDate), this.itinerary.pickupTime || '06:00 PM')
-        : '',
-      duration: pkg === '8hr' ? 8 : 12,
-    };
-
-    this.availabilityService.checkAvailability(request).subscribe({
-      next: (response) => {
-        if (response?.cars?.length) {
-          this.bookingState.setAvailabilityResponse(response);
-          this.availableCars = response.cars.map(car => this.mapApiCarToDisplay(car));
-          this.availableCars.sort((a, b) => a.price - b.price);
-        } else {
-          this.availableCars = [];
-        }
-        this.isLoading = false;
-        this.initializeTabs();
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.availableCars = [];
-        this.isLoading = false;
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  private formatPickupDateTime(date: Date, time: string): string {
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if (!match) return `${dd}-${mm}-${yyyy} 18:00`;
-    let hours = parseInt(match[1]);
-    const minutes = match[2];
-    const ampm = match[3].toUpperCase();
-    if (ampm === 'PM' && hours < 12) hours += 12;
-    if (ampm === 'AM' && hours === 12) hours = 0;
-    return `${dd}-${mm}-${yyyy} ${String(hours).padStart(2, '0')}:${minutes}`;
+    // No API re-fetch needed — API returns all packages (R1=8hr, R2=12hr, R3=4hr)
+    // carsToDisplay getter filters by selectedLocalPackage
+    this.cdr.markForCheck();
   }
 
   /** Returns car price — raw API fare, doubled for round trip */
