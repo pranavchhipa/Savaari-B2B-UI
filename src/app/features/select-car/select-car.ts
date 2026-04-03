@@ -10,11 +10,16 @@ import { CommissionService } from '../../core/services/commission.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { TripTypeService } from '../../core/services/trip-type.service';
-import { AvailableCar } from '../../core/models';
+import { AvailableCar, AvailabilityRequest, City } from '../../core/models';
 import { CAR_DISPLAY_INFO } from '../../core/mocks/mock-cars';
+import { CityService } from '../../core/services/city.service';
+import { toSavaariDateTime } from '../../core/utils/date-format.util';
+import { AddressAutocompleteService } from '../../core/services/address-autocomplete.service';
 
 import { FooterComponent } from '../../components/layout/footer/footer';
 import { DatePickerModule } from 'primeng/datepicker';
+import { AutoCompleteModule } from 'primeng/autocomplete';
+import { SelectModule } from 'primeng/select';
 
 /** Display-ready car object for the template */
 interface DisplayCar {
@@ -48,7 +53,9 @@ interface DisplayCar {
     LucideAngularModule,
     ReactiveFormsModule,
     FooterComponent,
-    DatePickerModule
+    DatePickerModule,
+    AutoCompleteModule,
+    SelectModule
   ],
   templateUrl: './select-car.html',
   styleUrl: './select-car.css',
@@ -66,6 +73,8 @@ export class SelectCarComponent implements OnInit {
   private analytics = inject(AnalyticsService);
   private availabilityService = inject(AvailabilityService);
   private tripTypeService = inject(TripTypeService);
+  private cityService = inject(CityService);
+  private addressService = inject(AddressAutocompleteService);
 
   itinerary: Itinerary | null = null;
   modifyForm!: FormGroup;
@@ -90,6 +99,17 @@ export class SelectCarComponent implements OnInit {
     { label: 'Drop to Airport', value: 'drop' },
     { label: 'Pickup from Airport', value: 'pickup' }
   ];
+
+  // City search for modify modal
+  sourceCities: City[] = [];
+  destinationCities: City[] = [];
+  filteredSourceCities: City[] = [];
+  filteredDestinationCities: City[] = [];
+  filteredAirports: City[] = [];
+  airportList: City[] = [];
+  filteredLocalities: any[] = [];
+  selectedFromCity: City | null = null;
+  selectedToCity: City | null = null;
 
   ngOnInit() {
     this.itinerary = this.bookingState.getItinerary();
@@ -265,7 +285,8 @@ export class SelectCarComponent implements OnInit {
       pickupTime: [pickupTime],
       airportSubType: [this.itinerary?.airportSubType || 'drop'],
       pickupAddress: [this.itinerary?.pickupAddress || ''],
-      dropAirport: [this.itinerary?.dropAirport || '']
+      dropAirport: [this.itinerary?.dropAirport || ''],
+      airportLocality: [null]
     });
 
     // Set min return date to day after pickup
@@ -319,6 +340,12 @@ export class SelectCarComponent implements OnInit {
 
   openModifyModal() {
     this.isModifyModalOpen = true;
+    this.loadSourceCities();
+    if (this.isAirport) this.loadAirports();
+    // Load destination cities if we have a source city
+    if (this.itinerary?.fromCityId && !this.isLocal && !this.isAirport) {
+      this.loadDestinationCities(this.itinerary.fromCityId);
+    }
     this.cdr.markForCheck();
   }
 
@@ -335,10 +362,15 @@ export class SelectCarComponent implements OnInit {
       const returnDate = formVal.returnDate;
       const pickupTime = formVal.pickupTime instanceof Date ? this.formatTimeFromDate(formVal.pickupTime) : formVal.pickupTime;
 
+      const fromCity = this.selectedFromCity || (typeof formVal.fromCity === 'object' ? formVal.fromCity : null);
+      const toCity = this.selectedToCity || (typeof formVal.toCity === 'object' ? formVal.toCity : null);
+
       const updatedItinerary: Itinerary = {
         ...this.itinerary!,
-        fromCity: formVal.fromCity,
-        toCity: formVal.toCity,
+        fromCity: fromCity?.name || formVal.fromCity || this.itinerary!.fromCity,
+        fromCityId: fromCity?.id || this.itinerary!.fromCityId,
+        toCity: toCity?.name || formVal.toCity || this.itinerary!.toCity,
+        toCityId: toCity?.id || this.itinerary!.toCityId,
         pickupDate: pickupDate,
         pickupTime: pickupTime,
         ...(this.isRoundTrip && { returnDate: returnDate }),
@@ -350,9 +382,124 @@ export class SelectCarComponent implements OnInit {
         })
       };
       this.bookingState.setItinerary(updatedItinerary);
+      this.itinerary = updatedItinerary;
       this.isModifyModalOpen = false;
+      this.isLoading = true;
       this.cdr.markForCheck();
+
+      // Re-fetch availability with updated params
+      const apiParams = this.tripTypeService.mapUiTabToApiParams(updatedItinerary.tripType || 'One Way', {
+        airportSubType: updatedItinerary.airportSubType,
+        localPackage: updatedItinerary.localPackage
+      });
+
+      const pickupDateObj = pickupDate instanceof Date ? pickupDate : new Date(pickupDate);
+      const availabilityRequest: AvailabilityRequest = {
+        sourceCity: updatedItinerary.fromCityId!,
+        tripType: apiParams.tripType,
+        subTripType: apiParams.subTripType,
+        pickupDateTime: toSavaariDateTime(pickupDateObj, pickupTime),
+        duration: 1,
+        ...(updatedItinerary.toCityId && { destinationCity: updatedItinerary.toCityId }),
+        ...(this.isRoundTrip && updatedItinerary.returnDate && {
+          duration: Math.ceil((new Date(updatedItinerary.returnDate).getTime() - pickupDateObj.getTime()) / (1000 * 60 * 60 * 24))
+        })
+      };
+
+      this.availabilityService.checkAvailability(availabilityRequest).subscribe({
+        next: (response) => {
+          this.bookingState.setAvailabilityResponse(response);
+          this.loadCarsFromAvailability();
+          this.initializeTabs();
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.isLoading = false;
+          this.availableCars = [];
+          this.cdr.markForCheck();
+        }
+      });
     }
+  }
+
+  private getModifyApiParams() {
+    return this.tripTypeService.mapUiTabToApiParams(this.itinerary?.tripType || 'One Way', {
+      airportSubType: this.itinerary?.airportSubType,
+      localPackage: this.itinerary?.localPackage
+    });
+  }
+
+  /** Load source cities for modify modal */
+  loadSourceCities() {
+    if (this.sourceCities.length) return;
+    const apiParams = this.getModifyApiParams();
+    this.cityService.getSourceCities(apiParams.tripType, apiParams.subTripType).subscribe(cities => {
+      this.sourceCities = cities;
+      this.cdr.markForCheck();
+    });
+  }
+
+  /** Load destination cities based on selected source */
+  loadDestinationCities(sourceId: number) {
+    const apiParams = this.getModifyApiParams();
+    this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, sourceId).subscribe(cities => {
+      this.destinationCities = cities;
+      this.cdr.markForCheck();
+    });
+  }
+
+  /** Load airport list */
+  loadAirports() {
+    if (this.airportList.length) return;
+    this.cityService.getAirportList().subscribe(airports => {
+      this.airportList = airports;
+      this.cdr.markForCheck();
+    });
+  }
+
+  filterSourceCities(event: any) {
+    this.filteredSourceCities = this.filterCitiesRanked(this.sourceCities, event.query);
+  }
+
+  filterDestinationCities(event: any) {
+    this.filteredDestinationCities = this.filterCitiesRanked(this.destinationCities, event.query);
+  }
+
+  filterAirports(event: any) {
+    const q = (event.query || '').toLowerCase();
+    this.filteredAirports = this.airportList.filter(a => a.name.toLowerCase().includes(q)).slice(0, 20);
+  }
+
+  filterLocalities(event: any) {
+    this.addressService.searchAddress(event.query).subscribe(results => {
+      this.filteredLocalities = results;
+      this.cdr.markForCheck();
+    });
+  }
+
+  onFromCitySelect(event: any) {
+    const city = event.value || event;
+    this.selectedFromCity = city;
+    if (city?.id && !this.isLocal) {
+      this.loadDestinationCities(city.id);
+    }
+  }
+
+  onToCitySelect(event: any) {
+    this.selectedToCity = event.value || event;
+  }
+
+  private filterCitiesRanked(cities: City[], query: string): City[] {
+    const q = query.toLowerCase();
+    return cities
+      .filter(c => c.name.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+        const bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+        return aStarts - bStarts || a.name.localeCompare(b.name);
+      })
+      .slice(0, 20);
   }
 
   get isRoundTrip(): boolean {

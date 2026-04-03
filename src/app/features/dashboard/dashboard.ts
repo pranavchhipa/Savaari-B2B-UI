@@ -544,7 +544,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.bookingForm = this.fb.group({
       fromCity: [null],
       toCity: [null],
-      tripType: [null],
+      tripType: ['drop'],
       pickupAddress: [''],
       dropAirport: [''],
       airportLocality: [null],

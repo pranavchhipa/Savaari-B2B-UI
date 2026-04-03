@@ -276,9 +276,6 @@
                                     <!-- Exclusions -->
                                     <div [hidden]="activeTab[car.id] !== 'exclusions'" class="flex flex-wrap gap-x-8 gap-y-1">
                                         <div *ngFor="let item of car.exclusions" class="flex items-center gap-1.5">
-                                            <div class="w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center">
-                                                <lucide-icon name="x" [size]="12" class="text-orange-600 dark:text-orange-400" [strokeWidth]="3"></lucide-icon>
-                                            </div>
                                             <div class="flex flex-col">
                                                 <span class="text-[8px] text-slate-400 uppercase font-bold tracking-tight leading-none">On Actuals</span>
                                                 <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">{{item}}</span>
@@ -356,61 +353,54 @@
                 <ng-container *ngIf="isAirport">
                     <!-- TRIP Type Dropdown -->
                     <div class="flex flex-col">
-                        <label
-                            class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Trip</label>
-                        <div class="relative">
-                            <select formControlName="airportSubType"
-                                class="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 focus:border-primary transition-all outline-none text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100">
-                                <option value="drop">Drop to Airport</option>
-                                <option value="pickup">Pickup from Airport</option>
-                            </select>
-                        </div>
+                        <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Trip</label>
+                        <p-select formControlName="airportSubType" [options]="airportSubTypes" optionLabel="label" optionValue="value"
+                            styleClass="w-full" appendTo="body"></p-select>
                     </div>
                     <!-- PICKUP ADDRESS -->
                     <div class="flex flex-col">
-                        <label
-                            class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Pickup
-                            Address</label>
-                        <div class="relative">
-                            <input type="text" formControlName="pickupAddress"
-                                class="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 focus:border-primary transition-all outline-none text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 placeholder:text-slate-300"
-                                placeholder="Start typing your address">
-                        </div>
+                        <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Pickup Address</label>
+                        <p-autoComplete formControlName="pickupAddress" [suggestions]="filteredLocalities"
+                            (completeMethod)="filterLocalities($event)" field="description" optionLabel="description" [minLength]="3"
+                            placeholder="Start typing address" styleClass="w-full"
+                            inputStyleClass="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                            panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                        </p-autoComplete>
                     </div>
                     <!-- DROP AIRPORT -->
                     <div class="flex flex-col">
-                        <label
-                            class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Drop
-                            Airport</label>
-                        <div class="relative">
-                            <input type="text" formControlName="dropAirport"
-                                class="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 focus:border-primary transition-all outline-none text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 placeholder:text-slate-300"
-                                placeholder="e.g. Bangalore">
-                        </div>
+                        <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Drop Airport</label>
+                        <p-autoComplete formControlName="airportLocality" [suggestions]="filteredAirports"
+                            (completeMethod)="filterAirports($event)" field="name" optionLabel="name" [minLength]="0"
+                            placeholder="Search airport" styleClass="w-full"
+                            inputStyleClass="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                            panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                        </p-autoComplete>
                     </div>
                 </ng-container>
 
                 <!-- FROM / CITY (Hidden for Airport) -->
                 <div class="flex flex-col" *ngIf="!isAirport">
-                    <label
-                        class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">{{isLocal
-                        ? 'City' : 'From'}}</label>
-                    <div class="relative">
-                        <input type="text" formControlName="fromCity"
-                            class="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 focus:border-primary transition-all outline-none text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 placeholder:text-slate-300"
-                            placeholder="Bengaluru, Bangalore">
-                    </div>
+                    <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">{{isLocal ? 'City' : 'From'}}</label>
+                    <p-autoComplete formControlName="fromCity" [suggestions]="filteredSourceCities"
+                        (completeMethod)="filterSourceCities($event)" (onSelect)="onFromCitySelect($event)"
+                        field="name" optionLabel="name" [minLength]="1"
+                        placeholder="Start typing city" styleClass="w-full"
+                        inputStyleClass="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                        panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                    </p-autoComplete>
                 </div>
 
                 <!-- TO (Hidden for Local and Airport) -->
                 <div class="flex flex-col" *ngIf="!isLocal && !isAirport">
-                    <label
-                        class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">To</label>
-                    <div class="relative">
-                        <input type="text" formControlName="toCity"
-                            class="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 focus:border-primary transition-all outline-none text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 placeholder:text-slate-300"
-                            placeholder="Start typing city - e.g. Mysore">
-                    </div>
+                    <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">To</label>
+                    <p-autoComplete formControlName="toCity" [suggestions]="filteredDestinationCities"
+                        (completeMethod)="filterDestinationCities($event)" (onSelect)="onToCitySelect($event)"
+                        field="name" optionLabel="name" [minLength]="1"
+                        placeholder="Start typing city" styleClass="w-full"
+                        inputStyleClass="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                        panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                    </p-autoComplete>
                 </div>
 
                 <!-- PICK UP -->
@@ -450,7 +440,7 @@
                         class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Pick
                         Up At</label>
                     <div class="modify-modal-datepicker relative flex items-center border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 bg-white dark:bg-slate-800">
-                        <p-datepicker #modifyPickupTime formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12"
+                        <p-datepicker #modifyPickupTime formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12" [stepMinute]="15"
                             appendTo="body" styleClass="w-full border-none bg-transparent"
                             inputStyleClass="w-full bg-transparent border-none text-[14px] focus:ring-0 p-0 text-slate-800 dark:text-gray-100 font-medium !shadow-none outline-none">
                         </p-datepicker>

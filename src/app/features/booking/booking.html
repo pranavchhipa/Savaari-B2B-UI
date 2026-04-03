@@ -199,7 +199,8 @@
                                     Address <span class="text-red-500">*</span></label>
                             </div>
                             <div *ngIf="formSubmitAttempted && !isPickupAddressValid()" class="text-xs text-red-500 mt-1 ml-4">Pickup address is required (min 3 characters)</div>
-                            <!-- Drop Address with locality autocomplete -->
+                            <!-- Drop Address — only for One Way bookings -->
+                            <ng-container *ngIf="itinerary?.tripType === 'One Way'">
                             <div class="relative group">
                                 <div class="absolute left-4 top-1/2 -translate-y-1/2 text-rose-500 z-10 pointer-events-none">
                                     <lucide-icon name="map-pin" [size]="18"></lucide-icon>
@@ -231,6 +232,7 @@
                                     Address <span class="text-red-500">*</span></label>
                             </div>
                             <div *ngIf="formSubmitAttempted && !isDropAddressValid()" class="text-xs text-red-500 mt-1 ml-4">Drop address is required (min 3 characters)</div>
+                            </ng-container>
                         </div>
 
                         <div class="relative group">
@@ -600,7 +602,7 @@
                                 <lucide-icon name="map-pin" [size]="12" class="text-primary"></lucide-icon>
                                 {{itinerary?.fromCity || 'Bangalore'}}
                             </p>
-                            <p class="text-xs text-slate-500 mt-0.5 ml-5">Local · {{itinerary?.localPackage || '8hr/80km'}}</p>
+                            <p class="text-xs text-slate-500 mt-0.5 ml-5">Local</p>
                         </div>
 
                         <!-- AIRPORT -->

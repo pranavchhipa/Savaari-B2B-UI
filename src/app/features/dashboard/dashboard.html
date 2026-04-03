@@ -419,7 +419,7 @@
           <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 sm:p-3 border border-slate-200 dark:border-slate-600/50 mb-3">
 
             <!-- Trip Type -->
-            <div class="search-cell px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50 lg:min-w-[200px]">
+            <div class="search-cell px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50 lg:min-w-[240px]">
               <lucide-icon name="navigation" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Trip <span class="text-red-400">*</span></span>
@@ -431,8 +431,32 @@
               </div>
             </div>
 
+            <!-- Pickup Address -->
+            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
+              <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
+              <div class="flex flex-col flex-1 min-w-0">
+                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
+                  {{ bookingForm.get('tripType')?.value === 'pickup' ? 'Drop Address' : 'Pickup Address' }} <span class="text-red-400">*</span>
+                </span>
+                <p-autoComplete formControlName="pickupAddress" [suggestions]="filteredLocalities"
+                  (completeMethod)="filterLocalities($event)" (onSelect)="onAddressSelect($event)" field="description" optionLabel="description" [minLength]="3"
+                  placeholder="Start typing address" styleClass="w-full search-bar-autocomplete"
+                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                  <ng-template pTemplate="item" let-addr>
+                    <div class="flex items-center gap-2 px-2 py-1.5">
+                      <lucide-icon name="map-pin" [size]="14" class="text-orange-500 shrink-0"></lucide-icon>
+                      <div class="min-w-0">
+                        <span class="text-sm font-medium block truncate text-slate-700 dark:text-slate-200">{{ addr.main_text || addr.description }}</span>
+                        <span *ngIf="addr.secondary_text" class="text-[10px] text-slate-400 block truncate">{{ addr.secondary_text }}</span>
+                      </div>
+                    </div>
+                  </ng-template>
+                </p-autoComplete>
+              </div>
+            </div>
 
-            <!-- Airport -->
+            <!-- Drop Airport -->
             <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
               <lucide-icon name="plane" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
@@ -455,32 +479,6 @@
               </div>
             </div>
 
-
-            <!-- Address (conditional) -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-              [hidden]="!bookingForm.get('tripType')?.value">
-              <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
-              <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
-                  {{ bookingForm.get('tripType')?.value === 'pickup' ? 'Drop Address' : 'Pickup Address' }}
-                </span>
-                <p-autoComplete formControlName="pickupAddress" [suggestions]="filteredLocalities"
-                  (completeMethod)="filterLocalities($event)" (onSelect)="onAddressSelect($event)" field="description" optionLabel="description" [minLength]="3"
-                  placeholder="Start typing address" styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
-                  panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
-                  <ng-template pTemplate="item" let-addr>
-                    <div class="flex items-center gap-2 px-2 py-1.5">
-                      <lucide-icon name="map-pin" [size]="14" class="text-orange-500 shrink-0"></lucide-icon>
-                      <div class="min-w-0">
-                        <span class="text-sm font-medium block truncate text-slate-700 dark:text-slate-200">{{ addr.main_text || addr.description }}</span>
-                        <span *ngIf="addr.secondary_text" class="text-[10px] text-slate-400 block truncate">{{ addr.secondary_text }}</span>
-                      </div>
-                    </div>
-                  </ng-template>
-                </p-autoComplete>
-              </div>
-            </div>
           </div>
 
           <!-- Row 2: Date + Time + Search -->
