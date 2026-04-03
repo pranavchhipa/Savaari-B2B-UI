@@ -20,6 +20,7 @@ import { LocalityService, Locality } from '../../core/services/locality.service'
 import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
+import { switchMap, of } from 'rxjs';
 
 type TabType = 'ONE_WAY' | 'ROUND_TRIP' | 'LOCAL' | 'AIRPORT';
 
@@ -902,11 +903,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Airport validation: require airport selection
+    // Airport validation: require airport selection + pickup address with resolved lat/lng
     if (isAirport) {
       if (!this.selectedAirportCity && !val.airportLocality?.id) {
         this.showError = true;
         this.errorMessage = 'Please select an airport.';
+        return;
+      }
+      if (!this.selectedPlaceDetails?.lat || !this.selectedPlaceDetails?.lng) {
+        this.showError = true;
+        this.errorMessage = 'Please select a pickup/drop address from the suggestions.';
         return;
       }
     }
@@ -1003,9 +1009,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const oneWaySource = isPickupFromAirport ? airportCityId : addressCityId;
         const oneWayDest = isPickupFromAirport ? addressCityId : airportCityId;
 
+        // Resolve city names for the conversion
+        const addressCityName = this.selectedPlaceDetails?.name || itinerary.custShortAddress || '';
+        const airportCityName = selectedAirport?.cityOnly || selectedAirport?.name?.split(',').pop()?.trim() || '';
+        const oneWayFromName = isPickupFromAirport ? airportCityName : addressCityName;
+        const oneWayToName = isPickupFromAirport ? addressCityName : airportCityName;
+
         this.isSearching = true;
         this.cdr.markForCheck();
-        this.convertAirportToOneWay(itinerary, oneWaySource, pickupDate, pickupTimeStr, oneWayDest);
+        this.convertAirportToOneWay(itinerary, oneWaySource, pickupDate, pickupTimeStr, oneWayDest, oneWayFromName, oneWayToName);
         return;
       }
     }
@@ -1043,11 +1055,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.isSearching = true;
     this.cdr.markForCheck();
 
+    if (isAirport && !environment.production) {
+      console.log('[Dashboard] Airport availability request:', JSON.stringify(availabilityRequest, null, 2));
+      console.log('[Dashboard] selectedPlaceDetails:', this.selectedPlaceDetails);
+      console.log('[Dashboard] selectedAirportCity:', this.selectedAirportCity);
+    }
+
+    // For airport fallback: check if address and airport are in the same city
+    // Same city = never convert to one-way (confirmed by Shubhendu)
+    const isSameCityAirport = isAirport &&
+      this.selectedPlaceDetails?.aliasSourceCityId === fromCityId;
+
+    // Pre-compute city names for potential one-way conversion fallback
+    const fallbackAddressName = this.selectedPlaceDetails?.name || '';
+    const fallbackAirportCityName = selectedAirport?.cityOnly || selectedAirport?.name?.split(',').pop()?.trim() || '';
+
     this.availabilityService.checkAvailability(availabilityRequest).subscribe({
       next: (response) => {
         if (isAirport && (!response.cars || response.cars.length === 0)) {
-          // Airport returned no cars → convert to One Way (HAR-confirmed behavior)
-          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr);
+          if (isSameCityAirport) {
+            // Same city — don't convert, show error
+            this.isSearching = false;
+            this.formSubmitted = false;
+            this.showError = true;
+            this.errorMessage = 'Airport cabs not available for this route. Please try a different date or time.';
+            this.cdr.markForCheck();
+            return;
+          }
+          // Different city — convert to One Way (HAR-confirmed behavior)
+          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr, undefined, fallbackAddressName, fallbackAirportCityName);
           return;
         }
         this.bookingState.setAvailabilityResponse(response);
@@ -1057,8 +1093,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         if (isAirport) {
-          // Airport availability failed → convert to One Way (HAR-confirmed behavior)
-          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr);
+          if (isSameCityAirport) {
+            // Same city — don't convert, show error
+            this.isSearching = false;
+            this.formSubmitted = false;
+            this.showError = true;
+            this.errorMessage = 'Airport cabs not available for this route. Please try a different date or time.';
+            this.cdr.markForCheck();
+            return;
+          }
+          // Different city — convert to One Way (HAR-confirmed behavior)
+          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr, undefined, fallbackAddressName, fallbackAirportCityName);
           return;
         }
         this.isSearching = false;
@@ -1082,26 +1127,113 @@ export class DashboardComponent implements OnInit, OnDestroy {
    */
   private convertAirportToOneWay(
     originalItinerary: any,
-    fromCityId: number,
+    fallbackFromCityId: number,
     pickupDate: Date,
     pickupTimeStr: string,
-    destinationCityId?: number
+    destinationCityId?: number,
+    fromCityName?: string,
+    toCityName?: string
   ) {
     const selectedAirport = this.selectedAirportCity;
-    const destId = destinationCityId || selectedAirport?.id || fromCityId;
+    const destId = destinationCityId || selectedAirport?.id || fallbackFromCityId;
 
-    // Build One Way availability request
-    const oneWayRequest: AvailabilityRequest = {
-      sourceCity: fromCityId,
-      tripType: 'outstation',
-      subTripType: 'oneWay',
-      destinationCity: destId,
-      pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
-      duration: 1,
+    // Savaari place_id API often returns wrong aliasSourceCityId (e.g., Bhiwandi → 377/Bangalore).
+    // Airport city ID (e.g. 114 for Mumbai in airport list) is NOT the same as outstation city ID.
+    // Both from/to cities must be resolved from source/destination cities APIs.
+    const custShortAddr = originalItinerary.custShortAddress || '';
+
+    /** Helper: find city by name from a list, trying multiple candidate tokens. Returns { id, displayName }. */
+    const resolveCity = (
+      cityList: City[],
+      cityName: string | undefined,
+      fallbackId: number,
+      fallbackName: string,
+      label: string,
+      preferAirport = false
+    ): { id: number; displayName: string } => {
+      if (!cityName || !cityList.length) return { id: fallbackId, displayName: fallbackName };
+      const candidates = [
+        cityName,
+        cityName.split(',')[0]?.trim(),
+      ].filter(Boolean).map(s => s!.toLowerCase());
+
+      let matched: City | undefined;
+
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        const matches = cityList.filter(c => {
+          const co = c.cityOnly?.toLowerCase() || '';
+          const cn = c.name.toLowerCase();
+          return co === candidate || cn.startsWith(candidate) || candidate.startsWith(co) || cn === candidate;
+        });
+        if (matches.length) {
+          if (preferAirport) {
+            // Prefer "Mumbai (Bombay Airport)" format over "Mumbai Airport" — match beta
+            matched = matches.find(c => c.name.toLowerCase().includes('(') && c.name.toLowerCase().includes('airport'))
+              ?? matches.find(c => c.name.toLowerCase().includes('airport'))
+              ?? matches[0];
+          } else {
+            matched = matches[0];
+          }
+          break;
+        }
+      }
+
+      if (matched) {
+        // Use cityOnly for short display (e.g. "Bhiwandi" or "Mumbai (Bombay Airport)")
+        const displayName = matched.cityOnly || matched.name.split(',')[0].trim();
+        if (!environment.production) console.log(`[Dashboard] ${label} resolved:`, matched.name, '→ display:', displayName, '(id:', matched.id, ')');
+        return { id: matched.id, displayName };
+      }
+      if (!environment.production) console.warn(`[Dashboard] ${label} NOT resolved, using fallback:`, fallbackId, '| tried:', candidates);
+      return { id: fallbackId, displayName: fallbackName };
     };
 
-    this.availabilityService.checkAvailability(oneWayRequest).subscribe({
-      next: (response) => {
+    // Step 1: get source cities → resolve fromCityId
+    // Step 2: get destination cities for that source → resolve toCityId
+    // Step 3: call availability API
+    this.cityService.getSourceCities('outstation', 'oneWay').pipe(
+      switchMap(sourceCities => {
+        if (!environment.production) {
+          console.log('[Dashboard] convertAirportToOneWay — fromCityName:', fromCityName,
+            '| toCityName:', toCityName,
+            '| custShortAddress:', custShortAddr,
+            '| fallbackFromId:', fallbackFromCityId, '| fallbackDestId:', destId,
+            '| source cities:', sourceCities.length);
+        }
+
+        // Resolve source city (address side, e.g. Bhiwandi)
+        // Try place_name first; fallback to first token of custShortAddress (e.g. "Bhiwandi" from "Bhiwandi, Maharashtra, India")
+        const fromNameHint = fromCityName || custShortAddr.split(',')[0]?.trim() || '';
+        const resolvedFrom = resolveCity(sourceCities, fromNameHint, fallbackFromCityId, fromCityName || '', 'fromCity', false);
+
+        // Now get destination cities for this source city
+        return this.cityService.getDestinationCities('outstation', 'oneWay', resolvedFrom.id).pipe(
+          switchMap(destCities => {
+            // Resolve destination city — prefer airport-named entry (e.g. "Mumbai (Bombay Airport)")
+            const resolvedTo = resolveCity(destCities, toCityName, destId, toCityName || '', 'toCity', true);
+
+            if (!environment.production) {
+              console.log('[Dashboard] Final one-way request: sourceCity:', resolvedFrom.id, resolvedFrom.displayName, '→ destCity:', resolvedTo.id, resolvedTo.displayName);
+            }
+
+            const oneWayRequest: AvailabilityRequest = {
+              sourceCity: resolvedFrom.id,
+              tripType: 'outstation',
+              subTripType: 'oneWay',
+              destinationCity: resolvedTo.id,
+              pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
+              duration: 1,
+            };
+
+            return this.availabilityService.checkAvailability(oneWayRequest).pipe(
+              switchMap(response => of({ response, resolvedFrom, resolvedTo }))
+            );
+          })
+        );
+      })
+    ).subscribe({
+      next: ({ response, resolvedFrom, resolvedTo }) => {
         if (!response.cars || response.cars.length === 0) {
           this.isSearching = false;
           this.formSubmitted = false;
@@ -1112,14 +1244,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
 
         // Update itinerary to reflect One Way conversion
+        // Use cityOnly display names so select-car shows "Bhiwandi / Mumbai (Bombay Airport)"
         const convertedItinerary = {
           ...originalItinerary,
           tripType: 'One Way',
           subTripType: 'oneWay',
-          toCityId: destId,
-          fromCityId: fromCityId,
+          fromCity: resolvedFrom.displayName || fromCityName || originalItinerary.fromCity,
+          fromCityId: resolvedFrom.id,
+          toCity: resolvedTo.displayName || toCityName || originalItinerary.toCity,
+          toCityId: resolvedTo.id,
           airportConvertedToOneWay: true,
-          aliasDestCityId: destId,
+          aliasDestCityId: resolvedTo.id,
         };
 
         this.bookingState.setItinerary(convertedItinerary);
@@ -1137,6 +1272,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  /** Clear airport pickup address field + resolved place details */
+  clearPickupAddress() {
+    this.bookingForm.get('pickupAddress')?.reset();
+    this.selectedPlaceDetails = null;
+    this.cdr.markForCheck();
+  }
+
+  /** Clear airport selection + related state */
+  clearAirportField() {
+    this.bookingForm.get('airportLocality')?.reset();
+    this.selectedAirportCity = null;
+    this.airportLocalityId = null;
+    this.airportLocalityName = '';
+    this.cdr.markForCheck();
   }
 
   /** User clicks OK on the conversion popup → navigate to select-car */

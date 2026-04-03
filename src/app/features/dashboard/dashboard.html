@@ -379,6 +379,10 @@
                 </ng-template>
               </p-autoComplete>
             </div>
+            <button *ngIf="bookingForm.get('fromCity')?.value?.id" type="button" (click)="bookingForm.get('fromCity')?.reset()"
+              class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+              <lucide-icon name="x" [size]="14"></lucide-icon>
+            </button>
           </div>
 
 
@@ -454,6 +458,10 @@
                   </ng-template>
                 </p-autoComplete>
               </div>
+              <button *ngIf="bookingForm.get('pickupAddress')?.value" type="button" (click)="clearPickupAddress()"
+                class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                <lucide-icon name="x" [size]="14"></lucide-icon>
+              </button>
             </div>
 
             <!-- Drop Airport -->
@@ -477,6 +485,10 @@
                   </ng-template>
                 </p-autoComplete>
               </div>
+              <button *ngIf="selectedAirportCity" type="button" (click)="clearAirportField()"
+                class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                <lucide-icon name="x" [size]="14"></lucide-icon>
+              </button>
             </div>
 
           </div>

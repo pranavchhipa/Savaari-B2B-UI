@@ -64,11 +64,8 @@ export class AvailabilityService {
     params['pickupDateTime'] = request.pickupDateTime;
     params['duration'] = request.duration;
 
-    // destinationCity: sent for outstation & local, NOT for airport
-    // For local, HAR shows empty string destinationCity= (cleanParams keeps empty strings)
-    if (!isAirport) {
-      params['destinationCity'] = request.destinationCity ?? '';
-    }
+    // destinationCity: sent for all trip types (beta HAR shows airport also sends destinationCity= empty)
+    params['destinationCity'] = isAirport ? '' : (request.destinationCity ?? '');
 
     // Multicity intermediate stops for round trip (e.g. Bangalore → Mysore → Ooty)
     if (request.multicityId) {
@@ -97,12 +94,22 @@ export class AvailabilityService {
   private normalizeResponse(raw: RawAvailabilityResponse): AvailabilityResponse {
     const cars: AvailableCar[] = [];
     if (raw.data) {
-      for (const key of Object.keys(raw.data)) {
-        const group = raw.data[key];
-        if (group?.availableCars?.length) {
-          for (const rawCar of group.availableCars) {
-            if (!rawCar.soldoutFlag) {
-              cars.push(this.normalizeCar(rawCar));
+      // Airport response: data.availableCars (flat array, no R1/R2/R3 grouping)
+      // Local/Outstation response: data.R1.availableCars, data.R2.availableCars, etc.
+      if (Array.isArray((raw.data as any).availableCars)) {
+        for (const rawCar of (raw.data as any).availableCars) {
+          if (!rawCar.soldoutFlag) {
+            cars.push(this.normalizeCar(rawCar));
+          }
+        }
+      } else {
+        for (const key of Object.keys(raw.data)) {
+          const group = raw.data[key];
+          if (group?.availableCars?.length) {
+            for (const rawCar of group.availableCars) {
+              if (!rawCar.soldoutFlag) {
+                cars.push(this.normalizeCar(rawCar));
+              }
             }
           }
         }
