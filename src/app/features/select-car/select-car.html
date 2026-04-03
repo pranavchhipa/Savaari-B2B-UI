@@ -267,19 +267,13 @@
                                             <div class="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
                                                 <lucide-icon name="check" [size]="12" class="text-emerald-600 dark:text-emerald-400" [strokeWidth]="3"></lucide-icon>
                                             </div>
-                                            <div class="flex flex-col">
-                                                <span class="text-[8px] text-slate-400 uppercase font-bold tracking-tight leading-none">Included</span>
-                                                <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">{{item}}</span>
-                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">{{item}}</span>
                                         </div>
                                     </div>
                                     <!-- Exclusions -->
                                     <div [hidden]="activeTab[car.id] !== 'exclusions'" class="flex flex-wrap gap-x-8 gap-y-1">
                                         <div *ngFor="let item of car.exclusions" class="flex items-center gap-1.5">
-                                            <div class="flex flex-col">
-                                                <span class="text-[8px] text-slate-400 uppercase font-bold tracking-tight leading-none">On Actuals</span>
-                                                <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">{{item}}</span>
-                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">{{item}}</span>
                                         </div>
                                     </div>
                                     <!-- Facilities -->
