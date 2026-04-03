@@ -992,14 +992,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 paymentmode: 'savaariwebsite',
               }).subscribe();
 
-              // Settlement payment — mark booking as Pre Paid, remove from auto-pay cron
-              this.paymentService.settlementPayment({
-                bookingId: bkId,
-                paymentAmount: advanceAmount,
-                paymentMethod: 'Razorpay',
-                transactionId: rzpOrderId,
-                paymentId: razorpayPaymentId,
-              }).subscribe();
+              // Settlement payment — ONLY when fully settled (no deferred auto-deduct remaining)
+              if (this.getDeferredAmount() === 0) {
+                this.paymentService.settlementPayment({
+                  bookingId: bkId,
+                  paymentAmount: advanceAmount,
+                  paymentMethod: 'Razorpay',
+                  transactionId: rzpOrderId,
+                  paymentId: razorpayPaymentId,
+                }).subscribe();
+              }
 
               this.isProcessingRazorpay = false;
               this.bookingConfirmed = true;
@@ -1180,13 +1182,18 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               advancedAmount: payNow,
             } as any).subscribe();
 
-            // Step 3: Settlement payment — mark booking as Pre Paid, remove from auto-pay cron
-            this.paymentService.settlementPayment({
-              bookingId: bkId,
-              paymentAmount: payNow,
-              paymentMethod: 'Wallet',
-              transactionId: txnId,
-            }).subscribe();
+            // Step 3: Settlement payment — ONLY when fully settled (no deferred auto-deduct remaining)
+            // Option 1: always settled (driver collects rest, no cron)
+            // Option 2/3 non-urgent: 25% now, cron auto-deducts rest later → DON'T call settlement
+            // Option 2/3 urgent: 100%/120% upfront → call settlement
+            if (this.getDeferredAmount() === 0) {
+              this.paymentService.settlementPayment({
+                bookingId: bkId,
+                paymentAmount: payNow,
+                paymentMethod: 'Wallet',
+                transactionId: txnId,
+              }).subscribe();
+            }
 
             // Step 4: Send confirmation emails (fire-and-forget)
             this.paymentService.sendConfirmationEmail(bkId).subscribe();
