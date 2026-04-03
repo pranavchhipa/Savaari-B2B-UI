@@ -39,11 +39,13 @@ export function toSavaariDateTime(date: Date, time: string): string {
 
 /**
  * Calculates the number of days between two dates (for round trip duration).
+ * Inclusive of both pickup and return day (3rd→6th = 4 days).
  * Returns at least 1.
  */
 export function calculateDuration(pickupDate: Date, returnDate: Date): number {
   const diffMs = returnDate.getTime() - pickupDate.getTime();
-  return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return Math.max(1, diffDays + 1);
 }
 
 /**

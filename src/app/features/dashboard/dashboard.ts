@@ -1029,13 +1029,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
       tripType: apiParams.tripType,
       subTripType: isLocal ? '' : apiParams.subTripType,
       pickupDateTime: toSavaariDateTime(pickupDate, pickupTimeStr),
-      ...((!isLocal && !isAirport) && { destinationCity: toCityId }),
-      // Multicity intermediate stops for round trip (e.g. Bangalore → Mysore → Ooty)
-      ...(isRoundTrip && this.extraDestinations.length > 0 && {
-        multicityId: this.extraDestinations
-          .filter(c => c && typeof c === 'object' && c.id)
-          .map(c => c.id)
-          .join(',')
+      // destinationCity: comma-separated list of ALL destination cities (main TO + extra stops)
+      // Beta HAR confirms: "destinationCity=4483,1993" (no separate multicityId param)
+      ...((!isLocal && !isAirport) && {
+        destinationCity: isRoundTrip && this.extraDestinations.length > 0
+          ? [toCityId, ...this.extraDestinations.filter(c => c?.id).map(c => c.id)].join(',')
+          : toCityId
       }),
       duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
       ...(isAirport && this.airportLocalityId && { localityId: this.airportLocalityId }),

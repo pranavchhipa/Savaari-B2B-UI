@@ -12,8 +12,7 @@ export interface AvailabilityRequest {
   sourceCity: number;          // Integer city ID (e.g. 377 = Bangalore)
   tripType: string;            // 'local' | 'outstation' | 'airport'
   subTripType: string;         // 'oneWay' | 'roundTrip' | '880' etc.
-  destinationCity?: number;    // Required for outstation (final destination for multicity)
-  multicityId?: string;        // Comma-separated intermediate city IDs for round trip multicity
+  destinationCity?: number | string;  // City ID or comma-separated IDs for round trip multicity (e.g. "4483,1993")
   pickupDateTime: string;      // Format: DD-MM-YYYY HH:MM
   duration?: number;           // Days — always required (1 for oneWay)
   customerLatLong?: string;    // lat,lng — sent for airport; empty string for local/outstation

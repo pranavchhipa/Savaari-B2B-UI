@@ -157,7 +157,10 @@ export class SelectCarComponent implements OnInit {
   private loadCarsFromAvailability() {
     const response = this.bookingState.getAvailabilityResponse();
     if (response?.cars?.length) {
-      this.availableCars = response.cars.map(car => this.mapApiCarToDisplay(car));
+      // Filter out cars with 0 fare (e.g. Minibus placeholder entries from API)
+      this.availableCars = response.cars
+        .filter(car => car.fare > 0)
+        .map(car => this.mapApiCarToDisplay(car));
     } else {
       this.availableCars = [];
     }
@@ -405,7 +408,7 @@ export class SelectCarComponent implements OnInit {
         duration: 1,
         ...(updatedItinerary.toCityId && { destinationCity: updatedItinerary.toCityId }),
         ...(this.isRoundTrip && updatedItinerary.returnDate && {
-          duration: Math.ceil((new Date(updatedItinerary.returnDate).getTime() - pickupDateObj.getTime()) / (1000 * 60 * 60 * 24))
+          duration: Math.ceil((new Date(updatedItinerary.returnDate).getTime() - pickupDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1
         })
       };
 
@@ -569,16 +572,14 @@ export class SelectCarComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  /** Returns car price — raw API fare, doubled for round trip */
+  /** Returns car price — API already returns correct round trip total */
   getCarPrice(baseFare: number): number {
-    return this.isRoundTrip ? baseFare * 2 : baseFare;
+    return baseFare;
   }
 
-  /** Returns KMs label adjusted for trip type */
+  /** Returns KMs label — API already returns correct round trip total */
   getCarKms(baseKms: string): string {
-    if (!this.isRoundTrip) return baseKms;
-    const num = parseInt(baseKms, 10);
-    return isNaN(num) ? baseKms : `${num * 2} KMs`;
+    return baseKms;
   }
 
   setTab(carId: string, tab: string) {

@@ -67,10 +67,6 @@ export class AvailabilityService {
     // destinationCity: sent for all trip types (beta HAR shows airport also sends destinationCity= empty)
     params['destinationCity'] = isAirport ? '' : (request.destinationCity ?? '');
 
-    // Multicity intermediate stops for round trip (e.g. Bangalore → Mysore → Ooty)
-    if (request.multicityId) {
-      params['multicityId'] = request.multicityId;
-    }
 
     // Airport-specific params (confirmed by Shubhendu — required for airport pricing)
     if (isAirport) {
