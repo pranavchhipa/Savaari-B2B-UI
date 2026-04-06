@@ -78,11 +78,13 @@ export interface PaymentConfirmationRequest {
   orderId?: string;                // savaari_payment_id
   paymentId?: string;              // razorpay_payment_id
   paymentmode?: string;            // 'savaariwebsite'
-  // Wallet flow params (from Jibin's confirmation callback doc)
-  source?: string;                 // 'B2B_WALLET' for wallet payments
+  // Wallet + Razorpay flow params (from Jibin's confirmation callback doc, April 2026)
+  source?: string;                 // 'B2B_WALLET' for wallet payments, 'B2B_RAZORPAY' for razorpay
   booking_id?: string;             // booking ID
   payment_option?: number;         // 1=25% driver collects, 2=25% auto-deduct, 3=100% full
-  transaction_id?: string;         // wallet transaction ID from pay-booking response
+  transaction_id?: string;         // wallet transaction ID / razorpay payment ID
+  totalAmount?: number;            // The booking Total Fare (REQUIRED — required by Jibin's updated db columns)
+  bufferAmount?: number;           // The buffer refundable deposit (REQUIRED — 0 for opt 1/2, 20% of fare for opt 3)
 }
 
 @Injectable({ providedIn: 'root' })
@@ -228,8 +230,10 @@ export class PaymentService {
     }
 
     // Build params based on flow type (wallet vs razorpay).
-    // Per Jibin's doc, Razorpay must also pass source/booking_id/payment_option/
-    // transaction_id (same trigger params as wallet) so the DB gets updated.
+    // Per Jibin's April 2026 doc, BOTH wallet and razorpay flows MUST send:
+    //   source, booking_id, payment_option, transaction_id, totalAmount, bufferAmount
+    // totalAmount + bufferAmount were added because DB entries weren't being stored
+    // without them (server uses these to populate sv_advance_payment + sv_booking_wallet_payment).
     let body: Record<string, any>;
     if (request.source === 'B2B_WALLET') {
       body = {
@@ -237,6 +241,8 @@ export class PaymentService {
         booking_id: request.booking_id,
         payment_option: request.payment_option,
         transaction_id: request.transaction_id,
+        totalAmount: request.totalAmount,
+        bufferAmount: request.bufferAmount,
         advancedAmount: request.advancedAmount,
       };
     } else if (request.source === 'B2B_RAZORPAY') {
@@ -245,6 +251,8 @@ export class PaymentService {
         booking_id: request.booking_id,
         payment_option: request.payment_option,
         transaction_id: request.transaction_id,
+        totalAmount: request.totalAmount,
+        bufferAmount: request.bufferAmount,
         advancedAmount: request.advancedAmount,
         orderId: request.orderId,
         paymentId: request.paymentId,

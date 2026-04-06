@@ -1036,11 +1036,14 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               // confirmation.php — pass the same trigger params as wallet flow
               // (per Jibin's doc: "Same parameters need to be passed after the
               // Razor pay callback also"). This is what updates the database.
+              // April 2026: totalAmount + bufferAmount added — REQUIRED for db storage.
               this.paymentService.confirmPayment({
                 source: 'B2B_RAZORPAY',
                 booking_id: bkId,
                 payment_option: this.paymentOption,
                 transaction_id: razorpayPaymentId,
+                totalAmount: this.selectedCar?.price || 0,
+                bufferAmount: this.paymentOption === 3 ? this.getOption3BufferAmount() : 0,
                 advancedAmount: advanceAmount,
                 orderId: savaariPayId,
                 paymentId: razorpayPaymentId,
@@ -1229,11 +1232,15 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
             const txnId = result.transactionId || '';
 
             // Step 2: Call confirmation.php with wallet-specific params
+            // Per Jibin's April 2026 db column update, totalAmount + bufferAmount
+            // are now REQUIRED so the server can populate sv_advance_payment correctly.
             this.paymentService.confirmPayment({
               source: 'B2B_WALLET',
               booking_id: bkId,
               payment_option: this.paymentOption,
               transaction_id: txnId,
+              totalAmount: this.selectedCar?.price || 0,
+              bufferAmount: this.paymentOption === 3 ? this.getOption3BufferAmount() : 0,
               advancedAmount: payNow,
             } as any).subscribe();
 
