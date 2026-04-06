@@ -874,6 +874,48 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     return this.selectedCar.price;
   }
 
+  /** Professional KMs display — returns "183 km" or "183 (175 + 8) km" or fallback. */
+  get displayKms(): string {
+    if (!this.selectedCar) return '—';
+    const raw = this.selectedCar.kmsIncluded || '';
+    if (!raw) return '—';
+    // If already in format "183 (175 + 8) km" or "183 km" → normalize and return
+    const s = String(raw).trim();
+    // Match "NNN (NNN + NN) km"
+    const breakdown = s.match(/(\d+)\s*\((\d+)\s*\+\s*(\d+)\)\s*km/i);
+    if (breakdown) return `${breakdown[1]} km`;
+    // Match leading number + optional suffix
+    const num = s.match(/^(\d+)/);
+    return num ? `${num[1]} km` : s;
+  }
+
+  /** Pickup full address for display in confirmation (prefers selected address, falls back to city). */
+  get displayPickupAddress(): string {
+    const addr = (this.pickupAddress || '').trim();
+    const city = this.itinerary?.fromCity || '';
+    if (addr && addr !== city) return `${addr}, ${city}`;
+    return city;
+  }
+
+  /** Drop full address for display in confirmation. */
+  get displayDropAddress(): string {
+    const addr = (this.dropAddress || '').trim();
+    const city = this.itinerary?.toCity || '';
+    if (addr && addr !== city) return `${addr}, ${city}`;
+    return city;
+  }
+
+  /** Returns formatted pickup date + time for confirmation header. */
+  get displayPickupDateTime(): string {
+    if (!this.itinerary?.pickupDate) return '';
+    const d = new Date(this.itinerary.pickupDate);
+    const day = d.getDate();
+    const suffix = (n: number) => (n >= 11 && n <= 13) ? 'th' : (['st','nd','rd'][((n - 1) % 10)] || 'th');
+    const month = d.toLocaleString('en-US', { month: 'long' });
+    const year = d.getFullYear();
+    return `${day}${suffix(day)} ${month} ${year} at ${this.itinerary.pickupTime || ''}`;
+  }
+
   bookNow() {
     this.bookingError = '';
 

@@ -922,147 +922,389 @@
         </div>
     </div>
 
-    <!-- Booking Confirmation Screen -->
-    <!-- Confetti Canvas (behind confirmation card) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!--                    BOOKING CONFIRMATION SCREEN                   -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <canvas *ngIf="bookingConfirmed" #confettiCanvas
         class="fixed inset-0 z-[200] pointer-events-none w-screen h-screen"></canvas>
 
     <div *ngIf="bookingConfirmed"
-        class="booking-voucher-print max-w-2xl mx-auto mt-2 mb-6 relative z-[201] px-4">
+        class="booking-voucher-print max-w-5xl mx-auto mt-4 mb-10 relative z-[201] px-4">
 
-        <!-- Compact Success + Booking ID Row -->
-        <div class="flex items-center justify-between mb-3 gap-2">
-            <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/30 confirmation-pop shrink-0">
-                    <lucide-icon name="check" [size]="18" class="text-white sm:!w-[22px] sm:!h-[22px]"></lucide-icon>
+        <!-- ─── HERO SUCCESS HEADER ─── -->
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 shadow-xl shadow-emerald-500/20 mb-5 confirmation-card-rise">
+            <!-- Decorative circles -->
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+
+            <div class="relative px-5 sm:px-8 py-5 sm:py-6 flex items-center gap-4 sm:gap-5">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/20 backdrop-blur-sm ring-4 ring-white/20 flex items-center justify-center flex-shrink-0 confirmation-pop">
+                    <lucide-icon name="check" [size]="32" [strokeWidth]="3" class="text-white"></lucide-icon>
                 </div>
-                <div class="min-w-0">
-                    <h1 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Booking Confirmed</h1>
-                    <p class="text-[10px] sm:text-xs text-slate-400 truncate">ID: <span class="font-semibold text-slate-600 dark:text-slate-300">{{bookingId}}</span></p>
-                </div>
-            </div>
-            <span class="px-2 sm:px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-800 shrink-0">Confirmed</span>
-        </div>
-
-        <!-- Main Booking Card -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200/80 dark:border-slate-700/60 overflow-hidden confirmation-card-rise">
-
-            <div class="px-3 sm:px-5 py-3 sm:py-4 space-y-2.5 sm:space-y-3">
-
-                <!-- Route Row -->
-                <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                    <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-primary flex-shrink-0"></div>
-                    <span class="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">{{itinerary?.fromCity}}</span>
-                    <ng-container *ngIf="itinerary?.extraDestinations?.length">
-                        <ng-container *ngFor="let stop of itinerary?.extraDestinations">
-                            <lucide-icon name="arrow-right" [size]="12" class="text-orange-300 flex-shrink-0 sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
-                            <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-400 flex-shrink-0"></div>
-                            <span class="text-xs sm:text-sm font-semibold text-orange-600 dark:text-orange-400">{{stop.cityOnly || stop.cityName}}</span>
-                        </ng-container>
-                    </ng-container>
-                    <lucide-icon name="arrow-right" [size]="12" class="text-slate-300 flex-shrink-0 sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
-                    <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-500 flex-shrink-0"></div>
-                    <span class="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">{{itinerary?.toCity}}</span>
-                    <span class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 sm:px-2 py-0.5 rounded ml-auto">{{itinerary?.tripType}}</span>
-                </div>
-
-                <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
-
-                <!-- Trip + Passenger in one compact grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-x-3 sm:gap-x-4 gap-y-2 text-[11px] sm:text-xs">
-                    <div>
-                        <p class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">Date</p>
-                        <p class="font-semibold text-slate-900 dark:text-white">{{itinerary?.pickupDate | date:'dd MMM yy'}}</p>
+                <div class="flex-1 min-w-0 text-white">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Booking Confirmed</h1>
+                        <span class="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-widest backdrop-blur-sm">Confirmed</span>
                     </div>
-                    <div>
-                        <p class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">Time</p>
-                        <p class="font-semibold text-slate-900 dark:text-white">{{itinerary?.pickupTime}}</p>
-                    </div>
-                    <div>
-                        <p class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">Vehicle</p>
-                        <p class="font-semibold text-slate-900 dark:text-white">{{selectedCar?.name || 'Sedan'}}</p>
-                    </div>
-                    <div>
-                        <p class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">Passenger</p>
-                        <p class="font-semibold text-slate-900 dark:text-white">{{guestName || '—'}}</p>
-                    </div>
-                    <div>
-                        <p class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">Phone</p>
-                        <p class="font-semibold text-slate-900 dark:text-white">{{phone || '—'}}</p>
-                    </div>
-                    <div>
-                        <p class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">KMs</p>
-                        <p class="font-semibold text-slate-900 dark:text-white">{{selectedCar?.kmsIncluded || '—'}}</p>
-                    </div>
-                </div>
-
-                <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
-
-                <!-- Payment — compact rows -->
-                <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg px-2.5 sm:px-3 py-2 sm:py-2.5 space-y-1 sm:space-y-1.5 text-[11px] sm:text-xs">
-                    <div class="flex justify-between">
-                        <span class="text-slate-500">Total Fare</span>
-                        <span class="font-bold text-slate-900 dark:text-white">₹{{ selectedCar?.price || 0 | number:'1.0-0' }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-500">Paid Now</span>
-                        <span class="font-bold text-emerald-600">₹{{ getPayNowAmount() | number:'1.0-0' }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-500">Via</span>
-                        <span class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                            <ng-container *ngIf="paymentMethod === 'razorpay'">
-                                <lucide-icon name="credit-card" [size]="12" class="text-primary"></lucide-icon> Card / UPI / Bank
-                            </ng-container>
-                            <ng-container *ngIf="paymentMethod !== 'razorpay'">
-                                <lucide-icon name="wallet" [size]="12" class="text-primary"></lucide-icon> Wallet
-                            </ng-container>
-                        </span>
-                    </div>
-                    <div class="flex justify-between" *ngIf="getDeferredAmount() > 0">
-                        <span class="text-amber-600">Auto-deduct (48h before)</span>
-                        <span class="font-bold text-amber-600">₹{{ getDeferredAmount() | number:'1.0-0' }}</span>
-                    </div>
-                    <div class="flex justify-between" *ngIf="paymentOption === 1 && getDriverCollectsAmount() > 0">
-                        <span class="text-slate-400">Customer pays driver</span>
-                        <span class="font-semibold text-slate-500">₹{{ getDriverCollectsAmount() | number:'1.0-0' }} + extras</span>
-                    </div>
-                    <div class="flex justify-between" *ngIf="paymentOption === 2">
-                        <span class="text-slate-400">Customer pays driver</span>
-                        <span class="font-semibold text-slate-500">Extras only</span>
-                    </div>
-                </div>
-
-                <!-- GST -->
-                <div *ngIf="needsGstInvoice && agentGstNumber" class="flex items-center gap-1.5 text-[11px] text-emerald-600">
-                    <lucide-icon name="check-circle" [size]="12"></lucide-icon>
-                    <span>GST: {{agentGstNumber}}</span>
+                    <p class="text-[12px] sm:text-[13px] text-white/90 font-medium">
+                        Booking ID: <span class="font-bold">{{ bookingId }}</span>
+                    </p>
+                    <p class="text-[11px] sm:text-[12px] text-white/80 mt-1 leading-relaxed">
+                        Reservation details sent to your email & phone. Driver details within
+                        <span class="font-bold">1.5 hours</span> of pickup time.
+                    </p>
                 </div>
             </div>
         </div>
 
-        <!-- Compact Action Row — 2x2 on mobile, 4 in a row on desktop -->
-        <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 no-print">
-            <button (click)="shareOnWhatsApp()"
-                class="py-2.5 sm:py-2 bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                Share
-            </button>
-            <button (click)="printVoucher()"
-                class="py-2.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold rounded-lg text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer">
-                <lucide-icon name="printer" [size]="13"></lucide-icon>
-                Print
-            </button>
-            <button routerLink="/bookings"
-                class="py-2.5 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold rounded-lg text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 active:scale-[0.98] transition-all cursor-pointer">
-                <lucide-icon name="list" [size]="13"></lucide-icon>
-                Bookings
-            </button>
-            <button routerLink="/dashboard"
-                class="py-2.5 sm:py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer">
-                <lucide-icon name="plus" [size]="13"></lucide-icon>
-                New Booking
-            </button>
+        <!-- ─── TWO-COLUMN LAYOUT: Main details (left) + Sidebar (right) ─── -->
+        <div class="grid lg:grid-cols-3 gap-5">
+
+            <!-- ╔══ LEFT COLUMN: Trip Details + T&C + Comfort ══╗ -->
+            <div class="lg:col-span-2 space-y-5">
+
+                <!-- ══ TRIP DETAILS CARD ══ -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+
+                    <!-- Card header -->
+                    <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                        <h2 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <lucide-icon name="map-pin" [size]="16" class="text-primary"></lucide-icon>
+                            Trip Details
+                        </h2>
+                        <span class="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full">{{ itinerary?.tripType }}</span>
+                    </div>
+
+                    <div class="p-5 space-y-5">
+
+                        <!-- Route with vertical line + markers (like timeline) -->
+                        <div class="relative">
+                            <!-- Vertical connecting line -->
+                            <div class="absolute left-[9px] top-3 bottom-3 w-0.5 bg-gradient-to-b from-primary via-orange-300 to-orange-500"></div>
+
+                            <!-- Pickup -->
+                            <div class="relative flex items-start gap-3 pb-4">
+                                <div class="w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-[3px] border-primary flex-shrink-0 relative z-10 mt-0.5"></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Pickup</p>
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white leading-snug">{{ itinerary?.fromCity }}</p>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ pickupAddress || 'Address will be shared with driver' }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Intermediate stops -->
+                            <ng-container *ngIf="itinerary?.extraDestinations?.length">
+                                <div *ngFor="let stop of itinerary?.extraDestinations" class="relative flex items-start gap-3 pb-4">
+                                    <div class="w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-[3px] border-orange-400 flex-shrink-0 relative z-10 mt-0.5"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Via</p>
+                                        <p class="text-sm font-bold text-orange-600 dark:text-orange-400 leading-snug">{{ stop.cityOnly || stop.cityName }}</p>
+                                    </div>
+                                </div>
+                            </ng-container>
+
+                            <!-- Drop -->
+                            <div class="relative flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-[3px] border-orange-500 flex-shrink-0 relative z-10 mt-0.5"></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Drop</p>
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white leading-snug">{{ itinerary?.toCity }}</p>
+                                    <p *ngIf="dropAddress" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ dropAddress }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+
+                        <!-- Trip meta grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div>
+                                <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">
+                                    <lucide-icon name="calendar" [size]="11"></lucide-icon>
+                                    Pickup Date
+                                </div>
+                                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ itinerary?.pickupDate | date:'dd MMM yyyy' }}</p>
+                                <p class="text-[11px] text-slate-500">{{ itinerary?.pickupTime }}</p>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">
+                                    <lucide-icon name="car" [size]="11"></lucide-icon>
+                                    Vehicle
+                                </div>
+                                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ selectedCar?.name || 'Sedan' }}</p>
+                                <p class="text-[11px] text-slate-500">or Equivalent</p>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">
+                                    <lucide-icon name="route" [size]="11"></lucide-icon>
+                                    KMs Included
+                                </div>
+                                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ displayKms }}</p>
+                                <p class="text-[11px] text-slate-500">Included in fare</p>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">
+                                    <lucide-icon name="indian-rupee" [size]="11"></lucide-icon>
+                                    Total Fare
+                                </div>
+                                <p class="text-sm font-bold text-emerald-600">₹{{ selectedCar?.price || 0 | number:'1.0-0' }}</p>
+                                <p class="text-[11px] text-emerald-600/70">All inclusive</p>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+
+                        <!-- Passenger info -->
+                        <div>
+                            <div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">
+                                <lucide-icon name="user" [size]="11"></lucide-icon>
+                                Passenger Information
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Name</p>
+                                    <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ guestName || '—' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Mobile</p>
+                                    <p class="text-sm font-semibold text-slate-900 dark:text-white">+{{ selectedCountryCode?.isdCode || '91' }} {{ phone || '—' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Email</p>
+                                    <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ guestEmail || agentEmail || '—' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ IMPORTANT T&C CARD ══ -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                    <div class="px-5 py-3.5 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/50">
+                        <h2 class="text-sm font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2">
+                            <lucide-icon name="info" [size]="16" class="text-amber-600 dark:text-amber-400"></lucide-icon>
+                            Important Terms of Your Trip
+                        </h2>
+                    </div>
+                    <ul class="p-5 space-y-3 text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                        <li class="flex items-start gap-2.5">
+                            <lucide-icon name="route" [size]="14" class="text-amber-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                            <span>Your trip has a <span class="font-bold text-slate-800 dark:text-white">{{ displayKms }}</span> limit. If usage exceeds this, you will be charged for the excess KM used.</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <lucide-icon name="fuel" [size]="14" class="text-amber-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                            <span>We promote cleaner fuel — your cab may be a <span class="font-bold text-slate-800 dark:text-white">CNG vehicle</span>. The driver may need to refill CNG once or more during the trip. Please cooperate.</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <lucide-icon name="parking-circle" [size]="14" class="text-amber-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                            <span>Airport entry / parking charges, if applicable, are <span class="font-bold text-slate-800 dark:text-white">not included</span> in the fare and will be charged extra.</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <lucide-icon name="map-pin" [size]="14" class="text-amber-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                            <span>Your trip includes <span class="font-bold text-slate-800 dark:text-white">one pickup</span> in the pickup city and <span class="font-bold text-slate-800 dark:text-white">one drop</span> to the destination city. Within-city travel is not included.</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <lucide-icon name="snowflake" [size]="14" class="text-amber-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                            <span>If your trip involves hill climbs, cab <span class="font-bold text-slate-800 dark:text-white">AC may be switched off</span> during such climbs.</span>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <lucide-icon name="gauge" [size]="14" class="text-amber-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                            <span>We recommend verifying the <span class="font-bold text-slate-800 dark:text-white">odometer reading</span> at the start and end of your journey for full transparency.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- ══ COMFORT & SUPPORT CARD ══ -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                    <div class="px-5 py-3.5 bg-sky-50 dark:bg-sky-900/20 border-b border-sky-200 dark:border-sky-800/50">
+                        <h2 class="text-sm font-bold text-sky-900 dark:text-sky-300 flex items-center gap-2">
+                            <lucide-icon name="sparkles" [size]="16" class="text-sky-600 dark:text-sky-400"></lucide-icon>
+                            Your Comfort & Support
+                        </h2>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <ul class="space-y-3 text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                            <li class="flex items-start gap-2.5">
+                                <lucide-icon name="sun" [size]="14" class="text-sky-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                                <span>Prepare for weather and motion sickness — especially for mountain/hill routes. Carry water, snacks and basic medication.</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <lucide-icon name="calendar-clock" [size]="14" class="text-sky-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                                <span>Need to cancel? Please cancel at least <span class="font-bold text-slate-800 dark:text-white">24 hours before</span> your scheduled journey time to avoid charges.</span>
+                            </li>
+                            <li class="flex items-start gap-2.5">
+                                <lucide-icon name="file-text" [size]="14" class="text-sky-500 flex-shrink-0 mt-0.5"></lucide-icon>
+                                <span>Read the full <a routerLink="/terms-conditions" class="text-primary font-bold hover:underline">Terms &amp; Conditions</a> for complete trip policy.</span>
+                            </li>
+                        </ul>
+
+                        <!-- 24x7 Support callout -->
+                        <div class="mt-4 flex items-center gap-3 p-3.5 rounded-xl bg-gradient-to-r from-primary/5 to-cyan-500/5 dark:from-primary/10 dark:to-cyan-500/10 border border-primary/20">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-primary/30">
+                                <lucide-icon name="headset" [size]="18" class="text-white"></lucide-icon>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">24×7 Support</p>
+                                <a href="tel:09045450000" class="text-sm font-bold text-slate-900 dark:text-white hover:text-primary transition-colors">
+                                    0 90 4545 0000
+                                </a>
+                            </div>
+                            <span class="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                ONLINE
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ╔══ RIGHT COLUMN SIDEBAR: Payment + Actions ══╗ -->
+            <div class="lg:col-span-1 space-y-5">
+
+                <!-- ══ PAYMENT SUMMARY CARD (sticky on desktop) ══ -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden lg:sticky lg:top-4">
+                    <div class="px-5 py-3.5 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
+                        <h2 class="text-sm font-bold flex items-center gap-2">
+                            <lucide-icon name="receipt" [size]="16"></lucide-icon>
+                            Payment Summary
+                        </h2>
+                    </div>
+
+                    <div class="p-5 space-y-4">
+                        <!-- Line items -->
+                        <div class="space-y-2.5 text-[12px]">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500 dark:text-slate-400">Total Fare</span>
+                                <span class="font-bold text-slate-900 dark:text-white">₹{{ selectedCar?.price || 0 | number:'1.0-0' }}</span>
+                            </div>
+
+                            <!-- Option 3: show 20% buffer -->
+                            <div *ngIf="paymentOption === 3" class="flex justify-between items-center">
+                                <span class="text-slate-500 dark:text-slate-400">20% Refundable Deposit</span>
+                                <span class="font-semibold text-slate-700 dark:text-slate-200">₹{{ getOption3BufferAmount() | number:'1.0-0' }}</span>
+                            </div>
+
+                            <div class="h-px bg-slate-100 dark:bg-slate-800 my-2"></div>
+
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-600 dark:text-slate-300 font-semibold">Paid Now</span>
+                                <span class="font-extrabold text-emerald-600 text-base">₹{{ getPayNowAmount() | number:'1.0-0' }}</span>
+                            </div>
+
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500 dark:text-slate-400">Payment Mode</span>
+                                <span class="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                                    <ng-container *ngIf="paymentMethod === 'razorpay'">
+                                        <lucide-icon name="credit-card" [size]="12" class="text-primary"></lucide-icon>
+                                        Card / UPI / Bank
+                                    </ng-container>
+                                    <ng-container *ngIf="paymentMethod !== 'razorpay'">
+                                        <lucide-icon name="wallet" [size]="12" class="text-primary"></lucide-icon>
+                                        B2B Wallet
+                                    </ng-container>
+                                </span>
+                            </div>
+
+                            <div *ngIf="getDeferredAmount() > 0" class="flex justify-between items-center pt-2 border-t border-dashed border-slate-200 dark:border-slate-700">
+                                <div class="flex flex-col">
+                                    <span class="text-amber-600 dark:text-amber-400 font-semibold">Auto-Deduct</span>
+                                    <span class="text-[10px] text-amber-600/70">48 hours before trip</span>
+                                </div>
+                                <span class="font-bold text-amber-600 dark:text-amber-400">₹{{ getDeferredAmount() | number:'1.0-0' }}</span>
+                            </div>
+
+                            <div *ngIf="paymentOption === 1 && getDriverCollectsAmount() > 0" class="flex justify-between items-center">
+                                <span class="text-slate-500 dark:text-slate-400">Customer Pays Driver</span>
+                                <span class="font-semibold text-slate-600 dark:text-slate-300">₹{{ getDriverCollectsAmount() | number:'1.0-0' }} + extras</span>
+                            </div>
+
+                            <div *ngIf="paymentOption === 2" class="flex justify-between items-center">
+                                <span class="text-slate-500 dark:text-slate-400">Customer Pays Driver</span>
+                                <span class="font-semibold text-slate-600 dark:text-slate-300">Extras only</span>
+                            </div>
+
+                            <div *ngIf="paymentOption === 3" class="flex justify-between items-center">
+                                <span class="text-slate-500 dark:text-slate-400">Customer Pays Driver</span>
+                                <span class="font-bold text-emerald-600">₹0 Cashless</span>
+                            </div>
+                        </div>
+
+                        <!-- GST badge -->
+                        <div *ngIf="needsGstInvoice && agentGstNumber" class="flex items-center gap-2 p-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-lg">
+                            <lucide-icon name="check-circle" [size]="14" class="text-emerald-600 flex-shrink-0"></lucide-icon>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[10px] uppercase tracking-wider text-emerald-600 font-bold">GST Invoice</p>
+                                <p class="text-[11px] font-mono font-bold text-emerald-700 dark:text-emerald-400 truncate">{{ agentGstNumber }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Action buttons -->
+                        <div class="space-y-2 pt-2 no-print">
+                            <button (click)="shareOnWhatsApp()"
+                                class="w-full py-2.5 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer shadow-md shadow-green-500/20">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                Share on WhatsApp
+                            </button>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <button (click)="printVoucher()"
+                                    class="py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold rounded-xl text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-all cursor-pointer">
+                                    <lucide-icon name="printer" [size]="14"></lucide-icon>
+                                    Print
+                                </button>
+                                <button routerLink="/bookings"
+                                    class="py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold rounded-xl text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-all cursor-pointer">
+                                    <lucide-icon name="list" [size]="14"></lucide-icon>
+                                    My Bookings
+                                </button>
+                            </div>
+
+                            <button routerLink="/dashboard"
+                                class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer shadow-md shadow-orange-500/20">
+                                <lucide-icon name="plus" [size]="14"></lucide-icon>
+                                New Booking
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ NEXT STEPS / WHAT HAPPENS NEXT ══ -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 p-5">
+                    <h3 class="text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-3">What Happens Next</h3>
+                    <ol class="space-y-3">
+                        <li class="flex items-start gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">✓</span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[12px] font-bold text-slate-800 dark:text-white">Booking Confirmed</p>
+                                <p class="text-[10px] text-slate-500">Confirmation sent to your email</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">2</span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[12px] font-bold text-slate-800 dark:text-white">Driver Assigned</p>
+                                <p class="text-[10px] text-slate-500">Details 1.5 hours before pickup</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-[10px] font-bold flex-shrink-0">3</span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[12px] font-bold text-slate-800 dark:text-white">Journey Starts</p>
+                                <p class="text-[10px] text-slate-500">Driver arrives at pickup location</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center text-[10px] font-bold flex-shrink-0">4</span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[12px] font-bold text-slate-800 dark:text-white">Invoice Generated</p>
+                                <p class="text-[10px] text-slate-500">After trip completion</p>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+            </div>
         </div>
     </div>
 </main>
