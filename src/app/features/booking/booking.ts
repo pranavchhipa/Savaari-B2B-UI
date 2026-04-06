@@ -790,36 +790,31 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
    */
   getPayNowAmount(optionOverride?: number): number {
     if (!this.selectedCar) return 0;
-    // ALWAYS base the slider / percentages on the CURRENT displayed fare
+    // ALWAYS base slider / percentages on the CURRENT displayed fare
     // (this.selectedCar.price), which may have been updated after pickup/drop
-    // lat-lng recalculation on this page. regularPrice is only used as a
-    // minimum-floor (API requires prePayment >= 25% of original regularPrice)
-    // but must never cause 100% slider to exceed the updated trip fare.
+    // lat-lng recalculation on this page. The user sees ₹2,623 → 25% must
+    // equal ₹656, not some stale regularPrice-based floor.
     const total = this.selectedCar.price;
-    const minFloor = this.selectedCar.regularPrice || total;
     const option = optionOverride !== undefined ? optionOverride : this.paymentOption;
     const isUrgent = this.isBookingUrgent();
 
     // Option 1: Flexible Agent — slider % of the *current* trip fare.
-    // Enforce API minimum: never below 25% of regularPrice floor.
     if (option === 1) {
-      const sliderAmt = Math.round(total * (this.option1SliderPercent / 100));
-      const apiMin = Math.round(minFloor * 0.25);
-      return Math.max(sliderAmt, apiMin);
+      return Math.round(total * (this.option1SliderPercent / 100));
     }
 
     // Option 2: Pay 25% now, rest auto-deducted
     // Urgent (<48h): 100% now (no time for auto-deduction)
     // Advance (>48h): 25% now, 75% auto-deducted 48h before trip
     if (option === 2) {
-      return isUrgent ? total : Math.round(Math.max(total, minFloor) * 0.25);
+      return isUrgent ? total : Math.round(total * 0.25);
     }
 
     // Option 3: Zero cash — full wallet
     // Urgent (<48h): 100% + 20% buffer now (buffer refunded post-trip)
     // Advance (>48h): 25% now, (75% + 20% buffer) auto-deducted 48h before trip
     if (option === 3) {
-      return isUrgent ? Math.round(total * 1.20) : Math.round(Math.max(total, minFloor) * 0.25);
+      return isUrgent ? Math.round(total * 1.20) : Math.round(total * 0.25);
     }
 
     return 0;
