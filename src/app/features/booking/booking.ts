@@ -936,13 +936,20 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     const bkId = this.bookingId;
-    const advanceAmount = this.advanceAmount || amount;
-    const savaariPayId = this.savaariPayId || this.paymentService.generateSavaariPaymentId(bkId);
+    // IMPORTANT: always use the *fresh* amount the user picked (slider / updated fare),
+    // NOT the stale advanceAmount captured at booking creation time. The encoded_amount
+    // checksum is tied to the old amount, so we drop it and let the backend recompute
+    // from the raw amount. Also generate a fresh savaari_payment_id every attempt so
+    // razor_createorder doesn't return a cached order at the old amount.
+    const advanceAmount = amount;
+    const savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
+    this.savaariPayId = savaariPayId;
+    this.advanceAmount = advanceAmount;
 
-    // Step 1: Create Razorpay order via PHP
+    // Step 1: Create Razorpay order via PHP (fresh order at current amount)
     this.paymentService.createRazorpayOrder({
       amount: advanceAmount,
-      encoded_amount: this.encodedAmount,
+      encoded_amount: '',
       savaari_payment_id: savaariPayId,
     }).subscribe({
       next: (orderResp) => {
@@ -984,13 +991,19 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               this.paymentService.sendConfirmationEmail(bkId).subscribe();
               this.paymentService.sendConfirmationEmail(bkId).subscribe();
 
-              // confirmation.php
+              // confirmation.php — pass the same trigger params as wallet flow
+              // (per Jibin's doc: "Same parameters need to be passed after the
+              // Razor pay callback also"). This is what updates the database.
               this.paymentService.confirmPayment({
+                source: 'B2B_RAZORPAY',
+                booking_id: bkId,
+                payment_option: this.paymentOption,
+                transaction_id: razorpayPaymentId,
                 advancedAmount: advanceAmount,
                 orderId: savaariPayId,
                 paymentId: razorpayPaymentId,
                 paymentmode: 'savaariwebsite',
-              }).subscribe();
+              } as any).subscribe();
 
               // Settlement payment — ONLY when fully settled (no deferred auto-deduct remaining)
               if (this.getDeferredAmount() === 0) {
@@ -1254,8 +1267,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (state.guestName) this.guestName = state.guestName;
       if (state.guestEmail) this.guestEmail = state.guestEmail;
       if (state.phone) this.phone = state.phone;
-      if (state.pickupAddress) this.pickupAddress = state.pickupAddress;
-      if (state.dropAddress) this.dropAddress = state.dropAddress;
+      // Pickup and drop address are intentionally NOT restored — they should always
+      // start cleared for each new "Explore Cabs" flow so the agent enters them fresh.
+      this.pickupAddress = '';
+      this.dropAddress = '';
       if (state.landmark) this.landmark = state.landmark;
       if (state.needsGstInvoice !== undefined) this.needsGstInvoice = state.needsGstInvoice;
       if (state.paymentOption) this.paymentOption = state.paymentOption;

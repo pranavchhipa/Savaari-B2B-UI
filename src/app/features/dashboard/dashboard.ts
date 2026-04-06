@@ -626,10 +626,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (state.fromCity) this.bookingForm.patchValue({ fromCity: state.fromCity }, { emitEvent: false });
       if (state.toCity) this.bookingForm.patchValue({ toCity: state.toCity }, { emitEvent: false });
       if (state.tripType) this.bookingForm.patchValue({ tripType: state.tripType }, { emitEvent: false });
-      if (state.pickupAddress) this.bookingForm.patchValue({ pickupAddress: state.pickupAddress }, { emitEvent: false });
+      // For airport tab: intentionally do NOT restore pickup address / airport locality / airport city.
+      // Returning users should start with cleared fields so the autocomplete works fresh.
+      const isAirportTab = this.selectedTab === 'AIRPORT';
+      if (!isAirportTab && state.pickupAddress) this.bookingForm.patchValue({ pickupAddress: state.pickupAddress }, { emitEvent: false });
       if (state.dropAirport) this.bookingForm.patchValue({ dropAirport: state.dropAirport }, { emitEvent: false });
-      if (state.airportLocality) this.bookingForm.patchValue({ airportLocality: state.airportLocality }, { emitEvent: false });
-      if (state.airportCity) this.bookingForm.patchValue({ airportCity: state.airportCity }, { emitEvent: false });
+      if (!isAirportTab && state.airportLocality) this.bookingForm.patchValue({ airportLocality: state.airportLocality }, { emitEvent: false });
+      if (!isAirportTab && state.airportCity) this.bookingForm.patchValue({ airportCity: state.airportCity }, { emitEvent: false });
       if (state.pickupDate) {
         const restored = new Date(state.pickupDate);
         // Only restore if date is valid and not in the past
@@ -645,10 +648,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
       if (state.pickupTime) this.bookingForm.patchValue({ pickupTime: new Date(state.pickupTime) }, { emitEvent: false });
 
-      // Restore airport state
-      if (state.selectedAirportCity) this.selectedAirportCity = state.selectedAirportCity;
-      if (state.airportLocalityId) this.airportLocalityId = state.airportLocalityId;
-      if (state.airportLocalityName) this.airportLocalityName = state.airportLocalityName;
+      // Restore airport state (skipped on airport tab so fields clear on return)
+      if (!isAirportTab) {
+        if (state.selectedAirportCity) this.selectedAirportCity = state.selectedAirportCity;
+        if (state.airportLocalityId) this.airportLocalityId = state.airportLocalityId;
+        if (state.airportLocalityName) this.airportLocalityName = state.airportLocalityName;
+      } else {
+        this.selectedAirportCity = null;
+        this.airportLocalityId = null;
+        this.airportLocalityName = '';
+      }
 
       // Restore extra destinations
       if (state.extraDestinations?.length) this.extraDestinations = state.extraDestinations;

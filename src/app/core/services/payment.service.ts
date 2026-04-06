@@ -227,21 +227,37 @@ export class PaymentService {
       return of(true);
     }
 
-    // Build params based on flow type (wallet vs razorpay)
-    const body: Record<string, any> = request.source === 'B2B_WALLET'
-      ? {
-          source: 'B2B_WALLET',
-          booking_id: request.booking_id,
-          payment_option: request.payment_option,
-          transaction_id: request.transaction_id,
-          advancedAmount: request.advancedAmount,
-        }
-      : {
-          advancedAmount: request.advancedAmount,
-          orderId: request.orderId,
-          paymentId: request.paymentId,
-          paymentmode: request.paymentmode || 'savaariwebsite',
-        };
+    // Build params based on flow type (wallet vs razorpay).
+    // Per Jibin's doc, Razorpay must also pass source/booking_id/payment_option/
+    // transaction_id (same trigger params as wallet) so the DB gets updated.
+    let body: Record<string, any>;
+    if (request.source === 'B2B_WALLET') {
+      body = {
+        source: 'B2B_WALLET',
+        booking_id: request.booking_id,
+        payment_option: request.payment_option,
+        transaction_id: request.transaction_id,
+        advancedAmount: request.advancedAmount,
+      };
+    } else if (request.source === 'B2B_RAZORPAY') {
+      body = {
+        source: 'B2B_RAZORPAY',
+        booking_id: request.booking_id,
+        payment_option: request.payment_option,
+        transaction_id: request.transaction_id,
+        advancedAmount: request.advancedAmount,
+        orderId: request.orderId,
+        paymentId: request.paymentId,
+        paymentmode: request.paymentmode || 'savaariwebsite',
+      };
+    } else {
+      body = {
+        advancedAmount: request.advancedAmount,
+        orderId: request.orderId,
+        paymentId: request.paymentId,
+        paymentmode: request.paymentmode || 'savaariwebsite',
+      };
+    }
 
     return this.api.paymentPost<any>(
       'payment_confirmation/confirmation.php',

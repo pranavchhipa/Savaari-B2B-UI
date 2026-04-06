@@ -337,13 +337,30 @@
 .dark .p-select-overlay .p-select-option:hover {
   background: #334155 !important;
 }
-.dark .p-autocomplete-overlay {
+.dark .p-autocomplete-overlay,
+.dark .p-autocomplete-panel {
   background: #1e293b !important;
-  border-color: #475569 !important;
+  border: 1px solid #475569 !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
 }
-.dark .p-autocomplete-overlay .p-autocomplete-option {
+.dark .p-autocomplete-overlay .p-autocomplete-option,
+.dark .p-autocomplete-overlay .p-autocomplete-item,
+.dark .p-autocomplete-panel .p-autocomplete-item {
   color: #e2e8f0 !important;
+  background: transparent !important;
 }
-.dark .p-autocomplete-overlay .p-autocomplete-option:hover {
+.dark .p-autocomplete-overlay .p-autocomplete-option:hover,
+.dark .p-autocomplete-overlay .p-autocomplete-item:hover,
+.dark .p-autocomplete-panel .p-autocomplete-item:hover,
+.dark .p-autocomplete-overlay .p-autocomplete-option.p-focus,
+.dark .p-autocomplete-overlay .p-autocomplete-item.p-highlight,
+.dark .p-autocomplete-panel .p-autocomplete-item.p-highlight {
   background: #334155 !important;
+  color: #f1f5f9 !important;
+}
+/* Ensure nested text in custom item templates is readable in dark mode */
+.dark .p-autocomplete-overlay .p-autocomplete-option *,
+.dark .p-autocomplete-overlay .p-autocomplete-item *,
+.dark .p-autocomplete-panel .p-autocomplete-item * {
+  color: inherit;
 }
