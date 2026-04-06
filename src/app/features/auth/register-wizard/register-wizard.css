@@ -69,3 +69,22 @@
 .animate-float-1 { animation: float1 5s ease-in-out infinite; }
 .animate-float-2 { animation: float2 6.5s ease-in-out infinite; }
 .animate-float-3 { animation: float3 4.5s ease-in-out infinite; }
+
+/* Clean industry-standard ring spinner (replaces lucide loader-2) */
+@keyframes ringSpin {
+  to { transform: rotate(360deg); }
+}
+.ring-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: ringSpin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.ring-spinner-dark {
+  border-color: rgba(100, 116, 139, 0.25);
+  border-top-color: #0891b2;
+}
