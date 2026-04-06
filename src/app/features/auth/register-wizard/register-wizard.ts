@@ -70,6 +70,40 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
 
   isLoading = false;
 
+  // ── Testimonials carousel (left branding panel) ──
+  testimonials = [
+    {
+      name: 'Rajesh Kumar',
+      role: 'Travel Agent, Mumbai',
+      avatar: 'assets/avatars/rajesh.jpg',
+      rating: 5,
+      quote: 'B2B CAB transformed my business. Instant bookings, fair commissions, and 24/7 support. My customers love the reliability.'
+    },
+    {
+      name: 'Priya Sharma',
+      role: 'Agency Owner, Delhi',
+      avatar: 'assets/avatars/priya.jpg',
+      rating: 5,
+      quote: 'The best B2B cab platform I\'ve used. Zero cancellation policy is a game-changer. Highly recommended for serious agents.'
+    },
+    {
+      name: 'Suresh Patel',
+      role: 'Tour Operator, Ahmedabad',
+      avatar: 'assets/avatars/suresh.jpg',
+      rating: 5,
+      quote: 'Expanded to 15+ cities in just 3 months with B2B CAB. The wallet system and markup controls give me complete flexibility.'
+    },
+    {
+      name: 'Anita Reddy',
+      role: 'Travel Consultant, Bangalore',
+      avatar: 'assets/avatars/anita.jpg',
+      rating: 5,
+      quote: 'Professional fleet, on-time service, and transparent pricing. B2B CAB is my go-to partner for all outstation bookings.'
+    }
+  ];
+  activeTestimonial = 0;
+  private testimonialInterval: any;
+
   ngOnInit() {
     this.allCities = [
       { id: 377, name: 'Bangalore, Karnataka', cityOnly: 'Bangalore', state: 'Karnataka' },
@@ -94,10 +128,17 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
       { id: 231, name: 'Manali, Himachal Pradesh', cityOnly: 'Manali', state: 'Himachal Pradesh' },
     ];
     this.filteredCities = this.allCities.slice(0, 20);
+
+    // Auto-rotate testimonials every 4 seconds
+    this.testimonialInterval = setInterval(() => {
+      this.activeTestimonial = (this.activeTestimonial + 1) % this.testimonials.length;
+      this.cdr.markForCheck();
+    }, 4000);
   }
 
   ngOnDestroy() {
     if (this.otpTimerInterval) clearInterval(this.otpTimerInterval);
+    if (this.testimonialInterval) clearInterval(this.testimonialInterval);
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -228,6 +269,16 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     this.sendOtp();
   }
 
+  changePhoneNumber() {
+    if (this.otpTimerInterval) clearInterval(this.otpTimerInterval);
+    this.otpSent = false;
+    this.otpVerified = false;
+    this.otpVerifying = false;
+    this.otpTimer = 0;
+    this.otpDigits = ['', '', '', '', '', ''];
+    this.cdr.markForCheck();
+  }
+
   // ── Step 3: Decision ──
 
   goToDashboard() {
@@ -302,6 +353,26 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   skipDocs() { this.goToStep(6); }
 
   // ── Step 6: Credentials ──
+
+  passwordStrength(): number {
+    const pw = this.credentialsForm.get('password')?.value || '';
+    if (!pw) return 0;
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+    if (/\d/.test(pw)) score++;
+    if (/[^a-zA-Z0-9]/.test(pw)) score++;
+    return score;
+  }
+
+  passwordStrengthLabel(): string {
+    const score = this.passwordStrength();
+    if (score === 0) return 'Enter password';
+    if (score === 1) return 'Weak';
+    if (score === 2) return 'Fair';
+    if (score === 3) return 'Good';
+    return 'Strong';
+  }
 
   onCredentialsContinue() {
     if (this.credentialsForm.invalid) { this.credentialsForm.markAllAsTouched(); return; }
