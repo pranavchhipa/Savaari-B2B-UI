@@ -119,6 +119,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   private advanceAmount = 0;     // from paymentOptions[*].parameters.amount25per
   private encodedAmount = '';    // from paymentOptions[*].parametersEncoded.amount25perEncoded
   private savaariPayId = '';     // from data.order_id
+  // Full paymentOption blob from booking create response — needed because the
+  // backend returns multiple pre-computed (amount, encoded) pairs:
+  //   amount20per/amount20perEncoded, amount25per/amount25perEncoded,
+  //   amount30per/amount30perEncoded, amount50per/amount50perEncoded,
+  //   amountFull/amountFullEncoded, amountAdv/amountAdvEncoded
+  // razor_createorder.php REQUIRES the matching encoded SHA1 — sending an empty
+  // encoded_amount makes the backend respond { order_id: null }, which breaks
+  // the entire Razorpay chain (createorder → SDK → checkhash → confirmation).
+  private paymentOptionParams: Record<string, number> = {};
+  private paymentOptionEncoded: Record<string, string> = {};
 
   // From place_id API responses — used in booking create
   private pickupPlaceName = '';        // place_name → locality
@@ -363,6 +373,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           if (payOpts.length > 0) {
             this.advanceAmount = payOpts[0]?.parameters?.amount25per || payOpts[0]?.parameters?.amountAdv || this.advanceAmount;
             this.encodedAmount = payOpts[0]?.parametersEncoded?.amount25perEncoded || payOpts[0]?.parametersEncoded?.amountAdvEncoded || this.encodedAmount;
+            // Cache the full (amount, encoded) pair set so processRazorpayPayment
+            // can pick the correct hash when the user pays a non-25% amount
+            // (slider 50%, urgent 100%, etc.). razor_createorder.php returns
+            // null order_id without the matching encoded SHA1.
+            this.paymentOptionParams = (payOpts[0]?.parameters || {}) as Record<string, number>;
+            this.paymentOptionEncoded = (payOpts[0]?.parametersEncoded || {}) as Record<string, string>;
           }
         }
         // Fallback: generate savaari_payment_id if API didn't return one
@@ -943,6 +959,71 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /**
+   * Resolve which (amount, encoded) pair to send to razor_createorder.php.
+   *
+   * The booking-create response includes pre-computed SHA1 hashes for several
+   * standard percentages (20/25/30/50/100 + adv/full). razor_createorder.php
+   * REQUIRES the encoded SHA1 to match the amount being charged — sending an
+   * empty hash makes the backend respond `{ order_id: null }`.
+   *
+   * Strategy:
+   *   1. Compute the requested percentage of total fare
+   *   2. Try exact match: amount{N}per/amount{N}perEncoded
+   *   3. If 100%, use amountFull/amountFullEncoded
+   *   4. Otherwise, snap to the closest available percentage hash
+   *   5. Final fallback: use cached this.advanceAmount + this.encodedAmount (the 25% advance)
+   */
+  private resolveRazorpayChargePair(requestedAmount: number): { amount: number; encoded: string; matchedKey: string } {
+    const total = this.selectedCar?.price || 0;
+    const params = this.paymentOptionParams || {};
+    const encoded = this.paymentOptionEncoded || {};
+
+    // 1) Direct lookup by percentage
+    if (total > 0) {
+      const pct = Math.round((requestedAmount / total) * 100);
+
+      // Exact percentage match (amount25per, amount30per, amount50per, etc.)
+      const pctKey = `amount${pct}per`;
+      const pctEncodedKey = `${pctKey}Encoded`;
+      if (params[pctKey] && encoded[pctEncodedKey]) {
+        return { amount: params[pctKey], encoded: encoded[pctEncodedKey], matchedKey: pctKey };
+      }
+
+      // 100% → amountFull / amountFullEncoded
+      if (pct >= 100 && params['amountFull'] && encoded['amountFullEncoded']) {
+        return { amount: params['amountFull'], encoded: encoded['amountFullEncoded'], matchedKey: 'amountFull' };
+      }
+
+      // 2) Snap to closest available standard percentage hash
+      const standardPcts = [20, 25, 30, 50] as const;
+      let bestKey: string | null = null;
+      let bestDiff = Number.POSITIVE_INFINITY;
+      for (const sp of standardPcts) {
+        const k = `amount${sp}per`;
+        const ek = `${k}Encoded`;
+        if (params[k] && encoded[ek]) {
+          const diff = Math.abs(sp - pct);
+          if (diff < bestDiff) {
+            bestDiff = diff;
+            bestKey = k;
+          }
+        }
+      }
+      if (bestKey) {
+        return { amount: params[bestKey], encoded: encoded[`${bestKey}Encoded`], matchedKey: bestKey };
+      }
+    }
+
+    // 3) Final fallback: cached 25% advance values from booking response
+    if (this.advanceAmount && this.encodedAmount) {
+      return { amount: this.advanceAmount, encoded: this.encodedAmount, matchedKey: 'cached_25per' };
+    }
+
+    // Last resort (should never hit if booking-create response was parsed correctly)
+    return { amount: requestedAmount, encoded: '', matchedKey: 'none' };
+  }
+
+  /**
    * Process Razorpay payment for already-created booking.
    *
    * HAR-confirmed: booking is already created on "Proceed to Next".
@@ -978,20 +1059,40 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     const bkId = this.bookingId;
-    // IMPORTANT: always use the *fresh* amount the user picked (slider / updated fare),
-    // NOT the stale advanceAmount captured at booking creation time. The encoded_amount
-    // checksum is tied to the old amount, so we drop it and let the backend recompute
-    // from the raw amount. Also generate a fresh savaari_payment_id every attempt so
-    // razor_createorder doesn't return a cached order at the old amount.
-    const advanceAmount = amount;
-    const savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
+
+    // CRITICAL (April 2026 fix): razor_createorder.php REQUIRES the SHA1 encoded_amount
+    // matching the amount being charged. Sending an empty encoded_amount makes the
+    // backend respond with { order_id: null }, which then breaks the entire chain:
+    //   createorder → SDK opens without order context → callback returns no signature
+    //   → razor_checkhash.php fails 401 → confirmation.php fails 301
+    //
+    // The booking-create response gives us pre-computed (amount, encoded) pairs:
+    //   amount25per/amount25perEncoded, amount50per/amount50perEncoded,
+    //   amountFull/amountFullEncoded, amountAdv/amountAdvEncoded, etc.
+    // We must pick the pair that matches what the user wants to pay AND reuse the
+    // savaari_payment_id from the booking response (NOT regenerate — backend caches
+    // the order_id under it).
+    const resolved = this.resolveRazorpayChargePair(amount);
+    const advanceAmount = resolved.amount;
+    const encodedAmount = resolved.encoded;
+    const savaariPayId = this.savaariPayId || this.paymentService.generateSavaariPaymentId(bkId);
     this.savaariPayId = savaariPayId;
     this.advanceAmount = advanceAmount;
+
+    if (!environment.production) {
+      console.log('[Razorpay] createorder request:', {
+        amount: advanceAmount,
+        encoded_amount: encodedAmount ? encodedAmount.substring(0, 8) + '…' : '(empty)',
+        savaari_payment_id: savaariPayId,
+        requestedAmount: amount,
+        matchedKey: resolved.matchedKey,
+      });
+    }
 
     // Step 1: Create Razorpay order via PHP (fresh order at current amount)
     this.paymentService.createRazorpayOrder({
       amount: advanceAmount,
-      encoded_amount: '',
+      encoded_amount: encodedAmount,
       savaari_payment_id: savaariPayId,
     }).subscribe({
       next: (orderResp) => {
@@ -1013,12 +1114,17 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           description: `Booking #${bkId} - ₹${advanceAmount}`,
           order_id: razorpayOrderId,
           handler: (rzpResponse: any) => {
-            // Post-payment flow (HAR-confirmed + Jibin's settlement-payment doc):
+            // Post-payment flow (HAR-confirmed):
             //   1. razor_checkhash.php → verify payment signature
             //   2. autologin → refresh B2B JWT
             //   3. email_sent × 2 → send confirmation emails
-            //   4. confirmation.php → mark booking as paid
-            //   5. settlement-payment → update booking as Pre Paid, remove from auto-pay cron
+            //   4. confirmation.php → mark booking as paid (writes db rows)
+            //
+            // NOTE: settlement-payment is intentionally NOT called here. Per the
+            // user's flow (April 2026), settlement should only fire when the agent
+            // clicks "Settle Now" from the Manage Bookings page — handled by
+            // bookings.ts confirmSettle(). Auto-calling it here was prematurely
+            // marking the booking as fully paid.
 
             const razorpayPaymentId = rzpResponse.razorpay_payment_id || '';
             const rzpOrderId = rzpResponse.razorpay_order_id || razorpayOrderId;
@@ -1049,17 +1155,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 paymentId: razorpayPaymentId,
                 paymentmode: 'savaariwebsite',
               } as any).subscribe();
-
-              // Settlement payment — ONLY when fully settled (no deferred auto-deduct remaining)
-              if (this.getDeferredAmount() === 0) {
-                this.paymentService.settlementPayment({
-                  bookingId: bkId,
-                  paymentAmount: advanceAmount,
-                  paymentMethod: 'Razorpay',
-                  transactionId: rzpOrderId,
-                  paymentId: razorpayPaymentId,
-                }).subscribe();
-              }
 
               this.isProcessingRazorpay = false;
               this.bookingConfirmed = true;
@@ -1224,11 +1319,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
    * Process wallet payment for already-created booking.
    * Booking was already created on "Proceed to Next" — just deduct wallet + confirm.
    *
-   * Flow (from Jibin's confirmation callback doc + settlement-payment API):
+   * Flow (from Jibin's confirmation callback doc, April 2026):
    *   1. POST /wallet/pay-booking → deduct wallet, get transaction_id
    *   2. POST /confirmation.php → source=B2B_WALLET, booking_id, payment_option, transaction_id
-   *   3. POST /booking/settlement-payment → mark booking as Pre Paid, remove from auto-pay cron
-   *   4. email_sent × 2 → confirmation emails
+   *   3. email_sent × 2 → confirmation emails
+   *
+   * NOTE: settlement-payment is NOT called here. It runs only when the agent
+   * clicks "Settle Now" from Manage Bookings (bookings.ts confirmSettle()).
    */
   private processWalletPayment(payNow: number) {
     if (!this.bookingId) {
@@ -1263,20 +1360,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               advancedAmount: payNow,
             } as any).subscribe();
 
-            // Step 3: Settlement payment — ONLY when fully settled (no deferred auto-deduct remaining)
-            // Option 1: always settled (driver collects rest, no cron)
-            // Option 2/3 non-urgent: 25% now, cron auto-deducts rest later → DON'T call settlement
-            // Option 2/3 urgent: 100%/120% upfront → call settlement
-            if (this.getDeferredAmount() === 0) {
-              this.paymentService.settlementPayment({
-                bookingId: bkId,
-                paymentAmount: payNow,
-                paymentMethod: 'Wallet',
-                transactionId: txnId,
-              }).subscribe();
-            }
+            // NOTE: settlement-payment is intentionally NOT called here. It runs
+            // only when the agent clicks "Settle Now" from the Manage Bookings
+            // page (handled by bookings.ts confirmSettle()). Auto-calling it
+            // here was prematurely marking the booking as fully Pre Paid.
 
-            // Step 4: Send confirmation emails (fire-and-forget)
+            // Step 3: Send confirmation emails (fire-and-forget)
             this.paymentService.sendConfirmationEmail(bkId).subscribe();
             this.paymentService.sendConfirmationEmail(bkId).subscribe();
 
