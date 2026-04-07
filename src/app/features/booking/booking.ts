@@ -966,55 +966,65 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
    * REQUIRES the encoded SHA1 to match the amount being charged — sending an
    * empty hash makes the backend respond `{ order_id: null }`.
    *
-   * Strategy:
+   * Strategy (always charges >= what user requested, never less):
    *   1. Compute the requested percentage of total fare
    *   2. Try exact match: amount{N}per/amount{N}perEncoded
-   *   3. If 100%, use amountFull/amountFullEncoded
-   *   4. Otherwise, snap to the closest available percentage hash
-   *   5. Final fallback: use cached this.advanceAmount + this.encodedAmount (the 25% advance)
+   *   3. If pct >= 100, use amountFull/amountFullEncoded (covers Option 3 urgent
+   *      120% — the extra 20% buffer is a backend limitation, not chargeable
+   *      via Razorpay without a 120% hash)
+   *   4. Otherwise, round UP to the next available standard pct hash
+   *   5. Final fallback: cached this.advanceAmount + this.encodedAmount (25% advance)
+   *
+   * Coverage matrix:
+   *   - Option 1 slider 25/30/50/100% → exact match
+   *   - Option 1 slider 26-29% → 30% (round up)
+   *   - Option 1 slider 31-50% → 50% (round up)
+   *   - Option 1 slider 51-100% → 100% (round up to amountFull)
+   *   - Option 2 non-urgent (25%) → exact match
+   *   - Option 2 urgent (100%) → exact match amountFull
+   *   - Option 3 non-urgent (25%) → exact match
+   *   - Option 3 urgent (120%) → amountFull (20% buffer NOT collected via Razorpay)
    */
   private resolveRazorpayChargePair(requestedAmount: number): { amount: number; encoded: string; matchedKey: string } {
     const total = this.selectedCar?.price || 0;
     const params = this.paymentOptionParams || {};
     const encoded = this.paymentOptionEncoded || {};
 
-    // 1) Direct lookup by percentage
     if (total > 0) {
       const pct = Math.round((requestedAmount / total) * 100);
 
-      // Exact percentage match (amount25per, amount30per, amount50per, etc.)
+      // 1) Exact percentage match (amount25per, amount30per, amount50per, etc.)
       const pctKey = `amount${pct}per`;
       const pctEncodedKey = `${pctKey}Encoded`;
       if (params[pctKey] && encoded[pctEncodedKey]) {
         return { amount: params[pctKey], encoded: encoded[pctEncodedKey], matchedKey: pctKey };
       }
 
-      // 100% → amountFull / amountFullEncoded
+      // 2) >= 100% → amountFull / amountFullEncoded (covers urgent Option 2/3)
       if (pct >= 100 && params['amountFull'] && encoded['amountFullEncoded']) {
         return { amount: params['amountFull'], encoded: encoded['amountFullEncoded'], matchedKey: 'amountFull' };
       }
 
-      // 2) Snap to closest available standard percentage hash
+      // 3) Round UP: pick the SMALLEST available standard pct that is >= requested.
+      //    This guarantees the user pays at least what they asked for, never less.
+      //    Available hashes (in ascending order): 20, 25, 30, 50, then amountFull(100).
       const standardPcts = [20, 25, 30, 50] as const;
-      let bestKey: string | null = null;
-      let bestDiff = Number.POSITIVE_INFINITY;
       for (const sp of standardPcts) {
-        const k = `amount${sp}per`;
-        const ek = `${k}Encoded`;
-        if (params[k] && encoded[ek]) {
-          const diff = Math.abs(sp - pct);
-          if (diff < bestDiff) {
-            bestDiff = diff;
-            bestKey = k;
+        if (sp >= pct) {
+          const k = `amount${sp}per`;
+          const ek = `${k}Encoded`;
+          if (params[k] && encoded[ek]) {
+            return { amount: params[k], encoded: encoded[ek], matchedKey: k };
           }
         }
       }
-      if (bestKey) {
-        return { amount: params[bestKey], encoded: encoded[`${bestKey}Encoded`], matchedKey: bestKey };
+      // 4) > 50% but < 100% → fall through to amountFull
+      if (params['amountFull'] && encoded['amountFullEncoded']) {
+        return { amount: params['amountFull'], encoded: encoded['amountFullEncoded'], matchedKey: 'amountFull' };
       }
     }
 
-    // 3) Final fallback: cached 25% advance values from booking response
+    // 5) Final fallback: cached 25% advance values from booking response
     if (this.advanceAmount && this.encodedAmount) {
       return { amount: this.advanceAmount, encoded: this.encodedAmount, matchedKey: 'cached_25per' };
     }
