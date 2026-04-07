@@ -1123,11 +1123,20 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       pickupAddress: pickupAddr || this.itinerary!.pickupAddress || '',
       customerLatLong: this.pickupLatLng ? `${this.pickupLatLng.lat},${this.pickupLatLng.lng}` : '',
       locality,
-      alias_source_city_id: this.pickupAliasSourceCityId || 0,
+      // alias_source_city_id comes from place_id API (source_city_map_info.city_id)
+      // populated in onPickupAddressSelect when user picks a pickup suggestion.
+      // Fallback to itinerary.fromCityId so we never silently send 0 — backend uses
+      // this for pricing route lookup, sending 0 causes fare mismatch in db tables.
+      alias_source_city_id: this.pickupAliasSourceCityId || this.itinerary!.fromCityId || 0,
       dropAddress: this.dropAddress || '',
       dropLatLong: this.dropLatLng ? `${this.dropLatLng.lat},${this.dropLatLng.lng}` : '',
       dropLocality,
-      alias_dest_city_id: (apiParams.subTripType === 'oneWay') ? 0 : (this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || 0),
+      // alias_dest_city_id comes from place_id API (destination_city_map_info.city_id)
+      // populated in onDropAddressSelect. Per Jibin (April 2026): backend pricing
+      // engine uses both alias IDs to compute correct fare — sending 0 causes the
+      // db amount columns to mismatch what the user was shown. Fall back to
+      // itinerary.toCityId / aliasDestCityId so the value is always meaningful.
+      alias_dest_city_id: this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || this.itinerary!.toCityId || 0,
       customerTitle: 'Mr',
       customerName: this.guestName,
       // Per Shubhendu (April 2026): customerEmail must hold AGENT email, and
