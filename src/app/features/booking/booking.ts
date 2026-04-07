@@ -1130,10 +1130,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       alias_dest_city_id: (apiParams.subTripType === 'oneWay') ? 0 : (this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || 0),
       customerTitle: 'Mr',
       customerName: this.guestName,
-      customerEmail: this.guestEmail || this.agentEmail || undefined,
+      // Per Shubhendu (April 2026): customerEmail must hold AGENT email, and
+      // customerSecondaryEmail must hold the CUSTOMER (guest) email — backend
+      // mailers/notifications rely on this convention.
+      customerEmail: this.agentEmail || undefined,
       customerMobile: this.phone,
       countryCode: this.selectedCountryCode ? `${this.selectedCountryCode.isdCode}|${this.selectedCountryCode.key?.split('|')[1] || 'IND'}` : '91|IND',
-      customerSecondaryEmail: this.agentEmail || undefined,
+      customerSecondaryEmail: this.guestEmail || undefined,
       carType: this.selectedCar!.carTypeId || 4,
       premiumFlag: 0,
       // NOTE: `prePayment` is intentionally NOT sent in the booking creation request.
