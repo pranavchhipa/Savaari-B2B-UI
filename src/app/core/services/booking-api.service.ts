@@ -71,7 +71,10 @@ export class BookingApiService {
       carType: request.carType,
       premiumFlag: request.premiumFlag ?? 0,
       destinationCity: request.destinationCity,
-      prePayment: request.prePayment,
+      // NOTE: `prePayment` intentionally NOT sent. Verified from live HAR
+      // (April 2026) — live site does not send this field. Sending it causes
+      // partner API to mark `book_flag = 1` prematurely, breaking
+      // confirmation.php update logic. Reported by Jibin.
       locality: request.locality,
       alias_source_city_id: request.alias_source_city_id ?? 0,
       alias_dest_city_id: request.alias_dest_city_id ?? 0,
@@ -95,8 +98,9 @@ export class BookingApiService {
 
     return this.api.partnerPostForm<CreateBookingResponse>('booking', formBody, { token }).pipe(
       switchMap(response => {
-        // API returns data as array (prePayment=0): { data: [{ booking_id, reservation_id }] }
-        // OR as object (prePayment>0):              { data: { bookingId, reservationId, ... } }
+        // API response shape (we no longer send prePayment in request):
+        //   { data: [{ booking_id, reservation_id }] }  ← array form (current)
+        //   { data: { bookingId, reservationId, ... } } ← object form (legacy)
         const raw = response.data as any;
         const dataItem = Array.isArray(raw) ? raw[0] : raw;
         const bookingId = dataItem?.booking_id || dataItem?.bookingId || response.booking_id || response.bookingId || '';

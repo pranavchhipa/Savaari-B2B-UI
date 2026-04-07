@@ -54,7 +54,14 @@ export interface CreateBookingRequest {
   premiumFlag?: number;          // 0 or 1
 
   // Payment
-  prePayment?: number;           // Amount paid upfront
+  /** @deprecated DO NOT SEND in booking creation request.
+   * Verified from live b2bcab.betasavaari.com HAR (April 2026) — the live site
+   * does NOT include this field. Sending it causes the partner API backend to
+   * mark `book_flag = 1` prematurely, which then makes confirmation.php skip
+   * its update logic (it has `if (book_flag == 0)` guard). Reported by Jibin.
+   * Payment amount is communicated to backend via confirmation.php afterwards.
+   */
+  prePayment?: number;
   couponCode?: string;
   fixed_amount?: number;
 

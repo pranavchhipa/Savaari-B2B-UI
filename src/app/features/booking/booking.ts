@@ -336,7 +336,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
 
     const prePayment = this.advanceAmount || Math.round(this.selectedCar.price * 0.25);
-    const request = this.buildBookingRequest(apiParams, prePayment);
+    const request = this.buildBookingRequest(apiParams);
 
     // Create booking
     this.bookingApi.createBooking(request).subscribe({
@@ -1103,8 +1103,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /** Build a CreateBookingRequest from current form state
    * Field mapping matches FLOW.md exactly (from HAR analysis of b2bcab.betasavaari.com)
+   * NOTE: `prePayment` is intentionally NOT included — see comment below.
    */
-  private buildBookingRequest(apiParams: { tripType: string; subTripType: string }, prePaymentAmount: number): CreateBookingRequest {
+  private buildBookingRequest(apiParams: { tripType: string; subTripType: string }): CreateBookingRequest {
     const pickupAddr = typeof this.pickupAddress === 'string' ? this.pickupAddress : String(this.pickupAddress || '');
     const isAirport = apiParams.tripType === 'airport';
 
@@ -1135,7 +1136,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       customerSecondaryEmail: this.agentEmail || undefined,
       carType: this.selectedCar!.carTypeId || 4,
       premiumFlag: 0,
-      prePayment: prePaymentAmount,
+      // NOTE: `prePayment` is intentionally NOT sent in the booking creation request.
+      // Verified from live b2bcab.betasavaari.com HAR (April 2026) — the live site
+      // does NOT include this field in the POST /booking payload. Sending it causes
+      // the partner API backend to mark `book_flag = 1` prematurely, which then
+      // makes confirmation.php skip its update logic (it has `if (book_flag == 0)`
+      // guard). Reported by Jibin (April 2026). Payment amount is communicated to
+      // the backend later via confirmation.php (totalAmount + advancedAmount).
       app_user_id: Number(this.auth.getAgentId()) || undefined,
       couponCode: '',
       device: 'DESKTOP',
