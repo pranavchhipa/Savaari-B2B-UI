@@ -368,17 +368,24 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         if (dataItem) {
           // order_id = savaari_payment_id (e.g. "SW35004S0426-2361706")
           this.savaariPayId = dataItem.order_id || '';
-          // paymentOptions[0].parameters.amount25per = advance amount
+          // Alpha returns 9+ payment gateway entries; only the PayPay entry
+          // (payment_gateway_code: 15) carries `parametersEncoded` SHA1 hashes
+          // that razor_createorder.php needs. Beta returns just one entry at [0].
+          // Find the gateway with parametersEncoded — that's the Razorpay-compatible one.
           const payOpts = dataItem.paymentOptions || [];
-          if (payOpts.length > 0) {
-            this.advanceAmount = payOpts[0]?.parameters?.amount25per || payOpts[0]?.parameters?.amountAdv || this.advanceAmount;
-            this.encodedAmount = payOpts[0]?.parametersEncoded?.amount25perEncoded || payOpts[0]?.parametersEncoded?.amountAdvEncoded || this.encodedAmount;
+          const razorpayOpt = payOpts.find(
+            (p: any) => p?.parametersEncoded && Object.keys(p.parametersEncoded).length > 0
+          ) || payOpts.find((p: any) => p?.payment_gateway_code === 15 || p?.vendor === 'PayPay')
+            || payOpts[0];
+          if (razorpayOpt) {
+            this.advanceAmount = razorpayOpt?.parameters?.amount25per || razorpayOpt?.parameters?.amountAdv || this.advanceAmount;
+            this.encodedAmount = razorpayOpt?.parametersEncoded?.amount25perEncoded || razorpayOpt?.parametersEncoded?.amountAdvEncoded || this.encodedAmount;
             // Cache the full (amount, encoded) pair set so processRazorpayPayment
             // can pick the correct hash when the user pays a non-25% amount
             // (slider 50%, urgent 100%, etc.). razor_createorder.php returns
             // null order_id without the matching encoded SHA1.
-            this.paymentOptionParams = (payOpts[0]?.parameters || {}) as Record<string, number>;
-            this.paymentOptionEncoded = (payOpts[0]?.parametersEncoded || {}) as Record<string, string>;
+            this.paymentOptionParams = (razorpayOpt?.parameters || {}) as Record<string, number>;
+            this.paymentOptionEncoded = (razorpayOpt?.parametersEncoded || {}) as Record<string, string>;
           }
         }
         // Fallback: generate savaari_payment_id if API didn't return one
