@@ -105,12 +105,15 @@ export class ApiService {
    *           payment_confirmation/confirmation.php,
    *           razor_createorder.php, razor_checkhash.php
    *
-   * Endpoints are relative paths — PHP files live on the same server.
-   * No environment prefix needed (per Shubhendu).
+   * CRITICAL: MUST use paymentApiBaseUrl (`/payment-api`) prefix so .htaccess
+   * (alpha prod) and proxy.conf.json (dev) route to b2bcab.betasavaari.com.
+   * Without the prefix, the request hits the current host directly — on alpha
+   * this means hitting alpha's own (misconfigured) razor_createorder.php which
+   * returns `order_id: null`. HAR-confirmed root cause (April 2026).
    */
   paymentPost<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
     const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
-    return this.http.post<T>(endpoint, formBody.toString(), {
+    return this.http.post<T>(`${environment.paymentApiBaseUrl}/${endpoint}`, formBody.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }
     });
   }
@@ -118,9 +121,10 @@ export class ApiService {
   /**
    * POST to the Payment PHP API with FormData (multipart/form-data).
    * Used for: razor_checkhash.php (confirmed from Postman)
+   * Same /payment-api prefix rule as paymentPost — see above.
    */
   paymentPostFormData<T>(endpoint: string, formData: FormData): Observable<T> {
-    return this.http.post<T>(endpoint, formData);
+    return this.http.post<T>(`${environment.paymentApiBaseUrl}/${endpoint}`, formData);
   }
 
   /**
