@@ -378,9 +378,9 @@
               @if (gstLookupLoading) {
                 <lucide-icon name="loader-2" [size]="16" class="animate-spin"></lucide-icon> Fetching details...
               } @else if (gstForm.value.gstNumber) {
-                Verify GSTIN <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+                Proceed <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
               } @else {
-                Skip — I don't need GST invoices <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+                Proceed — I don't have a GST number <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
               }
             </button>
           </form>
