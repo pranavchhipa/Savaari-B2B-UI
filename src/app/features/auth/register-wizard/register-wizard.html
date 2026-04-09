@@ -367,10 +367,6 @@
               @if (gstForm.get('gstNumber')?.errors?.['pattern'] && gstForm.get('gstNumber')?.touched) {
                 <p class="text-[11px] text-red-500 mt-1.5">Invalid GSTIN format</p>
               }
-              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-start gap-1.5">
-                <lucide-icon name="sparkles" [size]="12" class="text-primary mt-0.5"></lucide-icon>
-                We'll fetch your PAN, company name and address automatically from your GSTIN.
-              </p>
             </div>
 
             <button type="submit" [disabled]="gstLookupLoading"
