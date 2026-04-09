@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -6,7 +6,18 @@ import { LucideAngularModule } from 'lucide-angular';
 import { LandingNavbarComponent } from '../../landing/components/navbar/landing-navbar';
 import { AuthService } from '../../../core/services/auth.service';
 import { WalletService } from '../../../core/services/wallet.service';
-import { City } from '../../../core/models';
+
+/**
+ * Single-page progressive registration wizard (vercel demo flow).
+ *
+ * Steps reveal one at a time. Completed steps collapse into a compact
+ * summary row with an "Edit" affordance. All API calls (OTP send/verify,
+ * GST -> Surepass auto-fill) are mocked locally — no network traffic.
+ *
+ * Final submit performs a mock auto-login via AuthService and routes to
+ * the dashboard.
+ */
+type StepKey = 'name' | 'contact' | 'gst' | 'pan' | 'company' | 'password';
 
 @Component({
   selector: 'app-register-wizard',
@@ -16,14 +27,27 @@ import { City } from '../../../core/models';
   styleUrl: './register-wizard.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RegisterWizardComponent implements OnInit, OnDestroy {
+export class RegisterWizardComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private authService = inject(AuthService);
   private walletService = inject(WalletService);
 
-  currentStep = 1;
+  // Mock OTPs — fixed for demo so reviewers know what to type
+  readonly MOCK_MOBILE_OTP = '1234';
+  readonly MOCK_EMAIL_OTP = '5678';
+
+  // Mock Surepass response when GST is provided
+  readonly MOCK_SUREPASS_FROM_GST = {
+    pan: 'AAACX1234F',
+    companyName: 'ACME TRAVELS PRIVATE LIMITED',
+    companyAddress: '12, MG ROAD, GROUND FLOOR, SHANTHALA NAGAR, ASHOK NAGAR, BENGALURU URBAN, BENGALURU, KARNATAKA - 560001, INDIA',
+  };
+
+  readonly STEP_ORDER: StepKey[] = ['name', 'contact', 'gst', 'pan', 'company', 'password'];
+  currentStep: StepKey = 'name';
+  completedSteps = new Set<StepKey>();
 
   // ── Step 1: Name ──
   nameForm = this.fb.group({
@@ -31,355 +55,286 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     lastName: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(/^[a-zA-Z\s\-'.]+$/)]],
   });
 
-  // ── Step 2: Phone + OTP ──
-  phoneForm = this.fb.group({
-    phone: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+  // ── Step 2: Contact (mobile + email + OTPs side by side) ──
+  contactForm = this.fb.group({
+    mobile: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+    email: ['', [Validators.required, Validators.email]],
   });
-  otpSent = false;
-  otpDigits: string[] = ['', '', '', '', '', ''];
-  otpVerified = false;
-  otpVerifying = false;
-  otpTimer = 0;
+  contactPhase: 'entry' | 'otp' | 'verified' = 'entry';
+  mobileOtp: string[] = ['', '', '', ''];
+  emailOtp: string[] = ['', '', '', ''];
+  mobileOtpError = '';
+  emailOtpError = '';
+  mobileOtpVerified = false;
+  emailOtpVerified = false;
   sendingOtp = false;
-  private otpTimerInterval: any;
 
-  // ── Step 4: Company ──
+  // ── Step 3: GST (optional) ──
+  gstForm = this.fb.group({
+    gstNumber: ['', [Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/)]],
+  });
+  gstSkipped = false;
+  gstLookupLoading = false;
+
+  // ── Step 4: PAN (auto-filled from GST or manual) ──
+  panForm = this.fb.group({
+    panNumber: ['', [Validators.required, Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]$/)]],
+  });
+  panAutoFilled = false;
+
+  // ── Step 5: Company (name always uppercase) ──
   companyForm = this.fb.group({
     companyName: ['', [Validators.required, Validators.maxLength(100)]],
-    companyCity: ['', Validators.required],
+    companyAddress: ['', [Validators.required, Validators.minLength(10)]],
   });
-  allCities: City[] = [];
-  filteredCities: City[] = [];
-  showCityDropdown = false;
-  selectedCityId = 0;
+  companyAutoFilled = false;
 
-  // ── Step 5: Documents ──
-  docsForm = this.fb.group({
-    panNumber: ['', [Validators.required, Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]$/)]],
-    gstNumber: [''],
-  });
-
-  // ── Step 6: Credentials ──
-  credentialsForm = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+  // ── Step 6: Password ──
+  passwordForm = this.fb.group({
     password: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)]],
     confirmPassword: ['', Validators.required],
+    rememberMe: [true],
   }, { validators: this.passwordMatchValidator });
   showPassword = false;
   showConfirmPassword = false;
 
-  isLoading = false;
+  isSubmitting = false;
 
-  // ── Testimonials carousel (left branding panel) ──
-  testimonials = [
-    {
-      name: 'Rajesh Kumar',
-      role: 'Travel Agent, Mumbai',
-      avatar: 'assets/avatars/rajesh.jpg',
-      rating: 5,
-      quote: 'B2B CAB transformed my business. Instant bookings, fair commissions, and 24/7 support. My customers love the reliability.'
-    },
-    {
-      name: 'Priya Sharma',
-      role: 'Agency Owner, Delhi',
-      avatar: 'assets/avatars/priya.jpg',
-      rating: 5,
-      quote: 'The best B2B cab platform I\'ve used. Zero cancellation policy is a game-changer. Highly recommended for serious agents.'
-    },
-    {
-      name: 'Suresh Patel',
-      role: 'Tour Operator, Ahmedabad',
-      avatar: 'assets/avatars/suresh.jpg',
-      rating: 5,
-      quote: 'Expanded to 15+ cities in just 3 months with B2B CAB. The wallet system and markup controls give me complete flexibility.'
-    },
-    {
-      name: 'Anita Reddy',
-      role: 'Travel Consultant, Bangalore',
-      avatar: 'assets/avatars/anita.jpg',
-      rating: 5,
-      quote: 'Professional fleet, on-time service, and transparent pricing. B2B CAB is my go-to partner for all outstation bookings.'
-    }
-  ];
-  activeTestimonial = 0;
-  private testimonialInterval: any;
-
-  ngOnInit() {
-    this.allCities = [
-      { id: 377, name: 'Bangalore, Karnataka', cityOnly: 'Bangalore', state: 'Karnataka' },
-      { id: 145, name: 'New Delhi, Delhi', cityOnly: 'New Delhi', state: 'Delhi' },
-      { id: 114, name: 'Mumbai, Maharashtra', cityOnly: 'Mumbai', state: 'Maharashtra' },
-      { id: 81, name: 'Chennai, Tamil Nadu', cityOnly: 'Chennai', state: 'Tamil Nadu' },
-      { id: 178, name: 'Hyderabad, Telangana', cityOnly: 'Hyderabad', state: 'Telangana' },
-      { id: 263, name: 'Pune, Maharashtra', cityOnly: 'Pune', state: 'Maharashtra' },
-      { id: 191, name: 'Jaipur, Rajasthan', cityOnly: 'Jaipur', state: 'Rajasthan' },
-      { id: 210, name: 'Kolkata, West Bengal', cityOnly: 'Kolkata', state: 'West Bengal' },
-      { id: 7, name: 'Ahmedabad, Gujarat', cityOnly: 'Ahmedabad', state: 'Gujarat' },
-      { id: 152, name: 'Goa, Goa', cityOnly: 'Goa', state: 'Goa' },
-      { id: 214, name: 'Kochi, Kerala', cityOnly: 'Kochi', state: 'Kerala' },
-      { id: 222, name: 'Lucknow, Uttar Pradesh', cityOnly: 'Lucknow', state: 'Uttar Pradesh' },
-      { id: 84, name: 'Chandigarh, Chandigarh', cityOnly: 'Chandigarh', state: 'Chandigarh' },
-      { id: 90, name: 'Coimbatore, Tamil Nadu', cityOnly: 'Coimbatore', state: 'Tamil Nadu' },
-      { id: 237, name: 'Mysore, Karnataka', cityOnly: 'Mysore', state: 'Karnataka' },
-      { id: 379, name: 'Udaipur, Rajasthan', cityOnly: 'Udaipur', state: 'Rajasthan' },
-      { id: 300, name: 'Shimla, Himachal Pradesh', cityOnly: 'Shimla', state: 'Himachal Pradesh' },
-      { id: 380, name: 'Visakhapatnam, Andhra Pradesh', cityOnly: 'Visakhapatnam', state: 'Andhra Pradesh' },
-      { id: 186, name: 'Indore, Madhya Pradesh', cityOnly: 'Indore', state: 'Madhya Pradesh' },
-      { id: 231, name: 'Manali, Himachal Pradesh', cityOnly: 'Manali', state: 'Himachal Pradesh' },
-    ];
-    this.filteredCities = this.allCities.slice(0, 20);
-
-    // Auto-rotate testimonials every 4 seconds
-    this.testimonialInterval = setInterval(() => {
-      this.activeTestimonial = (this.activeTestimonial + 1) % this.testimonials.length;
-      this.cdr.markForCheck();
-    }, 4000);
-  }
-
-  ngOnDestroy() {
-    if (this.otpTimerInterval) clearInterval(this.otpTimerInterval);
-    if (this.testimonialInterval) clearInterval(this.testimonialInterval);
-  }
+  ngOnInit(): void {}
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
     const pw = control.get('password')?.value;
     const cpw = control.get('confirmPassword')?.value;
-    return pw === cpw ? null : { mismatch: true };
+    return !cpw || pw === cpw ? null : { mismatch: true };
   }
 
-  // ── Progress ──
+  // ── Step navigation helpers ──
+
+  isCompleted(step: StepKey): boolean { return this.completedSteps.has(step); }
+  isCurrent(step: StepKey): boolean { return this.currentStep === step; }
+  isVisible(step: StepKey): boolean {
+    return this.isCurrent(step) || this.isCompleted(step);
+  }
 
   get progressPercent(): number {
-    if (this.currentStep <= 2) return (this.currentStep / 2) * 100;
-    if (this.currentStep >= 4 && this.currentStep <= 6) return ((this.currentStep - 3) / 3) * 100;
-    return 100;
-  }
-
-  get showProgress(): boolean {
-    return this.currentStep !== 3 && this.currentStep !== 7;
+    return (this.completedSteps.size / this.STEP_ORDER.length) * 100;
   }
 
   get progressLabel(): string {
-    if (this.currentStep <= 2) return `Step ${this.currentStep} of 2`;
-    if (this.currentStep >= 4 && this.currentStep <= 6) return `Step ${this.currentStep - 3} of 3`;
-    return '';
+    const idx = this.STEP_ORDER.indexOf(this.currentStep);
+    return `Step ${idx + 1} of ${this.STEP_ORDER.length}`;
   }
 
-  goToStep(step: number) {
+  private advanceTo(next: StepKey, completed: StepKey) {
+    this.completedSteps.add(completed);
+    this.currentStep = next;
+    this.cdr.markForCheck();
+    // Smooth scroll to the new active step on small screens
+    setTimeout(() => {
+      const el = document.getElementById('step-' + next);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  }
+
+  editStep(step: StepKey) {
+    // Re-open a previously completed step for editing
     this.currentStep = step;
     this.cdr.markForCheck();
   }
 
   // ── Step 1: Name ──
 
-  onNameContinue() {
+  submitName() {
     if (this.nameForm.invalid) { this.nameForm.markAllAsTouched(); return; }
-    this.goToStep(2);
+    this.advanceTo('contact', 'name');
   }
 
-  // ── Step 2: Phone + OTP ──
+  get fullName(): string {
+    const f = this.nameForm.value.firstName || '';
+    const l = this.nameForm.value.lastName || '';
+    return `${f} ${l}`.trim();
+  }
 
-  sendOtp() {
-    if (this.phoneForm.invalid) { this.phoneForm.markAllAsTouched(); return; }
+  // ── Step 2: Contact + OTPs ──
+
+  sendContactOtps() {
+    if (this.contactForm.invalid) { this.contactForm.markAllAsTouched(); return; }
     this.sendingOtp = true;
     this.cdr.markForCheck();
 
-    // Mock: simulate sending OTP
     setTimeout(() => {
       this.sendingOtp = false;
-      this.otpSent = true;
-      this.otpTimer = 30;
+      this.contactPhase = 'otp';
+      this.mobileOtp = ['', '', '', ''];
+      this.emailOtp = ['', '', '', ''];
+      this.mobileOtpError = '';
+      this.emailOtpError = '';
+      this.mobileOtpVerified = false;
+      this.emailOtpVerified = false;
       this.cdr.markForCheck();
-
-      this.otpTimerInterval = setInterval(() => {
-        this.otpTimer--;
-        if (this.otpTimer <= 0) clearInterval(this.otpTimerInterval);
-        this.cdr.markForCheck();
-      }, 1000);
-
-      // Mock: auto-fill OTP after short delay
+      // Focus first mobile OTP box
       setTimeout(() => {
-        this.otpDigits = ['1', '2', '3', '4', '5', '6'];
-        this.cdr.markForCheck();
-        setTimeout(() => this.verifyOtp(), 600);
-      }, 1200);
-    }, 800);
+        const el = document.querySelector<HTMLInputElement>('input[data-otp="mobile-0"]');
+        el?.focus();
+      }, 100);
+    }, 600);
   }
 
-  onOtpInput(event: Event, index: number) {
+  onOtpInput(event: Event, channel: 'mobile' | 'email', index: number) {
     const input = event.target as HTMLInputElement;
-    const val = input.value;
-    if (val.length === 1 && /^[0-9]$/.test(val)) {
-      this.otpDigits[index] = val;
-      const parent = input.parentElement;
-      if (parent && index < 5) (parent.children[index + 1] as HTMLInputElement)?.focus();
-    } else {
-      input.value = this.otpDigits[index] || '';
+    const val = input.value.replace(/\D/g, '').slice(0, 1);
+    input.value = val;
+    const arr = channel === 'mobile' ? this.mobileOtp : this.emailOtp;
+    arr[index] = val;
+    if (val && index < 3) {
+      const next = document.querySelector<HTMLInputElement>(`input[data-otp="${channel}-${index + 1}"]`);
+      next?.focus();
     }
+    this.tryVerifyChannel(channel);
     this.cdr.markForCheck();
   }
 
-  onOtpKeydown(event: KeyboardEvent, index: number) {
+  onOtpKeydown(event: KeyboardEvent, channel: 'mobile' | 'email', index: number) {
     if (event.key === 'Backspace') {
-      if (!this.otpDigits[index] && index > 0) {
-        const parent = (event.target as HTMLInputElement).parentElement;
-        if (parent) {
-          this.otpDigits[index - 1] = '';
-          const prev = parent.children[index - 1] as HTMLInputElement;
-          prev.value = '';
-          prev.focus();
-        }
+      const arr = channel === 'mobile' ? this.mobileOtp : this.emailOtp;
+      if (!arr[index] && index > 0) {
+        arr[index - 1] = '';
+        const prev = document.querySelector<HTMLInputElement>(`input[data-otp="${channel}-${index - 1}"]`);
+        if (prev) { prev.value = ''; prev.focus(); }
       } else {
-        this.otpDigits[index] = '';
+        arr[index] = '';
       }
+      // Reset verified state if user edits a verified channel
+      if (channel === 'mobile') { this.mobileOtpVerified = false; this.mobileOtpError = ''; }
+      else { this.emailOtpVerified = false; this.emailOtpError = ''; }
       this.cdr.markForCheck();
     }
   }
 
-  onOtpPaste(event: ClipboardEvent) {
-    event.preventDefault();
-    const pasted = event.clipboardData?.getData('text')?.replace(/\D/g, '').slice(0, 6) || '';
-    for (let i = 0; i < 6; i++) this.otpDigits[i] = pasted[i] || '';
-    this.cdr.markForCheck();
-    if (this.isOtpComplete()) setTimeout(() => this.verifyOtp(), 300);
-  }
-
-  isOtpComplete(): boolean {
-    return this.otpDigits.every(d => /^[0-9]$/.test(d));
-  }
-
-  verifyOtp() {
-    if (!this.isOtpComplete()) return;
-    this.otpVerifying = true;
-    this.cdr.markForCheck();
-
-    setTimeout(() => {
-      this.otpVerifying = false;
-      this.otpVerified = true;
-      this.cdr.markForCheck();
-      setTimeout(() => this.goToStep(3), 700);
-    }, 500);
-  }
-
-  resendOtp() {
-    if (this.otpTimer > 0) return;
-    this.otpDigits = ['', '', '', '', '', ''];
-    this.otpSent = false;
-    this.otpVerified = false;
-    this.sendOtp();
-  }
-
-  changePhoneNumber() {
-    if (this.otpTimerInterval) clearInterval(this.otpTimerInterval);
-    this.otpSent = false;
-    this.otpVerified = false;
-    this.otpVerifying = false;
-    this.otpTimer = 0;
-    this.otpDigits = ['', '', '', '', '', ''];
-    this.cdr.markForCheck();
-  }
-
-  // ── Step 3: Decision ──
-
-  goToDashboard() {
-    this.isLoading = true;
-    this.cdr.markForCheck();
-    this.authService.login('mock@savaari.com', 'mock').subscribe({
-      next: () => { this.walletService.loadBalance(); this.router.navigate(['/dashboard']); },
-      error: () => this.router.navigate(['/dashboard'])
-    });
-  }
-
-  startTrustedPartner() { this.goToStep(4); }
-
-  // ── Step 4: Company + City ──
-
-  filterCities(event: Event) {
-    const q = (event.target as HTMLInputElement).value.toLowerCase();
-    if (!q) {
-      this.filteredCities = this.allCities.slice(0, 20);
+  private tryVerifyChannel(channel: 'mobile' | 'email') {
+    const arr = channel === 'mobile' ? this.mobileOtp : this.emailOtp;
+    if (arr.some(d => d === '')) return;
+    const entered = arr.join('');
+    const expected = channel === 'mobile' ? this.MOCK_MOBILE_OTP : this.MOCK_EMAIL_OTP;
+    if (entered === expected) {
+      if (channel === 'mobile') { this.mobileOtpVerified = true; this.mobileOtpError = ''; }
+      else { this.emailOtpVerified = true; this.emailOtpError = ''; }
+      // If both verified, advance
+      if (this.mobileOtpVerified && this.emailOtpVerified) {
+        setTimeout(() => {
+          this.contactPhase = 'verified';
+          this.advanceTo('gst', 'contact');
+        }, 500);
+      }
     } else {
-      const prefix = this.allCities.filter(c => (c.cityOnly || c.name).toLowerCase().startsWith(q));
-      const sub = this.allCities.filter(c => !prefix.includes(c) && c.name.toLowerCase().includes(q));
-      this.filteredCities = [...prefix, ...sub].slice(0, 20);
+      if (channel === 'mobile') this.mobileOtpError = 'Invalid OTP';
+      else this.emailOtpError = 'Invalid OTP';
     }
-    this.showCityDropdown = true;
-    this.cdr.markForCheck();
   }
 
-  selectCity(city: City) {
-    this.companyForm.patchValue({ companyCity: city.name });
-    this.selectedCityId = city.id;
-    this.showCityDropdown = false;
-    this.cdr.markForCheck();
+  resendOtps() {
+    this.sendContactOtps();
   }
 
-  onCityFocus() {
-    this.filteredCities = this.allCities.slice(0, 20);
-    this.showCityDropdown = true;
-    this.cdr.markForCheck();
+  editContact() {
+    this.contactPhase = 'entry';
+    this.mobileOtpVerified = false;
+    this.emailOtpVerified = false;
+    this.editStep('contact');
   }
 
-  onCityBlur() {
-    setTimeout(() => { this.showCityDropdown = false; this.cdr.markForCheck(); }, 200);
-  }
-
-  onCompanyContinue() {
-    if (this.companyForm.invalid) { this.companyForm.markAllAsTouched(); return; }
-    this.goToStep(5);
-  }
-
-  // ── Step 5: Documents ──
-
-  onPanInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const upper = input.value.toUpperCase();
-    input.value = upper;
-    this.docsForm.get('panNumber')?.setValue(upper, { emitEvent: false });
-  }
+  // ── Step 3: GST (optional) ──
 
   onGstInput(event: Event) {
     const input = event.target as HTMLInputElement;
     const upper = input.value.toUpperCase();
     input.value = upper;
-    this.docsForm.get('gstNumber')?.setValue(upper, { emitEvent: false });
+    this.gstForm.get('gstNumber')?.setValue(upper, { emitEvent: false });
   }
 
-  onDocsContinue() {
-    if (this.docsForm.get('panNumber')?.invalid) { this.docsForm.markAllAsTouched(); return; }
-    this.goToStep(6);
+  submitGst() {
+    const gst = (this.gstForm.value.gstNumber || '').trim();
+    if (!gst) {
+      // User chose to skip GST — go to manual PAN entry
+      this.gstSkipped = true;
+      this.panAutoFilled = false;
+      this.companyAutoFilled = false;
+      this.advanceTo('pan', 'gst');
+      return;
+    }
+    if (this.gstForm.invalid) { this.gstForm.markAllAsTouched(); return; }
+
+    // Mock Surepass lookup — auto-fills PAN, company name, company address
+    this.gstLookupLoading = true;
+    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.gstLookupLoading = false;
+      this.gstSkipped = false;
+      this.panForm.patchValue({ panNumber: this.MOCK_SUREPASS_FROM_GST.pan });
+      this.companyForm.patchValue({
+        companyName: this.MOCK_SUREPASS_FROM_GST.companyName,
+        companyAddress: this.MOCK_SUREPASS_FROM_GST.companyAddress,
+      });
+      this.panAutoFilled = true;
+      this.companyAutoFilled = true;
+      this.completedSteps.add('pan'); // PAN already verified by GST
+      this.advanceTo('company', 'gst');
+    }, 900);
   }
 
-  skipDocs() { this.goToStep(6); }
+  // ── Step 4: PAN (only when GST skipped) ──
 
-  // ── Step 6: Credentials ──
-
-  passwordStrength(): number {
-    const pw = this.credentialsForm.get('password')?.value || '';
-    if (!pw) return 0;
-    let score = 0;
-    if (pw.length >= 8) score++;
-    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
-    if (/\d/.test(pw)) score++;
-    if (/[^a-zA-Z0-9]/.test(pw)) score++;
-    return score;
+  onPanInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const upper = input.value.toUpperCase();
+    input.value = upper;
+    this.panForm.get('panNumber')?.setValue(upper, { emitEvent: false });
   }
 
-  passwordStrengthLabel(): string {
-    const score = this.passwordStrength();
-    if (score === 0) return 'Enter password';
-    if (score === 1) return 'Weak';
-    if (score === 2) return 'Fair';
-    if (score === 3) return 'Good';
-    return 'Strong';
+  submitPan() {
+    if (this.panForm.invalid) { this.panForm.markAllAsTouched(); return; }
+    this.advanceTo('company', 'pan');
   }
 
-  onCredentialsContinue() {
-    if (this.credentialsForm.invalid) { this.credentialsForm.markAllAsTouched(); return; }
-    this.goToStep(7);
+  // ── Step 5: Company ──
+
+  onCompanyNameInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const upper = input.value.toUpperCase();
+    input.value = upper;
+    this.companyForm.get('companyName')?.setValue(upper, { emitEvent: false });
   }
 
-  // ── Step 7: Done ──
+  submitCompany() {
+    if (this.companyForm.invalid) { this.companyForm.markAllAsTouched(); return; }
+    this.advanceTo('password', 'company');
+  }
 
-  finishAndGoDashboard() { this.goToDashboard(); }
+  // ── Step 6: Password + Submit ──
+
+  submitPassword() {
+    if (this.passwordForm.invalid) { this.passwordForm.markAllAsTouched(); return; }
+    this.completedSteps.add('password');
+    this.isSubmitting = true;
+    this.cdr.markForCheck();
+
+    // Mock auto-login with the credentials the user just set.
+    // (vercel env has useMockData=true so AuthService.login returns the
+    // mock profile regardless of the actual email/password.)
+    const email = this.contactForm.value.email || 'demo@b2bcab.in';
+    const password = this.passwordForm.value.password || 'demo';
+
+    setTimeout(() => {
+      this.authService.login(email, password).subscribe({
+        next: () => {
+          this.walletService.loadBalance();
+          this.router.navigate(['/dashboard']);
+        },
+        error: () => {
+          this.isSubmitting = false;
+          this.cdr.markForCheck();
+        }
+      });
+    }, 800);
+  }
 }

@@ -1,90 +1,100 @@
-/* Step enter animation — fires when @switch creates a new element */
-@keyframes stepFadeIn {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+@reference "tailwindcss";
+
+/* ─── Step enter animation: each new card slides up + fades in ─── */
+@keyframes wizardStepEnter {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Success checkmark scale-in */
+/* Collapse animation when a step finishes */
+@keyframes wizardCollapse {
+  from { opacity: 0.6; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.3); }
-  to { opacity: 1; transform: scale(1); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
-/* Single pulse for the check circle */
-@keyframes pulseOnce {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-
-/* Badge reveal with rotation */
-@keyframes badgeReveal {
-  0% { opacity: 0; transform: scale(0.3) rotate(-20deg); }
-  60% { transform: scale(1.1) rotate(5deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0); }
-}
-
-/* Simple fade in */
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
-/* OTP digit fill animation */
-@keyframes digitPop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+/* ─── Card wrapper ─── */
+.wizard-card {
+  @apply bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-6 sm:p-7 shadow-sm mb-4;
+  animation: wizardStepEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Slow pulse for background glow orbs (left branding panel) */
-@keyframes pulseSlow {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50%      { opacity: 0.9;  transform: scale(1.08); }
+.wizard-card.is-collapsed {
+  @apply p-3 sm:p-3 bg-slate-50/70 dark:bg-slate-800/30 shadow-none;
+  animation: wizardCollapse 0.3s ease-out;
 }
 
-/* Floating confetti dots on success step */
-@keyframes float1 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25%      { transform: translate(8px, -12px) rotate(90deg); }
-  50%      { transform: translate(-4px, -20px) rotate(180deg); }
-  75%      { transform: translate(-10px, -8px) rotate(270deg); }
-}
-@keyframes float2 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  33%      { transform: translate(-10px, -14px) rotate(-120deg); }
-  66%      { transform: translate(12px, -6px) rotate(-240deg); }
-}
-@keyframes float3 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  50%      { transform: translate(6px, -18px) rotate(180deg); }
+/* ─── Card header ─── */
+.card-header {
+  @apply flex items-start gap-3;
 }
 
-.wizard-step { animation: stepFadeIn 0.35s ease-out; }
-.animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.animate-pulse-once { animation: pulseOnce 0.6s ease-out 0.3s; }
-.animate-badge-reveal { animation: badgeReveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.animate-fade-in { animation: fadeIn 0.3s ease-out; }
-.animate-pulse-slow { animation: pulseSlow 6s ease-in-out infinite; }
-.animate-float-1 { animation: float1 5s ease-in-out infinite; }
-.animate-float-2 { animation: float2 6.5s ease-in-out infinite; }
-.animate-float-3 { animation: float3 4.5s ease-in-out infinite; }
+.step-icon {
+  @apply w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0;
+}
 
-/* Clean industry-standard ring spinner (replaces lucide loader-2) */
-@keyframes ringSpin {
-  to { transform: rotate(360deg); }
+.card-title {
+  @apply text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight;
 }
-.ring-spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
-  border-radius: 50%;
-  animation: ringSpin 0.7s linear infinite;
-  flex-shrink: 0;
+
+.card-sub {
+  @apply text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-0.5;
 }
-.ring-spinner-dark {
-  border-color: rgba(100, 116, 139, 0.25);
-  border-top-color: #0891b2;
+
+/* ─── Form fields ─── */
+.field-label {
+  @apply block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5;
+}
+
+.field-input {
+  @apply block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none;
+}
+.field-input:focus {
+  @apply ring-2 ring-primary/20 border-primary;
+}
+
+/* ─── Primary CTA button ─── */
+.primary-btn {
+  @apply w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/95 hover:to-cyan-500/95 text-white font-semibold text-sm py-3.5 px-5 rounded-xl shadow-md shadow-primary/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed;
+}
+.primary-btn:hover:not(:disabled) {
+  @apply shadow-lg shadow-primary/30 -translate-y-0.5;
+}
+
+/* ─── Collapsed summary row ─── */
+.summary-row {
+  @apply w-full flex items-center justify-between gap-3 cursor-pointer;
+}
+
+.check-bubble {
+  @apply w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0;
+  animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.edit-link {
+  @apply text-[11px] font-semibold text-primary hover:underline uppercase tracking-wider;
+}
+
+/* ─── OTP input boxes ─── */
+.otp-box {
+  @apply flex-1 max-w-[56px] aspect-square text-center text-lg font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white outline-none transition-all;
+}
+.otp-box:focus {
+  @apply ring-2 ring-primary/20 border-primary;
+}
+.otp-box.otp-verified {
+  @apply border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300;
+}
+.otp-box.otp-error {
+  @apply border-red-400 bg-red-50 dark:bg-red-500/10;
+  animation: fadeIn 0.2s ease-out;
 }
