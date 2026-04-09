@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -27,7 +27,7 @@ type StepKey = 'name' | 'contact' | 'gst' | 'pan' | 'company' | 'password';
   styleUrl: './register-wizard.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RegisterWizardComponent implements OnInit {
+export class RegisterWizardComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -100,7 +100,26 @@ export class RegisterWizardComponent implements OnInit {
 
   isSubmitting = false;
 
-  ngOnInit(): void {}
+  // ── Left-panel branding: testimonial carousel (matches old register page) ──
+  testimonials = [
+    { name: 'Rajesh Kumar', city: 'Mumbai', text: 'B2B CAB has transformed my travel agency. The commission structure is transparent and payouts are always on time.', rating: 5 },
+    { name: 'Priya Sharma', city: 'Delhi', text: 'Zero cancellations means I never have to worry about letting my clients down. Best decision for my business.', rating: 5 },
+    { name: 'Suresh Patel', city: 'Ahmedabad', text: 'I earn more with B2B CAB than any other platform. The dashboard makes managing bookings effortless.', rating: 4 },
+    { name: 'Anita Verma', city: 'Bangalore', text: 'GST-ready invoices and instant booking confirmations. My clients love the professional service.', rating: 5 },
+  ];
+  activeTestimonial = 0;
+  private testimonialInterval: any;
+
+  ngOnInit(): void {
+    this.testimonialInterval = setInterval(() => {
+      this.activeTestimonial = (this.activeTestimonial + 1) % this.testimonials.length;
+      this.cdr.markForCheck();
+    }, 4000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.testimonialInterval) clearInterval(this.testimonialInterval);
+  }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
     const pw = control.get('password')?.value;
