@@ -217,8 +217,7 @@
               <lucide-icon name="phone" [size]="18" class="text-primary"></lucide-icon>
             </div>
             <div>
-              <h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight">How can we reach you?</h3>
-              <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">We'll send a one-time code to both your mobile and email.</p>
+              <h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight">Verify your contact details</h3>
             </div>
           </div>
 
@@ -472,7 +471,7 @@
               <h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight">Company details</h3>
               <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
                 @if (companyAutoFilled) {
-                  Pre-filled from your GSTIN — review and edit if needed.
+                  Verified from your GSTIN — these details are locked.
                 } @else {
                   Tell us about your business.
                 }
@@ -483,24 +482,48 @@
           <form [formGroup]="companyForm" (ngSubmit)="submitCompany()" class="space-y-4 mt-5">
             <div>
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Company name</label>
-              <input formControlName="companyName" (input)="onCompanyNameInput($event)" type="text"
-                placeholder="ACME TRAVELS PRIVATE LIMITED"
-                style="text-transform: uppercase;"
-                class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none"
-                [class.!border-red-400]="companyForm.get('companyName')?.invalid && companyForm.get('companyName')?.touched" />
+              <div class="relative">
+                <input formControlName="companyName" (input)="onCompanyNameInput($event)" type="text"
+                  [readonly]="companyAutoFilled"
+                  placeholder="ACME TRAVELS PRIVATE LIMITED"
+                  style="text-transform: uppercase;"
+                  class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                  [class.!bg-slate-50]="companyAutoFilled"
+                  [class.dark:!bg-slate-800/30]="companyAutoFilled"
+                  [class.!pr-10]="companyAutoFilled"
+                  [class.cursor-not-allowed]="companyAutoFilled"
+                  [class.!border-red-400]="companyForm.get('companyName')?.invalid && companyForm.get('companyName')?.touched" />
+                @if (companyAutoFilled) {
+                  <lucide-icon name="lock" [size]="14" class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500"></lucide-icon>
+                }
+              </div>
               <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
-                <lucide-icon name="info" [size]="11" class="inline"></lucide-icon>
-                Shown on your dashboard and invoices — always saved in capitals.
+                @if (companyAutoFilled) {
+                  <lucide-icon name="shield-check" [size]="11" class="inline text-emerald-500"></lucide-icon>
+                  Locked — verified from GSTIN database.
+                } @else {
+                  <lucide-icon name="info" [size]="11" class="inline"></lucide-icon>
+                  Shown on your dashboard and invoices — always saved in capitals.
+                }
               </p>
             </div>
 
             <div>
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Company address</label>
               <textarea formControlName="companyAddress" rows="3"
+                [readonly]="companyAutoFilled"
                 placeholder="Building, street, area, city, state, PIN"
                 class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none resize-none leading-relaxed"
+                [class.!bg-slate-50]="companyAutoFilled"
+                [class.dark:!bg-slate-800/30]="companyAutoFilled"
+                [class.cursor-not-allowed]="companyAutoFilled"
                 [class.!border-red-400]="companyForm.get('companyAddress')?.invalid && companyForm.get('companyAddress')?.touched"></textarea>
-              @if (!companyAutoFilled) {
+              @if (companyAutoFilled) {
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-start gap-1.5">
+                  <lucide-icon name="shield-check" [size]="11" class="text-emerald-500 mt-0.5"></lucide-icon>
+                  Locked — verified from GSTIN database.
+                </p>
+              } @else {
                 <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-start gap-1.5">
                   <lucide-icon name="map-pin" [size]="11" class="text-primary mt-0.5"></lucide-icon>
                   Smart address lookup coming soon — for now, please type your full registered address.
@@ -544,9 +567,25 @@
                 <lucide-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
               </button>
             </div>
-            @if (passwordForm.get('password')?.errors?.['pattern'] && passwordForm.get('password')?.touched) {
-              <p class="text-[11px] text-red-500 mt-1.5">Must include uppercase, lowercase and a number</p>
-            }
+            <!-- Live validation checklist — turns green as each rule is satisfied -->
+            <ul class="mt-2.5 space-y-1">
+              <li class="flex items-center gap-1.5 text-[11px]" [class.text-emerald-600]="pwHasMinLength" [class.text-slate-400]="!pwHasMinLength">
+                <lucide-icon [name]="pwHasMinLength ? 'check-circle-2' : 'circle'" [size]="12"></lucide-icon>
+                At least 8 characters
+              </li>
+              <li class="flex items-center gap-1.5 text-[11px]" [class.text-emerald-600]="pwHasUpper" [class.text-slate-400]="!pwHasUpper">
+                <lucide-icon [name]="pwHasUpper ? 'check-circle-2' : 'circle'" [size]="12"></lucide-icon>
+                One uppercase letter (A-Z)
+              </li>
+              <li class="flex items-center gap-1.5 text-[11px]" [class.text-emerald-600]="pwHasLower" [class.text-slate-400]="!pwHasLower">
+                <lucide-icon [name]="pwHasLower ? 'check-circle-2' : 'circle'" [size]="12"></lucide-icon>
+                One lowercase letter (a-z)
+              </li>
+              <li class="flex items-center gap-1.5 text-[11px]" [class.text-emerald-600]="pwHasNumber" [class.text-slate-400]="!pwHasNumber">
+                <lucide-icon [name]="pwHasNumber ? 'check-circle-2' : 'circle'" [size]="12"></lucide-icon>
+                One number (0-9)
+              </li>
+            </ul>
           </div>
 
           <div>
@@ -577,7 +616,7 @@
             @if (isSubmitting) {
               <lucide-icon name="loader-2" [size]="16" class="animate-spin"></lucide-icon> Creating your account...
             } @else {
-              Create account & sign in <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+              Create account <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
             }
           </button>
 

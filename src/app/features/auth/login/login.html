@@ -137,6 +137,16 @@
             </div>
           </div>
 
+          <!-- Success banner — shown right after wizard registration -->
+          @if (successMessage()) {
+            <div class="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 p-3 border border-emerald-200 dark:border-emerald-800">
+              <div class="flex items-center">
+                <lucide-icon name="check-circle-2" [size]="18" class="text-emerald-500 mr-2 flex-shrink-0"></lucide-icon>
+                <p class="text-sm text-emerald-700 dark:text-emerald-400">{{ successMessage() }}</p>
+              </div>
+            </div>
+          }
+
           <!-- Error Message -->
           @if (errorMessage()) {
             <div class="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-200 dark:border-red-800">

@@ -4,8 +4,8 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { LandingNavbarComponent } from '../../landing/components/navbar/landing-navbar';
-import { AuthService } from '../../../core/services/auth.service';
-import { WalletService } from '../../../core/services/wallet.service';
+/** localStorage key shared with login page so it can pre-fill the freshly-registered email/password */
+const PENDING_LOGIN_KEY = 'b2bcab.pendingLogin';
 
 /**
  * Single-page progressive registration wizard (vercel demo flow).
@@ -31,8 +31,6 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
-  private authService = inject(AuthService);
-  private walletService = inject(WalletService);
 
   // Mock OTPs — fixed for demo so reviewers know what to type
   readonly MOCK_MOBILE_OTP = '1234';
@@ -97,6 +95,13 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   }, { validators: this.passwordMatchValidator });
   showPassword = false;
   showConfirmPassword = false;
+
+  // Live password validation flags — drive the green checklist in the template
+  get pwValue(): string { return this.passwordForm.get('password')?.value || ''; }
+  get pwHasMinLength(): boolean { return this.pwValue.length >= 8; }
+  get pwHasUpper(): boolean { return /[A-Z]/.test(this.pwValue); }
+  get pwHasLower(): boolean { return /[a-z]/.test(this.pwValue); }
+  get pwHasNumber(): boolean { return /\d/.test(this.pwValue); }
 
   isSubmitting = false;
 
@@ -337,23 +342,19 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     this.isSubmitting = true;
     this.cdr.markForCheck();
 
-    // Mock auto-login with the credentials the user just set.
-    // (vercel env has useMockData=true so AuthService.login returns the
-    // mock profile regardless of the actual email/password.)
-    const email = this.contactForm.value.email || 'demo@b2bcab.in';
-    const password = this.passwordForm.value.password || 'demo';
+    // Stash the just-set credentials so the login page can pre-fill them.
+    // Wizard does NOT auto-login — user is sent to /login to actually sign in.
+    const email = this.contactForm.value.email || '';
+    const password = this.passwordForm.value.password || '';
+    try {
+      localStorage.setItem(PENDING_LOGIN_KEY, JSON.stringify({ email, password }));
+    } catch { /* localStorage may be disabled — fall through */ }
 
+    // Mock account-creation delay, then route to login
     setTimeout(() => {
-      this.authService.login(email, password).subscribe({
-        next: () => {
-          this.walletService.loadBalance();
-          this.router.navigate(['/dashboard']);
-        },
-        error: () => {
-          this.isSubmitting = false;
-          this.cdr.markForCheck();
-        }
-      });
+      this.isSubmitting = false;
+      this.cdr.markForCheck();
+      this.router.navigate(['/login'], { queryParams: { registered: '1' } });
     }, 800);
   }
 }

@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -17,7 +17,7 @@ import { environment } from '../../../../environments/environment';
   styleUrl: './login.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private auth = inject(AuthService);
@@ -31,7 +31,25 @@ export class LoginComponent {
 
   isLoading = signal(false);
   errorMessage = signal('');
+  successMessage = signal('');
   showPassword = signal(false);
+
+  ngOnInit(): void {
+    // If user just registered via the new wizard, pre-fill the email + password
+    // they chose during sign-up. Stored in localStorage by register-wizard.
+    try {
+      const raw = localStorage.getItem('b2bcab.pendingLogin');
+      if (raw) {
+        const { email, password } = JSON.parse(raw) as { email?: string; password?: string };
+        if (email && password) {
+          this.loginForm.patchValue({ email, password, rememberMe: true });
+          this.successMessage.set('Account created! Sign in to continue.');
+        }
+        // Consume once — don't leak credentials across future sessions
+        localStorage.removeItem('b2bcab.pendingLogin');
+      }
+    } catch { /* ignore — localStorage may be unavailable */ }
+  }
 
   onSubmit() {
     if (!this.loginForm.valid) {
