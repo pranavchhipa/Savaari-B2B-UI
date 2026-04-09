@@ -202,7 +202,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (profileGst) {
       this.agentGstNumber = profileGst;
       this.gstDecoded = decodeGSTIN(profileGst);
-      this.needsGstInvoice = true; // Per Shivam: auto-tick if GST filled
+      this.needsGstInvoice = true; // Per product feedback: auto-tick if GST filled
       this.gstManualEntry = false;
     }
 
@@ -386,6 +386,15 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
             // null order_id without the matching encoded SHA1.
             this.paymentOptionParams = (razorpayOpt?.parameters || {}) as Record<string, number>;
             this.paymentOptionEncoded = (razorpayOpt?.parametersEncoded || {}) as Record<string, string>;
+
+            if (!environment.production) {
+              const bucketSummary = Object.keys(this.paymentOptionParams)
+                .filter(k => this.paymentOptionEncoded[`${k}Encoded`])
+                .map(k => `${k}=₹${this.paymentOptionParams[k]}`)
+                .join(', ');
+              console.log('[Booking] Backend bucket hashes available:', bucketSummary || '(NONE)');
+              console.log('[Booking] Total fare:', this.selectedCar?.price || 0);
+            }
           }
         }
         // Fallback: generate savaari_payment_id if API didn't return one
@@ -833,7 +842,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       return isUrgent ? total : Math.round(total * 0.25);
     }
 
-    // Option 3: Zero cash — full wallet
+    // Option 3: Zero cash
     // Urgent (<48h): 100% + 20% buffer now (buffer refunded post-trip)
     // Advance (>48h): 25% now, (75% + 20% buffer) auto-deducted 48h before trip
     if (option === 3) {
@@ -966,78 +975,41 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /**
-   * Resolve which (amount, encoded) pair to send to razor_createorder.php.
+   * Build Razorpay prefill object with the AGENT's details (not the customer).
+   * Per backend team feedback (April 2026): prefill.name and prefill.contact
+   * must be of the logged-in agent, not the passenger being booked.
+   *   - name:    firstname + lastname from login response
+   *   - email:   agent email
+   *   - contact: mobileno (includes country code) or phone as fallback
+   */
+  private buildRazorpayPrefill(): { name: string; email: string; contact: string } {
+    const user = this.auth.getUserProfile();
+    const first = (user?.firstname || '').trim();
+    const last = (user?.lastname || '').trim();
+    const name = [first, last].filter(Boolean).join(' ');
+    const contact = String(user?.mobileno || user?.phone || '').replace(/\D/g, '');
+    return {
+      name,
+      email: this.auth.getUserEmail(),
+      contact,
+    };
+  }
+
+  /**
+   * Resolve the amount to send to razor_createorder.php.
    *
-   * The booking-create response includes pre-computed SHA1 hashes for several
-   * standard percentages (20/25/30/50/100 + adv/full). razor_createorder.php
-   * REQUIRES the encoded SHA1 to match the amount being charged — sending an
-   * empty hash makes the backend respond `{ order_id: null }`.
-   *
-   * Strategy (always charges >= what user requested, never less):
-   *   1. Compute the requested percentage of total fare
-   *   2. Try exact match: amount{N}per/amount{N}perEncoded
-   *   3. If pct >= 100, use amountFull/amountFullEncoded (covers Option 3 urgent
-   *      120% — the extra 20% buffer is a backend limitation, not chargeable
-   *      via Razorpay without a 120% hash)
-   *   4. Otherwise, round UP to the next available standard pct hash
-   *   5. Final fallback: cached this.advanceAmount + this.encodedAmount (25% advance)
-   *
-   * Coverage matrix:
-   *   - Option 1 slider 25/30/50/100% → exact match
-   *   - Option 1 slider 26-29% → 30% (round up)
-   *   - Option 1 slider 31-50% → 50% (round up)
-   *   - Option 1 slider 51-100% → 100% (round up to amountFull)
-   *   - Option 2 non-urgent (25%) → exact match
-   *   - Option 2 urgent (100%) → exact match amountFull
-   *   - Option 3 non-urgent (25%) → exact match
-   *   - Option 3 urgent (120%) → amountFull (20% buffer NOT collected via Razorpay)
+   * Per backend team (April 2026): send the EXACT slider amount — do NOT
+   * send encoded_amount. Backend will re-enable a raw-amount validation
+   * path later. Until then, the slider works for all 5% increments
+   * (25, 30, … 100) without snapping to a bucket.
    */
   private resolveRazorpayChargePair(requestedAmount: number): { amount: number; encoded: string; matchedKey: string } {
-    const total = this.selectedCar?.price || 0;
-    const params = this.paymentOptionParams || {};
-    const encoded = this.paymentOptionEncoded || {};
-
-    if (total > 0) {
-      const pct = Math.round((requestedAmount / total) * 100);
-
-      // 1) Exact percentage match (amount25per, amount30per, amount50per, etc.)
-      const pctKey = `amount${pct}per`;
-      const pctEncodedKey = `${pctKey}Encoded`;
-      if (params[pctKey] && encoded[pctEncodedKey]) {
-        return { amount: params[pctKey], encoded: encoded[pctEncodedKey], matchedKey: pctKey };
-      }
-
-      // 2) >= 100% → amountFull / amountFullEncoded (covers urgent Option 2/3)
-      if (pct >= 100 && params['amountFull'] && encoded['amountFullEncoded']) {
-        return { amount: params['amountFull'], encoded: encoded['amountFullEncoded'], matchedKey: 'amountFull' };
-      }
-
-      // 3) Round UP: pick the SMALLEST available standard pct that is >= requested.
-      //    This guarantees the user pays at least what they asked for, never less.
-      //    Available hashes (in ascending order): 20, 25, 30, 50, then amountFull(100).
-      const standardPcts = [20, 25, 30, 50] as const;
-      for (const sp of standardPcts) {
-        if (sp >= pct) {
-          const k = `amount${sp}per`;
-          const ek = `${k}Encoded`;
-          if (params[k] && encoded[ek]) {
-            return { amount: params[k], encoded: encoded[ek], matchedKey: k };
-          }
-        }
-      }
-      // 4) > 50% but < 100% → fall through to amountFull
-      if (params['amountFull'] && encoded['amountFullEncoded']) {
-        return { amount: params['amountFull'], encoded: encoded['amountFullEncoded'], matchedKey: 'amountFull' };
-      }
+    if (!environment.production) {
+      const total = this.selectedCar?.price || 0;
+      const pct = total > 0 ? Math.round((requestedAmount / total) * 100) : 0;
+      console.log(`[Razorpay] Sending exact slider amount: ₹${requestedAmount} (${pct}% of ₹${total})`);
     }
-
-    // 5) Final fallback: cached 25% advance values from booking response
-    if (this.advanceAmount && this.encodedAmount) {
-      return { amount: this.advanceAmount, encoded: this.encodedAmount, matchedKey: 'cached_25per' };
-    }
-
-    // Last resort (should never hit if booking-create response was parsed correctly)
-    return { amount: requestedAmount, encoded: '', matchedKey: 'none' };
+    return { amount: requestedAmount, encoded: '', matchedKey: 'exact_slider' };
   }
 
   /**
@@ -1077,18 +1049,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     const bkId = this.bookingId;
 
-    // CRITICAL (April 2026 fix): razor_createorder.php REQUIRES the SHA1 encoded_amount
-    // matching the amount being charged. Sending an empty encoded_amount makes the
-    // backend respond with { order_id: null }, which then breaks the entire chain:
-    //   createorder → SDK opens without order context → callback returns no signature
-    //   → razor_checkhash.php fails 401 → confirmation.php fails 301
-    //
-    // The booking-create response gives us pre-computed (amount, encoded) pairs:
-    //   amount25per/amount25perEncoded, amount50per/amount50perEncoded,
-    //   amountFull/amountFullEncoded, amountAdv/amountAdvEncoded, etc.
-    // We must pick the pair that matches what the user wants to pay AND reuse the
-    // savaari_payment_id from the booking response (NOT regenerate — backend caches
-    // the order_id under it).
+    // Resolve the slider amount to the nearest backend bucket so `amount`
+    // and `encoded_amount` stay consistent. razor_createorder.php rejects
+    // any mismatch with 401 and returns a null order_id.
     const resolved = this.resolveRazorpayChargePair(amount);
     const advanceAmount = resolved.amount;
     const encodedAmount = resolved.encoded;
@@ -1099,28 +1062,31 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!environment.production) {
       console.log('[Razorpay] createorder request:', {
         amount: advanceAmount,
-        encoded_amount: encodedAmount ? encodedAmount.substring(0, 8) + '…' : '(empty)',
+        encoded_amount: encodedAmount ? `${encodedAmount.slice(0, 10)}…` : '(empty)',
         savaari_payment_id: savaariPayId,
         requestedAmount: amount,
         matchedKey: resolved.matchedKey,
+        totalFare: this.selectedCar?.price || 0,
       });
     }
 
     // Step 1: Create Razorpay order via PHP (fresh order at current amount)
+    // NOTE: encoded_amount intentionally NOT sent — backend team will
+    // re-enable a raw-amount path later. See payment.service comment.
+    void encodedAmount;
     this.paymentService.createRazorpayOrder({
       amount: advanceAmount,
-      encoded_amount: encodedAmount,
       savaari_payment_id: savaariPayId,
     }).subscribe({
       next: (orderResp) => {
-        if (!orderResp) {
+        const razorpayOrderId = orderResp?.razorpay_order_id || orderResp?.order_id || '';
+        if (!orderResp || !razorpayOrderId) {
           this.isProcessingRazorpay = false;
           this.bookingError = 'Failed to create payment order. Please try again.';
+          if (!environment.production) console.error('[Razorpay] createorder returned empty order_id:', orderResp);
           this.cdr.markForCheck();
           return;
         }
-
-        const razorpayOrderId = orderResp.razorpay_order_id || orderResp.order_id || '';
 
         // Step 2: Open Razorpay SDK
         const options: any = {
@@ -1128,7 +1094,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           amount: advanceAmount * 100, // Razorpay expects paise
           currency: 'INR',
           name: environment.brandName,
-          description: `Booking #${bkId} - ₹${advanceAmount}`,
+          description: `Booking ${bkId} - INR ${advanceAmount}`,
           order_id: razorpayOrderId,
           handler: (rzpResponse: any) => {
             // Post-payment flow (HAR-confirmed):
@@ -1147,31 +1113,23 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
             const rzpOrderId = rzpResponse.razorpay_order_id || razorpayOrderId;
             const razorpaySignature = rzpResponse.razorpay_signature || '';
 
-            /** Common post-payment steps after checkhash (success or fail) */
-            const finishRazorpayPayment = () => {
-              // Refresh B2B JWT via autologin
+            // Guard: Razorpay SDK should always return these. If any is empty
+            // (e.g. because razor_createorder returned a null order_id and we
+            // opened the modal anyway), checkhash will fail and confirmation
+            // must NOT happen.
+            if (!razorpayPaymentId || !rzpOrderId || !razorpaySignature) {
+              this.isProcessingRazorpay = false;
+              this.bookingError = 'Payment response incomplete. Please contact support with your transaction details.';
+              if (!environment.production) console.error('[Razorpay] SDK callback missing fields:', rzpResponse);
+              this.cdr.markForCheck();
+              return;
+            }
+
+            /** Run on confirmed success only (checkhash OK + confirmation.php OK) */
+            const showBookingConfirmed = () => {
               this.auth.autoLogin().subscribe();
-
-              // Send confirmation emails (fire-and-forget)
               this.paymentService.sendConfirmationEmail(bkId).subscribe();
               this.paymentService.sendConfirmationEmail(bkId).subscribe();
-
-              // confirmation.php — pass the same trigger params as wallet flow
-              // (per Jibin's doc: "Same parameters need to be passed after the
-              // Razor pay callback also"). This is what updates the database.
-              // April 2026: totalAmount + bufferAmount added — REQUIRED for db storage.
-              this.paymentService.confirmPayment({
-                source: 'B2B_RAZORPAY',
-                booking_id: bkId,
-                payment_option: this.paymentOption,
-                transaction_id: razorpayPaymentId,
-                totalAmount: this.selectedCar?.price || 0,
-                bufferAmount: this.paymentOption === 3 ? this.getOption3BufferAmount() : 0,
-                advancedAmount: advanceAmount,
-                orderId: savaariPayId,
-                paymentId: razorpayPaymentId,
-                paymentmode: 'savaariwebsite',
-              } as any).subscribe();
 
               this.isProcessingRazorpay = false;
               this.bookingConfirmed = true;
@@ -1188,8 +1146,47 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               savaari_pay_id: savaariPayId,
               selectedAmount: advanceAmount,
             }).subscribe({
-              next: () => finishRazorpayPayment(),
-              error: () => finishRazorpayPayment(), // checkhash failed — still proceed (payment was taken by Razorpay)
+              next: (verified) => {
+                if (!verified) {
+                  this.isProcessingRazorpay = false;
+                  this.bookingError = 'Payment verification failed. Please contact support with payment ID: ' + razorpayPaymentId;
+                  this.cdr.markForCheck();
+                  return;
+                }
+                // Step 2: confirmation.php — updates DB. Gate UI on its success.
+                this.paymentService.confirmPayment({
+                  source: 'B2B_RAZORPAY',
+                  booking_id: bkId,
+                  payment_option: this.paymentOption,
+                  transaction_id: razorpayPaymentId,
+                  totalAmount: this.selectedCar?.price || 0,
+                  bufferAmount: this.paymentOption === 3 ? this.getOption3BufferAmount() : 0,
+                  advancedAmount: advanceAmount,
+                  orderId: savaariPayId,
+                  paymentId: razorpayPaymentId,
+                  paymentmode: 'savaariwebsite',
+                } as any).subscribe({
+                  next: (confirmed) => {
+                    if (confirmed) {
+                      showBookingConfirmed();
+                    } else {
+                      this.isProcessingRazorpay = false;
+                      this.bookingError = 'Payment taken but booking confirmation failed. Please contact support with payment ID: ' + razorpayPaymentId;
+                      this.cdr.markForCheck();
+                    }
+                  },
+                  error: () => {
+                    this.isProcessingRazorpay = false;
+                    this.bookingError = 'Payment taken but booking confirmation failed. Please contact support with payment ID: ' + razorpayPaymentId;
+                    this.cdr.markForCheck();
+                  },
+                });
+              },
+              error: () => {
+                this.isProcessingRazorpay = false;
+                this.bookingError = 'Payment signature verification failed. Please contact support with payment ID: ' + razorpayPaymentId;
+                this.cdr.markForCheck();
+              },
             });
           },
           modal: {
@@ -1198,7 +1195,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               this.cdr.markForCheck();
             }
           },
-          prefill: { email: this.auth.getUserEmail() },
+          prefill: this.buildRazorpayPrefill(),
           theme: { color: '#00ace6' },
         };
 
@@ -1244,14 +1241,14 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       dropLatLong: this.dropLatLng ? `${this.dropLatLng.lat},${this.dropLatLng.lng}` : '',
       dropLocality,
       // alias_dest_city_id comes from place_id API (destination_city_map_info.city_id)
-      // populated in onDropAddressSelect. Per Jibin (April 2026): backend pricing
+      // populated in onDropAddressSelect. Per backend team (April 2026): backend pricing
       // engine uses both alias IDs to compute correct fare — sending 0 causes the
       // db amount columns to mismatch what the user was shown. Fall back to
       // itinerary.toCityId / aliasDestCityId so the value is always meaningful.
       alias_dest_city_id: this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || this.itinerary!.toCityId || 0,
       customerTitle: 'Mr',
       customerName: this.guestName,
-      // Per Shubhendu (April 2026): customerEmail must hold AGENT email, and
+      // Per backend team (April 2026): customerEmail must hold AGENT email, and
       // customerSecondaryEmail must hold the CUSTOMER (guest) email — backend
       // mailers/notifications rely on this convention.
       customerEmail: this.agentEmail || undefined,
@@ -1265,7 +1262,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       // does NOT include this field in the POST /booking payload. Sending it causes
       // the partner API backend to mark `book_flag = 1` prematurely, which then
       // makes confirmation.php skip its update logic (it has `if (book_flag == 0)`
-      // guard). Reported by Jibin (April 2026). Payment amount is communicated to
+      // guard). Reported by backend team (April 2026). Payment amount is communicated to
       // the backend later via confirmation.php (totalAmount + advancedAmount).
       app_user_id: Number(this.auth.getAgentId()) || undefined,
       couponCode: '',
@@ -1288,9 +1285,25 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /** Register booking data in the local registry for history page */
   private registerBookingData(bkId: string, response: any, request: CreateBookingRequest, prePaymentAmount: number, paymentMethod: string) {
+    // Extract numeric km from selectedCar.kmsIncluded ("145 KMs" or "260 (145 + 115) km")
+    // so the bookings page can show "145 km" without waiting for the API to sync.
+    const kmsRaw = String(this.selectedCar?.kmsIncluded || '');
+    const kmsMatch = kmsRaw.match(/(\d+)/);
+    const packageKms = kmsMatch ? kmsMatch[1] : '';
+
+    // Pull booking_key out of the create-booking response. The API returns it
+    // either at the top level or nested inside `data` (array or object form).
+    // Needed by POST /system_bookings/cancellation.php when the user cancels.
+    const rawData = response?.data as any;
+    const dataItem = Array.isArray(rawData) ? rawData[0] : rawData;
+    const bookingKey = String(
+      response?.booking_key || dataItem?.booking_key || dataItem?.bookingKey || ''
+    );
+
     this.bookingRegistry.addBookingId(bkId);
     this.bookingRegistry.storeBookingData(bkId, {
       ...response,
+      booking_key: bookingKey,
       pick_city: this.itinerary?.fromCity || '',
       drop_city: this.itinerary?.toCity || '',
       source_city: this.itinerary?.fromCity || '',
@@ -1308,6 +1321,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       pickupDateTime: request.pickupDateTime || '',
       trip_type: request.tripType || '',
       usage_name: request.subTripType || '',
+      // Match the live B2B API field name so toBookingCard() picks it up
+      // through the same `package_kms` path used for synced bookings.
+      package_kms: packageKms,
+      min_km_quota_per_day: packageKms,
       booking_status: 'CONFIRMED',
       car_name: this.selectedCar?.name || '',
       gross_amount: this.selectedCar?.price || 0,
@@ -1336,7 +1353,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
    * Process wallet payment for already-created booking.
    * Booking was already created on "Proceed to Next" — just deduct wallet + confirm.
    *
-   * Flow (from Jibin's confirmation callback doc, April 2026):
+   * Flow (per backend team confirmation callback doc, April 2026):
    *   1. POST /wallet/pay-booking → deduct wallet, get transaction_id
    *   2. POST /confirmation.php → source=B2B_WALLET, booking_id, payment_option, transaction_id
    *   3. email_sent × 2 → confirmation emails
@@ -1365,7 +1382,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
             const txnId = result.transactionId || '';
 
             // Step 2: Call confirmation.php with wallet-specific params
-            // Per Jibin's April 2026 db column update, totalAmount + bufferAmount
+            // Per backend team's April 2026 db column update, totalAmount + bufferAmount
             // are now REQUIRED so the server can populate sv_advance_payment correctly.
             this.paymentService.confirmPayment({
               source: 'B2B_WALLET',
@@ -1577,7 +1594,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           amount: amountInPaise,
           currency: order.currency || 'INR',
           name: `${environment.brandName} Wallet`,
-          description: `Wallet Top-up ₹${savedAmount}`,
+          description: `Wallet Top-up INR ${savedAmount}`,
           order_id: order.orderId,
           handler: (response: any) => {
             // Step 3: Verify payment on backend
@@ -1616,9 +1633,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               this.cdr.markForCheck();
             }
           },
-          prefill: {
-            email: this.auth.getUserEmail(),
-          },
+          prefill: this.buildRazorpayPrefill(),
           theme: { color: '#f97316' },
         };
 

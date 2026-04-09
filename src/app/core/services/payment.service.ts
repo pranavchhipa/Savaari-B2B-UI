@@ -8,7 +8,7 @@ import { environment } from '../../../environments/environment';
 /**
  * Payment service for Razorpay integration via PHP backend endpoints.
  *
- * Confirmed from Postman (Shubhendu's extraction, March 2026):
+ * Confirmed from Postman (backend team's extraction, March 2026):
  *
  * Flow:
  *   1. advance_payment_check.php → Get advance amount for booking
@@ -52,7 +52,7 @@ export interface AdvancePaymentCheckResponse {
 
 export interface RazorpayOrderRequest {
   amount: number;                  // Amount in INR (not paise)
-  encoded_amount: string;          // SHA1 encoded amount from advance_payment_check
+  encoded_amount?: string;         // (currently unused — backend will re-enable later)
   savaari_payment_id: string;      // Format: SW{agentId}S{mmYY}-{bookingId}
 }
 
@@ -78,12 +78,12 @@ export interface PaymentConfirmationRequest {
   orderId?: string;                // savaari_payment_id
   paymentId?: string;              // razorpay_payment_id
   paymentmode?: string;            // 'savaariwebsite'
-  // Wallet + Razorpay flow params (from Jibin's confirmation callback doc, April 2026)
+  // Wallet + Razorpay flow params (per backend team's confirmation callback doc, April 2026)
   source?: string;                 // 'B2B_WALLET' for wallet payments, 'B2B_RAZORPAY' for razorpay
   booking_id?: string;             // booking ID
   payment_option?: number;         // 1=25% driver collects, 2=25% auto-deduct, 3=100% full
   transaction_id?: string;         // wallet transaction ID / razorpay payment ID
-  totalAmount?: number;            // The booking Total Fare (REQUIRED — required by Jibin's updated db columns)
+  totalAmount?: number;            // The booking Total Fare (REQUIRED — per backend team's updated db columns)
   bufferAmount?: number;           // The buffer refundable deposit (REQUIRED — 0 for opt 1/2, 20% of fare for opt 3)
 }
 
@@ -166,11 +166,13 @@ export class PaymentService {
       });
     }
 
+    // Per backend team (April 2026): do NOT send encoded_amount for now —
+    // it forces snapping to 25/50/100 buckets and breaks Payment Option 1
+    // slider. Backend will re-enable a raw-amount path later.
     return this.api.paymentPost<RazorpayOrderResponse>(
       'razor_createorder.php',
       {
         amount: request.amount,
-        encoded_amount: request.encoded_amount,
         savaari_payment_id: request.savaari_payment_id,
       }
     ).pipe(
@@ -187,27 +189,45 @@ export class PaymentService {
 
   /**
    * Step 3: Verify Razorpay payment signature.
-   * POST /razor_checkhash.php (multipart/form-data)
+   * POST /razor_checkhash.php (application/x-www-form-urlencoded)
    *
    * Called after Razorpay payment success callback.
+   *
+   * NOTE: Postman shows this as multipart/form-data, but on alpha that breaks
+   * because proxy.php uses `file_get_contents("php://input")` to forward the
+   * body — and php://input is EMPTY for multipart/form-data requests (PHP
+   * parses them into $_POST/$_FILES). The empty body reaches betasavaari and
+   * signature verification fails with 401 ERROR.
+   *
+   * Switching to form-urlencoded works because:
+   *   1. PHP backend reads $_POST which is populated identically by both
+   *      multipart/form-data and application/x-www-form-urlencoded
+   *   2. proxy.php correctly forwards form-urlencoded bodies via php://input
+   *   3. No file uploads needed — all fields are plain strings
    */
   verifyRazorpayPayment(request: RazorpayVerifyRequest): Observable<boolean> {
     if (environment.useMockData) {
       return of(true);
     }
 
-    // Postman shows this as multipart/form-data
-    const formData = new FormData();
-    formData.append('razorpay_order_id', request.razorpay_order_id);
-    formData.append('razorpay_payment_id', request.razorpay_payment_id);
-    formData.append('razorpay_signature', request.razorpay_signature);
-    formData.append('savaari_pay_id', request.savaari_pay_id);
-    formData.append('selectedAmount', String(request.selectedAmount));
-
-    return this.api.paymentPostFormData<any>('razor_checkhash.php', formData).pipe(
+    return this.api.paymentPost<any>('razor_checkhash.php', {
+      razorpay_order_id: request.razorpay_order_id,
+      razorpay_payment_id: request.razorpay_payment_id,
+      razorpay_signature: request.razorpay_signature,
+      savaari_pay_id: request.savaari_pay_id,
+      selectedAmount: request.selectedAmount,
+    }).pipe(
       map(response => {
         if (!environment.production) console.log('[PAYMENT] Razorpay hash verified:', response);
-        return true;
+        // Backend PHP endpoints return status_code=101 for OK and 301 for
+        // FAILURE (they are NOT HTTP codes — they are app-level codes).
+        // Treat anything that is not an explicit failure as success so we
+        // don't block legitimate payments.
+        const r: any = response || {};
+        const code = Number(r.status_code ?? r.statusCode ?? 0);
+        const status = String(r.status ?? '').toUpperCase();
+        const explicitFailure = code === 301 || status === 'FAILURE' || status === 'FAILED' || status === 'ERROR' || r.status === false;
+        return !explicitFailure;
       }),
       catchError(err => {
         console.error('[PAYMENT] razor_checkhash failed:', err);
@@ -218,7 +238,15 @@ export class PaymentService {
 
   /**
    * Step 4: Confirm payment in backend.
-   * POST /payment_confirmation/confirmation.php
+   * POST /payment_confirmation/confirmation.php (via /payment-api proxy → beta)
+   *
+   * IMPORTANT: This MUST go through the /payment-api proxy to b2bcab.betasavaari.com.
+   * Calling it directly on alpha (without /payment-api) hits alpha's own broken
+   * confirmation.php which returns status_code=301 FAILURE — because:
+   *   1. The booking was created in BETA database (via /partner-api proxy)
+   *   2. Alpha's confirmation.php can't find the booking in its own DB
+   *   3. Hash + savaari_pay_id were generated against beta — fails on alpha
+   * Same root cause as commit 608f322 (alpha PHP files are broken/different).
    *
    * Two flows:
    *   Razorpay: advancedAmount, orderId, paymentId, paymentmode
@@ -230,7 +258,7 @@ export class PaymentService {
     }
 
     // Build params based on flow type (wallet vs razorpay).
-    // Per Jibin's April 2026 doc, BOTH wallet and razorpay flows MUST send:
+    // Per backend team's April 2026 doc, BOTH wallet and razorpay flows MUST send:
     //   source, booking_id, payment_option, transaction_id, totalAmount, bufferAmount
     // totalAmount + bufferAmount were added because DB entries weren't being stored
     // without them (server uses these to populate sv_advance_payment + sv_booking_wallet_payment).
@@ -273,7 +301,14 @@ export class PaymentService {
     ).pipe(
       map(response => {
         if (!environment.production) console.log('[PAYMENT] Payment confirmed:', response);
-        return true;
+        // Same convention: 101 = OK, 301 = FAILURE. Treat only explicit
+        // failure as a failure so success variants (101, 'success', etc.)
+        // all pass through.
+        const r: any = response || {};
+        const code = Number(r.status_code ?? r.statusCode ?? 0);
+        const status = String(r.status ?? '').toUpperCase();
+        const explicitFailure = code === 301 || status === 'FAILURE' || status === 'FAILED' || status === 'ERROR' || r.status === false;
+        return !explicitFailure;
       }),
       catchError(err => {
         console.error('[PAYMENT] confirmation failed:', err);
@@ -309,7 +344,7 @@ export class PaymentService {
    * Step 6: Settlement payment — update booking as fully paid.
    * POST /booking/settlement-payment (Partner API, form-encoded)
    *
-   * From Jibin's doc (April 2026):
+   * Per backend team's doc (April 2026):
    *   Sets pay_bal_amt=0, payment_status='Pre Paid', made_payment=2
    *   Removes booking from auto-pay cron queue (sv_booking_wallet_payment.balance_paid_status=1)
    *   Records payment in sv_advance_payment for auditing

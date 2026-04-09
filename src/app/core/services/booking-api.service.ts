@@ -74,7 +74,7 @@ export class BookingApiService {
       // NOTE: `prePayment` intentionally NOT sent. Verified from live HAR
       // (April 2026) — live site does not send this field. Sending it causes
       // partner API to mark `book_flag = 1` prematurely, breaking
-      // confirmation.php update logic. Reported by Jibin.
+      // confirmation.php update logic. Reported by backend team.
       locality: request.locality,
       alias_source_city_id: request.alias_source_city_id ?? 0,
       alias_dest_city_id: request.alias_dest_city_id ?? 0,
@@ -179,22 +179,56 @@ export class BookingApiService {
   /**
    * Cancel a previously confirmed booking.
    *
-   * NOTE: The live B2B portal (b2bcab.in) does NOT have a cancel endpoint.
-   * B2B agents contact Savaari support directly to cancel bookings.
-   * This uses the Partner API's booking/cancel endpoint as a best guess,
-   * which may or may not work for B2B agents.
+   * Confirmed from live b2bcab.in HAR (April 2026):
+   *   POST https://api.betasavaari.com/system_bookings/cancellation.php
+   *   Body: application/x-www-form-urlencoded
+   *   Fields:
+   *     - booking_id          (required)
+   *     - reservation_id      (required — e.g. "S0426-2361927")
+   *     - reason              (dropdown value: "Customer changed plans" / "Wrong booking created")
+   *     - comments            (free-text, can be empty)
+   *     - booking_key         (from create-booking response; fallback to '')
+   *     - booking_type        (hard-coded to "1")
+   *
+   *   Response on success:
+   *     { status_code: 101, status_description: "SUCCESS", reservation_id, booking_data: {...} }
    */
-  cancelBooking(bookingId: string, reason?: string): Observable<CancelBookingResponse> {
+  cancelBooking(
+    bookingId: string,
+    reservationId: string,
+    reason: string,
+    comments: string = '',
+    bookingKey: string = ''
+  ): Observable<CancelBookingResponse> {
     if (environment.useMockData) {
-      return of({ status: 'cancelled', message: 'Mock booking cancelled' });
+      return of({
+        status: 'cancelled',
+        status_code: 101,
+        status_description: 'SUCCESS',
+        reservation_id: reservationId,
+        message: 'Mock booking cancelled'
+      });
     }
 
-    const token: string = this.auth.getPartnerToken() ?? '';
-    return this.api.partnerPostForm<CancelBookingResponse>('booking/cancel', {
-      bookingId,
+    return this.api.systemBookingsPostForm<any>('cancellation.php', {
+      booking_id: bookingId,
+      reservation_id: reservationId,
       reason,
-      agentId: btoa(this.auth.getAgentId()),
-    }, { token }).pipe(
+      comments,
+      booking_key: bookingKey,
+      booking_type: 1,
+    }).pipe(
+      map(response => {
+        // Treat status_code 101 + "SUCCESS" as cancellation success
+        const code = Number(response?.status_code);
+        const desc = String(response?.status_description || '').toUpperCase();
+        const ok = code === 101 || desc === 'SUCCESS';
+        return {
+          ...response,
+          status: ok ? 'cancelled' : 'failed',
+          message: response?.status_description || (ok ? 'Booking cancelled' : 'Failed to cancel booking'),
+        } as CancelBookingResponse;
+      }),
       catchError(err => this.errorHandler.handleApiError(err, 'BookingApiService.cancelBooking'))
     );
   }

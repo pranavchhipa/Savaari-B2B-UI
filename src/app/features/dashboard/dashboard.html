@@ -170,6 +170,7 @@
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
                 <p-datepicker #pickupTime1 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12" [stepMinute]="15"
+                  [minDate]="minPickupTime"
                   appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
@@ -309,6 +310,7 @@
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
                 <p-datepicker #pickupTime2 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12" [stepMinute]="15"
+                  [minDate]="minPickupTime"
                   appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
@@ -407,6 +409,7 @@
             <div class="flex flex-col">
               <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
               <p-datepicker #pickupTime3 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12" [stepMinute]="15"
+                [minDate]="minPickupTime"
                 appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
                 inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
               </p-datepicker>
@@ -517,6 +520,7 @@
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
                 <p-datepicker #pickupTime4 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12" [stepMinute]="15"
+                  [minDate]="minPickupTime"
                   appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>

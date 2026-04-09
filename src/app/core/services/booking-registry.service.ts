@@ -121,9 +121,16 @@ export class BookingRegistryService {
       customer_email: data.customer_email || data.customer?.email || '',
       car_name: data.car_name || data.package || '',
       itinerary: data.itinerary || '',
+      // Preserve package KM so the bookings page can show "145 km"
+      // for newly-created bookings before they sync to the B2B API.
+      package_kms: data.package_kms || data.packageKms || data.kms_included || data.kmsIncluded || '',
+      min_km_quota_per_day: data.min_km_quota_per_day || data.package_kms || '',
       prePayment: data.prePayment || 0,
       cashToCollect: data.cashToCollect || 0,
       carType: data.carType || 0,
+      // Preserve booking_key — required by POST /system_bookings/cancellation.php
+      // when the user cancels a booking from the Bookings page.
+      booking_key: data.booking_key || data.bookingKey || '',
     } as any;
   }
 

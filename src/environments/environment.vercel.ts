@@ -14,6 +14,8 @@ export const environment = {
   walletApiBaseUrl: '/wallet-api',
   paymentApiBaseUrl: '/payment-api',
   addressApiBaseUrl: '/address-api',
+  systemBookingsApiBaseUrl: '/system-bookings-api',
+  registrationApiBaseUrl: '/reg-api',
 
   /** Razorpay — not used in mock mode */
   razorpayKeyId: '',

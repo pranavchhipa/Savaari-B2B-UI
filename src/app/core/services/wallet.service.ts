@@ -18,7 +18,7 @@ export interface WalletTransaction {
 
 export interface WalletStatus {
   balance: number;
-  status: 'ACTIVE' | 'FROZEN' | 'PENDING' | 'CLOSED';
+  status: 'ACTIVE' | 'FROZEN' | 'PENDING' | 'CLOSED' | 'BLOCKED';
   walletId?: string;
 }
 
@@ -184,6 +184,33 @@ export class WalletService {
     return this.balanceSubject.getValue();
   }
 
+  /**
+   * Returns false ONLY when the wallet has been loaded and is explicitly
+   * in a non-ACTIVE state (BLOCKED / FROZEN / CLOSED / PENDING). If the
+   * status hasn't loaded yet (null) we assume ACTIVE — blocking here would
+   * prevent first-time users from ever completing a payment before the
+   * wallet/balance round-trip finishes. Mock mode is always active.
+   */
+  isWalletActive(): boolean {
+    if (environment.useMockData) return true;
+    const s = this.walletStatusSubject.getValue();
+    if (!s) return true; // not loaded yet — don't block
+    return s.status === 'ACTIVE';
+  }
+
+  /** Human-readable reason why the wallet is not usable right now. */
+  getInactiveReason(): string {
+    const s = this.walletStatusSubject.getValue();
+    if (!s) return 'Wallet not loaded yet. Please try again in a moment.';
+    switch (s.status) {
+      case 'BLOCKED': return 'Your wallet is BLOCKED. Please contact support to reactivate.';
+      case 'FROZEN':  return 'Your wallet is FROZEN. Please contact support.';
+      case 'PENDING': return 'Your wallet is still PENDING approval. Please try again later.';
+      case 'CLOSED':  return 'Your wallet is CLOSED. Please contact support.';
+      default:        return 'Wallet is not active.';
+    }
+  }
+
   // ─── Top-Up Flow ───────────────────────────────────────────────────────────
 
   /**
@@ -192,6 +219,10 @@ export class WalletService {
    * Use the returned orderId to open the Razorpay JS SDK.
    */
   initiateTopUp(amount: number): Observable<TopUpInitiateResponse | null> {
+    if (!this.isWalletActive()) {
+      console.warn('[WALLET] initiateTopUp blocked —', this.getInactiveReason());
+      return of(null);
+    }
     if (environment.useMockData) {
       const mockOrderId = 'order_mock_' + Math.random().toString(36).substring(2, 10);
       return of({
@@ -266,6 +297,10 @@ export class WalletService {
    * Returns order details to open Razorpay modal.
    */
   createBookingOrder(amount: number): Observable<TopUpInitiateResponse | null> {
+    if (!this.isWalletActive()) {
+      console.warn('[WALLET] createBookingOrder blocked —', this.getInactiveReason());
+      return of(null);
+    }
     if (environment.useMockData) {
       const mockOrderId = 'order_booking_' + Math.random().toString(36).substring(2, 10);
       return of({
@@ -337,6 +372,10 @@ export class WalletService {
    * Returns false if wallet balance is insufficient.
    */
   payForBooking(bookingId: string, amount: number, paymentOption: 1 | 2 | 3 = 1): Observable<{ success: boolean; transactionId?: string }> {
+    if (!this.isWalletActive()) {
+      console.warn('[WALLET] payForBooking blocked —', this.getInactiveReason());
+      return of({ success: false });
+    }
     if (environment.useMockData) {
       const success = this.deductForBooking(amount, bookingId);
       return of({ success, transactionId: success ? 'mock_txn_' + Date.now() : undefined });

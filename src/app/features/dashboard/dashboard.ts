@@ -337,11 +337,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Minimum selectable pickup date (today) */
+  /** Urgent-booking gap: agents can only book a cab at least N hours from now. */
+  private readonly URGENT_GAP_HOURS = 4;
+
+  /** Minimum selectable pickup date (today, unless now+gap crosses midnight → tomorrow) */
   minPickupDate: Date = new Date();
 
   /** Minimum selectable return date (pickup date + 1 day) */
   minReturnDate: Date = new Date();
+
+  /**
+   * Minimum selectable pickup TIME (only constrains the time-spinner when
+   * pickupDate === today). For future dates this stays null so any time is
+   * allowed. PrimeNG's `<p-datepicker [timeOnly]>` honours `minDate`'s hours
+   * and minutes when the form value's date matches `minDate`'s date.
+   */
+  minPickupTime: Date | null = null;
 
   private readonly SEARCH_STATE_KEY = 'b2b_search_state';
 
@@ -558,10 +569,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Set initial minReturnDate to tomorrow + 1 = dayAfter
     this.updateMinReturnDate(tomorrow);
 
-    // Watch pickupDate changes to auto-adjust return date + track analytics
+    // Apply the urgent-booking 4-hour gap rule on initial form state
+    this.updateUrgentGapConstraints(tomorrow);
+
+    // Watch pickupDate changes to auto-adjust return date + recompute the
+    // urgent-booking time floor + track analytics
     this.bookingForm.get('pickupDate')?.valueChanges.subscribe((newPickupDate: Date) => {
       if (newPickupDate) {
         this.updateMinReturnDate(newPickupDate);
+        this.updateUrgentGapConstraints(newPickupDate);
         const apiParams = this.getApiParams();
         this.analytics.trackPickupDateFill(
           newPickupDate.toLocaleDateString('en-IN'),
@@ -675,23 +691,99 @@ export class DashboardComponent implements OnInit, OnDestroy {
     } catch { /* ignore corrupt data */ }
   }
 
-  /** Update minReturnDate and auto-adjust returnDate if it's now invalid */
+  /** Update minReturnDate and auto-adjust returnDate if it's now invalid.
+   *  Same-day return is allowed — minReturnDate equals the pickup day itself.
+   */
   private updateMinReturnDate(pickupDate: Date) {
-    const nextDay = new Date(pickupDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-    nextDay.setHours(0, 0, 0, 0);
-    this.minReturnDate = nextDay;
+    const sameDay = new Date(pickupDate);
+    sameDay.setHours(0, 0, 0, 0);
+    this.minReturnDate = sameDay;
 
-    // If current return date is on the same day or before, push it forward
+    // Only push forward if the existing return date is strictly BEFORE pickup.
+    // Same-day is preserved.
     const currentReturn = this.bookingForm.get('returnDate')?.value;
     if (currentReturn) {
       const returnNormalized = new Date(currentReturn);
       returnNormalized.setHours(0, 0, 0, 0);
-      const pickupNormalized = new Date(pickupDate);
-      pickupNormalized.setHours(0, 0, 0, 0);
-      if (returnNormalized <= pickupNormalized) {
-        this.bookingForm.get('returnDate')?.setValue(new Date(nextDay));
+      if (returnNormalized.getTime() < sameDay.getTime()) {
+        this.bookingForm.get('returnDate')?.setValue(new Date(sameDay));
       }
+    }
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Earliest bookable instant from "now" — current time + URGENT_GAP_HOURS,
+   * rounded UP to the next 15-min slot. e.g. now=10:47 AM → 02:45 PM.
+   */
+  private getEarliestBookableInstant(): Date {
+    const t = new Date();
+    t.setHours(t.getHours() + this.URGENT_GAP_HOURS);
+    t.setSeconds(0, 0);
+    const rem = t.getMinutes() % 15;
+    if (rem !== 0) t.setMinutes(t.getMinutes() + (15 - rem));
+    return t;
+  }
+
+  /** True when the given date is the same calendar day as today. */
+  private isSameDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
+  }
+
+  /**
+   * Recompute minPickupDate / minPickupTime against the URGENT_GAP_HOURS rule
+   * and auto-bump pickupDate / pickupTime when they fall before the new floor.
+   *
+   * Called on init and whenever pickupDate changes.
+   */
+  private updateUrgentGapConstraints(pickupDate: Date | null) {
+    const earliest = this.getEarliestBookableInstant();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // If now+gap crosses midnight (e.g. 21:00 + 4h = 01:00 next day),
+    // today is no longer bookable → minPickupDate becomes tomorrow.
+    const earliestDay = new Date(earliest);
+    earliestDay.setHours(0, 0, 0, 0);
+    if (earliestDay.getTime() > today.getTime()) {
+      this.minPickupDate = earliestDay;
+    } else {
+      this.minPickupDate = today;
+    }
+
+    if (!pickupDate) {
+      this.minPickupTime = null;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // If user picked a date earlier than the new floor → push it to the floor.
+    const picked = new Date(pickupDate);
+    picked.setHours(0, 0, 0, 0);
+    if (picked.getTime() < this.minPickupDate.getTime()) {
+      // Avoid recursion: patch with emitEvent so valueChanges can re-run cleanly.
+      this.bookingForm.get('pickupDate')?.setValue(new Date(this.minPickupDate));
+      return; // valueChanges will re-fire and re-enter this method
+    }
+
+    // Apply minTime ONLY when the picked date is today (the only day where
+    // a 4-hour-from-now floor matters). For future dates, any time is allowed.
+    if (this.isSameDay(picked, today) && this.isSameDay(today, earliest)) {
+      this.minPickupTime = earliest;
+      // Auto-bump current pickupTime if it falls below the floor
+      const currentTime: Date | null = this.bookingForm.get('pickupTime')?.value;
+      if (currentTime instanceof Date) {
+        const candidate = new Date();
+        candidate.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+        if (candidate.getTime() < earliest.getTime()) {
+          this.bookingForm.get('pickupTime')?.setValue(new Date(earliest));
+        }
+      }
+    } else {
+      // Future date — clear the time floor.
+      this.minPickupTime = null;
     }
     this.cdr.markForCheck();
   }
@@ -937,6 +1029,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Urgent-booking 4-hour gap rule (applies to ALL 4 trip types).
+    // Combine the picked date + picked time and ensure it sits at or after
+    // "now + URGENT_GAP_HOURS". Auto-correct via updateUrgentGapConstraints
+    // should normally prevent this, but a determined user could still bypass
+    // it by typing — block here as a safety net.
+    if (val.pickupDate instanceof Date && val.pickupTime instanceof Date) {
+      const combined = new Date(val.pickupDate);
+      combined.setHours(val.pickupTime.getHours(), val.pickupTime.getMinutes(), 0, 0);
+      const earliest = this.getEarliestBookableInstant();
+      if (combined.getTime() < earliest.getTime()) {
+        // Bump the form forward and show a clear message instead of failing silently.
+        this.updateUrgentGapConstraints(val.pickupDate);
+        this.showError = true;
+        this.errorMessage = `Urgent bookings need at least ${this.URGENT_GAP_HOURS} hours of gap. Pickup time has been adjusted — please review and try again.`;
+        return;
+      }
+    }
+
     // For airport: derive city from the selected airport entry (source city with isAirport=true)
     const selectedAirport = this.selectedAirportCity;
     const fromCityName = isAirport
@@ -1013,7 +1123,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.bookingState.setItinerary(itinerary);
 
-    // ── Airport → One Way upfront conversion (confirmed by Shubhendu) ──
+    // ── Airport → One Way upfront conversion (confirmed by backend team) ──
     // Compare address city (source_city_info.city_id from place_id API) with airport city.
     // If different → user is in a different city from the airport → convert to one-way directly.
     if (isAirport && this.selectedPlaceDetails?.aliasSourceCityId) {
@@ -1058,7 +1168,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }),
       duration: isRoundTrip ? calculateDuration(pickupDate, returnDate) : 1,
       ...(isAirport && this.airportLocalityId && { localityId: this.airportLocalityId }),
-      // Airport-specific params (confirmed by Shubhendu — aid from source-cities API)
+      // Airport-specific params (confirmed by backend team — aid from source-cities API)
       // HAR: selectPlaceId = actual place_id from autocomplete, customerLatLong = "lat,lng" from place_id API
       ...(isAirport && {
         airport_id: selectedAirport?.aid ? Number(selectedAirport.aid) : (this.airportLocalityId || undefined),
@@ -1081,7 +1191,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     // For airport fallback: check if address and airport are in the same city
-    // Same city = never convert to one-way (confirmed by Shubhendu)
+    // Same city = never convert to one-way (confirmed by backend team)
     const isSameCityAirport = isAirport &&
       this.selectedPlaceDetails?.aliasSourceCityId === fromCityId;
 

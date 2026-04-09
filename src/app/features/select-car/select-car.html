@@ -435,6 +435,7 @@
                         Up At</label>
                     <div class="modify-modal-datepicker relative flex items-center border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 bg-white dark:bg-slate-800">
                         <p-datepicker #modifyPickupTime formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12" [stepMinute]="15"
+                            [minDate]="minPickupTime"
                             appendTo="body" styleClass="w-full border-none bg-transparent"
                             inputStyleClass="w-full bg-transparent border-none text-[14px] focus:ring-0 p-0 text-slate-800 dark:text-gray-100 font-medium !shadow-none outline-none">
                         </p-datepicker>

@@ -53,6 +53,7 @@ export interface BookingCard {
     billUrl?: string;
     // Cancellation
     cancelFlag?: boolean;
+    bookingKey?: string;
 }
 
 /** Calendar day model for the week strip */
@@ -102,17 +103,15 @@ export class BookingsComponent implements OnInit {
     settleProcessing = false;
     settlePaymentMethod: 'wallet' | 'razorpay' = 'wallet';
 
-    // Cancel modal
+    // Cancel modal — reasons match the live b2bcab.in portal (April 2026 HAR).
     cancelModalBooking: BookingCard | null = null;
     cancelReason = '';
+    cancelComments = '';
     cancelProcessing = false;
+    cancelError = '';
     cancelReasons = [
-        'Customer request',
-        'Change in travel plans',
-        'Found a better option',
-        'Weather / road conditions',
-        'Driver not assigned',
-        'Other'
+        'Customer changed plans',
+        'Wrong booking created',
     ];
 
     /** Map of bookingId → settled amount, persisted in localStorage */
@@ -546,13 +545,13 @@ export class BookingsComponent implements OnInit {
             paidVia = registryData.paymentMethod || 'wallet'; // 'wallet' or 'razorpay'
             if (paymentOption === 1) paymentMethod = 'Pay any amount now';
             else if (paymentOption === 2) paymentMethod = 'Pay 25% now, rest auto-deducted';
-            else if (paymentOption === 3) paymentMethod = 'Zero cash — full wallet';
+            else if (paymentOption === 3) paymentMethod = 'Zero cash';
         } else {
             // Fallback: try API fields
             const paymentOpt = b.payment_option || b.paymentOption || b.prePaymentType || '';
             if (paymentOpt === '1' || paymentOpt === 1) { paymentMethod = 'Pay any amount now'; paymentOption = 1; }
             else if (paymentOpt === '2' || paymentOpt === 2) { paymentMethod = 'Pay 25% now, rest auto-deducted'; paymentOption = 2; }
-            else if (paymentOpt === '3' || paymentOpt === 3) { paymentMethod = 'Zero cash — full wallet'; paymentOption = 3; }
+            else if (paymentOpt === '3' || paymentOpt === 3) { paymentMethod = 'Zero cash'; paymentOption = 3; }
             else { paymentMethod = 'Wallet Pay'; paymentOption = 0; }
         }
 
@@ -596,7 +595,9 @@ export class BookingsComponent implements OnInit {
             paymentMethod,
             paymentOption,
             paidVia: paidVia || (b.paidVia) || 'wallet',
-            kmsIncluded: b.kms_included || b.kmsIncluded || '',
+            // Real B2B API uses `package_kms` (confirmed from live booking-details response, April 2026).
+            // `min_km_quota_per_day` is the same value for outstation/local; kept as fallback.
+            kmsIncluded: b.package_kms || b.min_km_quota_per_day || b.kms_included || b.kmsIncluded || '',
             duration: parseInt(b.duration) || 0,
             extraKmRate: parseFloat(b.extra_km_rate || b.extraKmRate) || 0,
             bookedAt: b.created_at ? new Date(b.created_at) : b.createdAt ? new Date(b.createdAt) : b._storedAt ? new Date(b._storedAt) : null,
@@ -604,6 +605,7 @@ export class BookingsComponent implements OnInit {
             billFlag: Number(b.bill_flag) || 0,
             billUrl: b.bill_url || '',
             cancelFlag: b.cancel_flag === '1' || b.cancel_flag === 1 || b.cancel_flag_web === '1' || b.cancel_flag_web === 1,
+            bookingKey: String(b.booking_key || b.bookingKey || registryData?.booking_key || registryData?.bookingKey || ''),
         };
     }
 
@@ -626,7 +628,7 @@ export class BookingsComponent implements OnInit {
     getPaymentMethodShort(booking: BookingCard): string {
         if (booking.paymentOption === 1) return 'Pay any amount now';
         if (booking.paymentOption === 2) return 'Pay 25% now';
-        if (booking.paymentOption === 3) return 'Zero cash — full wallet';
+        if (booking.paymentOption === 3) return 'Zero cash';
         if (booking.prePayment && booking.fare && booking.prePayment >= booking.fare) return 'Fully Paid';
         if (booking.prePayment && booking.cashToCollect && booking.cashToCollect > 0) return 'Pay 25% now';
         return booking.paymentMethod || 'Wallet Pay';
@@ -636,7 +638,7 @@ export class BookingsComponent implements OnInit {
     getPaymentMethodLabel(booking: BookingCard): string {
         if (booking.paymentOption === 1) return 'Pay any amount now — Customer pays driver';
         if (booking.paymentOption === 2) return 'Pay 25% now, rest auto-deducted';
-        if (booking.paymentOption === 3) return 'Zero cash — full wallet';
+        if (booking.paymentOption === 3) return 'Zero cash';
         if (booking.prePayment && booking.fare && booking.prePayment >= booking.fare) return 'Fully Paid';
         return booking.paymentMethod || 'Wallet Pay';
     }
@@ -656,6 +658,40 @@ export class BookingsComponent implements OnInit {
         if (hrs < 24) return `in ${hrs} hrs`;
         const days = Math.floor(hrs / 24);
         return `in ${days}d ${hrs % 24}h`;
+    }
+
+    /** Human-readable trip type label (Outstation / Local / Airport). */
+    getTripTypeLabel(tripType: string | undefined): string {
+        const t = (tripType || '').toLowerCase().trim();
+        if (!t) return '';
+        if (t.includes('outstation')) return 'Outstation';
+        if (t.includes('local')) return 'Local';
+        if (t.includes('airport')) return 'Airport';
+        // Fallback: Title-case whatever we got
+        return t.charAt(0).toUpperCase() + t.slice(1);
+    }
+
+    /** Formatted package KM string, e.g. "145 km" — empty when not present.
+     *  Falls back to extracting km from usageName like "Outstation (145 km)" /
+     *  "Local (8hr/80 km)" when the dedicated field is missing.
+     */
+    getPackageKmLabel(booking: BookingCard): string {
+        const raw = booking.kmsIncluded;
+        const str = (raw === undefined || raw === null) ? '' : String(raw).trim();
+        if (str && str !== '0') {
+            // Already-formatted string ("145 km", "8hr/80 km") → return as-is
+            if (/km|hr/i.test(str)) return str;
+            // Pure numeric → append " km"
+            return `${str} km`;
+        }
+        // Fallback: pull "<digits> km" out of usageName / itinerary
+        const sources = [booking.usageName, booking.itinerary];
+        for (const src of sources) {
+            if (!src) continue;
+            const m = String(src).match(/(\d+)\s*km/i);
+            if (m) return `${m[1]} km`;
+        }
+        return '';
     }
 
     // ─── Calendar ──────────────────────────────────────────────
@@ -912,34 +948,75 @@ export class BookingsComponent implements OnInit {
     openCancelModal(booking: BookingCard) {
         this.cancelModalBooking = booking;
         this.cancelReason = '';
+        this.cancelComments = '';
+        this.cancelError = '';
         this.cancelProcessing = false;
         this.cdr.markForCheck();
     }
 
     closeCancelModal() {
+        if (this.cancelProcessing) return;
         this.cancelModalBooking = null;
         this.cancelReason = '';
+        this.cancelComments = '';
+        this.cancelError = '';
         this.cancelProcessing = false;
         this.cdr.markForCheck();
+    }
+
+    /** Free-cancellation deadline text for the cancel modal — same format as the live portal. */
+    getFreeCancellationText(booking: BookingCard | null): string {
+        if (!booking || !booking.pickupDate) return '';
+        // Live portal shows the pickup datetime as the free-cancellation cutoff.
+        const d = booking.pickupDate;
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${booking.pickupTime || ''}`.trim();
     }
 
     confirmCancel() {
         if (!this.cancelModalBooking || !this.cancelReason) return;
         this.cancelProcessing = true;
+        this.cancelError = '';
         this.cdr.markForCheck();
 
-        this.bookingApi.cancelBooking(this.cancelModalBooking.bookingId, this.cancelReason).subscribe({
-            next: () => {
-                const id = this.cancelModalBooking!.bookingId;
+        const booking = this.cancelModalBooking;
+        this.bookingApi.cancelBooking(
+            booking.bookingId,
+            booking.reservationId || '',
+            this.cancelReason,
+            this.cancelComments || '',
+            booking.bookingKey || ''
+        ).subscribe({
+            next: (response: any) => {
+                const code = Number(response?.status_code);
+                const desc = String(response?.status_description || '').toUpperCase();
+                const ok = code === 101 || desc === 'SUCCESS' || response?.status === 'cancelled';
+                if (!ok) {
+                    this.cancelProcessing = false;
+                    this.cancelError = response?.message || response?.status_description || 'Failed to cancel booking.';
+                    this.cdr.markForCheck();
+                    return;
+                }
+                // Move the card from upcoming → cancelled instead of just removing it.
+                const id = booking.bookingId;
+                const cancelled = this.upcomingBookings.find(b => b.bookingId === id);
                 this.upcomingBookings = this.upcomingBookings.filter(b => b.bookingId !== id);
+                if (cancelled) {
+                    cancelled.status = 'cancelled';
+                    this.cancelledBookings = [cancelled, ...this.cancelledBookings];
+                }
                 this.bookingRegistry.removeBookingId(id);
                 this.updateCalendarWithBookings();
-                this.closeCancelModal();
+                this.cancelProcessing = false;
+                this.cancelModalBooking = null;
+                this.cancelReason = '';
+                this.cancelComments = '';
+                this.cdr.markForCheck();
             },
             error: (err) => {
                 this.cancelProcessing = false;
+                this.cancelError = err?.message || 'Failed to cancel booking. Please contact support.';
                 this.cdr.markForCheck();
-                alert(err?.message || 'Failed to cancel booking. Please contact support.');
             }
         });
     }

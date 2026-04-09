@@ -46,7 +46,7 @@ export class AvailabilityService {
       params['rate_source'] = 'web';
     }
 
-    // rate_type=premium only for outstation (confirmed by Shubhendu + live site)
+    // rate_type=premium only for outstation (confirmed by backend team + live site)
     if (isOutstation) {
       params['rate_type'] = 'premium';
     }
@@ -68,7 +68,7 @@ export class AvailabilityService {
     params['destinationCity'] = isAirport ? '' : (request.destinationCity ?? '');
 
 
-    // Airport-specific params (confirmed by Shubhendu — required for airport pricing)
+    // Airport-specific params (confirmed by backend team — required for airport pricing)
     if (isAirport) {
       params['terminalId'] = request.terminalId || '';
       params['selectPlaceId'] = request.selectPlaceId || '';

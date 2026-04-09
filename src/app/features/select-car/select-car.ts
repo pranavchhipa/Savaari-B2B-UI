@@ -13,7 +13,7 @@ import { TripTypeService } from '../../core/services/trip-type.service';
 import { AvailableCar, AvailabilityRequest, City } from '../../core/models';
 import { CAR_DISPLAY_INFO } from '../../core/mocks/mock-cars';
 import { CityService } from '../../core/services/city.service';
-import { toSavaariDateTime } from '../../core/utils/date-format.util';
+import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
 import { AddressAutocompleteService } from '../../core/services/address-autocomplete.service';
 
 import { FooterComponent } from '../../components/layout/footer/footer';
@@ -90,6 +90,10 @@ export class SelectCarComponent implements OnInit {
   isModifyModalOpen = false;
   minPickupDate: Date = new Date();
   minReturnDate: Date = new Date();
+  /** Time floor for urgent bookings — only applies when pickupDate === today. */
+  minPickupTime: Date | null = null;
+  /** Earliest bookable gap from "now" — agents must book at least N hours ahead. */
+  private readonly URGENT_GAP_HOURS = 4;
   isLoading = true;
 
   // Local trip package selection: '8hr' | '12hr'
@@ -285,9 +289,22 @@ export class SelectCarComponent implements OnInit {
     const returnDate = this.itinerary?.returnDate ? new Date(this.itinerary.returnDate) : new Date();
     const pickupTime = this.parseTimeToDate(this.itinerary?.pickupTime || '09:30 PM');
 
+    // PrimeNG AutoComplete needs an OBJECT (not a string) so the chosen value
+    // displays its `name` field correctly and (onSelect) wiring works on edit.
+    const fromCityObj = this.itinerary?.fromCityId
+      ? { id: this.itinerary.fromCityId, name: this.itinerary.fromCity || '' } as City
+      : null;
+    const toCityObj = this.itinerary?.toCityId
+      ? { id: this.itinerary.toCityId, name: this.itinerary.toCity || '' } as City
+      : null;
+    // Cache them so submitModifyModal sees the original cities even when the
+    // user only edits the date / time and never touches the autocomplete.
+    this.selectedFromCity = fromCityObj;
+    this.selectedToCity = toCityObj;
+
     this.modifyForm = this.fb.group({
-      fromCity: [this.itinerary?.fromCity || ''],
-      toCity: [this.itinerary?.toCity || ''],
+      fromCity: [fromCityObj],
+      toCity: [toCityObj],
       pickupDate: [pickupDate],
       returnDate: [returnDate],
       pickupTime: [pickupTime],
@@ -297,28 +314,97 @@ export class SelectCarComponent implements OnInit {
       airportLocality: [null]
     });
 
-    // Set min return date to day after pickup
+    // Set min return date to day after pickup + apply urgent-booking gap rule
     this.updateMinReturnDate(pickupDate);
+    this.updateUrgentGapConstraints(pickupDate);
 
-    // When pickup date changes, adjust min return date
+    // When pickup date changes, adjust min return date + recompute time floor.
+    // Same-day return is allowed, so only push the return forward when it is
+    // strictly BEFORE the new pickup day.
     this.modifyForm.get('pickupDate')?.valueChanges.subscribe((newPickup: Date) => {
       if (newPickup) {
         this.updateMinReturnDate(newPickup);
+        this.updateUrgentGapConstraints(newPickup);
         const currentReturn = this.modifyForm.get('returnDate')?.value;
-        if (currentReturn && currentReturn <= newPickup) {
-          const dayAfter = new Date(newPickup);
-          dayAfter.setDate(dayAfter.getDate() + 1);
-          this.modifyForm.patchValue({ returnDate: dayAfter }, { emitEvent: false });
+        if (currentReturn) {
+          const returnNorm = new Date(currentReturn);
+          returnNorm.setHours(0, 0, 0, 0);
+          const pickupNorm = new Date(newPickup);
+          pickupNorm.setHours(0, 0, 0, 0);
+          if (returnNorm.getTime() < pickupNorm.getTime()) {
+            this.modifyForm.patchValue({ returnDate: new Date(pickupNorm) }, { emitEvent: false });
+          }
         }
         this.cdr.markForCheck();
       }
     });
   }
 
+  /** Same-day return is allowed — minReturnDate equals the pickup day itself. */
   private updateMinReturnDate(pickupDate: Date): void {
-    const dayAfter = new Date(pickupDate);
-    dayAfter.setDate(dayAfter.getDate() + 1);
-    this.minReturnDate = dayAfter;
+    const sameDay = new Date(pickupDate);
+    sameDay.setHours(0, 0, 0, 0);
+    this.minReturnDate = sameDay;
+  }
+
+  /** Earliest bookable instant: now + URGENT_GAP_HOURS, rounded UP to next 15-min slot. */
+  private getEarliestBookableInstant(): Date {
+    const t = new Date();
+    t.setHours(t.getHours() + this.URGENT_GAP_HOURS);
+    t.setSeconds(0, 0);
+    const rem = t.getMinutes() % 15;
+    if (rem !== 0) t.setMinutes(t.getMinutes() + (15 - rem));
+    return t;
+  }
+
+  private isSameDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
+  }
+
+  /**
+   * Mirrors dashboard's urgent-booking gap rule. Computes minPickupDate /
+   * minPickupTime against the now+4h floor and auto-bumps the pickup time
+   * when it falls below it. Only constrains the time spinner when pickupDate
+   * is today; future dates allow any time.
+   */
+  private updateUrgentGapConstraints(pickupDate: Date | null): void {
+    const earliest = this.getEarliestBookableInstant();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const earliestDay = new Date(earliest);
+    earliestDay.setHours(0, 0, 0, 0);
+    this.minPickupDate = earliestDay.getTime() > today.getTime() ? earliestDay : today;
+
+    if (!pickupDate) {
+      this.minPickupTime = null;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const picked = new Date(pickupDate);
+    picked.setHours(0, 0, 0, 0);
+    if (picked.getTime() < this.minPickupDate.getTime()) {
+      this.modifyForm.get('pickupDate')?.setValue(new Date(this.minPickupDate));
+      return; // valueChanges will re-fire and re-enter this method
+    }
+
+    if (this.isSameDay(picked, today) && this.isSameDay(today, earliest)) {
+      this.minPickupTime = earliest;
+      const currentTime: Date | null = this.modifyForm.get('pickupTime')?.value;
+      if (currentTime instanceof Date) {
+        const candidate = new Date();
+        candidate.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+        if (candidate.getTime() < earliest.getTime()) {
+          this.modifyForm.get('pickupTime')?.setValue(new Date(earliest));
+        }
+      }
+    } else {
+      this.minPickupTime = null;
+    }
+    this.cdr.markForCheck();
   }
 
   /** Parse "09:30 PM" style string to a Date object for PrimeNG time picker */
@@ -375,9 +461,9 @@ export class SelectCarComponent implements OnInit {
 
       const updatedItinerary: Itinerary = {
         ...this.itinerary!,
-        fromCity: fromCity?.name || formVal.fromCity || this.itinerary!.fromCity,
+        fromCity: fromCity?.name || (typeof formVal.fromCity === 'string' ? formVal.fromCity : this.itinerary!.fromCity),
         fromCityId: fromCity?.id || this.itinerary!.fromCityId,
-        toCity: toCity?.name || formVal.toCity || this.itinerary!.toCity,
+        toCity: toCity?.name || (typeof formVal.toCity === 'string' ? formVal.toCity : this.itinerary!.toCity),
         toCityId: toCity?.id || this.itinerary!.toCityId,
         pickupDate: pickupDate,
         pickupTime: pickupTime,
@@ -395,22 +481,49 @@ export class SelectCarComponent implements OnInit {
       this.isLoading = true;
       this.cdr.markForCheck();
 
-      // Re-fetch availability with updated params
+      // Re-fetch availability with updated params — mirror dashboard's onSearch
+      // so all trip-type quirks (Local empty subTripType, Round Trip multi-city,
+      // Airport extras) stay in sync between the two entry points.
       const apiParams = this.tripTypeService.mapUiTabToApiParams(updatedItinerary.tripType || 'One Way', {
         airportSubType: updatedItinerary.airportSubType,
         localPackage: updatedItinerary.localPackage
       });
 
       const pickupDateObj = pickupDate instanceof Date ? pickupDate : new Date(pickupDate);
+      const returnDateObj = returnDate instanceof Date ? returnDate : (returnDate ? new Date(returnDate) : null);
+
+      // Round Trip multi-city: send all destinations as comma-separated list
+      // (matches dashboard widget — without this, extras like "Coorg" silently drop)
+      const extras = (updatedItinerary.extraDestinations || []).filter((c: any) => c?.cityId);
+      const destinationCityValue: string | number | undefined = (() => {
+        if (this.isAirport) return undefined; // airport availability ignores destinationCity
+        if (this.isRoundTrip && extras.length && updatedItinerary.toCityId) {
+          return [updatedItinerary.toCityId, ...extras.map((c: any) => c.cityId)].join(',');
+        }
+        return updatedItinerary.toCityId;
+      })();
+
       const availabilityRequest: AvailabilityRequest = {
         sourceCity: updatedItinerary.fromCityId!,
         tripType: apiParams.tripType,
-        subTripType: apiParams.subTripType,
+        // Local sends empty subTripType so backend returns ALL packages (R1/R2/R3)
+        // for the on-page package selector — same as dashboard.
+        subTripType: this.isLocal ? '' : apiParams.subTripType,
         pickupDateTime: toSavaariDateTime(pickupDateObj, pickupTime),
-        duration: 1,
-        ...(updatedItinerary.toCityId && { destinationCity: updatedItinerary.toCityId }),
-        ...(this.isRoundTrip && updatedItinerary.returnDate && {
-          duration: Math.ceil((new Date(updatedItinerary.returnDate).getTime() - pickupDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1
+        duration: this.isRoundTrip && returnDateObj
+          ? calculateDuration(pickupDateObj, returnDateObj)
+          : 1,
+        ...(destinationCityValue !== undefined && destinationCityValue !== '' && { destinationCity: destinationCityValue }),
+        // Airport: forward the resolved place / airport metadata that the
+        // original dashboard search captured. Without these the API returns 404.
+        ...(this.isAirport && {
+          airport_id: (updatedItinerary as any).airport_id || (updatedItinerary as any).airportId || '',
+          airport_name: (updatedItinerary as any).airport_name || (updatedItinerary as any).airportName || updatedItinerary.dropAirport || '',
+          terminalId: '',
+          selectPlaceId: (updatedItinerary as any).selectPlaceId || '',
+          custShortAddress: (updatedItinerary as any).custShortAddress || updatedItinerary.pickupAddress || '',
+          customerLatLong: (updatedItinerary as any).customerLatLong || '',
+          ...((updatedItinerary as any).airportLocalityId && { localityId: (updatedItinerary as any).airportLocalityId }),
         })
       };
 

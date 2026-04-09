@@ -17,7 +17,7 @@ export interface AvailabilityRequest {
   duration?: number;           // Days — always required (1 for oneWay)
   customerLatLong?: string;    // lat,lng — sent for airport; empty string for local/outstation
   localityId?: number;         // Required for airport transfers
-  // Airport-specific params (confirmed by Shubhendu)
+  // Airport-specific params (confirmed by backend team)
   terminalId?: string;
   selectPlaceId?: string;      // Google Place ID
   custShortAddress?: string;   // Short address label

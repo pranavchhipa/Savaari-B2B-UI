@@ -27,8 +27,18 @@ export const environment = {
   /** Address API: autocomplete + place_id (proxied to apiext.betasavaari.com) */
   addressApiBaseUrl: '/address-api',
 
-  /** Razorpay test key for wallet top-up */
-  razorpayKeyId: 'rzp_test_dsrBANLbHxlwZb',
+  /** System Bookings API: cancellation.php (proxied to api.betasavaari.com/system_bookings) */
+  systemBookingsApiBaseUrl: '/system-bookings-api',
+
+  /**
+   * Registration API: GST verification + OTP send/verify (proxied to api.alphasavaari.com).
+   * These endpoints are alpha-only per backend team confirmation (April 2026).
+   * Used by the new multi-step registration wizard.
+   */
+  registrationApiBaseUrl: '/reg-api',
+
+  /** Razorpay test key — updated per backend team (April 2026) */
+  razorpayKeyId: 'rzp_test_SWAcB744ApXvsB',
 
   /**
    * Partner API credentials — removed from source code for security.
@@ -55,8 +65,8 @@ export const environment = {
   supportPhoneTel: 'tel:09045450000',
   supportEmail: 'info@savaari.com',
 
-  /** New multi-step registration wizard (Vercel demo only) */
-  newRegistrationFlow: false,
+  /** New multi-step registration wizard */
+  newRegistrationFlow: true,
 
   /** Dashboard background images */
   dashboardImages: {

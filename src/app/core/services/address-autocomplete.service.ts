@@ -10,7 +10,7 @@ import { environment } from '../../../environments/environment';
  *   1. GET /autocomplete/info.php — search addresses by query
  *   2. GET /place_id/info.php — get place details by place_id
  *
- * Confirmed by Shubhendu (March 2026):
+ * Confirmed by backend team (March 2026):
  *   - rsource = b2b
  *   - token = 32-char random session token; expires after 20 min or when place_id is called
  *     (if place_id response includes `token`, that value is used until the next expiry/place_id)

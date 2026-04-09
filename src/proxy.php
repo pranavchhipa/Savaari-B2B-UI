@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $target = null;
 
-// Route to correct backend (Beta servers — per Shubhendu's instruction 2026-03-30)
+// Route to correct backend (Beta servers — per backend team instruction 2026-03-30)
 if (preg_match('#^/partner-api/(.*)$#', $uri, $m)) {
     $target = 'https://api.betasavaari.com/partner_api/public/' . $m[1];
 } elseif (preg_match('#^/b2b-api/(.*)$#', $uri, $m)) {
@@ -29,6 +29,8 @@ if (preg_match('#^/partner-api/(.*)$#', $uri, $m)) {
     $target = 'https://apiext.betasavaari.com/' . $m[1];
 } elseif (preg_match('#^/payment-api/(.*)$#', $uri, $m)) {
     $target = 'https://b2bcab.betasavaari.com/' . $m[1];
+} elseif (preg_match('#^/system-bookings-api/(.*)$#', $uri, $m)) {
+    $target = 'https://api.betasavaari.com/system_bookings/' . $m[1];
 } else {
     http_response_code(404);
     echo json_encode(['error' => 'Unknown API route']);

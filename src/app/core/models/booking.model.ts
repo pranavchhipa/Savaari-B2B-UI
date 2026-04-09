@@ -58,7 +58,7 @@ export interface CreateBookingRequest {
    * Verified from live b2bcab.betasavaari.com HAR (April 2026) — the live site
    * does NOT include this field. Sending it causes the partner API backend to
    * mark `book_flag = 1` prematurely, which then makes confirmation.php skip
-   * its update logic (it has `if (book_flag == 0)` guard). Reported by Jibin.
+   * its update logic (it has `if (book_flag == 0)` guard). Reported by backend team.
    * Payment amount is communicated to backend via confirmation.php afterwards.
    */
   prePayment?: number;

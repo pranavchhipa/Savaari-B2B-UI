@@ -24,8 +24,19 @@ export const environment = {
   /** Address API: autocomplete + place_id (proxied via .htaccess) */
   addressApiBaseUrl: '/address-api',
 
-  /** Razorpay test key */
-  razorpayKeyId: 'rzp_test_dsrBANLbHxlwZb',
+  /** System Bookings API: cancellation.php (proxied via .htaccess) */
+  systemBookingsApiBaseUrl: '/system-bookings-api',
+
+  /**
+   * Registration API: GST verification + OTP send/verify.
+   * Alpha-hosted endpoints. On the alpha server itself these calls are local
+   * (same origin) — .htaccess / proxy.php will rewrite `/reg-api/*` to
+   * `https://api.alphasavaari.com/*`. Used by the new registration wizard.
+   */
+  registrationApiBaseUrl: '/reg-api',
+
+  /** Razorpay test key — updated per backend team (April 2026) */
+  razorpayKeyId: 'rzp_test_SWAcB744ApXvsB',
 
   /** Partner API credentials — obtained dynamically via JWT after login */
   apiKey: '',

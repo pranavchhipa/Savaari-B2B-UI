@@ -52,6 +52,23 @@ export class WalletDashboardComponent implements OnInit {
     return Math.ceil(this.filteredTransactions.length / this.pageSize);
   }
 
+  // Quick stats — computed from the full (unfiltered) transaction set
+  get totalCredits(): number {
+    return this.allTransactions
+      .filter(tx => tx.type === 'TOPUP' || tx.type === 'REFUND')
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+  }
+
+  get totalDebits(): number {
+    return this.allTransactions
+      .filter(tx => tx.type === 'BOOKING_PAYMENT')
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+  }
+
+  get totalTransactions(): number {
+    return this.allTransactions.length;
+  }
+
   get paginatedTransactions(): WalletTransaction[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredTransactions.slice(start, start + this.pageSize);
@@ -83,17 +100,31 @@ export class WalletDashboardComponent implements OnInit {
       this.walletService.loadHistory();
     });
 
-    // Subscribe to transactions to keep local filtered list in sync
+    // Max-wait cap — hide skeleton after 1500ms no matter what
+    const loadCap = setTimeout(() => {
+      if (this.isLoadingWallet) {
+        this.isLoadingWallet = false;
+        this.cdr.markForCheck();
+      }
+    }, 1500);
+
+    // Subscribe to transactions to keep local filtered list in sync.
+    // Hide skeleton as soon as real data arrives (non-empty OR second emission)
+    // so the stable min-height skeleton swaps straight into real rows without flicker.
+    let emissionCount = 0;
     this.transactions$.subscribe(txs => {
+      emissionCount++;
       this.allTransactions = txs;
       this.applyFilter(this.activeFilter);
-    });
 
-    // Hide skeleton after brief loading window
-    setTimeout(() => {
-      this.isLoadingWallet = false;
-      this.cdr.markForCheck();
-    }, 1200);
+      // First emission is usually the BehaviorSubject seed ([]). Wait for the
+      // second emission (real API result) OR any non-empty set before hiding.
+      if (this.isLoadingWallet && (txs.length > 0 || emissionCount >= 2)) {
+        clearTimeout(loadCap);
+        this.isLoadingWallet = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   openTopUpModal(): void {
@@ -146,7 +177,10 @@ export class WalletDashboardComponent implements OnInit {
         console.log('[WALLET-UI] Razorpay order initiated:', orderDetails.orderId);
 
         const rzp = new (window as any).Razorpay({
-          key: orderDetails.razorpayKeyId || environment.razorpayKeyId,
+          // Always prefer environment key — wallet API returns an older test
+          // key that is now inactive on Razorpay, while environment holds the
+          // current active key shared by backend team (April 2026).
+          key: environment.razorpayKeyId || orderDetails.razorpayKeyId,
           amount: orderDetails.amount,
           currency: orderDetails.currency,
           order_id: orderDetails.orderId,

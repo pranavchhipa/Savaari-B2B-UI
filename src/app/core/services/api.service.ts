@@ -128,6 +128,23 @@ export class ApiService {
   }
 
   /**
+   * POST to a same-origin relative URL with form-encoded body, NO base URL prefix.
+   * Used for: payment_confirmation/confirmation.php
+   *
+   * Per backend team (April 2026): the confirmation page must be called WITHOUT the
+   * `/payment-api` prefix, otherwise wallet payment callback functionality breaks.
+   * On alpha (b2bcab.alphasavaari.com) this hits the PHP file at the same origin
+   * directly. In dev, proxy.conf.json has `/payment_confirmation` rule that
+   * forwards to b2bcab.betasavaari.com.
+   */
+  paymentPostDirect<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }
+    });
+  }
+
+  /**
    * POST to the Wallet API (apiext.betasavaari.com/wallet/public/).
    * Token goes in Authorization: Bearer header per wallet TRD.
    * Used for: wallet/balance, wallet/create, wallet/history, wallet/topup/*, wallet/pay-booking, wallet/refund
@@ -146,6 +163,52 @@ export class ApiService {
   addressGet<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
     const httpParams = new HttpParams({ fromObject: this.cleanParams(params) });
     return this.http.get<T>(`${environment.addressApiBaseUrl}/${endpoint}`, { params: httpParams });
+  }
+
+  /**
+   * GET from the Registration API (query params).
+   * Used for: general/gst_verification.php (alpha-hosted endpoints)
+   */
+  regGet<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const httpParams = new HttpParams({ fromObject: this.cleanParams(params) });
+    return this.http.get<T>(`${environment.registrationApiBaseUrl}/${endpoint}`, { params: httpParams });
+  }
+
+  /**
+   * POST to the Registration API with form-encoded body.
+   * Used for: user/send-otp, user/verify-otp (alpha-hosted endpoints)
+   */
+  regPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`${environment.registrationApiBaseUrl}/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+  }
+
+  /**
+   * POST to the Registration API with JSON body.
+   */
+  regPostJson<T>(endpoint: string, body: unknown): Observable<T> {
+    return this.http.post<T>(`${environment.registrationApiBaseUrl}/${endpoint}`, body, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  /**
+   * POST to the System Bookings API (api.betasavaari.com/system_bookings/).
+   * Used for: cancellation.php (booking cancellation).
+   *
+   * Confirmed from live b2bcab.in HAR (April 2026):
+   *   POST /system_bookings/cancellation.php
+   *   Body: application/x-www-form-urlencoded
+   *   Fields: booking_id, reservation_id, reason, comments, booking_key, booking_type=1
+   *   Response: { status_code: 101, status_description: "SUCCESS", reservation_id, booking_data: {...} }
+   */
+  systemBookingsPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`${environment.systemBookingsApiBaseUrl}/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
   }
 
   /**
