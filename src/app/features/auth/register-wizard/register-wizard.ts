@@ -145,8 +145,15 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   }
 
   get progressLabel(): string {
-    const idx = this.STEP_ORDER.indexOf(this.currentStep);
-    return `Step ${idx + 1} of ${this.STEP_ORDER.length}`;
+    // Friendly, motivating stage text — never "Step X of Y" / "0%"
+    const done = this.completedSteps.size;
+    if (done === 0) return "Let's get you started";
+    if (done === 1) return "Off to a great start";
+    if (done === 2) return "Picking up speed";
+    if (done === 3) return "Halfway there";
+    if (done === 4) return "Almost done";
+    if (done === 5) return "Just one more step";
+    return "All set!";
   }
 
   private advanceTo(next: StepKey, completed: StepKey) {

@@ -2,8 +2,8 @@
 
 <div class="flex flex-col lg:flex-row min-h-[calc(100vh-64px)]">
 
-  <!-- ========== LEFT PANEL — branding (desktop only) ========== -->
-  <div class="hidden lg:flex lg:w-[45%] relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+  <!-- ========== LEFT PANEL — branding (desktop only, sticky so it stays in view while right side scrolls) ========== -->
+  <div class="hidden lg:flex lg:w-[45%] relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden lg:sticky lg:top-0 lg:h-screen lg:self-start">
     <!-- Glow orbs -->
     <div class="absolute top-10 right-16 w-56 h-56 bg-primary/8 rounded-full blur-[80px]"></div>
     <div class="absolute bottom-16 left-8 w-40 h-40 bg-cyan-500/8 rounded-full blur-[60px]"></div>
@@ -119,18 +119,22 @@
     <!-- Header -->
     <div class="text-center mb-6">
       <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Create your B2B account</h1>
-      <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm">A quick guided setup — one step at a time.</p>
+      <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm">Takes about 2 minutes — and you're booking cabs the same day.</p>
     </div>
 
-    <!-- Progress bar -->
+    <!-- Friendly stage indicator — no percentages, no "step X of Y" -->
     <div class="mb-6">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ progressLabel }}</span>
-        <span class="text-[11px] font-semibold text-primary">{{ progressPercent | number:'1.0-0' }}%</span>
+      <div class="flex items-center justify-center mb-2.5">
+        <span class="text-[12px] font-semibold text-primary tracking-wide">{{ progressLabel }}</span>
       </div>
-      <div class="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-        <div class="h-full bg-gradient-to-r from-primary to-cyan-500 rounded-full transition-all duration-500 ease-out"
-          [style.width.%]="progressPercent"></div>
+      <!-- 6 segmented dots that fill in as you progress -->
+      <div class="flex items-center justify-center gap-1.5">
+        @for (s of STEP_ORDER; track s; let i = $index) {
+          <span class="h-1.5 rounded-full transition-all duration-500 ease-out"
+            [class]="completedSteps.has(s)
+              ? 'w-8 bg-gradient-to-r from-primary to-cyan-500'
+              : (currentStep === s ? 'w-8 bg-primary/40' : 'w-4 bg-slate-200 dark:bg-slate-700')"></span>
+        }
       </div>
     </div>
 
