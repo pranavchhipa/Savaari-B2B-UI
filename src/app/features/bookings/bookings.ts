@@ -480,28 +480,6 @@ export class BookingsComponent implements OnInit {
             }
         }
 
-        // Background API fetch
-        this.bookingRegistry.fetchAllBookingDetails(this.bookingApi).subscribe({
-            next: (registryBookings) => {
-                const nowIds = new Set([
-                    ...this.upcomingBookings.map(b => b.bookingId),
-                    ...this.completedBookings.map(b => b.bookingId),
-                ]);
-                for (const b of registryBookings) {
-                    const card = this.toBookingCard(b);
-                    if (!card.bookingId || nowIds.has(card.bookingId)) continue;
-                    if (card.status === 'cancelled') continue;
-                    if (card.status === 'completed') {
-                        this.completedBookings.unshift(card);
-                    } else {
-                        this.upcomingBookings.unshift(card);
-                    }
-                }
-                this.updateCalendarWithBookings();
-                this.cdr.markForCheck();
-            },
-            error: () => {}
-        });
     }
 
     private toBookingCard(b: any): BookingCard {

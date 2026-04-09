@@ -526,21 +526,50 @@ export class WalletService {
       amount = singleAmt;
     }
 
-    // Determine transaction type from API field
-    const rawType = (t.transaction_type ?? t.transactionType ?? t.type ?? '').toUpperCase();
-    let type: WalletTransaction['type'] = 'TOPUP';
-    if (rawType === 'DEBIT' || rawType === 'BOOKING_PAYMENT') {
-      type = 'BOOKING_PAYMENT';
-      if (amount > 0) amount = -amount; // Ensure debit is negative
-    } else if (rawType === 'BOOKING_REFUND' || rawType === 'REFUND') {
+    // Build description first — used as a classification signal below
+    const rawDesc = (t.remarks ?? t.description ?? t.narration ?? '').toString();
+    const descLower = rawDesc.toLowerCase();
+    const rawType = (t.transaction_type ?? t.transactionType ?? t.type ?? '').toString().toUpperCase();
+
+    // Determine transaction type using a layered approach:
+    //
+    //   1. REFUND wins if description/type clearly says "refund" (a refund is a credit,
+    //      but labelled differently from a normal top-up).
+    //   2. Otherwise, if the amount is negative OR debit_amount was populated OR the
+    //      description contains debit keywords — it's a BOOKING_PAYMENT. This catches
+    //      cases where the API returns an ambiguous/incorrect transaction_type for
+    //      auto-deductions (observed on alpha April 2026: a buffer auto-deduction came
+    //      through with a CREDIT-style type even though it was clearly a debit).
+    //   3. Everything else is a TOPUP (credit).
+    let type: WalletTransaction['type'];
+
+    const looksLikeRefund = rawType.includes('REFUND') || descLower.includes('refund');
+    const looksLikeDebit =
+      amount < 0 ||
+      debitAmt > 0 ||
+      rawType === 'DEBIT' ||
+      rawType === 'BOOKING_PAYMENT' ||
+      descLower.includes('deduction') ||
+      descLower.includes('auto-deduct') ||
+      descLower.includes('auto deduct') ||
+      descLower.includes('debit') ||
+      descLower.includes('payment for booking') ||
+      descLower.includes('wallet payment');
+
+    if (looksLikeRefund) {
       type = 'REFUND';
-    } else if (rawType === 'TOPUP' || rawType === 'CREDIT') {
+      if (amount < 0) amount = Math.abs(amount); // refunds are always positive
+    } else if (looksLikeDebit) {
+      type = 'BOOKING_PAYMENT';
+      if (amount > 0) amount = -amount; // force negative so UI shows red/minus
+    } else {
       type = 'TOPUP';
+      if (amount < 0) amount = Math.abs(amount); // force positive so UI shows green
     }
 
     // Build description from remarks or type
-    const description = t.remarks ?? t.description ?? t.narration
-      ?? (type === 'TOPUP' ? 'Wallet Top-up' : type === 'REFUND' ? 'Booking Refund' : 'Booking Payment');
+    const description = rawDesc
+      || (type === 'TOPUP' ? 'Wallet Top-up' : type === 'REFUND' ? 'Booking Refund' : 'Booking Payment');
 
     return {
       id: String(t.id ?? t.transaction_id ?? t.transactionId ?? ''),
