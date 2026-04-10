@@ -58,8 +58,8 @@ export const environment = {
   supportPhoneTel: 'tel:09045450000',
   supportEmail: 'info@savaari.com',
 
-  /** New multi-step registration wizard (Vercel demo only) */
-  newRegistrationFlow: false,
+  /** New multi-step registration wizard */
+  newRegistrationFlow: true,
 
   /** Dashboard background images */
   dashboardImages: {
