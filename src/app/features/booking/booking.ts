@@ -1129,7 +1129,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
             const showBookingConfirmed = () => {
               this.auth.autoLogin().subscribe();
               this.paymentService.sendConfirmationEmail(bkId).subscribe();
-              this.paymentService.sendConfirmationEmail(bkId).subscribe();
+
+              // Update registry with correct payment option + amount
+              this.updateRegistryPayment(bkId, advanceAmount, 'razorpay');
 
               this.isProcessingRazorpay = false;
               this.bookingConfirmed = true;
@@ -1350,6 +1352,24 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /**
+   * Update the booking registry with the correct payment option and amount
+   * AFTER the user has completed payment. This fixes the mismatch where
+   * registerBookingData() is called before payment option selection (paymentOption=0).
+   */
+  private updateRegistryPayment(bkId: string, paidAmount: number, method: 'wallet' | 'razorpay') {
+    const existing = this.bookingRegistry.getStoredBookingData(bkId);
+    if (existing) {
+      this.bookingRegistry.storeBookingData(bkId, {
+        ...existing,
+        paymentOption: this.paymentOption,
+        paymentMethod: method,
+        prePayment: paidAmount,
+        cashToCollect: Math.max(0, (this.selectedCar?.price || 0) - paidAmount),
+      });
+    }
+  }
+
+  /**
    * Process wallet payment for already-created booking.
    * Booking was already created on "Proceed to Next" — just deduct wallet + confirm.
    *
@@ -1399,9 +1419,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
             // page (handled by bookings.ts confirmSettle()). Auto-calling it
             // here was prematurely marking the booking as fully Pre Paid.
 
-            // Step 3: Send confirmation emails (fire-and-forget)
+            // Step 3: Send confirmation email (fire-and-forget)
             this.paymentService.sendConfirmationEmail(bkId).subscribe();
-            this.paymentService.sendConfirmationEmail(bkId).subscribe();
+
+            // Step 4: Update registry with correct payment option + amount
+            this.updateRegistryPayment(bkId, payNow, 'wallet');
 
             this.isProcessingWallet = false;
             this.bookingConfirmed = true;
@@ -1423,7 +1445,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     } else {
       // Zero payment — just confirm
       this.paymentService.sendConfirmationEmail(bkId).subscribe();
-      this.paymentService.sendConfirmationEmail(bkId).subscribe();
+      this.updateRegistryPayment(bkId, 0, 'wallet');
       this.isProcessingWallet = false;
       this.bookingConfirmed = true;
       this.clearPassengerState();

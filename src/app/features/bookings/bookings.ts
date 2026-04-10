@@ -7,6 +7,7 @@ import { FooterComponent } from '../../components/layout/footer/footer';
 import { BookingApiService } from '../../core/services/booking-api.service';
 import { BookingRegistryService } from '../../core/services/booking-registry.service';
 import { WalletService } from '../../core/services/wallet.service';
+import { PaymentService } from '../../core/services/payment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingDetails } from '../../core/models';
 import { environment } from '../../../environments/environment';
@@ -83,6 +84,7 @@ export class BookingsComponent implements OnInit {
     private bookingApi = inject(BookingApiService);
     private bookingRegistry = inject(BookingRegistryService);
     private walletService = inject(WalletService);
+    private paymentService = inject(PaymentService);
     private authService = inject(AuthService);
 
     // Categorized booking lists
@@ -699,7 +701,10 @@ export class BookingsComponent implements OnInit {
             const q = this.searchQuery.toLowerCase();
             list = list.filter(b =>
                 b.bookingId.toLowerCase().includes(q) ||
-                b.sourceCity.toLowerCase().includes(q)
+                b.sourceCity.toLowerCase().includes(q) ||
+                b.destinationCity.toLowerCase().includes(q) ||
+                b.customerName.toLowerCase().includes(q) ||
+                b.reservationId.toLowerCase().includes(q)
             );
         }
         // Date filter
@@ -822,7 +827,41 @@ export class BookingsComponent implements OnInit {
         this.settleProcessing = true;
         this.cdr.markForCheck();
 
-        const onSuccess = () => {
+        /** After payment succeeds, call backend APIs to persist settlement, then update UI. */
+        const onSuccess = (transactionId: string, paymentMethod: 'Wallet' | 'Razorpay', paymentId?: string) => {
+            // Step 1: confirmation.php — record the payment in sv_advance_payment
+            this.paymentService.confirmPayment({
+                source: paymentMethod === 'Wallet' ? 'B2B_WALLET' : 'B2B_RAZORPAY',
+                booking_id: booking.bookingId,
+                payment_option: booking.paymentOption || 2,
+                transaction_id: transactionId,
+                totalAmount: booking.fare || 0,
+                bufferAmount: 0,
+                advancedAmount: amount,
+            } as any).subscribe({
+                next: () => {
+                    // Step 2: settlement-payment — sets pay_bal_amt=0, payment_status='Pre Paid'
+                    this.paymentService.settlementPayment({
+                        bookingId: booking.bookingId,
+                        paymentAmount: amount,
+                        paymentMethod,
+                        transactionId,
+                        paymentId,
+                    }).subscribe({
+                        next: (settled) => {
+                            if (!environment.production) console.log('[BOOKINGS] Settlement API result:', settled);
+                        },
+                        error: (err) => {
+                            if (!environment.production) console.warn('[BOOKINGS] settlement-payment API error:', err);
+                        },
+                    });
+                },
+                error: (err) => {
+                    if (!environment.production) console.warn('[BOOKINGS] confirmation.php error:', err);
+                },
+            });
+
+            // Update UI immediately (don't block on API calls)
             booking.prePayment = (booking.prePayment || 0) + amount;
             booking.cashToCollect = 0;
             this.saveSettledPayment(booking.bookingId, booking.prePayment);
@@ -845,7 +884,16 @@ export class BookingsComponent implements OnInit {
         if (booking.paymentOption === 1) {
             booking.prePayment = booking.fare;
             this.saveSettledPayment(booking.bookingId, booking.fare);
-            setTimeout(() => onSuccess(), 1500);
+            setTimeout(() => {
+                // No wallet/razorpay involved — just update UI
+                this.settleProcessing = false;
+                this.settleBookingId = null;
+                this.settledBookingId = booking.bookingId;
+                this.settlePaymentMethod = 'wallet';
+                this.updateCalendarWithBookings();
+                this.cdr.markForCheck();
+                setTimeout(() => { this.settledBookingId = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
+            }, 1500);
             return;
         }
 
@@ -854,7 +902,7 @@ export class BookingsComponent implements OnInit {
             if (environment.useMockData) {
                 // Mock mode: simulate Razorpay payment instantly
                 this.walletService.verifyBookingPayment('mock_order', 'mock_payment', 'mock_sig', amount, booking.bookingId).subscribe({
-                    next: () => setTimeout(() => onSuccess(), 1200),
+                    next: () => setTimeout(() => onSuccess('mock_payment', 'Razorpay', 'mock_payment'), 1200),
                     error: () => onError()
                 });
                 return;
@@ -874,14 +922,15 @@ export class BookingsComponent implements OnInit {
                         description: `Settle Booking #${booking.bookingId} — ₹${amount}`,
                         order_id: order.orderId,
                         handler: (response: any) => {
+                            const rzpPaymentId = response.razorpay_payment_id || '';
                             this.walletService.verifyBookingPayment(
                                 response.razorpay_order_id,
-                                response.razorpay_payment_id,
+                                rzpPaymentId,
                                 response.razorpay_signature,
                                 amount,
                                 booking.bookingId
                             ).subscribe({
-                                next: () => setTimeout(() => onSuccess(), 800),
+                                next: () => setTimeout(() => onSuccess(rzpPaymentId, 'Razorpay', rzpPaymentId), 800),
                                 error: () => onError()
                             });
                         },
@@ -902,11 +951,12 @@ export class BookingsComponent implements OnInit {
             return;
         }
 
-        // Wallet settlement — pay from wallet
+        // Wallet settlement — pay from wallet, then call backend APIs
         this.walletService.payForBooking(booking.bookingId, amount, (booking.paymentOption || 2) as 1 | 2 | 3).subscribe({
-            next: (success) => {
-                if (success) {
-                    setTimeout(() => onSuccess(), 1200);
+            next: (result) => {
+                if (result.success) {
+                    const txnId = result.transactionId || '';
+                    setTimeout(() => onSuccess(txnId, 'Wallet'), 1200);
                 } else {
                     onError();
                 }
