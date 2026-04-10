@@ -62,6 +62,9 @@ export interface RegisterPayload {
   password: string;
   mobileVerificationToken?: string;
   emailVerificationToken?: string;
+  agentCity?: string;            // From place_id API or GST address parsing
+  agentState?: string;
+  agentCityId?: number;          // Savaari source city ID from place_id API
 }
 
 export interface RegisterResult {
@@ -172,19 +175,21 @@ export class RegistrationService {
 
     return forkJoin([sms$, email$]).pipe(
       map(([smsRes, emailRes]) => {
-        if (!smsRes.ok || !emailRes.ok) {
-          const msgs: string[] = [];
-          if (!smsRes.ok) msgs.push(smsRes.error);
-          if (!emailRes.ok) msgs.push(emailRes.error);
+        // Mobile OTP is mandatory; email OTP is optional (backend may not support it)
+        if (!smsRes.ok) {
           return {
             success: false,
-            mobileOtpSent: smsRes.ok,
+            mobileOtpSent: false,
             emailOtpSent: emailRes.ok,
             expiresInSeconds: 0,
-            errorMessage: msgs.join(' | '),
+            errorMessage: smsRes.error || 'Failed to send mobile OTP.',
           } as SendOtpResult;
         }
-        return this.mockSendOtpSuccess();
+        // Mobile sent — proceed even if email failed
+        const result = this.mockSendOtpSuccess();
+        result.mobileOtpSent = true;
+        result.emailOtpSent = emailRes.ok;
+        return result;
       })
     );
   }
@@ -303,13 +308,10 @@ export class RegistrationService {
     fd.append('agentGST', payload.gstNumber ?? '');
     fd.append('password', payload.password);
 
-    // Placeholder city/state — wizard does not ask for city. Backend stores the
-    // company address as the authoritative location; city fields are legacy and
-    // required by the existing endpoint. We send empty strings + 0 id rather
-    // than omitting them to stay backwards-compatible with the current schema.
-    fd.append('agentCity', '');
-    fd.append('agentState', '');
-    fd.append('agentcityId', '0');
+    // City/state extracted from place_id API (autocomplete path) or GST address
+    fd.append('agentCity', payload.agentCity || '');
+    fd.append('agentState', payload.agentState || '');
+    fd.append('agentcityId', String(payload.agentCityId || 0));
     fd.append('agentLogo', '');
     fd.append('asAgent', '0');
     fd.append('agentLocalCommission', '5');

@@ -288,10 +288,7 @@
                                 }
                             </button>
                             @if (bookingError && !step1Complete) {
-                                <div class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-2 w-full">
-                                    <lucide-icon name="alert-circle" [size]="16" class="text-red-500 flex-shrink-0 mt-0.5"></lucide-icon>
-                                    <span class="text-xs text-red-600 dark:text-red-400 leading-relaxed">{{ bookingError }}</span>
-                                </div>
+                                <p class="mt-3 text-xs text-red-500">{{ bookingError }}</p>
                             }
                         </div>
                     </form>
@@ -584,10 +581,7 @@
                 </div>
 
                 <!-- Error message (if any) -->
-                <div *ngIf="bookingError" class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-2">
-                    <lucide-icon name="alert-circle" [size]="16" class="text-red-500 flex-shrink-0 mt-0.5"></lucide-icon>
-                    <span class="text-xs text-red-600 dark:text-red-400 leading-relaxed">{{ bookingError }}</span>
-                </div>
+                <p *ngIf="bookingError" class="mt-3 text-xs text-red-500">{{ bookingError }}</p>
 
             </div> <!-- Ends Step 2 -->
         </div> <!-- Ends Left Column -->
@@ -913,11 +907,7 @@
                 </div>
 
                 <!-- Success message -->
-                <div *ngIf="topUpSuccess"
-                    class="p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2">
-                    <lucide-icon name="check-circle" [size]="16" class="text-emerald-500"></lucide-icon>
-                    <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Funds added! You can now pay via wallet.</span>
-                </div>
+                <p *ngIf="topUpSuccess" class="text-xs text-emerald-600 dark:text-emerald-400">Funds added! You can now pay via wallet.</p>
             </div>
         </div>
     </div>

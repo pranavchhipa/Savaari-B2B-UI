@@ -4,7 +4,6 @@ import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validat
 import { Router, RouterLink } from '@angular/router';
 import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { LucideAngularModule } from 'lucide-angular';
-import { LandingNavbarComponent } from '../../landing/components/navbar/landing-navbar';
 import { environment } from '../../../../environments/environment';
 import {
   RegistrationService,
@@ -43,7 +42,7 @@ type StepKey = 'name' | 'contact' | 'gst' | 'pan' | 'company' | 'password';
 @Component({
   selector: 'app-register-wizard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, AutoCompleteModule, LucideAngularModule, LandingNavbarComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, AutoCompleteModule, LucideAngularModule],
   templateUrl: './register-wizard.html',
   styleUrl: './register-wizard.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -143,6 +142,11 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   companyAddressFallbackMode = false;                               // true when API returns only city-level fallback (no exact street)
   companyAddressError = '';                                         // Inline validation error for skip-GST path
   companyAddressSearching = false;                                  // Shows loader in dropdown while API is in flight
+
+  /** Resolved city/state for registration — populated from place_id API or GST address parsing */
+  resolvedCity = '';
+  resolvedState = '';
+  resolvedCityId = 0;
 
   // ── Step 6: Password ──
   passwordForm = this.fb.group({
@@ -358,13 +362,20 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
       this.mobileOtpError = '';
       this.emailOtpError = '';
       this.mobileOtpVerified = false;
-      this.emailOtpVerified = false;
       this.mobileVerificationToken = '';
-      this.emailVerificationToken = '';
 
-      // Start cooldown timers for both channels
+      // If email OTP was not sent (backend doesn't support it), auto-verify email
+      if (!result.emailOtpSent) {
+        this.emailOtpVerified = true;
+        this.emailVerificationToken = 'skipped';
+      } else {
+        this.emailOtpVerified = false;
+        this.emailVerificationToken = '';
+        this.startCooldown('email');
+      }
+
+      // Start cooldown for mobile
       this.startCooldown('mobile');
-      this.startCooldown('email');
 
       this.cdr.markForCheck();
       // Focus first mobile OTP box
@@ -592,6 +603,24 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
       this.panAutoFilled = !!pan;
       this.companyAutoFilled = !!(legalName && address);
 
+      // Extract city/state from GST address (format: "..., City, State, Pincode")
+      if (address) {
+        const parts = address.split(',').map((p: string) => p.trim()).filter((p: string) => p);
+        if (parts.length >= 3) {
+          const lastPart = parts[parts.length - 1];
+          // If last part is pincode (6 digits), state is second-to-last, city is third-to-last
+          if (/^\d{6}$/.test(lastPart)) {
+            this.resolvedState = parts[parts.length - 2] || '';
+            this.resolvedCity = parts[parts.length - 3] || '';
+          } else {
+            // No pincode: last is state/country, second-to-last is city
+            this.resolvedState = parts[parts.length - 2] || '';
+            this.resolvedCity = parts[parts.length - 3] || '';
+          }
+        }
+      }
+      this.resolvedCityId = 0;
+
       // Clear any stale autocomplete state from a previous skip-GST attempt
       this.companyAddressInput = '';
       this.filteredCompanyAddresses = [];
@@ -695,6 +724,10 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
             place_id: details.place_id,
             sublocality: details.sublocality || '',
           };
+          // Store city/state for registration payload
+          this.resolvedCity = details.city || '';
+          this.resolvedState = details.state || '';
+          this.resolvedCityId = details.aliasSourceCityId || 0;
         }
         this.cdr.markForCheck();
       },
@@ -769,6 +802,9 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
       password: this.passwordForm.value.password || '',
       mobileVerificationToken: this.mobileVerificationToken,
       emailVerificationToken: this.emailVerificationToken,
+      agentCity: this.resolvedCity,
+      agentState: this.resolvedState,
+      agentCityId: this.resolvedCityId,
     };
 
     this.registrationService.registerAccount(payload).subscribe(result => {

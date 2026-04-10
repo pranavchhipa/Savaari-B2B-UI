@@ -247,15 +247,8 @@
         </div>
 
         <!-- Success -->
-        <div *ngIf="submitSuccess"
-          class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 text-sm font-medium">
-          <lucide-icon name="check-circle-2" [size]="20" class="text-emerald-500 flex-shrink-0"></lucide-icon>
-          Account created successfully! Redirecting to login...
-        </div>
-
-        <!-- Error -->
-        <p *ngIf="submitError"
-          class="text-xs text-red-500 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{{ submitError }}</p>
+        <p *ngIf="submitSuccess" class="text-sm text-emerald-600">Account created successfully! Redirecting to login...</p>
+        <p *ngIf="submitError" class="text-xs text-red-500">{{ submitError }}</p>
         <p *ngIf="registerForm.invalid && registerForm.touched && !submitError"
           class="text-xs text-red-500">Please fill in all required fields.</p>
 

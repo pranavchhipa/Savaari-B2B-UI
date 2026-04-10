@@ -37,6 +37,8 @@ export interface PlaceDetails {
   aliasSourceCityId: number;  // source_city_map_info.city_id — for booking create
   aliasDestCityId: number;    // destination_city_map_info.city_id — for booking create
   sublocality: string;        // sublocality_level_1 from address_components — used as dropLocality
+  city: string;              // locality from address_components — used for registration
+  state: string;             // administrative_area_level_1 from address_components
 }
 
 @Injectable({ providedIn: 'root' })
@@ -157,6 +159,8 @@ export class AddressAutocompleteService {
         aliasSourceCityId: 377,
         aliasDestCityId: 0,
         sublocality: 'Koramangala',
+        city: 'Bangalore',
+        state: 'Karnataka',
       });
     }
 
@@ -226,12 +230,19 @@ export class AddressAutocompleteService {
 
     // Extract sublocality from address_components (used as dropLocality in booking create)
     let sublocality = '';
+    let city = '';
+    let state = '';
     const components = response.address_components || [];
     for (const comp of components) {
       const types: string[] = comp.types || [];
-      if (types.includes('sublocality_level_1') || types.includes('sublocality')) {
+      if (!sublocality && (types.includes('sublocality_level_1') || types.includes('sublocality'))) {
         sublocality = comp.longText || comp.long_name || '';
-        break;
+      }
+      if (!city && (types.includes('locality') || types.includes('administrative_area_level_2'))) {
+        city = comp.longText || comp.long_name || '';
+      }
+      if (!state && types.includes('administrative_area_level_1')) {
+        state = comp.longText || comp.long_name || '';
       }
     }
 
@@ -244,6 +255,8 @@ export class AddressAutocompleteService {
       aliasSourceCityId: Number(response.source_city_map_info?.city_id) || 0,
       aliasDestCityId: Number(response.destination_city_map_info?.city_id) || 0,
       sublocality: sublocality || response.addressLocality || '',
+      city,
+      state,
     };
   }
 }

@@ -75,11 +75,7 @@
             </div>
 
             <!-- Success banner -->
-            <div *ngIf="profileSuccess"
-              class="mb-6 flex items-center gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-lg text-sm">
-              <lucide-icon name="check-circle" [size]="18"></lucide-icon>
-              Profile updated successfully!
-            </div>
+            <p *ngIf="profileSuccess" class="mb-4 text-sm text-emerald-600 dark:text-emerald-400">Profile updated successfully!</p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
 
@@ -160,11 +156,8 @@
                   class="mt-1 text-xs text-red-500">Invalid GSTIN format</p>
 
                 <!-- PAN-GSTIN mismatch error -->
-                <div *ngIf="gstPanMismatch && gstDecodedInfo?.isValidFormat"
-                  class="mt-2 p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
-                  <lucide-icon name="alert-triangle" [size]="14" class="text-red-500 shrink-0"></lucide-icon>
-                  <span class="text-xs text-red-600 dark:text-red-400 font-medium">PAN mismatch — the PAN embedded in this GSTIN (<span class="font-mono">{{ gstDecodedInfo!.pan }}</span>) does not match your profile PAN (<span class="font-mono">{{ profile.panNumber }}</span>).</span>
-                </div>
+                <p *ngIf="gstPanMismatch && gstDecodedInfo?.isValidFormat"
+                  class="mt-2 text-xs text-red-500">PAN mismatch — the PAN in this GSTIN (<span class="font-mono">{{ gstDecodedInfo!.pan }}</span>) does not match your profile PAN (<span class="font-mono">{{ profile.panNumber }}</span>).</p>
               </div>
 
               <!-- City -->
@@ -283,18 +276,8 @@
             </div>
 
             <!-- Success Banner -->
-            <div *ngIf="passwordSuccess"
-              class="mb-6 flex items-center gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-lg text-sm">
-              <lucide-icon name="check-circle" [size]="18"></lucide-icon>
-              Password changed successfully!
-            </div>
-
-            <!-- Error Banner -->
-            <div *ngIf="passwordError"
-              class="mb-6 flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
-              <lucide-icon name="alert-circle" [size]="18"></lucide-icon>
-              {{ passwordError }}
-            </div>
+            <p *ngIf="passwordSuccess" class="mb-4 text-sm text-emerald-600 dark:text-emerald-400">Password changed successfully!</p>
+            <p *ngIf="passwordError" class="mb-4 text-sm text-red-500">{{ passwordError }}</p>
 
             <div class="space-y-5 max-w-md">
 

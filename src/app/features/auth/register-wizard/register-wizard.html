@@ -1,6 +1,4 @@
-<app-landing-navbar></app-landing-navbar>
-
-<div class="flex flex-col lg:flex-row min-h-[calc(100vh-64px)]">
+<div class="flex flex-col lg:flex-row min-h-screen">
 
   <!-- ========== LEFT PANEL — branding (desktop only, sticky so it stays in view while right side scrolls) ========== -->
   <div class="hidden lg:flex lg:w-[45%] relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden lg:sticky lg:top-0 lg:h-screen lg:self-start">
@@ -203,7 +201,8 @@
           : 'bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-6 sm:p-7 shadow-sm mb-4 wizard-card-anim'">
 
         @if (contactCollapsed) {
-          <button type="button" (click)="editContact()" class="w-full flex items-center justify-between gap-3 cursor-pointer">
+          <!-- Contact is locked after OTP verification — no edit allowed -->
+          <div class="w-full flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
               <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
                 <lucide-icon name="check" [size]="14"></lucide-icon>
@@ -213,8 +212,10 @@
                 <div class="text-sm font-semibold text-slate-800 dark:text-white">{{ contactForm.value.mobile }} · {{ contactForm.value.email }}</div>
               </div>
             </div>
-            <span class="text-[11px] font-semibold text-primary hover:underline uppercase tracking-wider">Edit</span>
-          </button>
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <lucide-icon name="lock" [size]="10"></lucide-icon> Verified
+            </span>
+          </div>
         } @else {
           <div class="flex items-start gap-3">
             <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
@@ -310,7 +311,8 @@
                 </div>
               </div>
 
-              <!-- Email OTP row -->
+              <!-- Email OTP row (hidden when email OTP was not sent by backend) -->
+              @if (emailVerificationToken !== 'skipped') {
               <div>
                 <div class="flex items-center justify-between mb-2">
                   <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-2">
@@ -356,6 +358,7 @@
                   }
                 </div>
               </div>
+              }
 
               <div class="flex items-center justify-start text-xs pt-1">
                 <button type="button" (click)="contactPhase = 'entry'"
@@ -439,18 +442,37 @@
           : 'bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-6 sm:p-7 shadow-sm mb-4 wizard-card-anim'">
 
         @if (panCollapsed) {
-          <button type="button" (click)="editStep('pan')" class="w-full flex items-center justify-between gap-3 cursor-pointer">
-            <div class="flex items-center gap-3">
-              <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
-                <lucide-icon name="check" [size]="14"></lucide-icon>
+          @if (panAutoFilled) {
+            <!-- PAN auto-filled from GST — locked -->
+            <div class="w-full flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
+                  <lucide-icon name="check" [size]="14"></lucide-icon>
+                </div>
+                <div class="text-left">
+                  <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">PAN</div>
+                  <div class="text-sm font-semibold text-slate-800 dark:text-white font-mono">{{ panForm.value.panNumber }}</div>
+                </div>
               </div>
-              <div class="text-left">
-                <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">PAN</div>
-                <div class="text-sm font-semibold text-slate-800 dark:text-white font-mono">{{ panForm.value.panNumber }}</div>
-              </div>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <lucide-icon name="lock" [size]="10"></lucide-icon> From GST
+              </span>
             </div>
-            <span class="text-[11px] font-semibold text-primary hover:underline uppercase tracking-wider">Edit</span>
-          </button>
+          } @else {
+            <!-- PAN manually entered — editable -->
+            <button type="button" (click)="editStep('pan')" class="w-full flex items-center justify-between gap-3 cursor-pointer">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
+                  <lucide-icon name="check" [size]="14"></lucide-icon>
+                </div>
+                <div class="text-left">
+                  <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">PAN</div>
+                  <div class="text-sm font-semibold text-slate-800 dark:text-white font-mono">{{ panForm.value.panNumber }}</div>
+                </div>
+              </div>
+              <span class="text-[11px] font-semibold text-primary hover:underline uppercase tracking-wider">Edit</span>
+            </button>
+          }
         } @else {
           <div class="flex items-start gap-3">
             <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">

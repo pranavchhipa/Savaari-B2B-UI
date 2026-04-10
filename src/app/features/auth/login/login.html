@@ -1,5 +1,4 @@
-<app-landing-navbar></app-landing-navbar>
-<div class="flex-1 flex flex-col lg:flex-row lg:min-h-[calc(100vh-140px)]">
+<div class="flex-1 flex flex-col lg:flex-row lg:min-h-screen">
 
   <!-- Left Panel — branding + stats (hidden on mobile, shows on lg+) -->
   <div class="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden flex-col justify-center px-12 xl:px-16">
@@ -137,24 +136,12 @@
             </div>
           </div>
 
-          <!-- Success banner — shown right after wizard registration -->
           @if (successMessage()) {
-            <div class="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 p-3 border border-emerald-200 dark:border-emerald-800">
-              <div class="flex items-center">
-                <lucide-icon name="check-circle-2" [size]="18" class="text-emerald-500 mr-2 flex-shrink-0"></lucide-icon>
-                <p class="text-sm text-emerald-700 dark:text-emerald-400">{{ successMessage() }}</p>
-              </div>
-            </div>
+            <p class="text-sm text-emerald-600 dark:text-emerald-400">{{ successMessage() }}</p>
           }
 
-          <!-- Error Message -->
           @if (errorMessage()) {
-            <div class="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-200 dark:border-red-800">
-              <div class="flex items-center">
-                <lucide-icon name="alert-circle" [size]="18" class="text-red-500 mr-2 flex-shrink-0"></lucide-icon>
-                <p class="text-sm text-red-700 dark:text-red-400">{{ errorMessage() }}</p>
-              </div>
-            </div>
+            <p class="text-sm text-red-500">{{ errorMessage() }}</p>
           }
 
           <!-- Buttons -->
@@ -177,4 +164,3 @@
     </div>
   </div>
 </div>
-<app-footer></app-footer>
