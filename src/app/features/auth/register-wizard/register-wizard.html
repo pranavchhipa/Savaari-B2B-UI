@@ -256,10 +256,12 @@
             }
 
             @if (contactPhase === 'otp') {
-              <div class="bg-cyan-50/60 dark:bg-cyan-500/5 border border-cyan-200/60 dark:border-cyan-500/20 rounded-xl p-3 text-xs text-cyan-800 dark:text-cyan-300 flex items-start gap-2">
-                <lucide-icon name="info" [size]="14" class="mt-0.5 shrink-0"></lucide-icon>
-                <span><strong>Demo mode:</strong> Mobile OTP is <strong>{{ MOCK_MOBILE_OTP }}</strong>, email OTP is <strong>{{ MOCK_EMAIL_OTP }}</strong>.</span>
-              </div>
+              @if (showMockOtpHint) {
+                <div class="bg-cyan-50/60 dark:bg-cyan-500/5 border border-cyan-200/60 dark:border-cyan-500/20 rounded-xl p-3 text-xs text-cyan-800 dark:text-cyan-300 flex items-start gap-2">
+                  <lucide-icon name="info" [size]="14" class="mt-0.5 shrink-0"></lucide-icon>
+                  <span><strong>Demo mode:</strong> Mobile OTP is <strong>{{ MOCK_MOBILE_OTP }}</strong>, email OTP is <strong>{{ MOCK_EMAIL_OTP }}</strong>.</span>
+                </div>
+              }
 
               <!-- Mobile OTP row -->
               <div>
@@ -272,6 +274,10 @@
                     <span class="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
                       <lucide-icon name="check-circle" [size]="12"></lucide-icon> Verified
                     </span>
+                  } @else if (mobileVerifying) {
+                    <span class="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                      <lucide-icon name="loader-2" [size]="12" class="animate-spin"></lucide-icon> Verifying...
+                    </span>
                   }
                 </div>
                 <div class="flex gap-2">
@@ -279,12 +285,29 @@
                     <input type="text" inputmode="numeric" maxlength="1"
                       [attr.data-otp]="'mobile-' + $index"
                       [value]="digit"
+                      [disabled]="mobileOtpVerified || mobileVerifying"
                       (input)="onOtpInput($event, 'mobile', $index)"
                       (keydown)="onOtpKeydown($event, 'mobile', $index)"
-                      [class]="'flex-1 max-w-[56px] aspect-square text-center text-lg font-bold rounded-xl border outline-none transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary ' + (mobileOtpVerified ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : (mobileOtpError ? 'border-red-400 bg-red-50 dark:bg-red-500/10 otp-error-anim' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white'))" />
+                      [class]="'flex-1 max-w-[44px] aspect-square text-center text-base font-bold rounded-xl border outline-none transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary ' + (mobileOtpVerified ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : (mobileOtpError ? 'border-red-400 bg-red-50 dark:bg-red-500/10 otp-error-anim' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white'))" />
                   }
                 </div>
-                @if (mobileOtpError) { <p class="text-[11px] text-red-500 mt-1.5">{{ mobileOtpError }}</p> }
+                <div class="flex items-center justify-between mt-1.5">
+                  <p class="text-[11px] text-red-500 min-h-[14px]">{{ mobileOtpError || '' }}</p>
+                  @if (!mobileOtpVerified) {
+                    <button type="button"
+                      [disabled]="mobileResendCooldown > 0 || mobileResending"
+                      (click)="resendChannel('mobile')"
+                      class="text-[11px] font-semibold text-primary hover:underline disabled:text-slate-400 disabled:hover:no-underline disabled:cursor-not-allowed transition-colors">
+                      @if (mobileResending) {
+                        Sending...
+                      } @else if (mobileResendCooldown > 0) {
+                        Resend in {{ mobileResendCooldown }}s
+                      } @else {
+                        Resend mobile OTP
+                      }
+                    </button>
+                  }
+                </div>
               </div>
 
               <!-- Email OTP row -->
@@ -298,6 +321,10 @@
                     <span class="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
                       <lucide-icon name="check-circle" [size]="12"></lucide-icon> Verified
                     </span>
+                  } @else if (emailVerifying) {
+                    <span class="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                      <lucide-icon name="loader-2" [size]="12" class="animate-spin"></lucide-icon> Verifying...
+                    </span>
                   }
                 </div>
                 <div class="flex gap-2">
@@ -305,21 +332,36 @@
                     <input type="text" inputmode="numeric" maxlength="1"
                       [attr.data-otp]="'email-' + $index"
                       [value]="digit"
+                      [disabled]="emailOtpVerified || emailVerifying"
                       (input)="onOtpInput($event, 'email', $index)"
                       (keydown)="onOtpKeydown($event, 'email', $index)"
-                      [class]="'flex-1 max-w-[56px] aspect-square text-center text-lg font-bold rounded-xl border outline-none transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary ' + (emailOtpVerified ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : (emailOtpError ? 'border-red-400 bg-red-50 dark:bg-red-500/10 otp-error-anim' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white'))" />
+                      [class]="'flex-1 max-w-[44px] aspect-square text-center text-base font-bold rounded-xl border outline-none transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary ' + (emailOtpVerified ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : (emailOtpError ? 'border-red-400 bg-red-50 dark:bg-red-500/10 otp-error-anim' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white'))" />
                   }
                 </div>
-                @if (emailOtpError) { <p class="text-[11px] text-red-500 mt-1.5">{{ emailOtpError }}</p> }
+                <div class="flex items-center justify-between mt-1.5">
+                  <p class="text-[11px] text-red-500 min-h-[14px]">{{ emailOtpError || '' }}</p>
+                  @if (!emailOtpVerified) {
+                    <button type="button"
+                      [disabled]="emailResendCooldown > 0 || emailResending"
+                      (click)="resendChannel('email')"
+                      class="text-[11px] font-semibold text-primary hover:underline disabled:text-slate-400 disabled:hover:no-underline disabled:cursor-not-allowed transition-colors">
+                      @if (emailResending) {
+                        Sending...
+                      } @else if (emailResendCooldown > 0) {
+                        Resend in {{ emailResendCooldown }}s
+                      } @else {
+                        Resend email OTP
+                      }
+                    </button>
+                  }
+                </div>
               </div>
 
-              <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center justify-start text-xs pt-1">
                 <button type="button" (click)="contactPhase = 'entry'"
                   class="text-slate-500 hover:text-primary transition-colors">
                   <lucide-icon name="arrow-left" [size]="12" class="inline"></lucide-icon> Change number/email
                 </button>
-                <button type="button" (click)="resendOtps()"
-                  class="text-primary hover:underline font-semibold">Resend codes</button>
               </div>
             }
           </form>
@@ -508,26 +550,102 @@
               </p>
             </div>
 
+            @if (companyAutoFilled && panForm.value.panNumber) {
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">PAN number</label>
+                <div class="relative">
+                  <input type="text" readonly
+                    [value]="panForm.value.panNumber"
+                    class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 !bg-slate-50 dark:!bg-slate-800/30 text-slate-800 dark:text-white text-sm py-3 px-4 pr-10 font-mono tracking-wider cursor-not-allowed outline-none" />
+                  <lucide-icon name="lock" [size]="14" class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500"></lucide-icon>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                  <lucide-icon name="shield-check" [size]="11" class="inline text-emerald-500"></lucide-icon>
+                  Auto-derived from your GSTIN — used for tax filings.
+                </p>
+              </div>
+            }
+
             <div>
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Company address</label>
-              <textarea formControlName="companyAddress" rows="3"
-                [readonly]="companyAutoFilled"
-                placeholder="Building, street, area, city, state, PIN"
-                class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none resize-none leading-relaxed"
-                [class.!bg-slate-50]="companyAutoFilled"
-                [class.dark:!bg-slate-800/30]="companyAutoFilled"
-                [class.cursor-not-allowed]="companyAutoFilled"
-                [class.!border-red-400]="companyForm.get('companyAddress')?.invalid && companyForm.get('companyAddress')?.touched"></textarea>
+
               @if (companyAutoFilled) {
+                <!-- GST-filled path: locked textarea, address from GST portal -->
+                <textarea formControlName="companyAddress" rows="3" readonly
+                  placeholder="Building, street, area, city, state, PIN"
+                  class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 !bg-slate-50 dark:!bg-slate-800/30 text-slate-800 dark:text-white text-sm py-3 px-4 pr-10 cursor-not-allowed resize-none leading-relaxed outline-none"></textarea>
                 <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-start gap-1.5">
                   <lucide-icon name="shield-check" [size]="11" class="text-emerald-500 mt-0.5"></lucide-icon>
                   Locked — verified from GSTIN database.
                 </p>
               } @else {
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-start gap-1.5">
-                  <lucide-icon name="map-pin" [size]="11" class="text-primary mt-0.5"></lucide-icon>
-                  Smart address lookup coming soon — for now, please type your full registered address.
-                </p>
+                <!-- Skip-GST path: Savaari autocomplete (Google Places under the hood) -->
+                <div class="relative">
+                  <p-autoComplete
+                    [(ngModel)]="companyAddressInput"
+                    [ngModelOptions]="{standalone: true}"
+                    [suggestions]="filteredCompanyAddresses"
+                    (completeMethod)="filterCompanyAddresses($event)"
+                    (onSelect)="onCompanyAddressSelect($event)"
+                    field="description"
+                    optionLabel="description"
+                    [minLength]="3"
+                    [delay]="250"
+                    placeholder="Start typing — e.g. MG Road, Bangalore"
+                    styleClass="w-full register-address-autocomplete"
+                    inputStyleClass="w-full rounded-xl border border-slate-200 dark:!border-slate-700 bg-white dark:!bg-slate-800/50 text-slate-800 dark:!text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 pr-10 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                    panelStyleClass="!bg-white dark:!bg-slate-900 !border !border-slate-200 dark:!border-slate-700 !rounded-xl !shadow-lg !mt-1 !max-h-[280px]"
+                    appendTo="body">
+                    <ng-template pTemplate="item" let-addr>
+                      <div class="flex items-start gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                        <lucide-icon
+                          [name]="addr.isFallback ? 'building-2' : 'map-pin'"
+                          [size]="15"
+                          [class]="addr.isFallback ? 'text-amber-500 shrink-0 mt-0.5' : 'text-primary shrink-0 mt-0.5'"></lucide-icon>
+                        <div class="min-w-0 flex-1">
+                          <div class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{{ addr.main_text || addr.description }}</div>
+                          @if (addr.secondary_text) {
+                            <div class="text-[11px] text-slate-400 dark:text-slate-500 truncate">{{ addr.secondary_text }}</div>
+                          }
+                        </div>
+                      </div>
+                    </ng-template>
+                    <ng-template pTemplate="empty">
+                      <div class="px-4 py-3 text-[11px] text-slate-500 dark:text-slate-400">
+                        No matches — you can keep typing your full address anyway.
+                      </div>
+                    </ng-template>
+                  </p-autoComplete>
+                  @if (companyAddressInput) {
+                    <button type="button" (click)="clearCompanyAddress()"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer z-10"
+                      aria-label="Clear address">
+                      <lucide-icon name="x" [size]="13"></lucide-icon>
+                    </button>
+                  }
+                </div>
+
+                @if (companyAddressError) {
+                  <p class="text-[11px] text-red-500 mt-1.5 flex items-start gap-1.5">
+                    <lucide-icon name="alert-circle" [size]="11" class="mt-0.5"></lucide-icon>
+                    {{ companyAddressError }}
+                  </p>
+                } @else if (selectedCompanyPlaceDetails) {
+                  <p class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1.5 flex items-start gap-1.5">
+                    <lucide-icon name="check-circle" [size]="11" class="mt-0.5"></lucide-icon>
+                    Pinpointed on the map — coordinates captured for accurate pickup routing.
+                  </p>
+                } @else if (companyAddressFallbackMode) {
+                  <p class="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5 flex items-start gap-1.5">
+                    <lucide-icon name="alert-triangle" [size]="11" class="mt-0.5"></lucide-icon>
+                    Exact street not found — you can keep typing to refine or pick a city-level match.
+                  </p>
+                } @else {
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-start gap-1.5">
+                    <lucide-icon name="map-pin" [size]="11" class="text-primary mt-0.5"></lucide-icon>
+                    Start typing to see suggestions — pick one for the most accurate address.
+                  </p>
+                }
               }
             </div>
 

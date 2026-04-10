@@ -1,28 +1,22 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { environment } from '../../../environments/environment';
 
 /**
- * Registration Service — encapsulates all API calls for the new multi-step
- * registration wizard.
+ * Registration Service — API calls for the multi-step registration wizard.
  *
- * ENDPOINTS (all alpha-hosted per backend team, April 2026):
- *   1. POST /general/gst_verification.php    — GST verification (ready)
- *   2. POST /user/send-otp                   — Send OTPs to mobile + email (pending)
- *   3. POST /user/verify-otp                 — Verify OTP, return verification token (pending)
- *   4. POST /user (b2b-api, multipart)       — Existing register endpoint (extended)
+ * ENDPOINTS (backend team, April 2026):
+ *   1. POST /partner_api/public/general/gst_verification.php — GST verification
+ *   2. POST /partner_api/public/otp/sms/send                 — Send SMS OTP
+ *   3. POST /partner_api/public/otp/sms/verify                — Verify SMS OTP (6-digit)
+ *   4. POST /partner_api/public/otp/email/send                — Send email OTP
+ *   5. POST /partner_api/public/otp/email/verify              — Verify email OTP (6-digit)
+ *   6. POST /b2b-api/user (multipart)                         — Register account
  *
- * GRACEFUL FALLBACK:
- *   All methods handle 404 / 501 gracefully and fall back to a mock response when:
- *     - environment.useMockData is true, OR
- *     - the endpoint responds with 404 / 501 (not deployed yet)
- *   This allows the wizard UI to be developed and tested end-to-end before the
- *   backend endpoints are live.
- *
- * The mock OTPs are 1234 (mobile) and 5678 (email) — same as the original wizard
- * mocks so manual testers don't need to relearn anything.
+ * Mock mode (environment.useMockData === true) returns hardcoded responses
+ * for Vercel demo only. Real API failures surface as user-facing errors.
  */
 
 // ─── Response types ────────────────────────────────────────────────────────
@@ -77,21 +71,11 @@ export interface RegisterResult {
   errorCode?: string;
 }
 
-// ─── Mock constants (shared with wizard so tester credentials stay stable) ──
+// ─── Mock constants (Vercel demo only — shown in hint banner) ──────────────
 
-/** Mock OTPs used in dev fallback mode — same as the original wizard mocks. */
-export const MOCK_MOBILE_OTP = '1234';
-export const MOCK_EMAIL_OTP = '5678';
-
-/** Mock Surepass-style GST lookup response used when the real API is unreachable. */
-const MOCK_GST_RESPONSE: GstVerificationResult = {
-  success: true,
-  legalName: 'ACME TRAVELS PRIVATE LIMITED',
-  businessName: 'ACME TRAVELS PRIVATE LIMITED',
-  panNumber: 'AAACX1234F',
-  address: '12, MG ROAD, GROUND FLOOR, SHANTHALA NAGAR, BENGALURU URBAN, BENGALURU, KARNATAKA - 560001, INDIA',
-  gstinStatus: 'Active',
-};
+/** Mock OTPs — only used when environment.useMockData is true (Vercel demo). */
+export const MOCK_MOBILE_OTP = '123456';
+export const MOCK_EMAIL_OTP = '567890';
 
 
 @Injectable({ providedIn: 'root' })
@@ -112,22 +96,21 @@ export class RegistrationService {
    */
   verifyGst(gstNumber: string): Observable<GstVerificationResult> {
     if (environment.useMockData) {
-      return of({ ...MOCK_GST_RESPONSE, panNumber: this.derivePanFromGst(gstNumber) || MOCK_GST_RESPONSE.panNumber });
+      const pan = this.derivePanFromGst(gstNumber);
+      return of({
+        success: true,
+        legalName: 'DEMO COMPANY',
+        businessName: 'DEMO COMPANY',
+        panNumber: pan || 'AAACX1234F',
+        address: 'Demo Address, Bangalore',
+        gstinStatus: 'Active',
+      });
     }
 
-    // Backend doc (April 2026): POST with form body for Website side.
-    // Required: gstNumber. Optional: booking_id, companyName, action (default gst_check).
-    // AJAX example in doc: { gstNumber, booking_id } via POST.
-    const body = {
-      gstNumber,
-    };
-
-    return this.api.regPostForm<any>('general/gst_verification.php', body).pipe(
+    return this.api.regPostForm<any>('general/gst_verification.php', { gstNumber }).pipe(
       map(response => {
         if (response?.status === true && response?.data?.fields) {
           const f = response.data.fields;
-          // Backend requirement (April 2026): gstin_status MUST be "Active" to accept the GSTIN.
-          // Cancelled / Suspended / Inactive GSTINs exist in the database but must be rejected here.
           const status = (f.gstin_status ?? '').toString().trim();
           if (status.toLowerCase() !== 'active') {
             return {
@@ -147,17 +130,12 @@ export class RegistrationService {
             gstinStatus: status,
           } as GstVerificationResult;
         }
-        // API responded but status=false — extract error message
         const msg = response?.data?.message ?? response?.message ?? 'Invalid GST Number';
         return { success: false, errorMessage: msg };
       }),
       catchError(err => {
         if (!environment.production) {
-          console.warn('[REGISTRATION] verifyGst API error — falling back to mock:', err?.status ?? err?.message);
-        }
-        // Endpoint not deployed / network down — fall back to mock so dev flow continues
-        if (this.isEndpointUnavailable(err)) {
-          return of({ ...MOCK_GST_RESPONSE, panNumber: this.derivePanFromGst(gstNumber) || MOCK_GST_RESPONSE.panNumber });
+          console.warn('[REGISTRATION] verifyGst API error:', err?.status ?? err?.message);
         }
         return of({
           success: false,
@@ -172,24 +150,42 @@ export class RegistrationService {
   // ──────────────────────────────────────────────────────────────────────
 
   /**
-   * Send OTPs to both mobile and email in one call.
-   * Backend should send 2 separate 4-digit OTPs, one per channel.
+   * Send OTPs to both mobile and email via separate endpoints (forkJoin).
+   *
+   * POST /otp/sms/send   { mobile }      @noauth
+   * POST /otp/email/send  { email }      @noauth
    */
-  sendOtps(mobile: string, email: string, countryCode = '91'): Observable<SendOtpResult> {
+  sendOtps(mobile: string, email: string): Observable<SendOtpResult> {
     if (environment.useMockData) {
       return of(this.mockSendOtpSuccess());
     }
 
-    const body = {
-      mobile,
-      email,
-      countryCode,
-      channel: 'both',
-    };
+    const sms$ = this.api.regPostForm<any>('partner_api/public/otp/sms/send', { mobile }).pipe(
+      map(res => this.parseSendResponse(res)),
+      catchError(err => of({ ok: false, error: this.extractErrorMsg(err) }))
+    );
 
-    return this.api.regPostForm<any>('user/send-otp', body).pipe(
-      map(response => this.mapSendOtpResponse(response)),
-      catchError(err => this.fallbackSendOtp(err))
+    const email$ = this.api.regPostForm<any>('partner_api/public/otp/email/send', { email }).pipe(
+      map(res => this.parseSendResponse(res)),
+      catchError(err => of({ ok: false, error: this.extractErrorMsg(err) }))
+    );
+
+    return forkJoin([sms$, email$]).pipe(
+      map(([smsRes, emailRes]) => {
+        if (!smsRes.ok || !emailRes.ok) {
+          const msgs: string[] = [];
+          if (!smsRes.ok) msgs.push(smsRes.error);
+          if (!emailRes.ok) msgs.push(emailRes.error);
+          return {
+            success: false,
+            mobileOtpSent: smsRes.ok,
+            emailOtpSent: emailRes.ok,
+            expiresInSeconds: 0,
+            errorMessage: msgs.join(' | '),
+          } as SendOtpResult;
+        }
+        return this.mockSendOtpSuccess();
+      })
     );
   }
 
@@ -197,25 +193,30 @@ export class RegistrationService {
   // 3. RESEND OTP (single channel)
   // ──────────────────────────────────────────────────────────────────────
 
-  /**
-   * Resend OTP for a single channel (mobile or email).
-   * Used by the separate "Resend" buttons in the wizard.
-   */
-  resendOtp(channel: 'mobile' | 'email', contact: string, countryCode = '91'): Observable<SendOtpResult> {
+  /** Resend OTP for a single channel (5/day rate limit per backend spec). */
+  resendOtp(channel: 'mobile' | 'email', contact: string): Observable<SendOtpResult> {
     if (environment.useMockData) {
       return of(this.mockSendOtpSuccess());
     }
 
-    const body: Record<string, string> = {
-      channel,
-      countryCode,
-    };
+    const endpoint = channel === 'mobile' ? 'partner_api/public/otp/sms/send' : 'partner_api/public/otp/email/send';
+    const body: Record<string, string> = {};
     if (channel === 'mobile') body['mobile'] = contact;
     else body['email'] = contact;
 
-    return this.api.regPostForm<any>('user/send-otp', body).pipe(
-      map(response => this.mapSendOtpResponse(response)),
-      catchError(err => this.fallbackSendOtp(err))
+    return this.api.regPostForm<any>(endpoint, body).pipe(
+      map(res => {
+        const parsed = this.parseSendResponse(res);
+        if (!parsed.ok) return { success: false, mobileOtpSent: false, emailOtpSent: false, expiresInSeconds: 0, errorMessage: parsed.error } as SendOtpResult;
+        return this.mockSendOtpSuccess();
+      }),
+      catchError(err => of({
+        success: false,
+        mobileOtpSent: false,
+        emailOtpSent: false,
+        expiresInSeconds: 0,
+        errorMessage: this.extractErrorMsg(err),
+      } as SendOtpResult))
     );
   }
 
@@ -224,53 +225,45 @@ export class RegistrationService {
   // ──────────────────────────────────────────────────────────────────────
 
   /**
-   * Verify an OTP for a single channel. On success, backend returns a
-   * short-lived verificationToken that the wizard will pass in the final
-   * register call as proof that this channel was verified in this session.
+   * Verify a 6-digit OTP for a single channel.
+   *
+   * POST /otp/sms/verify    { mobile, otp }    @noauth
+   * POST /otp/email/verify   { email, otp }    @noauth
+   *
+   * No verificationToken returned — backend records status in DB.
    */
   verifyOtp(channel: 'mobile' | 'email', contact: string, otp: string): Observable<VerifyOtpResult> {
     if (environment.useMockData) {
       return of(this.mockVerifyOtp(channel, otp));
     }
 
-    const body: Record<string, string> = {
-      channel,
-      otp,
-    };
+    const endpoint = channel === 'mobile' ? 'partner_api/public/otp/sms/verify' : 'partner_api/public/otp/email/verify';
+    const body: Record<string, string> = { otp };
     if (channel === 'mobile') body['mobile'] = contact;
     else body['email'] = contact;
 
-    return this.api.regPostForm<any>('user/verify-otp', body).pipe(
-      map(response => {
-        if (response?.status === true && (response?.verified === true || response?.data?.verified === true)) {
-          const data = response.data ?? response;
-          return {
-            success: true,
-            verified: true,
-            verificationToken: data.verificationToken ?? data.verification_token ?? '',
-          } as VerifyOtpResult;
+    return this.api.regPostForm<any>(endpoint, body).pipe(
+      map(res => {
+        // Backend wraps response: { status: "success", data: { success: true, msg: "..." } }
+        const inner = res?.data ?? res;
+        const isOk = inner?.success === true || res?.status === 'success';
+        if (isOk) {
+          return { success: true, verified: true } as VerifyOtpResult;
         }
-        // Failure — extract attempts remaining if present
-        const data = response?.data ?? {};
         return {
           success: false,
           verified: false,
-          attemptsRemaining: data.attemptsRemaining ?? data.attempts_remaining,
-          errorMessage: response?.message ?? 'Invalid OTP',
-          errorCode: response?.errorCode ?? response?.error_code,
+          errorMessage: inner?.msg || res?.msg || 'OTP verification failed',
         } as VerifyOtpResult;
       }),
       catchError(err => {
         if (!environment.production) {
-          console.warn(`[REGISTRATION] verifyOtp (${channel}) API error — falling back to mock:`, err?.status ?? err?.message);
-        }
-        if (this.isEndpointUnavailable(err)) {
-          return of(this.mockVerifyOtp(channel, otp));
+          console.warn(`[REGISTRATION] verifyOtp (${channel}) error:`, err?.status ?? err?.message);
         }
         return of({
           success: false,
           verified: false,
-          errorMessage: err?.error?.message ?? err?.message ?? 'OTP verification failed',
+          errorMessage: this.extractErrorMsg(err),
         } as VerifyOtpResult);
       })
     );
@@ -365,42 +358,30 @@ export class RegistrationService {
   // Private helpers
   // ──────────────────────────────────────────────────────────────────────
 
-  /** Normalize backend send-otp response into our SendOtpResult shape. */
-  private mapSendOtpResponse(response: any): SendOtpResult {
-    if (response?.status === true || response?.statusCode === 200) {
-      const data = response.data ?? response;
-      return {
-        success: true,
-        mobileOtpSent: data.mobileOtpSent ?? data.mobile_otp_sent ?? true,
-        emailOtpSent: data.emailOtpSent ?? data.email_otp_sent ?? true,
-        expiresInSeconds: data.expiresInSeconds ?? data.expires_in_seconds ?? 600,
-      };
-    }
-    return {
-      success: false,
-      mobileOtpSent: false,
-      emailOtpSent: false,
-      expiresInSeconds: 0,
-      errorMessage: response?.message ?? 'Failed to send OTP',
-      errorCode: response?.errorCode ?? response?.error_code,
-    };
+  /**
+   * Parse a 200 OK send-otp response into a simple ok/error shape.
+   * Backend wraps: { status: "success", data: { success: true, msg: "..." } }
+   * Doc shape:     { success: true, msg: "..." }
+   * Handles both.
+   */
+  private parseSendResponse(res: any): { ok: boolean; error: string } {
+    const inner = res?.data ?? res;
+    const isOk = inner?.success === true || res?.status === 'success';
+    if (isOk) return { ok: true, error: '' };
+    return { ok: false, error: inner?.msg || res?.msg || 'Failed to send OTP' };
   }
 
-  /** Fallback behaviour when send-otp endpoint is unreachable. */
-  private fallbackSendOtp(err: any): Observable<SendOtpResult> {
-    if (!environment.production) {
-      console.warn('[REGISTRATION] sendOtp API error — falling back to mock:', err?.status ?? err?.message);
-    }
-    if (this.isEndpointUnavailable(err)) {
-      return of(this.mockSendOtpSuccess());
-    }
-    return of({
-      success: false,
-      mobileOtpSent: false,
-      emailOtpSent: false,
-      expiresInSeconds: 0,
-      errorMessage: err?.error?.message ?? err?.message ?? 'Failed to send OTP. Please try again.',
-    });
+  /**
+   * Extract a user-facing error message from an HTTP error response.
+   * Handles the backend's two error shapes:
+   *   { success: false, msg: "..." }
+   *   { success: false, errors: ["...", "..."] }
+   */
+  private extractErrorMsg(err: any): string {
+    const body = err?.error || {};
+    if (body.msg) return body.msg;
+    if (Array.isArray(body.errors) && body.errors.length) return body.errors.join(', ');
+    return err?.message || 'Something went wrong. Please try again.';
   }
 
   private mockSendOtpSuccess(): SendOtpResult {
@@ -408,30 +389,16 @@ export class RegistrationService {
       success: true,
       mobileOtpSent: true,
       emailOtpSent: true,
-      expiresInSeconds: 600,
+      expiresInSeconds: 300, // 5 minutes per backend spec
     };
   }
 
   private mockVerifyOtp(channel: 'mobile' | 'email', otp: string): VerifyOtpResult {
     const expected = channel === 'mobile' ? MOCK_MOBILE_OTP : MOCK_EMAIL_OTP;
     if (otp === expected) {
-      return {
-        success: true,
-        verified: true,
-        verificationToken: `mock_${channel}_${Date.now()}`,
-      };
+      return { success: true, verified: true };
     }
-    return {
-      success: false,
-      verified: false,
-      errorMessage: 'Invalid OTP',
-    };
-  }
-
-  /** True if the error looks like the endpoint simply isn't deployed yet. */
-  private isEndpointUnavailable(err: any): boolean {
-    const status = err?.status;
-    return status === 0 || status === 404 || status === 501 || status === 502 || status === 503;
+    return { success: false, verified: false, errorMessage: 'Invalid OTP' };
   }
 
   /**

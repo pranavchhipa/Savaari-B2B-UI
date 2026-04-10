@@ -1,28 +1,49 @@
 import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { LucideAngularModule } from 'lucide-angular';
 import { LandingNavbarComponent } from '../../landing/components/navbar/landing-navbar';
+import { environment } from '../../../../environments/environment';
+import {
+  RegistrationService,
+  MOCK_MOBILE_OTP,
+  MOCK_EMAIL_OTP,
+} from '../../../core/services/registration.service';
+import { AddressAutocompleteService, AddressSuggestion } from '../../../core/services/address-autocomplete.service';
+
 /** localStorage key shared with login page so it can pre-fill the freshly-registered email/password */
 const PENDING_LOGIN_KEY = 'b2bcab.pendingLogin';
 
+/** Resend-OTP cooldown in seconds — prevents rate-limit abuse. */
+const RESEND_COOLDOWN_SECONDS = 30;
+
+/** sessionStorage key — preserves wizard progress across page refresh. */
+const WIZARD_STATE_KEY = 'b2bcab.registerWizardState';
+
 /**
- * Single-page progressive registration wizard (vercel demo flow).
+ * Multi-step registration wizard for B2B Cab Portal.
  *
- * Steps reveal one at a time. Completed steps collapse into a compact
- * summary row with an "Edit" affordance. All API calls (OTP send/verify,
- * GST -> Surepass auto-fill) are mocked locally — no network traffic.
+ * Flow:
+ *   Step 1 — Name (first + last)
+ *   Step 2 — Contact (mobile + email, both OTP-verified)
+ *   Step 3 — GST (optional, auto-fills PAN + company on success)
+ *   Step 4 — PAN (only shown if GST was skipped or failed)
+ *   Step 5 — Company (name + address; locked if auto-filled from GST)
+ *   Step 6 — Password (+ confirm)
  *
- * Final submit performs a mock auto-login via AuthService and routes to
- * the dashboard.
+ * All API calls go through RegistrationService which handles the alpha-hosted
+ * registration endpoints (GST, OTP, register) with graceful fallback to mock
+ * responses when the endpoints are unreachable — so the wizard stays fully
+ * testable during development even before the backend ships the OTP endpoints.
  */
 type StepKey = 'name' | 'contact' | 'gst' | 'pan' | 'company' | 'password';
 
 @Component({
   selector: 'app-register-wizard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule, LandingNavbarComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, AutoCompleteModule, LucideAngularModule, LandingNavbarComponent],
   templateUrl: './register-wizard.html',
   styleUrl: './register-wizard.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -31,17 +52,17 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private registrationService = inject(RegistrationService);
+  private addressAutocomplete = inject(AddressAutocompleteService);
 
-  // Mock OTPs — fixed for demo so reviewers know what to type
-  readonly MOCK_MOBILE_OTP = '1234';
-  readonly MOCK_EMAIL_OTP = '5678';
-
-  // Mock Surepass response when GST is provided
-  readonly MOCK_SUREPASS_FROM_GST = {
-    pan: 'AAACX1234F',
-    companyName: 'ACME TRAVELS PRIVATE LIMITED',
-    companyAddress: '12, MG ROAD, GROUND FLOOR, SHANTHALA NAGAR, ASHOK NAGAR, BENGALURU URBAN, BENGALURU, KARNATAKA - 560001, INDIA',
-  };
+  /**
+   * Mock OTPs exposed to the template for the "Demo mode" hint banner.
+   * Only shown when `environment.useMockData` is true (i.e. Vercel demo).
+   * Real dev / alpha get real OTPs from the backend.
+   */
+  readonly MOCK_MOBILE_OTP = MOCK_MOBILE_OTP;
+  readonly MOCK_EMAIL_OTP = MOCK_EMAIL_OTP;
+  readonly showMockOtpHint = environment.useMockData;
 
   readonly STEP_ORDER: StepKey[] = ['name', 'contact', 'gst', 'pan', 'company', 'password'];
   currentStep: StepKey = 'name';
@@ -59,13 +80,30 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     email: ['', [Validators.required, Validators.email]],
   });
   contactPhase: 'entry' | 'otp' | 'verified' = 'entry';
-  mobileOtp: string[] = ['', '', '', ''];
-  emailOtp: string[] = ['', '', '', ''];
+  mobileOtp: string[] = ['', '', '', '', '', ''];
+  emailOtp: string[] = ['', '', '', '', '', ''];
   mobileOtpError = '';
   emailOtpError = '';
   mobileOtpVerified = false;
   emailOtpVerified = false;
   sendingOtp = false;
+  contactError = '';
+
+  /** Per-channel verification tokens returned by the verify-otp API. */
+  mobileVerificationToken = '';
+  emailVerificationToken = '';
+
+  /** Per-channel resend state — disables the button for RESEND_COOLDOWN_SECONDS. */
+  mobileResendCooldown = 0;
+  emailResendCooldown = 0;
+  mobileResending = false;
+  emailResending = false;
+  private mobileCooldownInterval: any;
+  private emailCooldownInterval: any;
+
+  /** Per-channel OTP verification in-flight flags — prevents double-submit. */
+  mobileVerifying = false;
+  emailVerifying = false;
 
   // ── Step 3: GST (optional) ──
   gstForm = this.fb.group({
@@ -73,6 +111,7 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   });
   gstSkipped = false;
   gstLookupLoading = false;
+  gstError = '';
 
   // ── Step 4: PAN (auto-filled from GST or manual) ──
   panForm = this.fb.group({
@@ -86,6 +125,24 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     companyAddress: ['', [Validators.required, Validators.minLength(10)]],
   });
   companyAutoFilled = false;
+
+  /**
+   * Skip-GST path only: Savaari address autocomplete state.
+   *
+   * When user skips GST verification they have to type their office address
+   * manually. Rather than a free-text textarea we wire up the Savaari
+   * autocomplete API (same Google Places dataset used by dashboard + booking)
+   * so the agent gets real suggestions with lat/lng resolution.
+   *
+   * GST-filled path keeps the locked textarea — address comes from the
+   * authoritative GST portal response and must not be editable.
+   */
+  companyAddressInput = '';                                         // Two-way ngModel bound to p-autoComplete
+  filteredCompanyAddresses: AddressSuggestion[] = [];               // Current dropdown suggestions
+  selectedCompanyPlaceDetails: { lat: number; lng: number; formatted_address: string; place_id: string; sublocality: string } | null = null;
+  companyAddressFallbackMode = false;                               // true when API returns only city-level fallback (no exact street)
+  companyAddressError = '';                                         // Inline validation error for skip-GST path
+  companyAddressSearching = false;                                  // Shows loader in dropdown while API is in flight
 
   // ── Step 6: Password ──
   passwordForm = this.fb.group({
@@ -104,6 +161,7 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   get pwHasNumber(): boolean { return /\d/.test(this.pwValue); }
 
   isSubmitting = false;
+  registerError = '';
 
   // ── Left-panel branding: testimonial carousel (matches old register page) ──
   testimonials = [
@@ -116,6 +174,7 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   private testimonialInterval: any;
 
   ngOnInit(): void {
+    this.restoreProgress();
     this.testimonialInterval = setInterval(() => {
       this.activeTestimonial = (this.activeTestimonial + 1) % this.testimonials.length;
       this.cdr.markForCheck();
@@ -124,6 +183,8 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.testimonialInterval) clearInterval(this.testimonialInterval);
+    if (this.mobileCooldownInterval) clearInterval(this.mobileCooldownInterval);
+    if (this.emailCooldownInterval) clearInterval(this.emailCooldownInterval);
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -159,6 +220,7 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   private advanceTo(next: StepKey, completed: StepKey) {
     this.completedSteps.add(completed);
     this.currentStep = next;
+    this.saveProgress();
     this.cdr.markForCheck();
     // Smooth scroll to the new active step on small screens
     setTimeout(() => {
@@ -167,9 +229,92 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     }, 50);
   }
 
+  /**
+   * Persist wizard progress to sessionStorage so a page refresh doesn't
+   * lose everything. Called after every step completion.
+   */
+  private saveProgress() {
+    try {
+      const state = {
+        currentStep: this.currentStep,
+        completedSteps: [...this.completedSteps],
+        nameForm: this.nameForm.value,
+        contactForm: this.contactForm.value,
+        contactPhase: this.contactPhase,
+        mobileOtpVerified: this.mobileOtpVerified,
+        emailOtpVerified: this.emailOtpVerified,
+        gstForm: this.gstForm.value,
+        gstSkipped: this.gstSkipped,
+        panForm: this.panForm.value,
+        panAutoFilled: this.panAutoFilled,
+        companyForm: this.companyForm.value,
+        companyAutoFilled: this.companyAutoFilled,
+        companyAddressInput: this.companyAddressInput,
+      };
+      sessionStorage.setItem(WIZARD_STATE_KEY, JSON.stringify(state));
+    } catch { /* sessionStorage may be disabled */ }
+  }
+
+  /**
+   * Restore wizard progress from sessionStorage on page load.
+   * Silently ignores corrupt / missing data — user just starts fresh.
+   */
+  private restoreProgress() {
+    try {
+      const raw = sessionStorage.getItem(WIZARD_STATE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+
+      // Restore step navigation
+      if (s.currentStep) this.currentStep = s.currentStep;
+      if (Array.isArray(s.completedSteps)) {
+        this.completedSteps = new Set(s.completedSteps as StepKey[]);
+      }
+
+      // Step 1 — Name
+      if (s.nameForm) this.nameForm.patchValue(s.nameForm);
+
+      // Step 2 — Contact (restore verified state but NOT OTP digits — they must re-verify if unfinished)
+      if (s.contactForm) this.contactForm.patchValue(s.contactForm);
+      if (s.contactPhase === 'verified') {
+        this.contactPhase = 'verified';
+        this.mobileOtpVerified = true;
+        this.emailOtpVerified = true;
+      } else {
+        // If OTP wasn't fully verified, reset to entry phase — user needs fresh OTPs
+        this.contactPhase = 'entry';
+      }
+
+      // Step 3 — GST
+      if (s.gstForm) this.gstForm.patchValue(s.gstForm);
+      if (s.gstSkipped != null) this.gstSkipped = s.gstSkipped;
+
+      // Step 4 — PAN
+      if (s.panForm) this.panForm.patchValue(s.panForm);
+      if (s.panAutoFilled != null) this.panAutoFilled = s.panAutoFilled;
+
+      // Step 5 — Company
+      if (s.companyForm) this.companyForm.patchValue(s.companyForm);
+      if (s.companyAutoFilled != null) this.companyAutoFilled = s.companyAutoFilled;
+      if (s.companyAddressInput) this.companyAddressInput = s.companyAddressInput;
+
+      this.cdr.markForCheck();
+    } catch { /* corrupt data — start fresh */ }
+  }
+
+  /** Clear saved progress — called after successful registration. */
+  private clearSavedProgress() {
+    try { sessionStorage.removeItem(WIZARD_STATE_KEY); } catch { /* ignore */ }
+  }
+
   editStep(step: StepKey) {
     // Re-open a previously completed step for editing
     this.currentStep = step;
+    // When re-opening company step in skip-GST mode, restore the autocomplete input
+    // from the form so the user sees whatever they had typed/selected last time
+    if (step === 'company' && !this.companyAutoFilled) {
+      this.companyAddressInput = this.companyForm.value.companyAddress || '';
+    }
     this.cdr.markForCheck();
   }
 
@@ -191,24 +336,43 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   sendContactOtps() {
     if (this.contactForm.invalid) { this.contactForm.markAllAsTouched(); return; }
     this.sendingOtp = true;
+    this.contactError = '';
     this.cdr.markForCheck();
 
-    setTimeout(() => {
+    const mobile = this.contactForm.value.mobile || '';
+    const email = this.contactForm.value.email || '';
+
+    this.registrationService.sendOtps(mobile, email).subscribe(result => {
       this.sendingOtp = false;
+
+      if (!result.success) {
+        this.contactError = result.errorMessage || 'Failed to send OTP. Please try again.';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      // Reset OTP state and advance to OTP-entry phase
       this.contactPhase = 'otp';
-      this.mobileOtp = ['', '', '', ''];
-      this.emailOtp = ['', '', '', ''];
+      this.mobileOtp = ['', '', '', '', '', ''];
+      this.emailOtp = ['', '', '', '', '', ''];
       this.mobileOtpError = '';
       this.emailOtpError = '';
       this.mobileOtpVerified = false;
       this.emailOtpVerified = false;
+      this.mobileVerificationToken = '';
+      this.emailVerificationToken = '';
+
+      // Start cooldown timers for both channels
+      this.startCooldown('mobile');
+      this.startCooldown('email');
+
       this.cdr.markForCheck();
       // Focus first mobile OTP box
       setTimeout(() => {
         const el = document.querySelector<HTMLInputElement>('input[data-otp="mobile-0"]');
         el?.focus();
       }, 100);
-    }, 600);
+    });
   }
 
   onOtpInput(event: Event, channel: 'mobile' | 'email', index: number) {
@@ -217,7 +381,7 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     input.value = val;
     const arr = channel === 'mobile' ? this.mobileOtp : this.emailOtp;
     arr[index] = val;
-    if (val && index < 3) {
+    if (val && index < 5) {
       const next = document.querySelector<HTMLInputElement>(`input[data-otp="${channel}-${index + 1}"]`);
       next?.focus();
     }
@@ -245,26 +409,129 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   private tryVerifyChannel(channel: 'mobile' | 'email') {
     const arr = channel === 'mobile' ? this.mobileOtp : this.emailOtp;
     if (arr.some(d => d === '')) return;
+
+    // Prevent re-verifying while a verify call is already in-flight
+    if (channel === 'mobile' && this.mobileVerifying) return;
+    if (channel === 'email' && this.emailVerifying) return;
+
     const entered = arr.join('');
-    const expected = channel === 'mobile' ? this.MOCK_MOBILE_OTP : this.MOCK_EMAIL_OTP;
-    if (entered === expected) {
-      if (channel === 'mobile') { this.mobileOtpVerified = true; this.mobileOtpError = ''; }
-      else { this.emailOtpVerified = true; this.emailOtpError = ''; }
-      // If both verified, advance
-      if (this.mobileOtpVerified && this.emailOtpVerified) {
-        setTimeout(() => {
-          this.contactPhase = 'verified';
-          this.advanceTo('gst', 'contact');
-        }, 500);
+    const contact = channel === 'mobile'
+      ? (this.contactForm.value.mobile || '')
+      : (this.contactForm.value.email || '');
+
+    if (channel === 'mobile') this.mobileVerifying = true;
+    else this.emailVerifying = true;
+    this.cdr.markForCheck();
+
+    this.registrationService.verifyOtp(channel, contact, entered).subscribe(result => {
+      if (channel === 'mobile') this.mobileVerifying = false;
+      else this.emailVerifying = false;
+
+      if (result.verified && result.success) {
+        if (channel === 'mobile') {
+          this.mobileOtpVerified = true;
+          this.mobileOtpError = '';
+          this.mobileVerificationToken = result.verificationToken || '';
+        } else {
+          this.emailOtpVerified = true;
+          this.emailOtpError = '';
+          this.emailVerificationToken = result.verificationToken || '';
+        }
+        this.cdr.markForCheck();
+
+        // If both verified, advance to next step
+        if (this.mobileOtpVerified && this.emailOtpVerified) {
+          setTimeout(() => {
+            this.contactPhase = 'verified';
+            this.advanceTo('gst', 'contact');
+          }, 500);
+        }
+      } else {
+        const errorMsg = result.errorMessage
+          || (result.attemptsRemaining !== undefined
+            ? `Invalid OTP. ${result.attemptsRemaining} attempts remaining.`
+            : 'Invalid OTP');
+        if (channel === 'mobile') this.mobileOtpError = errorMsg;
+        else this.emailOtpError = errorMsg;
+        this.cdr.markForCheck();
       }
-    } else {
-      if (channel === 'mobile') this.mobileOtpError = 'Invalid OTP';
-      else this.emailOtpError = 'Invalid OTP';
-    }
+    });
   }
 
-  resendOtps() {
-    this.sendContactOtps();
+  /**
+   * Resend OTP for a single channel. Disabled while the cooldown is active.
+   * Separate per-channel buttons avoid burning SMS cost / email quota when
+   * only one of the two OTPs failed to arrive.
+   */
+  resendChannel(channel: 'mobile' | 'email') {
+    // Block if cooldown still running or already resending
+    const cooldown = channel === 'mobile' ? this.mobileResendCooldown : this.emailResendCooldown;
+    const resending = channel === 'mobile' ? this.mobileResending : this.emailResending;
+    if (cooldown > 0 || resending) return;
+
+    const contact = channel === 'mobile'
+      ? (this.contactForm.value.mobile || '')
+      : (this.contactForm.value.email || '');
+    if (!contact) return;
+
+    if (channel === 'mobile') this.mobileResending = true;
+    else this.emailResending = true;
+    this.cdr.markForCheck();
+
+    this.registrationService.resendOtp(channel, contact).subscribe(result => {
+      if (channel === 'mobile') this.mobileResending = false;
+      else this.emailResending = false;
+
+      if (result.success) {
+        // Clear the current OTP boxes so the user knows a fresh code was sent
+        if (channel === 'mobile') {
+          this.mobileOtp = ['', '', '', '', '', ''];
+          this.mobileOtpError = '';
+          this.mobileOtpVerified = false;
+          this.mobileVerificationToken = '';
+        } else {
+          this.emailOtp = ['', '', '', '', '', ''];
+          this.emailOtpError = '';
+          this.emailOtpVerified = false;
+          this.emailVerificationToken = '';
+        }
+        this.startCooldown(channel);
+      } else {
+        if (channel === 'mobile') {
+          this.mobileOtpError = result.errorMessage || 'Failed to resend OTP';
+        } else {
+          this.emailOtpError = result.errorMessage || 'Failed to resend OTP';
+        }
+      }
+      this.cdr.markForCheck();
+    });
+  }
+
+  /** Start the cooldown countdown for a channel's resend button. */
+  private startCooldown(channel: 'mobile' | 'email') {
+    if (channel === 'mobile') {
+      this.mobileResendCooldown = RESEND_COOLDOWN_SECONDS;
+      if (this.mobileCooldownInterval) clearInterval(this.mobileCooldownInterval);
+      this.mobileCooldownInterval = setInterval(() => {
+        this.mobileResendCooldown--;
+        if (this.mobileResendCooldown <= 0) {
+          clearInterval(this.mobileCooldownInterval);
+          this.mobileCooldownInterval = null;
+        }
+        this.cdr.markForCheck();
+      }, 1000);
+    } else {
+      this.emailResendCooldown = RESEND_COOLDOWN_SECONDS;
+      if (this.emailCooldownInterval) clearInterval(this.emailCooldownInterval);
+      this.emailCooldownInterval = setInterval(() => {
+        this.emailResendCooldown--;
+        if (this.emailResendCooldown <= 0) {
+          clearInterval(this.emailCooldownInterval);
+          this.emailCooldownInterval = null;
+        }
+        this.cdr.markForCheck();
+      }, 1000);
+    }
   }
 
   editContact() {
@@ -285,6 +552,8 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
 
   submitGst() {
     const gst = (this.gstForm.value.gstNumber || '').trim();
+    this.gstError = '';
+
     if (!gst) {
       // User chose to skip GST — go to manual PAN entry
       this.gstSkipped = true;
@@ -295,22 +564,46 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     }
     if (this.gstForm.invalid) { this.gstForm.markAllAsTouched(); return; }
 
-    // Mock Surepass lookup — auto-fills PAN, company name, company address
+    // Real GST verification via alpha gst_verification.php
     this.gstLookupLoading = true;
     this.cdr.markForCheck();
-    setTimeout(() => {
+
+    this.registrationService.verifyGst(gst).subscribe(result => {
       this.gstLookupLoading = false;
+
+      if (!result.success) {
+        this.gstError = result.errorMessage || 'Invalid GST Number. Please check and try again.';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      // Auto-fill PAN + company details from GST API response
       this.gstSkipped = false;
-      this.panForm.patchValue({ panNumber: this.MOCK_SUREPASS_FROM_GST.pan });
+      const pan = result.panNumber || '';
+      const legalName = (result.legalName || result.businessName || '').toUpperCase();
+      const address = result.address || '';
+
+      this.panForm.patchValue({ panNumber: pan });
       this.companyForm.patchValue({
-        companyName: this.MOCK_SUREPASS_FROM_GST.companyName,
-        companyAddress: this.MOCK_SUREPASS_FROM_GST.companyAddress,
+        companyName: legalName,
+        companyAddress: address,
       });
-      this.panAutoFilled = true;
-      this.companyAutoFilled = true;
-      this.completedSteps.add('pan'); // PAN already verified by GST
+
+      this.panAutoFilled = !!pan;
+      this.companyAutoFilled = !!(legalName && address);
+
+      // Clear any stale autocomplete state from a previous skip-GST attempt
+      this.companyAddressInput = '';
+      this.filteredCompanyAddresses = [];
+      this.selectedCompanyPlaceDetails = null;
+      this.companyAddressFallbackMode = false;
+      this.companyAddressError = '';
+
+      // PAN step is implicitly completed when GST gives us a valid PAN
+      if (this.panAutoFilled) this.completedSteps.add('pan');
+
       this.advanceTo('company', 'gst');
-    }, 900);
+    });
   }
 
   // ── Step 4: PAN (only when GST skipped) ──
@@ -336,8 +629,122 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     this.companyForm.get('companyName')?.setValue(upper, { emitEvent: false });
   }
 
+  /**
+   * Fetch address suggestions from Savaari autocomplete API as user types.
+   * Skip-GST path only. GST-filled path uses the locked textarea.
+   */
+  filterCompanyAddresses(event: AutoCompleteCompleteEvent) {
+    const q = (event.query || '').trim();
+    if (q.length < 3) {
+      this.filteredCompanyAddresses = [];
+      this.companyAddressSearching = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.companyAddressSearching = true;
+    this.cdr.markForCheck();
+
+    this.addressAutocomplete.searchAddress(q, 'from').subscribe({
+      next: (suggestions) => {
+        this.filteredCompanyAddresses = suggestions;
+        // Fallback mode = all results are city-level only (no exact street from Google)
+        this.companyAddressFallbackMode = suggestions.length > 0 && suggestions.every((s) => s.isFallback);
+        this.companyAddressSearching = false;
+        // Keep the form field synced with whatever the user has typed so validators fire correctly
+        this.companyForm.patchValue({ companyAddress: q }, { emitEvent: false });
+        if (q.length >= 10) this.companyAddressError = '';
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.filteredCompanyAddresses = [];
+        this.companyAddressSearching = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /**
+   * User picked a suggestion from the dropdown — resolve place details
+   * (lat/lng/sublocality) via the Savaari place_id API. For city-level
+   * fallback results we skip the place_id call since there's no exact street.
+   */
+  onCompanyAddressSelect(event: any) {
+    const suggestion: AddressSuggestion = event.value || event;
+    if (!suggestion) return;
+
+    const addressString = suggestion.description || '';
+    this.companyAddressInput = addressString;
+    this.companyForm.patchValue({ companyAddress: addressString }, { emitEvent: false });
+    this.companyAddressError = '';
+
+    // Fallback suggestion → city-level only, no place_id API call
+    if (suggestion.isFallback || !suggestion.place_id) {
+      this.selectedCompanyPlaceDetails = null;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.addressAutocomplete.getPlaceDetails(suggestion.place_id, 'from').subscribe({
+      next: (details) => {
+        if (details) {
+          this.selectedCompanyPlaceDetails = {
+            lat: details.lat,
+            lng: details.lng,
+            formatted_address: details.formatted_address || addressString,
+            place_id: details.place_id,
+            sublocality: details.sublocality || '',
+          };
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.selectedCompanyPlaceDetails = null;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /** Reset the autocomplete field — used from the clear (×) button. */
+  clearCompanyAddress() {
+    this.companyAddressInput = '';
+    this.selectedCompanyPlaceDetails = null;
+    this.companyAddressFallbackMode = false;
+    this.filteredCompanyAddresses = [];
+    this.companyAddressError = '';
+    this.companyForm.patchValue({ companyAddress: '' }, { emitEvent: false });
+    this.cdr.markForCheck();
+  }
+
   submitCompany() {
-    if (this.companyForm.invalid) { this.companyForm.markAllAsTouched(); return; }
+    // Company name is required in both flows — GST-filled or manual
+    if (this.companyForm.get('companyName')?.invalid) {
+      this.companyForm.get('companyName')?.markAsTouched();
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (this.companyAutoFilled) {
+      // GST path — address comes from GST API and is locked; full form validation applies
+      if (this.companyForm.invalid) { this.companyForm.markAllAsTouched(); return; }
+    } else {
+      // Skip-GST path — validate the autocomplete input manually
+      const addr = (this.companyAddressInput || '').trim();
+      if (!addr) {
+        this.companyAddressError = 'Please enter your office address.';
+        this.cdr.markForCheck();
+        return;
+      }
+      if (addr.length < 10) {
+        this.companyAddressError = 'Address looks too short — please include building, street, city and PIN.';
+        this.cdr.markForCheck();
+        return;
+      }
+      this.companyAddressError = '';
+      // Commit the typed/selected value to the form so downstream submit (submitPassword) picks it up
+      this.companyForm.patchValue({ companyAddress: addr }, { emitEvent: false });
+    }
+
     this.advanceTo('password', 'company');
   }
 
@@ -345,23 +752,48 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
 
   submitPassword() {
     if (this.passwordForm.invalid) { this.passwordForm.markAllAsTouched(); return; }
-    this.completedSteps.add('password');
     this.isSubmitting = true;
+    this.registerError = '';
     this.cdr.markForCheck();
 
-    // Stash the just-set credentials so the login page can pre-fill them.
-    // Wizard does NOT auto-login — user is sent to /login to actually sign in.
-    const email = this.contactForm.value.email || '';
-    const password = this.passwordForm.value.password || '';
-    try {
-      localStorage.setItem(PENDING_LOGIN_KEY, JSON.stringify({ email, password }));
-    } catch { /* localStorage may be disabled — fall through */ }
+    const payload = {
+      firstName: this.nameForm.value.firstName || '',
+      lastName: this.nameForm.value.lastName || '',
+      mobile: this.contactForm.value.mobile || '',
+      email: this.contactForm.value.email || '',
+      countryCode: '91',
+      gstNumber: (this.gstForm.value.gstNumber || '').trim(),
+      panNumber: (this.panForm.value.panNumber || '').trim(),
+      companyName: (this.companyForm.value.companyName || '').trim(),
+      companyAddress: (this.companyForm.value.companyAddress || '').trim(),
+      password: this.passwordForm.value.password || '',
+      mobileVerificationToken: this.mobileVerificationToken,
+      emailVerificationToken: this.emailVerificationToken,
+    };
 
-    // Mock account-creation delay, then route to login
-    setTimeout(() => {
+    this.registrationService.registerAccount(payload).subscribe(result => {
       this.isSubmitting = false;
+
+      if (!result.success) {
+        this.registerError = result.message || 'Registration failed. Please try again.';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      this.completedSteps.add('password');
+      this.clearSavedProgress();
+
+      // Stash the just-set credentials so the login page can pre-fill them.
+      // Wizard does NOT auto-login — user is sent to /login to actually sign in.
+      try {
+        localStorage.setItem(PENDING_LOGIN_KEY, JSON.stringify({
+          email: payload.email,
+          password: payload.password,
+        }));
+      } catch { /* localStorage may be disabled — fall through */ }
+
       this.cdr.markForCheck();
       this.router.navigate(['/login'], { queryParams: { registered: '1' } });
-    }, 800);
+    });
   }
 }
