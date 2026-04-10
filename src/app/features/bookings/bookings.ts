@@ -423,6 +423,14 @@ export class BookingsComponent implements OnInit {
         this.isLoading = true;
         this.cdr.markForCheck();
 
+        // Show locally-registered bookings instantly while API loads
+        this.mergeRegistryBookings();
+        this.updateCalendarWithBookings();
+        if (this.upcomingBookings.length > 0 || this.completedBookings.length > 0) {
+            this.cdr.markForCheck();
+        }
+
+        // Then fetch full list from API (may be slow for agents with many bookings)
         this.bookingApi.getAllBookings().subscribe({
             next: (bookings: BookingDetails[]) => {
                 this.categorizeBookings(bookings);
@@ -432,8 +440,7 @@ export class BookingsComponent implements OnInit {
                 this.cdr.markForCheck();
             },
             error: () => {
-                this.mergeRegistryBookings();
-                this.updateCalendarWithBookings();
+                // API failed — keep showing registry bookings
                 this.isLoading = false;
                 this.cdr.markForCheck();
             }
@@ -523,15 +530,15 @@ export class BookingsComponent implements OnInit {
             // Registry has the truth — use it
             paymentOption = registryData.paymentOption || 0;
             paidVia = registryData.paymentMethod || 'wallet'; // 'wallet' or 'razorpay'
-            if (paymentOption === 1) paymentMethod = 'Pay any amount now';
-            else if (paymentOption === 2) paymentMethod = 'Pay 25% now, rest auto-deducted';
-            else if (paymentOption === 3) paymentMethod = 'Zero cash';
+            if (paymentOption === 1) paymentMethod = 'Pay Any Amount Now';
+            else if (paymentOption === 2) paymentMethod = 'Pay 25% Now, Rest Auto-Deducted';
+            else if (paymentOption === 3) paymentMethod = 'Zero Cash';
         } else {
             // Fallback: try API fields
             const paymentOpt = b.payment_option || b.paymentOption || b.prePaymentType || '';
-            if (paymentOpt === '1' || paymentOpt === 1) { paymentMethod = 'Pay any amount now'; paymentOption = 1; }
-            else if (paymentOpt === '2' || paymentOpt === 2) { paymentMethod = 'Pay 25% now, rest auto-deducted'; paymentOption = 2; }
-            else if (paymentOpt === '3' || paymentOpt === 3) { paymentMethod = 'Zero cash'; paymentOption = 3; }
+            if (paymentOpt === '1' || paymentOpt === 1) { paymentMethod = 'Pay Any Amount Now'; paymentOption = 1; }
+            else if (paymentOpt === '2' || paymentOpt === 2) { paymentMethod = 'Pay 25% Now, Rest Auto-Deducted'; paymentOption = 2; }
+            else if (paymentOpt === '3' || paymentOpt === 3) { paymentMethod = 'Zero Cash'; paymentOption = 3; }
             else { paymentMethod = 'Wallet Pay'; paymentOption = 0; }
         }
 
@@ -606,19 +613,19 @@ export class BookingsComponent implements OnInit {
 
     /** Short label for payment method — matches payment page option names exactly */
     getPaymentMethodShort(booking: BookingCard): string {
-        if (booking.paymentOption === 1) return 'Pay any amount now';
-        if (booking.paymentOption === 2) return 'Pay 25% now';
-        if (booking.paymentOption === 3) return 'Zero cash';
+        if (booking.paymentOption === 1) return 'Pay Any Amount Now';
+        if (booking.paymentOption === 2) return 'Pay 25% Now';
+        if (booking.paymentOption === 3) return 'Zero Cash';
         if (booking.prePayment && booking.fare && booking.prePayment >= booking.fare) return 'Fully Paid';
-        if (booking.prePayment && booking.cashToCollect && booking.cashToCollect > 0) return 'Pay 25% now';
+        if (booking.prePayment && booking.cashToCollect && booking.cashToCollect > 0) return 'Pay 25% Now';
         return booking.paymentMethod || 'Wallet Pay';
     }
 
     /** Full label for payment method (used in expanded detail view) */
     getPaymentMethodLabel(booking: BookingCard): string {
-        if (booking.paymentOption === 1) return 'Pay any amount now — Customer pays driver';
-        if (booking.paymentOption === 2) return 'Pay 25% now, rest auto-deducted';
-        if (booking.paymentOption === 3) return 'Zero cash';
+        if (booking.paymentOption === 1) return 'Pay Any Amount Now — Customer pays driver';
+        if (booking.paymentOption === 2) return 'Pay 25% Now, Rest Auto-Deducted';
+        if (booking.paymentOption === 3) return 'Zero Cash';
         if (booking.prePayment && booking.fare && booking.prePayment >= booking.fare) return 'Fully Paid';
         return booking.paymentMethod || 'Wallet Pay';
     }

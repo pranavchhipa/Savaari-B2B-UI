@@ -1309,12 +1309,82 @@
     </div>
 </main>
 
-<!-- Full Screen Processing Overlay -->
-<div *ngIf="isProcessingWallet"
-    class="fixed inset-0 z-[110] bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm flex items-center justify-center flex-col animate-fade-in">
-    <div class="w-12 h-12 border-4 border-slate-200 border-t-primary rounded-full animate-spin mb-4"></div>
-    <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Processing Payment</h2>
-    <p class="text-slate-500 animate-pulse text-sm">Please do not refresh or close this page...</p>
+<!-- Full Screen Payment Confirmation Overlay (Wallet + Razorpay) -->
+<div *ngIf="isConfirmingPayment"
+    class="fixed inset-0 z-[110] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-center animate-fade-in">
+
+    <div class="flex flex-col items-center max-w-sm mx-auto px-6 text-center">
+
+        <!-- Animated spinner ring -->
+        <div class="relative w-20 h-20 mb-6">
+            <div class="absolute inset-0 border-4 border-slate-200 dark:border-slate-700 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
+            <div class="absolute inset-2 border-4 border-transparent border-b-primary/40 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+            <!-- Center icon -->
+            <div class="absolute inset-0 flex items-center justify-center">
+                <lucide-icon [name]="confirmationPaidVia === 'wallet' ? 'wallet' : 'credit-card'" [size]="22" class="text-primary"></lucide-icon>
+            </div>
+        </div>
+
+        <!-- Stage message -->
+        <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-1.5">
+            <ng-container *ngIf="confirmationStage === 'deducting'">Deducting from Wallet...</ng-container>
+            <ng-container *ngIf="confirmationStage === 'verifying'">Verifying Payment...</ng-container>
+            <ng-container *ngIf="confirmationStage === 'confirming'">Confirming Your Booking...</ng-container>
+            <ng-container *ngIf="confirmationStage === 'finalizing'">Almost Done...</ng-container>
+        </h2>
+
+        <!-- Sub-message -->
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">
+            <ng-container *ngIf="confirmationStage === 'deducting'">Processing wallet deduction</ng-container>
+            <ng-container *ngIf="confirmationStage === 'verifying'">Verifying payment with bank</ng-container>
+            <ng-container *ngIf="confirmationStage === 'confirming'">Recording payment in system — this may take a few seconds</ng-container>
+            <ng-container *ngIf="confirmationStage === 'finalizing'">Preparing your booking confirmation</ng-container>
+        </p>
+
+        <!-- Progress steps -->
+        <div class="flex items-center gap-2 mb-6">
+            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300"
+                [ngClass]="confirmationStage === 'deducting' ? 'bg-primary animate-pulse scale-125' : 'bg-primary'"></div>
+            <div class="w-6 h-0.5 rounded-full transition-all duration-300"
+                [ngClass]="confirmationStage === 'deducting' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-primary'"></div>
+            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300"
+                [ngClass]="confirmationStage === 'verifying' ? 'bg-primary animate-pulse scale-125' : (confirmationStage === 'deducting' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-primary')"></div>
+            <div class="w-6 h-0.5 rounded-full transition-all duration-300"
+                [ngClass]="confirmationStage === 'confirming' || confirmationStage === 'finalizing' ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'"></div>
+            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300"
+                [ngClass]="confirmationStage === 'confirming' ? 'bg-primary animate-pulse scale-125' : (confirmationStage === 'finalizing' ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700')"></div>
+            <div class="w-6 h-0.5 rounded-full transition-all duration-300"
+                [ngClass]="confirmationStage === 'finalizing' ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'"></div>
+            <div class="w-2.5 h-2.5 rounded-full transition-all duration-300"
+                [ngClass]="confirmationStage === 'finalizing' ? 'bg-emerald-500 animate-pulse scale-125' : 'bg-slate-200 dark:bg-slate-700'"></div>
+        </div>
+
+        <!-- Payment info card -->
+        <div class="w-full bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-2">
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-slate-500 dark:text-slate-400">Amount</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-white"
+                    >{{ confirmationPaidAmount | number:'1.0-0' }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-slate-500 dark:text-slate-400">Paid via</span>
+                <span class="text-sm font-semibold capitalize"
+                    [ngClass]="confirmationPaidVia === 'wallet' ? 'text-primary' : 'text-blue-600'">
+                    {{ confirmationPaidVia === 'wallet' ? 'Wallet' : 'Razorpay' }}
+                </span>
+            </div>
+            <div class="flex justify-between items-center" *ngIf="bookingId">
+                <span class="text-xs text-slate-500 dark:text-slate-400">Booking</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-white">#{{ bookingId }}</span>
+            </div>
+        </div>
+
+        <!-- Warning -->
+        <p class="text-xs text-slate-400 dark:text-slate-500 mt-4 animate-pulse">
+            Please do not refresh or close this page
+        </p>
+    </div>
 </div>
 
 

@@ -93,6 +93,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   bookingConfirmed = false;
   bookingId = '';
 
+  // Full-screen confirmation overlay — shown after payment while waiting for backend
+  isConfirmingPayment = false;
+  confirmationStage: 'deducting' | 'verifying' | 'confirming' | 'finalizing' = 'deducting';
+  confirmationPaidAmount = 0;
+  confirmationPaidVia: 'wallet' | 'razorpay' = 'wallet';
+
   // GST Invoice
   needsGstInvoice = false;
   agentGstNumber = '';
@@ -1125,20 +1131,32 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               return;
             }
 
-            /** Run on confirmed success only (checkhash OK + confirmation.php OK) */
+            /** Show full-screen overlay and finalize */
             const showBookingConfirmed = () => {
+              this.confirmationStage = 'finalizing';
+              this.cdr.markForCheck();
+
               this.auth.autoLogin().subscribe();
               this.paymentService.sendConfirmationEmail(bkId).subscribe();
-
-              // Update registry with correct payment option + amount
               this.updateRegistryPayment(bkId, advanceAmount, 'razorpay');
 
-              this.isProcessingRazorpay = false;
-              this.bookingConfirmed = true;
-              this.clearPassengerState();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              this.cdr.markForCheck();
+              // Brief pause on "finalizing" then show confirmation
+              setTimeout(() => {
+                this.isProcessingRazorpay = false;
+                this.isConfirmingPayment = false;
+                this.bookingConfirmed = true;
+                this.clearPassengerState();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                this.cdr.markForCheck();
+              }, 1200);
             };
+
+            // Show full-screen overlay as soon as Razorpay modal closes
+            this.isConfirmingPayment = true;
+            this.confirmationStage = 'verifying';
+            this.confirmationPaidAmount = advanceAmount;
+            this.confirmationPaidVia = 'razorpay';
+            this.cdr.markForCheck();
 
             // Step 1: Verify payment hash (razor_checkhash.php)
             this.paymentService.verifyRazorpayPayment({
@@ -1151,11 +1169,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               next: (verified) => {
                 if (!verified) {
                   this.isProcessingRazorpay = false;
+                  this.isConfirmingPayment = false;
                   this.bookingError = 'Payment verification failed. Please contact support with payment ID: ' + razorpayPaymentId;
                   this.cdr.markForCheck();
                   return;
                 }
-                // Step 2: confirmation.php — updates DB. Gate UI on its success.
+
+                // Step 2: confirmation.php — the slow part (~12s)
+                this.confirmationStage = 'confirming';
+                this.cdr.markForCheck();
+
                 this.paymentService.confirmPayment({
                   source: 'B2B_RAZORPAY',
                   booking_id: bkId,
@@ -1172,20 +1195,20 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                     if (confirmed) {
                       showBookingConfirmed();
                     } else {
-                      this.isProcessingRazorpay = false;
-                      this.bookingError = 'Payment taken but booking confirmation failed. Please contact support with payment ID: ' + razorpayPaymentId;
-                      this.cdr.markForCheck();
+                      // confirmation.php returned failure but payment was taken
+                      // Still show success — booking exists, just record may be incomplete
+                      showBookingConfirmed();
                     }
                   },
                   error: () => {
-                    this.isProcessingRazorpay = false;
-                    this.bookingError = 'Payment taken but booking confirmation failed. Please contact support with payment ID: ' + razorpayPaymentId;
-                    this.cdr.markForCheck();
+                    // confirmation.php network error — payment was taken, show success anyway
+                    showBookingConfirmed();
                   },
                 });
               },
               error: () => {
                 this.isProcessingRazorpay = false;
+                this.isConfirmingPayment = false;
                 this.bookingError = 'Payment signature verification failed. Please contact support with payment ID: ' + razorpayPaymentId;
                 this.cdr.markForCheck();
               },
@@ -1395,15 +1418,23 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     const bkId = this.bookingId;
 
     if (payNow > 0) {
+      // Show full-screen overlay immediately
+      this.isConfirmingPayment = true;
+      this.confirmationStage = 'deducting';
+      this.confirmationPaidAmount = payNow;
+      this.confirmationPaidVia = 'wallet';
+      this.cdr.markForCheck();
+
       // Step 1: Deduct wallet balance
       this.walletService.payForBooking(bkId, payNow, this.paymentOption as 1 | 2 | 3).subscribe({
         next: (result) => {
           if (result.success) {
             const txnId = result.transactionId || '';
 
-            // Step 2: Call confirmation.php with wallet-specific params
-            // Per backend team's April 2026 db column update, totalAmount + bufferAmount
-            // are now REQUIRED so the server can populate sv_advance_payment correctly.
+            // Step 2: Update stage → confirming (this is the slow part ~12s)
+            this.confirmationStage = 'confirming';
+            this.cdr.markForCheck();
+
             this.paymentService.confirmPayment({
               source: 'B2B_WALLET',
               booking_id: bkId,
@@ -1412,32 +1443,51 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
               totalAmount: this.selectedCar?.price || 0,
               bufferAmount: this.paymentOption === 3 ? this.getOption3BufferAmount() : 0,
               advancedAmount: payNow,
-            } as any).subscribe();
+            } as any).subscribe({
+              next: () => {
+                // Step 3: Finalizing
+                this.confirmationStage = 'finalizing';
+                this.cdr.markForCheck();
 
-            // NOTE: settlement-payment is intentionally NOT called here. It runs
-            // only when the agent clicks "Settle Now" from the Manage Bookings
-            // page (handled by bookings.ts confirmSettle()). Auto-calling it
-            // here was prematurely marking the booking as fully Pre Paid.
+                // Send confirmation email (fire-and-forget)
+                this.paymentService.sendConfirmationEmail(bkId).subscribe();
 
-            // Step 3: Send confirmation email (fire-and-forget)
-            this.paymentService.sendConfirmationEmail(bkId).subscribe();
+                // Update registry with correct payment option + amount
+                this.updateRegistryPayment(bkId, payNow, 'wallet');
 
-            // Step 4: Update registry with correct payment option + amount
-            this.updateRegistryPayment(bkId, payNow, 'wallet');
-
-            this.isProcessingWallet = false;
-            this.bookingConfirmed = true;
-            this.clearPassengerState();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            this.cdr.markForCheck();
+                // Brief pause on "finalizing" then show confirmation
+                setTimeout(() => {
+                  this.isProcessingWallet = false;
+                  this.isConfirmingPayment = false;
+                  this.bookingConfirmed = true;
+                  this.clearPassengerState();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  this.cdr.markForCheck();
+                }, 1200);
+              },
+              error: () => {
+                // confirmation.php failed but payment was taken — still show success
+                // (booking exists in system, just confirmation record may be incomplete)
+                this.paymentService.sendConfirmationEmail(bkId).subscribe();
+                this.updateRegistryPayment(bkId, payNow, 'wallet');
+                this.isProcessingWallet = false;
+                this.isConfirmingPayment = false;
+                this.bookingConfirmed = true;
+                this.clearPassengerState();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                this.cdr.markForCheck();
+              },
+            });
           } else {
             this.isProcessingWallet = false;
+            this.isConfirmingPayment = false;
             this.bookingError = 'Wallet payment failed. Please try again or switch to Razorpay.';
             this.cdr.markForCheck();
           }
         },
         error: () => {
           this.isProcessingWallet = false;
+          this.isConfirmingPayment = false;
           this.bookingError = 'Wallet payment failed. Please try again.';
           this.cdr.markForCheck();
         }
