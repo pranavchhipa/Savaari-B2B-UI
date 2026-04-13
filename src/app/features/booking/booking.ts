@@ -63,6 +63,28 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   countryDropdownOpen = false;
   countrySearch = '';
 
+  /** Airport route FROM label (locked field on booking page) */
+  get airportRouteFrom(): string {
+    if (!this.itinerary || this.itinerary.tripType !== 'Airport') return '';
+    if (this.itinerary.airportSubType === 'pickup') {
+      // Pickup from Airport: FROM = airport
+      return this.itinerary.airportName || this.itinerary.dropAirport || '';
+    }
+    // Drop to Airport: FROM = user's address
+    return this.itinerary.pickupAddress || this.itinerary.custShortAddress || '';
+  }
+
+  /** Airport route TO label (locked field on booking page) */
+  get airportRouteTo(): string {
+    if (!this.itinerary || this.itinerary.tripType !== 'Airport') return '';
+    if (this.itinerary.airportSubType === 'pickup') {
+      // Pickup from Airport: TO = user's address (destination)
+      return this.itinerary.pickupAddress || this.itinerary.custShortAddress || '';
+    }
+    // Drop to Airport: TO = airport
+    return this.itinerary.airportName || this.itinerary.dropAirport || '';
+  }
+
   step1Complete = false;
   showRazorpayModal = false;
   showVASModal = false;
@@ -252,6 +274,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     // Restore passenger details from session storage (survives back navigation)
     this.restorePassengerState();
+
+    // Pre-fill address from itinerary (entered on dashboard) when booking page loads fresh
+    this.prefillAddressFromItinerary();
 
     // Intercept browser back button: if on payment step, go back to passenger details instead of leaving
     this.locationSub = this.location.subscribe((event) => {
@@ -617,14 +642,15 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     const match = this.dropSuggestionsRaw.find(s => this.stripCountry(s.description) === selected);
     if (!match?.place_id) return;
 
-    // Resolve place_id to get place_name + sublocality + lat/lng + alias IDs for booking create.
-    this.addressAutocomplete.getPlaceDetails(match.place_id, 'to').subscribe(details => {
+    // Always use request='from' — request='to' returns empty location/city data from Savaari API.
+    // aliasSourceCityId is populated reliably; use as fallback for aliasDestCityId.
+    this.addressAutocomplete.getPlaceDetails(match.place_id, 'from').subscribe(details => {
       if (!details) return;
 
       this.dropPlaceName = details.name;
       this.dropSublocality = details.sublocality;
       this.dropLatLng = { lat: details.lat, lng: details.lng };
-      this.dropAliasDestCityId = details.aliasDestCityId;
+      this.dropAliasDestCityId = details.aliasDestCityId || details.aliasSourceCityId;
 
       // Surge/fare recalculation happens server-side on booking create (not client-side).
       // Real surge data comes from booking API response's oneway_surge_details.
@@ -714,6 +740,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /** Check if all mandatory pickup fields are filled */
   isPickupDetailsValid(): boolean {
+    // Airport bookings: addresses are locked (pre-filled from dashboard), only need name + phone
+    if (this.itinerary?.tripType === 'Airport') {
+      return this.isGuestNameValid() && this.isPhoneValid();
+    }
     // For One Way trips, drop address is also required
     if (this.itinerary?.tripType === 'One Way') {
       return this.isGuestNameValid() && this.isPhoneValid() && this.isPickupAddressValid() && this.isDropAddressValid();
@@ -1260,7 +1290,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       pickupDateTime: toSavaariDateTime(new Date(this.itinerary!.pickupDate), this.itinerary!.pickupTime),
       duration: this.itinerary!.duration || 1,
       pickupAddress: pickupAddr || this.itinerary!.pickupAddress || '',
-      customerLatLong: this.pickupLatLng ? `${this.pickupLatLng.lat},${this.pickupLatLng.lng}` : '',
+      customerLatLong: this.pickupLatLng ? `${this.pickupLatLng.lat},${this.pickupLatLng.lng}` : (this.itinerary?.customerLatLong || ''),
       locality,
       // alias_source_city_id comes from place_id API (source_city_map_info.city_id)
       // populated in onPickupAddressSelect when user picks a pickup suggestion.
@@ -1546,6 +1576,39 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (state.selectedCountryCode) this.selectedCountryCode = state.selectedCountryCode;
       this.cdr.markForCheck();
     } catch {}
+  }
+
+  /** Pre-fill pickup/drop address from itinerary data (entered on dashboard).
+   *  Only fills if the field is currently empty — doesn't overwrite user edits. */
+  private prefillAddressFromItinerary(): void {
+    if (!this.itinerary) return;
+
+    if (this.itinerary.tripType === 'Airport') {
+      if (this.itinerary.airportSubType === 'drop') {
+        // Drop to Airport: pickup = user's home address (entered as "Pickup Address" on dashboard)
+        if (!this.pickupAddress) {
+          this.pickupAddress = this.itinerary.pickupAddress || this.itinerary.custShortAddress || '';
+        }
+      } else if (this.itinerary.airportSubType === 'pickup') {
+        // Pickup from Airport: pickup = airport terminal (entered as "Pickup Airport" on dashboard)
+        if (!this.pickupAddress) {
+          this.pickupAddress = this.itinerary.airportName || this.itinerary.dropAirport || '';
+        }
+      }
+      // Carry over resolved lat/lng from dashboard place_id resolution
+      if (!this.pickupLatLng && this.itinerary.customerLatLong) {
+        const parts = this.itinerary.customerLatLong.split(',');
+        if (parts.length === 2) {
+          this.pickupLatLng = { lat: parseFloat(parts[0]), lng: parseFloat(parts[1]) };
+        }
+      }
+    } else {
+      // Non-airport bookings: carry over pickupAddress from itinerary if available
+      if (!this.pickupAddress && this.itinerary.pickupAddress) {
+        this.pickupAddress = this.itinerary.pickupAddress;
+      }
+    }
+    this.cdr.markForCheck();
   }
 
   /** Clear passenger state after successful booking */

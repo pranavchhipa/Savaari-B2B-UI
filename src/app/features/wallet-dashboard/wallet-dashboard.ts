@@ -25,6 +25,11 @@ export class WalletDashboardComponent implements OnInit {
 
   get agentId(): string { return this.auth.getAgentId(); }
 
+  /** Agent's uploaded company logo (from Account Settings). When present, replaces B2B CAB logo on wallet card. */
+  get agentLogo(): string | null {
+    return localStorage.getItem('agentLogo');
+  }
+
   // Observables bound to template via async pipe
   balance$: Observable<number> = this.walletService.balance$;
   transactions$: Observable<WalletTransaction[]> = this.walletService.transactions$;

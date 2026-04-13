@@ -166,7 +166,26 @@
                             </div>
                             <div *ngIf="formSubmitAttempted && !isPhoneValid()" class="text-xs text-red-500 mt-1 ml-4">Valid phone number required (min 10 digits)</div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
+                        <!-- ── Airport bookings: locked FROM → TO route fields ── -->
+                        <div *ngIf="itinerary?.tripType === 'Airport'" class="flex flex-col gap-1">
+                            <!-- FROM (pickup point) -->
+                            <div class="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <lucide-icon name="crosshair" [size]="18" class="text-primary shrink-0"></lucide-icon>
+                                <span class="text-sm text-slate-700 dark:text-slate-200 font-medium">{{ airportRouteFrom }}</span>
+                            </div>
+                            <!-- Arrow -->
+                            <div class="flex justify-center py-0.5">
+                                <lucide-icon name="arrow-down" [size]="16" class="text-slate-400"></lucide-icon>
+                            </div>
+                            <!-- TO (drop point) -->
+                            <div class="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <lucide-icon name="crosshair" [size]="18" class="text-red-500 shrink-0"></lucide-icon>
+                                <span class="text-sm text-slate-700 dark:text-slate-200 font-medium">{{ airportRouteTo }}</span>
+                            </div>
+                        </div>
+
+                        <!-- ── Non-airport bookings: editable address fields ── -->
+                        <div *ngIf="itinerary?.tripType !== 'Airport'" class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
                             <!-- Pickup Address with locality autocomplete -->
                             <div class="relative group">
                                 <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary z-10 pointer-events-none">

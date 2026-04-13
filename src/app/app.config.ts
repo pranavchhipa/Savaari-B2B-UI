@@ -21,7 +21,7 @@ import {
   ArrowDownLeft, ArrowUpRight, CreditCard, Loader2, Filter, AlertTriangle,
   ArrowLeft, Plus, Check, Eye, EyeOff,
   TrendingUp, TrendingDown, Menu, LayoutDashboard, Headphones, CheckCircle2,
-  Crosshair, AlertCircle, RefreshCw, Inbox,
+  Crosshair, AlertCircle, RefreshCw, Inbox, ArrowDown,
   CalendarCheck, BarChart3, Percent, ChevronLeft,
   Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal,
   Package, Tag, Wrench, Smartphone, Landmark, Award, CircleCheck, CircleAlert, Circle } from 'lucide-angular';
@@ -59,7 +59,7 @@ export const appConfig: ApplicationConfig = {
         ArrowDownLeft, ArrowUpRight, CreditCard, Loader2, Filter, AlertTriangle,
         ArrowLeft, Plus, Check, Eye, EyeOff,
         TrendingUp, TrendingDown, Menu, LayoutDashboard, Headphones, CheckCircle2,
-        Crosshair, AlertCircle, RefreshCw, Inbox,
+        Crosshair, AlertCircle, RefreshCw, Inbox, ArrowDown,
         CalendarCheck, BarChart3, Percent, ChevronLeft,
         Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal,
         Package, Tag, Wrench, Smartphone, Landmark, Award, CircleCheck, CircleAlert, Circle

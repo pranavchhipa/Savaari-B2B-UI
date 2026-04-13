@@ -152,7 +152,7 @@
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
             <!-- PICKUP DATE -->
             <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-              (click)="pickupDate1.showOverlay()">
+              (click)="openPicker($event, pickupDate1)">
               <lucide-icon name="calendar" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
@@ -165,7 +165,7 @@
 
             <!-- PICKUP TIME -->
             <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-              (click)="pickupTime1.showOverlay()">
+              (click)="openPicker($event, pickupTime1)">
               <lucide-icon name="clock" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
@@ -292,7 +292,7 @@
 
             <!-- PICKUP DATE -->
             <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-              (click)="pickupDate2.showOverlay()">
+              (click)="openPicker($event, pickupDate2)">
               <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
@@ -305,7 +305,7 @@
 
             <!-- PICKUP TIME -->
             <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-              (click)="pickupTime2.showOverlay()">
+              (click)="openPicker($event, pickupTime2)">
               <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
@@ -319,7 +319,7 @@
 
             <!-- RETURN DATE -->
             <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-              (click)="returnDate2.showOverlay()">
+              (click)="openPicker($event, returnDate2)">
               <lucide-icon name="calendar" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Return <span class="text-red-400">*</span></span>
@@ -390,7 +390,7 @@
 
           <!-- PICKUP DATE -->
           <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-            (click)="pickupDate3.showOverlay()">
+            (click)="openPicker($event, pickupDate3)">
             <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
               <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
@@ -404,7 +404,7 @@
 
           <!-- PICKUP TIME -->
           <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-            (click)="pickupTime3.showOverlay()">
+            (click)="openPicker($event, pickupTime3)">
             <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
               <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
@@ -438,8 +438,9 @@
               </div>
             </div>
 
-            <!-- Pickup Address -->
-            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
+            <!-- Address (order swaps: 2nd for Drop-to-Airport, 3rd for Pickup-from-Airport) -->
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+              [style.order]="bookingForm.get('tripType')?.value === 'pickup' ? 3 : 2">
               <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
@@ -467,8 +468,9 @@
               </button>
             </div>
 
-            <!-- Drop Airport -->
-            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
+            <!-- Airport (order swaps: 3rd for Drop-to-Airport, 2nd for Pickup-from-Airport) -->
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+              [style.order]="bookingForm.get('tripType')?.value === 'pickup' ? 2 : 3">
               <lucide-icon name="plane" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
@@ -501,7 +503,7 @@
 
             <!-- PICKUP DATE -->
             <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-              (click)="pickupDate4.showOverlay()">
+              (click)="openPicker($event, pickupDate4)">
               <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
@@ -515,7 +517,7 @@
 
             <!-- PICKUP TIME -->
             <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
-              (click)="pickupTime4.showOverlay()">
+              (click)="openPicker($event, pickupTime4)">
               <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>

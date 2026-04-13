@@ -266,14 +266,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** When user selects an address from autocomplete → call 2nd API (place_id) to get lat/lng + city IDs */
+  /** When user selects an address from autocomplete → call place_id API for lat/lng + city IDs.
+   *  Handles graceful fallback when place_id API returns empty data (common with beta API). */
   onAddressSelect(event: any) {
     const suggestion: AddressSuggestion = event.value || event;
     if (!suggestion?.place_id) return;
 
-    const request = this.bookingForm.get('tripType')?.value === 'pickup' ? 'to' : 'from';
-    this.addressAutocomplete.getPlaceDetails(suggestion.place_id, request).subscribe(details => {
-      if (details) {
+    // Fallback suggestion (city-level, has latlng directly) — skip place_id API call
+    if (suggestion.isFallback && suggestion.latlng) {
+      const parts = suggestion.latlng.split(',');
+      this.selectedPlaceDetails = {
+        lat: parseFloat(parts[0]) || 0,
+        lng: parseFloat(parts[1]) || 0,
+        name: suggestion.main_text || suggestion.description || '',
+        place_id: suggestion.place_id,
+        aliasSourceCityId: 0,
+        aliasDestCityId: 0,
+      };
+      if (!environment.production) {
+        console.log('[Dashboard] Fallback address selected (no place_id call):', suggestion.description, 'lat:', this.selectedPlaceDetails.lat, 'lng:', this.selectedPlaceDetails.lng);
+      }
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // Call place_id API with request='from' (request='to' returns empty data from beta API)
+    this.addressAutocomplete.getPlaceDetails(suggestion.place_id, 'from').subscribe(details => {
+      if (details && details.lat && details.lng) {
+        // API returned valid coordinates
         this.selectedPlaceDetails = {
           lat: details.lat,
           lng: details.lng,
@@ -282,9 +302,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
           aliasSourceCityId: details.aliasSourceCityId,
           aliasDestCityId: details.aliasDestCityId,
         };
+      } else {
+        // place_id API returned empty/zero data — use airport coordinates as fallback
+        const airportLL = this.selectedAirportCity?.ll?.split(',') || [];
+        this.selectedPlaceDetails = {
+          lat: parseFloat(airportLL[0]) || 0,
+          lng: parseFloat(airportLL[1]) || 0,
+          name: details?.name || suggestion.main_text || suggestion.description || '',
+          place_id: details?.place_id || suggestion.place_id,
+          aliasSourceCityId: details?.aliasSourceCityId || 0,
+          aliasDestCityId: details?.aliasDestCityId || 0,
+        };
         if (!environment.production) {
-          console.log('[Dashboard] Place details resolved:', details.name, 'sourceCity:', details.aliasSourceCityId, 'destCity:', details.aliasDestCityId);
+          console.log('[Dashboard] place_id returned empty data, using airport coords as fallback');
         }
+      }
+      if (!environment.production) {
+        console.log('[Dashboard] Place details resolved:', this.selectedPlaceDetails.name,
+          'lat:', this.selectedPlaceDetails.lat, 'lng:', this.selectedPlaceDetails.lng,
+          'sourceCity:', this.selectedPlaceDetails.aliasSourceCityId, 'destCity:', this.selectedPlaceDetails.aliasDestCityId);
       }
       this.cdr.markForCheck();
     });
@@ -692,8 +728,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       // Restore extra destinations
       if (state.extraDestinations?.length) this.extraDestinations = state.extraDestinations;
 
-      // Load destination cities if source city was already selected
-      if (state.fromCity?.id) {
+      // Load destination cities if source city was already selected (not for Airport/Local)
+      if (state.fromCity?.id && this.selectedTab !== 'AIRPORT' && this.selectedTab !== 'LOCAL') {
         const apiParams = this.tripTypeService.mapUiTabToApiParams(this.selectedTab, {});
         this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, state.fromCity.id).subscribe(cities => {
           this.destinationCities = cities;
@@ -834,8 +870,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
   
 
-  /** Load destination cities based on selected source city */
+  /** Load destination cities based on selected source city.
+   *  Airport & Local tabs don't use destination cities — skip to avoid "Invalid trip type" 400. */
   private loadDestinationCities() {
+    if (this.selectedTab === 'AIRPORT' || this.selectedTab === 'LOCAL') return;
     const apiParams = this.getApiParams();
     this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, 377).subscribe({
       next: (cities) => {
@@ -968,6 +1006,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.analytics.trackSwitchTripType(prevSubtype, this.getAnalyticsSubtype(tab));
   }
 
+  /** Open a PrimeNG datepicker from the parent cell click.
+   *  Skips if the click landed on the datepicker's own input (PrimeNG handles that). */
+  openPicker(event: Event, picker: any) {
+    if ((event.target as HTMLElement).tagName === 'INPUT') return;
+    picker.showOverlay();
+  }
+
   private getAnalyticsSubtype(tab: any): string {
     switch (tab) {
       case 'ONE_WAY': return 'oneWay';
@@ -1029,14 +1074,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Airport validation: require airport selection + pickup address with resolved lat/lng
+    // Airport validation: require airport selection + address selection from suggestions.
+    // Note: place_id API may return lat:0/lng:0 — airport's own coordinates used as fallback.
+    // Live site sends customerLatLong='' for airport, so lat/lng not strictly required.
     if (isAirport) {
       if (!this.selectedAirportCity && !val.airportLocality?.id) {
+        this.formSubmitted = false;
         this.showError = true;
         this.errorMessage = 'Please select an airport.';
         return;
       }
-      if (!this.selectedPlaceDetails?.lat || !this.selectedPlaceDetails?.lng) {
+      if (!this.selectedPlaceDetails) {
+        this.formSubmitted = false;
         this.showError = true;
         this.errorMessage = 'Please select a pickup/drop address from the suggestions.';
         return;
@@ -1055,6 +1104,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (combined.getTime() < earliest.getTime()) {
         // Bump the form forward and show a clear message instead of failing silently.
         this.updateUrgentGapConstraints(val.pickupDate);
+        this.formSubmitted = false;
         this.showError = true;
         this.errorMessage = `Urgent bookings need at least ${this.URGENT_GAP_HOURS} hours of gap. Pickup time has been adjusted — please review and try again.`;
         return;
@@ -1131,17 +1181,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
         custShortAddress: (typeof val.pickupAddress === 'object' ? (val.pickupAddress?.description || val.pickupAddress?.main_text || val.pickupAddress?.name) : val.pickupAddress) || '',
         // Pass resolved place details for booking page to use
         selectPlaceId: this.selectedPlaceDetails?.place_id || '',
-        customerLatLong: this.selectedPlaceDetails ? `${this.selectedPlaceDetails.lat},${this.selectedPlaceDetails.lng}` : '',
+        customerLatLong: (this.selectedPlaceDetails?.lat && this.selectedPlaceDetails?.lng)
+          ? `${this.selectedPlaceDetails.lat},${this.selectedPlaceDetails.lng}`
+          : (selectedAirport?.ll || ''),
       })
     };
 
     this.bookingState.setItinerary(itinerary);
 
     // ── Airport → One Way upfront conversion (confirmed by backend team) ──
-    // Compare address city (source_city_info.city_id from place_id API) with airport city.
+    // Compare address city (source_city_map_info.city_id from place_id API) with airport city.
     // If different → user is in a different city from the airport → convert to one-way directly.
-    if (isAirport && this.selectedPlaceDetails?.aliasSourceCityId) {
-      const addressCityId = this.selectedPlaceDetails.aliasSourceCityId;
+    // place_id API always called with request='from', so aliasSourceCityId is reliably populated.
+    const addressCityId = this.selectedPlaceDetails?.aliasSourceCityId || this.selectedPlaceDetails?.aliasDestCityId;
+
+    if (!environment.production && isAirport) {
+      console.log('[Dashboard] Airport conversion check — direction:', val.tripType,
+        '| aliasSourceCityId:', this.selectedPlaceDetails?.aliasSourceCityId,
+        '| aliasDestCityId:', this.selectedPlaceDetails?.aliasDestCityId,
+        '| resolved addressCityId:', addressCityId,
+        '| airportCityId:', selectedAirport?.id || fromCityId);
+    }
+
+    if (isAirport && addressCityId) {
       const airportCityId = selectedAirport?.id || fromCityId;
 
       if (addressCityId !== airportCityId) {
@@ -1190,7 +1252,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
         terminalId: '',
         selectPlaceId: this.selectedPlaceDetails?.place_id || '',
         custShortAddress: (typeof val.pickupAddress === 'object' ? (val.pickupAddress?.description || val.pickupAddress?.main_text || val.pickupAddress?.name) : val.pickupAddress) || '',
-        customerLatLong: this.selectedPlaceDetails ? `${this.selectedPlaceDetails.lat},${this.selectedPlaceDetails.lng}` : '',
+        // Use place details lat/lng if valid, otherwise airport coordinates, otherwise empty (live site sends '')
+        customerLatLong: (this.selectedPlaceDetails?.lat && this.selectedPlaceDetails?.lng)
+          ? `${this.selectedPlaceDetails.lat},${this.selectedPlaceDetails.lng}`
+          : (selectedAirport?.ll || ''),
       }),
     };
 
@@ -1206,12 +1271,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // For airport fallback: check if address and airport are in the same city
     // Same city = never convert to one-way (confirmed by backend team)
-    const isSameCityAirport = isAirport &&
-      this.selectedPlaceDetails?.aliasSourceCityId === fromCityId;
+    // Use both aliasSourceCityId and aliasDestCityId — either matching means same city
+    const addressCityIdForFallback = this.selectedPlaceDetails?.aliasSourceCityId || this.selectedPlaceDetails?.aliasDestCityId;
+    const isSameCityAirport = isAirport && addressCityIdForFallback === fromCityId;
 
     // Pre-compute city names for potential one-way conversion fallback
-    const fallbackAddressName = this.selectedPlaceDetails?.name || '';
-    const fallbackAirportCityName = selectedAirport?.cityOnly || selectedAirport?.name?.split(',').pop()?.trim() || '';
+    // For "Pickup from Airport": source = airport city, dest = address city
+    // For "Drop to Airport": source = address city, dest = airport city
+    const addressText = (typeof val.pickupAddress === 'object' ? (val.pickupAddress?.description || val.pickupAddress?.main_text || val.pickupAddress?.name) : val.pickupAddress) || '';
+    const rawAddressName = this.selectedPlaceDetails?.name || addressText.split(',')[0]?.trim() || '';
+    const rawAirportCityName = selectedAirport?.cityOnly || selectedAirport?.name?.split(',').pop()?.trim() || '';
+    const isPickupDirection = val.tripType === 'pickup';
+    const fallbackFromName = isPickupDirection ? rawAirportCityName : rawAddressName;
+    const fallbackToName = isPickupDirection ? rawAddressName : rawAirportCityName;
+    const fallbackDestId = isPickupDirection ? (addressCityIdForFallback || undefined) : undefined;
 
     this.availabilityService.checkAvailability(availabilityRequest).subscribe({
       next: (response) => {
@@ -1226,7 +1299,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             return;
           }
           // Different city — convert to One Way (HAR-confirmed behavior)
-          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr, undefined, fallbackAddressName, fallbackAirportCityName);
+          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr, fallbackDestId, fallbackFromName, fallbackToName);
           return;
         }
         this.bookingState.setAvailabilityResponse(response);
@@ -1246,7 +1319,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             return;
           }
           // Different city — convert to One Way (HAR-confirmed behavior)
-          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr, undefined, fallbackAddressName, fallbackAirportCityName);
+          this.convertAirportToOneWay(itinerary, fromCityId, pickupDate, pickupTimeStr, fallbackDestId, fallbackFromName, fallbackToName);
           return;
         }
         this.isSearching = false;

@@ -686,6 +686,11 @@ export class SelectCarComponent implements OnInit {
     return this.itinerary?.tripType === 'Airport';
   }
 
+  /** True when an airport booking was auto-converted to One Way (different city) */
+  get isAirportConverted(): boolean {
+    return !!(this.itinerary as any)?.airportConvertedToOneWay;
+  }
+
   get airportSubTypeLabel(): string {
     const sub = this.itinerary?.airportSubType;
     return sub === 'pickup' ? 'Pickup from Airport' : 'Drop to Airport';
