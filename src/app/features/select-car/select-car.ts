@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { LucideAngularModule, Fuel, UserCheck, Moon, Receipt, FileText, Banknote, ParkingCircle, Gauge, Users, Briefcase, Snowflake, ChevronDown, ChevronRight, Calendar, Clock } from 'lucide-angular';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BookingStateService, Itinerary, SelectedCar } from '../../core/services/booking-state.service';
@@ -53,6 +53,7 @@ interface DisplayCar {
     RouterModule,
     LucideAngularModule,
     ReactiveFormsModule,
+    FormsModule,
     FooterComponent,
     DatePickerModule,
     AutoCompleteModule,
@@ -112,6 +113,10 @@ export class SelectCarComponent implements OnInit {
   filteredDestinationCities: City[] = [];
   filteredAirports: City[] = [];
   airportList: City[] = [];
+
+  // Round Trip multi-city stops in modify modal
+  modifyExtraDestinations: City[] = [];
+  readonly MAX_DESTINATIONS = 12;
   filteredLocalities: any[] = [];
   selectedFromCity: City | null = null;
   selectedToCity: City | null = null;
@@ -422,6 +427,12 @@ export class SelectCarComponent implements OnInit {
     return d;
   }
 
+  /** Strip state from full city name: "Bangalore, Karnataka" → "Bangalore" */
+  getCityOnly(fullName: string): string {
+    if (!fullName) return '';
+    return fullName.split(',')[0].trim();
+  }
+
   /** Format Date to "hh:mm AM/PM" string */
   private formatTimeFromDate(date: Date): string {
     let hours = date.getHours();
@@ -440,6 +451,11 @@ export class SelectCarComponent implements OnInit {
     if (this.itinerary?.fromCityId && !this.isLocal && !this.isAirport) {
       this.loadDestinationCities(this.itinerary.fromCityId);
     }
+    // Restore extra destinations from itinerary for round trip
+    this.modifyExtraDestinations = (this.itinerary?.extraDestinations || []).map(stop => ({
+      id: stop.cityId,
+      name: stop.cityName
+    } as City));
     this.cdr.markForCheck();
   }
 
@@ -459,6 +475,11 @@ export class SelectCarComponent implements OnInit {
       const fromCity = this.selectedFromCity || (typeof formVal.fromCity === 'object' ? formVal.fromCity : null);
       const toCity = this.selectedToCity || (typeof formVal.toCity === 'object' ? formVal.toCity : null);
 
+      // Map modify modal stops back to ItineraryStop format
+      const updatedStops = this.modifyExtraDestinations
+        .filter(c => c && c.id)
+        .map(c => ({ cityId: c.id, cityName: c.name, cityOnly: c.name?.split(',')[0]?.trim() }));
+
       const updatedItinerary: Itinerary = {
         ...this.itinerary!,
         fromCity: fromCity?.name || (typeof formVal.fromCity === 'string' ? formVal.fromCity : this.itinerary!.fromCity),
@@ -467,7 +488,7 @@ export class SelectCarComponent implements OnInit {
         toCityId: toCity?.id || this.itinerary!.toCityId,
         pickupDate: pickupDate,
         pickupTime: pickupTime,
-        ...(this.isRoundTrip && { returnDate: returnDate }),
+        ...(this.isRoundTrip && { returnDate: returnDate, extraDestinations: updatedStops }),
         ...(this.isLocal && { localPackage: this.selectedLocalPackage === '8hr' ? '8hr/80km' : '12hr/120km' }),
         ...(this.isAirport && {
           airportSubType: formVal.airportSubType,
@@ -584,6 +605,36 @@ export class SelectCarComponent implements OnInit {
   }
 
   filterDestinationCities(event: any) {
+    this.filteredDestinationCities = this.filterCitiesRanked(this.destinationCities, event.query);
+  }
+
+  // ── Modify modal: extra stop management ──
+
+  addModifyStop() {
+    if (this.modifyExtraDestinations.length >= this.MAX_DESTINATIONS - 1) return;
+    // Don't add if TO city isn't filled
+    const toCity = this.modifyForm.get('toCity')?.value;
+    if (!toCity || typeof toCity !== 'object' || !toCity.id) return;
+    // Don't add if last stop is empty
+    if (this.modifyExtraDestinations.length > 0) {
+      const last = this.modifyExtraDestinations[this.modifyExtraDestinations.length - 1];
+      if (!last || typeof last !== 'object' || !last.id) return;
+    }
+    this.modifyExtraDestinations.push(null as any);
+    this.cdr.markForCheck();
+  }
+
+  removeModifyStop(index: number) {
+    this.modifyExtraDestinations.splice(index, 1);
+    this.cdr.markForCheck();
+  }
+
+  onModifyStopSelect(event: any, index: number) {
+    const city: City = event.value || event;
+    this.modifyExtraDestinations[index] = city;
+  }
+
+  filterModifyStopCities(event: any) {
     this.filteredDestinationCities = this.filterCitiesRanked(this.destinationCities, event.query);
   }
 

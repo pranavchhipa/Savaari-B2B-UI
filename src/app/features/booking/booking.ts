@@ -569,7 +569,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       .searchAddress(query, 'from', city, this.fromCityLat || undefined, this.fromCityLng || undefined)
       .subscribe(results => {
         this.pickupSuggestionsRaw = results;
-        this.pickupSuggestions = results.map(r => r.description);
+        this.pickupSuggestions = results.map(r => this.stripCountry(r.description));
         this.cdr.markForCheck();
       });
   }
@@ -588,7 +588,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       .searchAddress(query, 'to', city, this.toCityLat || undefined, this.toCityLng || undefined)
       .subscribe(results => {
         this.dropSuggestionsRaw = results;
-        this.dropSuggestions = results.map(r => r.description);
+        this.dropSuggestions = results.map(r => this.stripCountry(r.description));
         this.cdr.markForCheck();
       });
   }
@@ -596,7 +596,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   /** When user selects a pickup address from localities list */
   onPickupAddressSelect(event: any): void {
     const selected: string = event?.value || event;
-    const match = this.pickupSuggestionsRaw.find(s => s.description === selected);
+    const match = this.pickupSuggestionsRaw.find(s => this.stripCountry(s.description) === selected);
     if (!match?.place_id) return;
 
     // Resolve place_id to get place_name (locality) + lat/lng for fare calc + alias IDs for booking create.
@@ -614,7 +614,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   /** When user selects a drop address from localities list */
   onDropAddressSelect(event: any): void {
     const selected: string = event?.value || event;
-    const match = this.dropSuggestionsRaw.find(s => s.description === selected);
+    const match = this.dropSuggestionsRaw.find(s => this.stripCountry(s.description) === selected);
     if (!match?.place_id) return;
 
     // Resolve place_id to get place_name + sublocality + lat/lng + alias IDs for booking create.
@@ -736,6 +736,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   isDropAddressValid(): boolean {
     return (typeof this.dropAddress === 'string' ? this.dropAddress : String(this.dropAddress || '')).trim().length >= 3;
+  }
+
+  /** Remove trailing ", India" from address suggestions for cleaner display */
+  private stripCountry(desc: string): string {
+    return desc ? desc.replace(/,\s*India$/i, '') : '';
   }
 
   setPaymentOption(option: number) {

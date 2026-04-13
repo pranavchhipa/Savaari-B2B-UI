@@ -559,8 +559,9 @@ export class BookingsComponent implements OnInit {
         return {
             bookingId: String(b.booking_id || b.bookingId || ''),
             reservationId: String(b.reservation_id || b.reservationId || ''),
-            sourceCity: b.pick_city || b.source_city || b.sourceCity || '',
-            destinationCity: b.drop_city || b.destination_city || b.destinationCity || '',
+            // Prefer registry data (accurate from booking creation) over API fields
+            sourceCity: registryData?.pick_city || registryData?.source_city || b.pick_city || b.source_city || b.sourceCity || '',
+            destinationCity: registryData?.drop_city || registryData?.destination_city || b.drop_city || b.destination_city || b.destinationCity || '',
             tripType: b.trip_type || b.tripType || '',
             usageName: b.usage_name || b.usagename || b.usageName || '',
             pickupAddress: b.pick_loc || b.pickup_address || b.pickupAddress || '',

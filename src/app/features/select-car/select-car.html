@@ -20,7 +20,7 @@
                     <h1 class="text-xs sm:text-lg md:text-xl font-bold text-slate-800 dark:text-slate-200 leading-tight">
                         <!-- Local -->
                         <ng-container *ngIf="isLocal">
-                            <span>{{itinerary.fromCity || 'Bangalore'}}</span>
+                            <span>{{ getCityOnly(itinerary.fromCity) || 'Bangalore' }}</span>
                             <span class="text-slate-300 mx-1 sm:mx-2">&rsaquo;</span>
                             <span>Local</span>
                             <span
@@ -38,18 +38,18 @@
                         </ng-container>
                         <!-- One Way / Round Trip -->
                         <ng-container *ngIf="!isLocal && !isAirport">
-                            <span>{{itinerary.fromCity || 'Bangalore'}}</span>
+                            <span>{{ getCityOnly(itinerary.fromCity) || 'Bangalore' }}</span>
+                            <span class="text-slate-300 mx-1 sm:mx-2">/</span>
+                            <span>{{ getCityOnly(itinerary.toCity) || 'Mysore' }}</span>
                             <ng-container *ngIf="itinerary.extraDestinations?.length">
                                 <ng-container *ngFor="let stop of itinerary.extraDestinations">
-                                    <span class="text-orange-400 mx-1 sm:mx-2">&rsaquo;</span>
-                                    <span class="text-orange-600 dark:text-orange-400">{{stop.cityOnly || stop.cityName}}</span>
+                                    <span class="text-slate-300 mx-1 sm:mx-2">/</span>
+                                    <span class="text-orange-600 dark:text-orange-400">{{ stop.cityOnly || getCityOnly(stop.cityName) }}</span>
                                 </ng-container>
                             </ng-container>
-                            <span class="text-slate-300 mx-1 sm:mx-2">/</span>
-                            <span>{{itinerary.toCity || 'Mysore'}}</span>
                             <ng-container *ngIf="itinerary.tripType === 'Round Trip'">
                                 <span class="text-slate-300 mx-1 sm:mx-2">/</span>
-                                <span>{{itinerary.fromCity || 'Bangalore'}}</span>
+                                <span>{{ getCityOnly(itinerary.fromCity) || 'Bangalore' }}</span>
                             </ng-container>
                             <span
                                 class="ml-1.5 sm:ml-3 text-[8px] sm:text-[11px] px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400 uppercase font-bold tracking-tight align-middle">
@@ -396,6 +396,33 @@
                         panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                     </p-autoComplete>
                 </div>
+
+                <!-- EXTRA STOPS (Round Trip only) -->
+                <ng-container *ngIf="isRoundTrip">
+                    <div *ngFor="let stop of modifyExtraDestinations; let i = index" class="flex items-end gap-2">
+                        <div class="flex flex-col flex-1">
+                            <label class="text-[11px] font-bold text-orange-500 uppercase tracking-wider mb-2">Stop {{ i + 1 }}</label>
+                            <p-autoComplete [ngModel]="modifyExtraDestinations[i]" [ngModelOptions]="{standalone: true}"
+                                [suggestions]="filteredDestinationCities" (completeMethod)="filterModifyStopCities($event)"
+                                (onSelect)="onModifyStopSelect($event, i)" field="name" optionLabel="name" [minLength]="1"
+                                placeholder="Enter city" styleClass="w-full"
+                                inputStyleClass="w-full border border-orange-200 dark:border-orange-700/40 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                                panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                            </p-autoComplete>
+                        </div>
+                        <button type="button" (click)="removeModifyStop(i)"
+                            class="w-8 h-8 mb-0.5 rounded-full bg-orange-50 hover:bg-red-50 text-orange-400 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer border-0 shrink-0">
+                            <lucide-icon name="x" [size]="14"></lucide-icon>
+                        </button>
+                    </div>
+                    <div *ngIf="modifyExtraDestinations.length < MAX_DESTINATIONS - 1">
+                        <button type="button" (click)="addModifyStop()"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-3 py-1.5 transition-all cursor-pointer border-0 shadow-sm">
+                            <lucide-icon name="plus" [size]="13"></lucide-icon>
+                            Add Stop {{ modifyExtraDestinations.length > 0 ? modifyExtraDestinations.length + 1 : 1 }}
+                        </button>
+                    </div>
+                </ng-container>
 
                 <!-- PICK UP -->
                 <div class="flex flex-col">

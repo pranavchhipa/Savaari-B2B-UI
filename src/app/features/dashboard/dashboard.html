@@ -151,7 +151,7 @@
           <!-- Row 2: DATE | TIME — vertical on mobile, horizontal on sm+ -->
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
             <!-- PICKUP DATE -->
-            <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
               (click)="pickupDate1.showOverlay()">
               <lucide-icon name="calendar" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col">
@@ -164,7 +164,7 @@
             </div>
 
             <!-- PICKUP TIME -->
-            <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
               (click)="pickupTime1.showOverlay()">
               <lucide-icon name="clock" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
               <div class="flex flex-col">
@@ -195,7 +195,7 @@
           <div class="relative flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 sm:p-3 border border-slate-200 dark:border-slate-600/50 mb-3">
 
             <!-- FROM -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 pr-14 sm:pr-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-t-lg sm:rounded-lg rounded-b-none sm:rounded-b-lg transition-colors border border-slate-200/80 dark:border-slate-500/50 border-b-0 sm:border-b"
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 pr-14 sm:pr-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-t-lg sm:rounded-lg rounded-b-none sm:rounded-b-lg transition-colors border border-slate-200/80 dark:border-slate-500/50 border-b-0 sm:border-b"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('fromCity')?.value?.id}">
               <lucide-icon name="map-pin" [size]="20" class="text-primary shrink-0"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
@@ -226,7 +226,7 @@
             </div>
 
             <!-- TO -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 pr-14 sm:pr-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-b-lg sm:rounded-lg rounded-t-none sm:rounded-t-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 pr-14 sm:pr-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-b-lg sm:rounded-lg rounded-t-none sm:rounded-t-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('toCity')?.value?.id}">
               <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
@@ -252,7 +252,7 @@
             class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 bg-orange-50/50 dark:bg-orange-900/10 rounded-xl p-3 border border-orange-200/60 dark:border-orange-700/30 mb-3">
             <ng-container *ngFor="let dest of extraDestinations; let i = index">
               <div *ngIf="i > 0" class="hidden lg:block w-px h-12 bg-orange-200 dark:bg-orange-700/40"></div>
-              <div class="search-cell flex-1 px-4 py-3 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-lg border border-orange-200/80 dark:border-orange-600/30">
+              <div class="search-cell flex-1 px-4 py-4 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-lg border border-orange-200/80 dark:border-orange-600/30">
                 <lucide-icon name="map-pin" [size]="16" class="text-orange-400 shrink-0"></lucide-icon>
                 <div class="flex flex-col flex-1 min-w-0">
                   <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">Stop {{ i + 1 }}</span>
@@ -291,7 +291,7 @@
           <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 sm:p-3 border border-slate-200 dark:border-slate-600/50">
 
             <!-- PICKUP DATE -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
               (click)="pickupDate2.showOverlay()">
               <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
@@ -304,7 +304,7 @@
             </div>
 
             <!-- PICKUP TIME -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
               (click)="pickupTime2.showOverlay()">
               <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
@@ -318,7 +318,7 @@
             </div>
 
             <!-- RETURN DATE -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
               (click)="returnDate2.showOverlay()">
               <lucide-icon name="calendar" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
@@ -331,7 +331,7 @@
             </div>
 
             <!-- DROP TIME (read-only) -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group rounded-lg relative">
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group rounded-lg relative">
               <lucide-icon name="clock" [size]="18" class="text-slate-300 shrink-0"></lucide-icon>
               <div class="flex flex-col">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Drop Time
@@ -363,7 +363,7 @@
           class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 sm:p-3 border border-slate-200 dark:border-slate-600/50">
 
           <!-- CITY -->
-          <div class="search-cell flex-[2] px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
+          <div class="search-cell flex-[2] px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
             <lucide-icon name="map-pin" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col flex-1 min-w-0">
               <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">City</span>
@@ -389,7 +389,7 @@
 
 
           <!-- PICKUP DATE -->
-          <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+          <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
             (click)="pickupDate3.showOverlay()">
             <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
@@ -403,7 +403,7 @@
 
 
           <!-- PICKUP TIME -->
-          <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+          <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
             (click)="pickupTime3.showOverlay()">
             <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
             <div class="flex flex-col">
@@ -426,7 +426,7 @@
           <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 sm:p-3 border border-slate-200 dark:border-slate-600/50 mb-3">
 
             <!-- Trip Type -->
-            <div class="search-cell px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50 lg:min-w-[240px]">
+            <div class="search-cell px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50 lg:min-w-[240px]">
               <lucide-icon name="navigation" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Trip <span class="text-red-400">*</span></span>
@@ -439,7 +439,7 @@
             </div>
 
             <!-- Pickup Address -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
               <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
@@ -468,7 +468,7 @@
             </div>
 
             <!-- Drop Airport -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50">
               <lucide-icon name="plane" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">
@@ -500,7 +500,7 @@
           <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 sm:p-3 border border-slate-200 dark:border-slate-600/50">
 
             <!-- PICKUP DATE -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
               (click)="pickupDate4.showOverlay()">
               <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">
@@ -514,7 +514,7 @@
 
 
             <!-- PICKUP TIME -->
-            <div class="search-cell flex-1 px-3 py-2 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg lg:rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
               (click)="pickupTime4.showOverlay()">
               <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
               <div class="flex flex-col">

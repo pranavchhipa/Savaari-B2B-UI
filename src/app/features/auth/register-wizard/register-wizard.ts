@@ -312,6 +312,8 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   }
 
   editStep(step: StepKey) {
+    // Save current form state BEFORE switching so edits to the current step aren't lost
+    this.saveProgress();
     // Re-open a previously completed step for editing
     this.currentStep = step;
     // When re-opening company step in skip-GST mode, restore the autocomplete input
@@ -785,13 +787,23 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
 
   submitPassword() {
     if (this.passwordForm.invalid) { this.passwordForm.markAllAsTouched(); return; }
+
+    // Safety guard: ensure name is present (could be lost if user edited step 1 mid-flow)
+    const firstName = (this.nameForm.value.firstName || '').trim();
+    const lastName = (this.nameForm.value.lastName || '').trim();
+    if (!firstName && !lastName) {
+      this.registerError = 'Name is missing — please go back to Step 1 and enter your name.';
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.isSubmitting = true;
     this.registerError = '';
     this.cdr.markForCheck();
 
     const payload = {
-      firstName: this.nameForm.value.firstName || '',
-      lastName: this.nameForm.value.lastName || '',
+      firstName,
+      lastName,
       mobile: this.contactForm.value.mobile || '',
       email: this.contactForm.value.email || '',
       countryCode: '91',

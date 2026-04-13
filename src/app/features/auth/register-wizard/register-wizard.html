@@ -254,6 +254,10 @@
                   Send verification codes <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
                 }
               </button>
+
+              @if (contactError) {
+                <p class="text-sm text-red-500">{{ contactError }}</p>
+              }
             }
 
             @if (contactPhase === 'otp') {

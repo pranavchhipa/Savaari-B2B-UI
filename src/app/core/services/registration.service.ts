@@ -382,6 +382,8 @@ export class RegistrationService {
   private extractErrorMsg(err: any): string {
     const body = err?.error || {};
     if (body.msg) return body.msg;
+    // Backend wraps errors as object: { errors: { success: false, msg: "..." } }
+    if (body.errors && !Array.isArray(body.errors) && body.errors.msg) return body.errors.msg;
     if (Array.isArray(body.errors) && body.errors.length) return body.errors.join(', ');
     return err?.message || 'Something went wrong. Please try again.';
   }

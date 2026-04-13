@@ -37,6 +37,15 @@
   line-height: 1.5 !important;
   cursor: pointer !important;
   white-space: nowrap !important;
+  /* Let all clicks pass through to the parent search-cell (click)="showOverlay()" handler.
+     Without this, PrimeNG's own input click handler double-toggles the overlay,
+     and clicks near the cell edge may miss the input entirely. */
+  pointer-events: none !important;
+}
+
+/* The PrimeNG datepicker wrapper span should also not intercept clicks */
+:host ::ng-deep .search-bar-datepicker {
+  pointer-events: none !important;
 }
 
 /* p-select inside search bar — make it borderless */

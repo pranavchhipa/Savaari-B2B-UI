@@ -185,7 +185,7 @@
                                     styleClass="w-full"
                                     inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 !text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
                                     panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                                    [forceSelection]="false"
+                                    [forceSelection]="true"
                                     [completeOnFocus]="false">
                                     <ng-template pTemplate="item" let-item>
                                         <div class="flex items-center gap-2 px-2 py-1.5">
@@ -198,7 +198,7 @@
                                     class="absolute text-xs text-slate-500 dark:text-slate-400 top-1.5 left-12 font-medium pointer-events-none">Pickup
                                     Address <span class="text-red-500">*</span></label>
                             </div>
-                            <div *ngIf="formSubmitAttempted && !isPickupAddressValid()" class="text-xs text-red-500 mt-1 ml-4">Pickup address is required (min 3 characters)</div>
+                            <div *ngIf="formSubmitAttempted && !isPickupAddressValid()" class="text-xs text-red-500 mt-1 ml-4">Please select a pickup address from the suggestions</div>
                             <!-- Drop Address — only for One Way bookings -->
                             <ng-container *ngIf="itinerary?.tripType === 'One Way'">
                             <div class="relative group">
@@ -218,7 +218,7 @@
                                     styleClass="w-full"
                                     inputStyleClass="block w-full !pl-12 !pr-4 !pt-6 !pb-2 !text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg !shadow-none"
                                     panelStyleClass="max-h-60 overflow-y-auto shadow-lg rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                                    [forceSelection]="false"
+                                    [forceSelection]="true"
                                     [completeOnFocus]="false">
                                     <ng-template pTemplate="item" let-item>
                                         <div class="flex items-center gap-2 px-2 py-1.5">
@@ -231,7 +231,7 @@
                                     class="absolute text-xs text-slate-500 dark:text-slate-400 top-1.5 left-12 font-medium pointer-events-none">Drop
                                     Address <span class="text-red-500">*</span></label>
                             </div>
-                            <div *ngIf="formSubmitAttempted && !isDropAddressValid()" class="text-xs text-red-500 mt-1 ml-4">Drop address is required (min 3 characters)</div>
+                            <div *ngIf="formSubmitAttempted && !isDropAddressValid()" class="text-xs text-red-500 mt-1 ml-4">Please select a drop address from the suggestions</div>
                             </ng-container>
                         </div>
 

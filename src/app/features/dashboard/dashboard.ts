@@ -97,17 +97,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     this.extraDestinations.push(null as any);
+    this.saveSearchState();
     this.cdr.markForCheck();
   }
 
   removeDestinationCity(index: number) {
     this.extraDestinations.splice(index, 1);
+    this.saveSearchState();
     this.cdr.markForCheck();
   }
 
   onExtraDestinationSelect(event: any, index: number) {
     const city: City = event.value || event;
     this.extraDestinations[index] = city;
+    this.saveSearchState();
   }
 
   filterExtraDestCities(event: AutoCompleteCompleteEvent) {
@@ -656,9 +659,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.bookingForm.patchValue({ pickupDate: restored }, { emitEvent: false });
         }
       }
+      // After restoring pickup date, recompute minReturnDate so the calendar blocks past dates
+      const restoredPickup = this.bookingForm.get('pickupDate')?.value;
+      if (restoredPickup) {
+        this.updateMinReturnDate(restoredPickup);
+      }
+
       if (state.returnDate) {
         const restored = new Date(state.returnDate);
-        if (!isNaN(restored.getTime()) && restored >= this.minPickupDate) {
+        const pickupFloor = restoredPickup ? new Date(restoredPickup) : this.minPickupDate;
+        pickupFloor.setHours(0, 0, 0, 0);
+        const restoredDay = new Date(restored);
+        restoredDay.setHours(0, 0, 0, 0);
+        // Return date must be >= pickup date (not just >= today)
+        if (!isNaN(restored.getTime()) && restoredDay.getTime() >= pickupFloor.getTime()) {
           this.bookingForm.patchValue({ returnDate: restored }, { emitEvent: false });
         }
       }
