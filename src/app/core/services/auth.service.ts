@@ -49,7 +49,11 @@ export class AuthService {
 
     const body: LoginRequest = { userEmail: email, password, isAgent: true };
 
-    return this.api.b2bPost<LoginResponse>('user/login', body).pipe(
+    // Beta site HAR (FLOW.md): login body is raw JSON sent as Content-Type: text/plain.
+    // application/json works for simple passwords but silently rejects when the
+    // password contains special chars like '@' — backend's JSON parser differs
+    // from how it reads the text/plain body. Matching the HAR-confirmed behavior.
+    return this.api.b2bPostRaw<LoginResponse>('user/login', JSON.stringify(body), 'text/plain').pipe(
       tap(resp => {
         if (resp.statusCode !== 200) throw new Error(resp.message || 'Login failed');
         this.b2bToken = resp.token;
@@ -96,6 +100,76 @@ export class AuthService {
       catchError(err => {
         console.warn('[AUTH] Auto-login failed:', err?.status ?? err?.message);
         return of(null);
+      })
+    );
+  }
+
+  /**
+   * Forgot password — sends a freshly-generated password to the agent's
+   * registered email address. Matches the legacy b2bbetasavaari flow:
+   *   POST /partner_api/public/forgot_password?token=<partnerJWT>
+   *   Body: user_email=<email>&is_agent=1  (application/x-www-form-urlencoded)
+   *   Response: { status: "success", data: "{\"passwordsend\":true}" }
+   *
+   * Partner token is fetched on-demand (the user is not yet logged in).
+   * Backend emails a new password directly — no OTP, no reset link.
+   */
+  forgotPassword(email: string): Observable<{ success: boolean; message: string }> {
+    if (environment.useMockData) {
+      return of({
+        success: true,
+        message: 'Password has been sent to your email address (mock).',
+      });
+    }
+
+    const ensureToken$: Observable<string> = this.partnerToken
+      ? of(this.partnerToken)
+      : this.fetchPartnerToken();
+
+    return ensureToken$.pipe(
+      switchMap(token =>
+        this.api.partnerPostForm<any>(
+          'forgot_password',
+          { user_email: email, is_agent: '1' },
+          { token }
+        )
+      ),
+      map(resp => {
+        // Response shape: { status: "success", data: "{\"passwordsend\":true}" }
+        // `data` is a JSON-encoded string — parse defensively.
+        let dataObj: any = resp?.data;
+        if (typeof dataObj === 'string') {
+          try { dataObj = JSON.parse(dataObj); } catch { /* keep as string */ }
+        }
+        const sent = dataObj?.passwordsend === true || dataObj?.passwordsend === 'true';
+        if (resp?.status === 'success' && sent) {
+          return {
+            success: true,
+            message: 'A new password has been sent to your email address.',
+          };
+        }
+        return {
+          success: false,
+          message: resp?.message || dataObj?.message || 'Email not registered. Please check and try again.',
+        };
+      }),
+      catchError(err => {
+        if (!environment.production) console.warn('[AUTH] forgotPassword failed:', err?.status ?? err?.message);
+        // Prefer a user-facing message from the response body; fall back to a
+        // status-aware default. Never surface the raw "Http failure response..."
+        // string — it leaks the internal URL and scares the user.
+        const body = err?.error;
+        const bodyMsg =
+          (body && typeof body === 'object' && (body.message || body.msg)) ||
+          (body?.data && typeof body.data === 'object' && (body.data.message || body.data.msg)) ||
+          '';
+        const status = err?.status;
+        const friendly =
+          bodyMsg ||
+          (status === 400 || status === 404
+            ? 'Email not registered. Please check and try again.'
+            : 'Could not send reset email. Please try again later.');
+        return of({ success: false, message: friendly });
       })
     );
   }

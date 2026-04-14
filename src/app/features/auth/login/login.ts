@@ -32,6 +32,10 @@ export class LoginComponent implements OnInit {
   successMessage = signal('');
   showPassword = signal(false);
 
+  /** Inline forgot-password mode — hides password field, shows Reset Password button. */
+  isForgotMode = signal(false);
+  forgotSuccess = signal('');
+
   ngOnInit(): void {
     // If user just registered via the new wizard, pre-fill the email + password
     // they chose during sign-up. Stored in localStorage by register-wizard.
@@ -73,6 +77,61 @@ export class LoginComponent implements OnInit {
         this.errorMessage.set(
           err?.error?.message || err?.message || 'Login failed. Please check your credentials.'
         );
+      }
+    });
+  }
+
+  /**
+   * Toggle between login mode and inline forgot-password mode.
+   * Preserves the email already typed so the user doesn't re-enter it.
+   */
+  enterForgotMode(event?: Event) {
+    event?.preventDefault();
+    this.isForgotMode.set(true);
+    this.errorMessage.set('');
+    this.forgotSuccess.set('');
+    this.successMessage.set('');
+  }
+
+  exitForgotMode() {
+    this.isForgotMode.set(false);
+    this.errorMessage.set('');
+    this.forgotSuccess.set('');
+  }
+
+  /**
+   * Submit the forgot-password request. Backend emails a freshly-generated
+   * password to the registered address; user then returns to login to sign in.
+   */
+  onForgotPassword() {
+    const emailCtrl = this.loginForm.get('email');
+    const email = (emailCtrl?.value || '').trim();
+
+    if (!email || emailCtrl?.invalid) {
+      // The form control's own *ngIf error message renders under the field,
+      // so there's no need to duplicate it in the general errorMessage banner.
+      emailCtrl?.markAsTouched();
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.forgotSuccess.set('');
+
+    this.auth.forgotPassword(email).subscribe(result => {
+      this.isLoading.set(false);
+      if (result.success) {
+        this.forgotSuccess.set(result.message);
+        // Auto-return to login view after 4s so the user can sign in with the new password
+        setTimeout(() => {
+          if (this.isForgotMode()) {
+            this.isForgotMode.set(false);
+            this.successMessage.set('A new password has been sent to your email. Please check and sign in.');
+            this.forgotSuccess.set('');
+          }
+        }, 4000);
+      } else {
+        this.errorMessage.set(result.message);
       }
     });
   }
