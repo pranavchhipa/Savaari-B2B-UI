@@ -55,6 +55,8 @@ export interface BookingCard {
     // Cancellation
     cancelFlag?: boolean;
     bookingKey?: string;
+    /** Backend-computed cancellation deadline ("DD-MM-YYYY HH:MM") — shown as tooltip when button is hidden. */
+    cancelDateTime?: string;
 }
 
 /** Calendar day model for the week strip */
@@ -594,7 +596,27 @@ export class BookingsComponent implements OnInit {
             billUrl: b.bill_url || '',
             cancelFlag: b.cancel_flag === '1' || b.cancel_flag === 1 || b.cancel_flag_web === '1' || b.cancel_flag_web === 1,
             bookingKey: String(b.booking_key || b.bookingKey || registryData?.booking_key || registryData?.bookingKey || ''),
+            cancelDateTime: String(b.cancel_date_time || b.cancelDateTime || ''),
         };
+    }
+
+    /**
+     * Decide whether the Cancel button should be visible for this booking.
+     *
+     * Business rule (per product requirement, April 2026):
+     *   "Booking cancellation trip shuru hone ke 1 ghante pehle tak ho sakti hai"
+     *   → if pickup is less than 1 hour away, cancellation is not allowed.
+     *
+     * We only enforce this client-side gate. The backend still applies its own
+     * rules on POST /system_bookings/cancellation.php (invalid booking_key,
+     * already-cancelled, driver-in-transit, etc.) and those surface via the
+     * error handler in `confirmCancel()`.
+     */
+    canCancelBooking(booking: BookingCard): boolean {
+        if (!booking || !booking.pickupDate) return false;
+        const msUntilPickup = booking.pickupDate.getTime() - Date.now();
+        const ONE_HOUR_MS = 60 * 60 * 1000;
+        return msUntilPickup >= ONE_HOUR_MS;
     }
 
     openReceipt(booking: BookingCard) {
@@ -1016,6 +1038,40 @@ export class BookingsComponent implements OnInit {
         this.cdr.markForCheck();
 
         const booking = this.cancelModalBooking;
+
+        // Last-mile sanity: backend requires booking_key on cancellation.php.
+        // Newly-created bookings sometimes reach this page before the
+        // booking-details API has surfaced the key, in which case we refetch
+        // that one booking to grab the key before attempting cancellation.
+        if (!booking.bookingKey) {
+            this.bookingApi.getBookingDetails(booking.bookingId).subscribe({
+                next: (details: any) => {
+                    const freshKey = String(
+                        details?.booking_key || details?.bookingKey || ''
+                    );
+                    if (!freshKey) {
+                        this.cancelProcessing = false;
+                        this.cancelError = 'Booking is still syncing. Please try again in a few seconds.';
+                        this.cdr.markForCheck();
+                        return;
+                    }
+                    booking.bookingKey = freshKey;
+                    this.sendCancelRequest(booking);
+                },
+                error: () => {
+                    this.cancelProcessing = false;
+                    this.cancelError = 'Could not verify booking for cancellation. Please refresh and try again.';
+                    this.cdr.markForCheck();
+                }
+            });
+            return;
+        }
+
+        this.sendCancelRequest(booking);
+    }
+
+    /** Issue the actual cancel API call — extracted so we can retry after refetching booking_key. */
+    private sendCancelRequest(booking: BookingCard) {
         this.bookingApi.cancelBooking(
             booking.bookingId,
             booking.reservationId || '',

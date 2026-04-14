@@ -101,6 +101,15 @@ export class WalletService {
         return false;
       }),
       catchError(err => {
+        // Backend returns 400 { status: "failure", message: "Already Exists" }
+        // when the agent's wallet was auto-created at registration. Functionally
+        // this is exactly what we want — a usable wallet — so treat it as success
+        // and skip the noisy red entry in DevTools.
+        const msg = (err?.error?.message ?? '').toString().toLowerCase();
+        if (err?.status === 400 && msg.includes('already exists')) {
+          if (!environment.production) console.log('[WALLET] Wallet already initialised for agent');
+          return of(true);
+        }
         console.warn('[WALLET] createWallet API error (wallet may not be deployed yet):', err?.status);
         return of(false);
       })

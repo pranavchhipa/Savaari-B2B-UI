@@ -56,6 +56,12 @@ export class AuthService {
     return this.api.b2bPostRaw<LoginResponse>('user/login', JSON.stringify(body), 'text/plain').pipe(
       tap(resp => {
         if (resp.statusCode !== 200) throw new Error(resp.message || 'Login failed');
+        // Clear any stale per-user state left over from a previous session on
+        // this browser (e.g. agent logged out without clicking Logout, or a
+        // different agent is signing in on a shared device). Without this,
+        // the booking registry leaks the previous user's bookings into the
+        // new user's "Upcoming" list and reveals their customer PII.
+        this.clearUserScopedStorage();
         this.b2bToken = resp.token;
         this.user = resp.user;
         this.userGst = resp.userGst || null;
@@ -212,7 +218,31 @@ export class AuthService {
     localStorage.removeItem(AuthService.STORAGE_GST);
     localStorage.removeItem('commission');
     localStorage.removeItem('commission_amt');
+    this.clearUserScopedStorage();
     console.log('[AUTH] Logged out');
+  }
+
+  /**
+   * Wipe per-user cached data that is NOT part of the auth payload but still
+   * belongs to the signed-in agent. Called from both `login()` (before
+   * applying new tokens) and `logout()` so the next user never inherits the
+   * previous one's booking registry, settled-payment state, or logo.
+   *
+   * Keys intentionally NOT cleared here:
+   *   - `theme`                 — UI preference, device-level
+   *   - `SavaariUserDeviceID`   — device fingerprint, not per-user
+   */
+  private clearUserScopedStorage(): void {
+    try {
+      localStorage.removeItem('savaari_b2b_booking_ids');
+      localStorage.removeItem('savaari_b2b_booking_data');
+      localStorage.removeItem('b2b_settled_payments');
+      localStorage.removeItem('agentLogo');
+      localStorage.removeItem('b2bcab.pendingLogin');
+      localStorage.removeItem('b2b_analytics_session');
+    } catch (e) {
+      console.warn('[AUTH] Failed to clear user-scoped storage:', e);
+    }
   }
 
   /** Get the partner API token (HMAC HS512). */

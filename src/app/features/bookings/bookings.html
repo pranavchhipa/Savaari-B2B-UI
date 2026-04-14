@@ -632,11 +632,20 @@
                             <lucide-icon name="copy" [size]="11"></lucide-icon>
                             Copy
                         </button>
-                        <button *ngIf="activeTab === 'upcoming'" (click)="$event.stopPropagation(); openCancelModal(booking)"
+                        <!-- Cancel button: only when pickup is >= 1 hour away (per product rule). -->
+                        <button *ngIf="activeTab === 'upcoming' && canCancelBooking(booking)"
+                            (click)="$event.stopPropagation(); openCancelModal(booking)"
                             class="ml-auto flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-semibold text-red-500 hover:text-white hover:bg-red-500 border border-red-200 hover:border-red-500 rounded-md transition cursor-pointer">
                             <lucide-icon name="x-circle" [size]="11"></lucide-icon>
                             Cancel Booking
                         </button>
+                        <!-- Window closed: show a disabled hint so the agent knows why the Cancel button is missing. -->
+                        <span *ngIf="activeTab === 'upcoming' && !canCancelBooking(booking)"
+                            class="ml-auto flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-md cursor-not-allowed"
+                            title="Cancellation window closed — trip is less than 1 hour away.">
+                            <lucide-icon name="alert-circle" [size]="11"></lucide-icon>
+                            Cancellation closed
+                        </span>
                     </div>
                 </div>
             </div>
