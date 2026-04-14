@@ -65,5 +65,12 @@
     "changeOrigin": true,
     "pathRewrite": { "^/reg-api": "" },
     "logLevel": "debug"
+  },
+  "/settlement-api": {
+    "target": "https://api.alphasavaari.com/partner_api/public",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": { "^/settlement-api": "" },
+    "logLevel": "debug"
   }
 }

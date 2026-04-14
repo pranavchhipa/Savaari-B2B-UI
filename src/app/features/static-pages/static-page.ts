@@ -214,17 +214,23 @@ export class StaticPageComponent implements OnInit {
         {
           heading: '1. Send us an email',
           content: [
-            `If you are facing any issue/ or for feedback, write to us at ${environment.supportEmail}`
+            `If you are facing any issue or for feedback, write to us at ${environment.partnerSupportEmail}`
           ]
         },
         {
           heading: '2. Pick up the phone and call us 24*7',
           content: [
-            `${environment.supportPhone} (standard STD/local charges apply)`
+            `${environment.partnerSupportPhone} (standard STD/local charges apply)`
           ]
         },
         {
-          heading: '3. Send snail mail to this address',
+          heading: '3. Message us on WhatsApp',
+          content: [
+            `WhatsApp: ${environment.partnerSupportWhatsapp}`
+          ]
+        },
+        {
+          heading: '4. Send snail mail to this address',
           content: [
             `${environment.companyName}`,
             '2nd, 3rd & 4th Floors, 1137, RG. Towers',

@@ -31,6 +31,10 @@ if (preg_match('#^/partner-api/(.*)$#', $uri, $m)) {
     $target = 'https://b2bcab.betasavaari.com/' . $m[1];
 } elseif (preg_match('#^/system-bookings-api/(.*)$#', $uri, $m)) {
     $target = 'https://api.betasavaari.com/system_bookings/' . $m[1];
+} elseif (preg_match('#^/settlement-api/(.*)$#', $uri, $m)) {
+    // Settlement endpoint is alpha-only — beta returns 404 for /booking/settlement-payment.
+    // Verified via probe (invalid token produced errroCode 11001 on alpha, 404 on beta).
+    $target = 'https://api.alphasavaari.com/partner_api/public/' . $m[1];
 } else {
     http_response_code(404);
     echo json_encode(['error' => 'Unknown API route']);

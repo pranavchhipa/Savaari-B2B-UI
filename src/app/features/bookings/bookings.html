@@ -229,10 +229,15 @@
                         </div>
                         <!-- Route + Details -->
                         <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-bold text-slate-800 dark:text-white truncate leading-tight">
-                                {{ booking.itinerary || booking.sourceCity }}
-                                <span *ngIf="!booking.itinerary && booking.destinationCity"> → {{ booking.destinationCity }}</span>
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white truncate leading-tight"
+                                [title]="booking.viaLine ? (booking.routeLine + ' (' + booking.viaLine + ')') : booking.routeLine">
+                                {{ booking.routeLine || booking.itinerary || booking.sourceCity }}
+                                <span *ngIf="!booking.routeLine && !booking.itinerary && booking.destinationCity"> → {{ booking.destinationCity }}</span>
                             </h3>
+                            <p *ngIf="booking.viaLine" class="text-[11px] italic text-slate-500 dark:text-slate-400 truncate mt-0.5"
+                                [title]="booking.viaLine">
+                                {{ booking.viaLine }}
+                            </p>
                             <!-- Meta row: Trip Type · Package KM · Trip ID -->
                             <p class="text-[11px] mt-1 truncate">
                                 <span *ngIf="getTripTypeLabel(booking.tripType) as ttl"
@@ -350,10 +355,15 @@
                                 <p class="text-[10px] text-slate-400 font-mono">{{ booking.pickupTime || '' }}</p>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h3 class="text-[13px] font-bold text-slate-800 dark:text-white truncate leading-tight">
-                                    {{ booking.itinerary || booking.sourceCity }}
-                                    <span *ngIf="!booking.itinerary && booking.destinationCity"> → {{ booking.destinationCity }}</span>
+                                <h3 class="text-[13px] font-bold text-slate-800 dark:text-white truncate leading-tight"
+                                    [title]="booking.viaLine ? (booking.routeLine + ' (' + booking.viaLine + ')') : booking.routeLine">
+                                    {{ booking.routeLine || booking.itinerary || booking.sourceCity }}
+                                    <span *ngIf="!booking.routeLine && !booking.itinerary && booking.destinationCity"> → {{ booking.destinationCity }}</span>
                                 </h3>
+                                <p *ngIf="booking.viaLine" class="text-[10px] italic text-slate-500 dark:text-slate-400 truncate mt-0.5"
+                                    [title]="booking.viaLine">
+                                    {{ booking.viaLine }}
+                                </p>
                                 <!-- Meta row (mobile): Trip Type · Package KM · Trip ID -->
                                 <p class="text-[10px] mt-0.5 truncate">
                                     <span *ngIf="getTripTypeLabel(booking.tripType) as ttl"
@@ -444,7 +454,13 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Route</span>
-                                    <span class="font-semibold text-slate-800 dark:text-white text-right max-w-[60%] truncate">{{ booking.itinerary || booking.sourceCity + ' → ' + booking.destinationCity }}</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white text-right max-w-[60%] truncate"
+                                        [title]="booking.viaLine ? (booking.routeLine + ' (' + booking.viaLine + ')') : booking.routeLine">{{ booking.routeLine || booking.itinerary || (booking.sourceCity + ' → ' + booking.destinationCity) }}</span>
+                                </div>
+                                <div *ngIf="booking.intermediateCities.length" class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Via</span>
+                                    <span class="font-semibold text-orange-600 dark:text-orange-400 text-right max-w-[60%] truncate"
+                                        [title]="booking.intermediateCities.join(', ')">{{ booking.intermediateCities.join(', ') }}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Car</span>
@@ -693,7 +709,7 @@
             </div>
             <div class="min-w-0">
                 <h3 class="font-bold text-slate-800 dark:text-white text-sm">Booking Cancellation</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ cancelModalBooking.sourceCity }}<span *ngIf="cancelModalBooking.destinationCity"> → {{ cancelModalBooking.destinationCity }}</span></p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 truncate" [title]="cancelModalBooking.routeLine">{{ cancelModalBooking.routeLine || (cancelModalBooking.sourceCity + (cancelModalBooking.destinationCity ? ' → ' + cancelModalBooking.destinationCity : '')) }}</p>
             </div>
             <button (click)="closeCancelModal()" class="ml-auto p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition cursor-pointer shrink-0">
                 <lucide-icon name="x" [size]="16" class="text-slate-400"></lucide-icon>
@@ -775,7 +791,7 @@
             <div class="min-w-0">
                 <h3 class="font-bold text-slate-800 dark:text-white text-sm">Booking Cancelled</h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
-                    {{ cancelSuccessBooking.sourceCity }}<span *ngIf="cancelSuccessBooking.destinationCity"> → {{ cancelSuccessBooking.destinationCity }}</span>
+                    <span [title]="cancelSuccessBooking.routeLine">{{ cancelSuccessBooking.routeLine || (cancelSuccessBooking.sourceCity + (cancelSuccessBooking.destinationCity ? ' → ' + cancelSuccessBooking.destinationCity : '')) }}</span>
                 </p>
             </div>
             <button (click)="dismissCancelSuccess()" class="ml-auto p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg transition cursor-pointer shrink-0">

@@ -20,6 +20,14 @@ export interface BookingCard {
     reservationId: string;
     sourceCity: string;
     destinationCity: string;
+    /** Round-trip / multi-stop intermediate cities (Pune, Lonavala, Mumbai...). Empty for one-way / local / airport. */
+    intermediateCities: string[];
+    /** Whether the cab returns to the pickup city (Round Trip). When true, fromCity is appended after destinationCity. */
+    isRoundTrip: boolean;
+    /** Pre-built single-line route string used in the card heading. Computed once so the template stays simple. */
+    routeLine: string;
+    /** Optional second line "via Pune, Lonavala, Mumbai" — empty for single-leg trips. Truncates intelligently for many stops. */
+    viaLine: string;
     tripType: string;
     usageName: string;
     pickupAddress: string;
@@ -429,28 +437,53 @@ export class BookingsComponent implements OnInit {
         this.weeklyShortfall = Math.max(0, this.weeklyCharges - this.walletBalance);
     }
 
+    /**
+     * Fetch the bookings list from the B2B API and categorize into tabs.
+     *
+     * SOURCE OF TRUTH = backend API.
+     *   - The local booking registry is NOT used to *add* rows to this list.
+     *     Earlier versions merged registry entries on top of the API response
+     *     so a just-created booking would show up instantly. That worked for
+     *     the happy path but also surfaced "Potential" bookings — entries
+     *     where the booking was created server-side but the agent never
+     *     completed payment (back-pressed, closed the tab, etc.). Those kept
+     *     appearing on the Upcoming tab labelled "Wallet Pay" with phantom
+     *     balance-due amounts, even after the server had filtered them out.
+     *   - The registry is still read per-booking inside `toBookingCard()` to
+     *     enrich the API row (paymentOption, prePayment, etc.) because the
+     *     beta booking-details API doesn't always surface those fields
+     *     immediately. That use is safe: it only fills in blanks for rows
+     *     that already exist in the API response — it never invents new rows.
+     */
     private loadBookings() {
         this.isLoading = true;
         this.cdr.markForCheck();
 
-        // Show locally-registered bookings instantly while API loads
-        this.mergeRegistryBookings();
-        this.updateCalendarWithBookings();
-        if (this.upcomingBookings.length > 0 || this.completedBookings.length > 0) {
-            this.cdr.markForCheck();
+        // Housekeeping: drop abandoned registry entries so localStorage
+        // doesn't grow without bound. Not strictly required for display
+        // (we no longer render registry-sourced rows), but it prevents
+        // stale orphan data from leaking into the enrichment lookup in
+        // toBookingCard() if a future booking ever reused the same ID.
+        const pruned = this.bookingRegistry.pruneOrphans();
+        if (pruned.length && !environment.production) {
+            console.log('[BOOKINGS] Pruned orphan registry entries:', pruned);
         }
 
-        // Then fetch full list from API (may be slow for agents with many bookings)
         this.bookingApi.getAllBookings().subscribe({
             next: (bookings: BookingDetails[]) => {
                 this.categorizeBookings(bookings);
-                this.mergeRegistryBookings();
                 this.updateCalendarWithBookings();
                 this.isLoading = false;
                 this.cdr.markForCheck();
             },
             error: () => {
-                // API failed — keep showing registry bookings
+                // API failed — show empty state rather than stale local data.
+                // User can pull-to-refresh / retry; this matches the product
+                // directive that all displayed booking data must come from
+                // the backend with fresh metrics.
+                this.upcomingBookings = [];
+                this.completedBookings = [];
+                this.cancelledBookings = [];
                 this.isLoading = false;
                 this.cdr.markForCheck();
             }
@@ -466,7 +499,16 @@ export class BookingsComponent implements OnInit {
             return true;
         });
 
-        const cards = unique.map(b => this.toBookingCard(b));
+        // Defence-in-depth against "Potential" bookings. The backend should
+        // already omit these, but if anything ever leaks through we still
+        // want to hide them — their paymentOption is blank, so they'd
+        // otherwise render with a misleading "Wallet Pay" fallback label.
+        const real = unique.filter((b: any) => {
+            const raw = String(b.booking_status || b.status || '').toLowerCase().trim();
+            return raw !== 'potential';
+        });
+
+        const cards = real.map(b => this.toBookingCard(b));
 
         // Apply any locally-persisted settlements before categorizing
         this.applySettledPayments(cards);
@@ -478,27 +520,86 @@ export class BookingsComponent implements OnInit {
         this.completedBookings = cards.filter(c => c.status === 'completed' || c.status === 'billed');
     }
 
-    private mergeRegistryBookings() {
-        const storedIds = this.bookingRegistry.getBookingIds();
-        if (storedIds.length === 0) return;
-
-        const localBookings = this.bookingRegistry.getLocalBookings();
-        const existingIds = new Set(this.upcomingBookings.map(b => b.bookingId));
-        const completedIds = new Set(this.completedBookings.map(b => b.bookingId));
-        const cancelledIds = new Set(this.cancelledBookings.map(b => b.bookingId));
-
-        for (const b of localBookings) {
-            const card = this.toBookingCard(b);
-            if (!card.bookingId) continue;
-            if (existingIds.has(card.bookingId) || completedIds.has(card.bookingId) || cancelledIds.has(card.bookingId)) continue;
-            if (card.status === 'cancelled') continue;
-            if (card.status === 'completed') {
-                this.completedBookings.unshift(card);
-            } else {
-                this.upcomingBookings.unshift(card);
-            }
+    /**
+     * Parse intermediate stops from whatever shape the data comes in.
+     *
+     * Source preference:
+     *   1. `intermediate_cities_array` — explicit string[] (we set this when storing the booking locally)
+     *   2. `intermediate_cities` — comma- or pipe-separated string ("Pune, Lonavala, Mumbai")
+     *   3. `via_cities` / `multi_city_destinations` — defensive fallbacks if backend ever surfaces them
+     *   4. parse from the backend `itinerary` HTML string ("BLR &rarr; Pune &rarr; Lonavala &rarr; HYD")
+     *
+     * Returns at most 20 stops (matches the dashboard's stop-add cap).
+     */
+    private extractIntermediateCities(b: any, sourceCity: string, destinationCity: string): string[] {
+        // 1. Explicit array (locally registered)
+        if (Array.isArray(b?.intermediate_cities_array)) {
+            return b.intermediate_cities_array
+                .map((s: any) => String(s || '').trim())
+                .filter((s: string) => s.length > 0)
+                .slice(0, 20);
         }
 
+        // 2. Comma / pipe / semicolon separated string from any of the known field names
+        const raw = b?.intermediate_cities || b?.via_cities || b?.multi_city_destinations || '';
+        if (typeof raw === 'string' && raw.trim()) {
+            return raw
+                .split(/[,|;]/)
+                .map((s: string) => s.trim())
+                .filter((s: string) => s.length > 0 && s.toLowerCase() !== sourceCity.toLowerCase() && s.toLowerCase() !== destinationCity.toLowerCase())
+                .slice(0, 20);
+        }
+
+        // 3. Parse from itinerary string ("Bangalore → Pune → Lonavala → Hyderabad").
+        //    Handles → ↔ ⇒ ⟶ -> hyphen and the HTML entity &rarr;
+        const itin = (b?.itinerary || '').toString().replace(/&rarr;|&#8594;|&#x2192;/gi, '→');
+        if (itin.includes('→') || /\s->\s/.test(itin)) {
+            const parts = itin
+                .split(/→|->/)
+                .map((s: string) => s.trim())
+                .filter((s: string) => s.length > 0);
+            // Drop source (first) and destination (last); collapse duplicates of either
+            const middle = parts.slice(1, -1).filter((s: string) =>
+                s.toLowerCase() !== sourceCity.toLowerCase() &&
+                s.toLowerCase() !== destinationCity.toLowerCase()
+            );
+            return middle.slice(0, 20);
+        }
+
+        return [];
+    }
+
+    /**
+     * Build the visible route line for the card heading.
+     * Round trip: source → (vias) → destination → source
+     * One way / outstation: source → (vias) → destination
+     * Local / airport: handled outside this helper (single point + label).
+     *
+     * If too many stops would overflow the line, the middle ones get folded
+     * into "+N stops" with the full list available via `viaLine` below the heading.
+     */
+    private buildRouteLine(sourceCity: string, intermediates: string[], destinationCity: string, isRoundTrip: boolean): string {
+        if (!sourceCity && !destinationCity) return '';
+        const segments: string[] = [];
+        if (sourceCity) segments.push(sourceCity);
+
+        // Show up to 2 intermediate stops inline; the rest move into viaLine.
+        // Keeps the heading readable for 20-stop trips while still hinting at the route shape.
+        if (intermediates.length <= 2) {
+            segments.push(...intermediates);
+        } else {
+            segments.push(intermediates[0], `+${intermediates.length - 1} stops`);
+        }
+
+        if (destinationCity) segments.push(destinationCity);
+        if (isRoundTrip && sourceCity) segments.push(sourceCity);
+        return segments.join(' → ');
+    }
+
+    /** "via Pune, Lonavala, Mumbai" — empty when there are no extra stops. */
+    private buildViaLine(intermediates: string[]): string {
+        if (!intermediates.length) return '';
+        return 'via ' + intermediates.join(', ');
     }
 
     private toBookingCard(b: any): BookingCard {
@@ -512,7 +613,7 @@ export class BookingsComponent implements OnInit {
 
         const rawStatus = String(b.booking_status || b.status || 'pending').toLowerCase().trim();
         let status = rawStatus;
-        if (rawStatus === '1' || rawStatus === 'confirmed') status = 'confirmed';
+        if (rawStatus === '1' || rawStatus === 'confirmed' || rawStatus === 'upcoming') status = 'confirmed';
         else if (rawStatus === '2' || rawStatus === 'assigned' || rawStatus === 'in_progress') status = 'assigned';
         else if (rawStatus === '3' || rawStatus === 'completed' || rawStatus === 'billed') status = 'completed';
         else if (rawStatus === '4' || rawStatus === 'cancel' || rawStatus === 'cancelled') status = 'cancelled';
@@ -566,12 +667,38 @@ export class BookingsComponent implements OnInit {
             }
         }
 
+        // Resolve route information
+        const sourceCity = registryData?.pick_city || registryData?.source_city || b.pick_city || b.source_city || b.sourceCity || '';
+        const destinationCity = registryData?.drop_city || registryData?.destination_city || b.drop_city || b.destination_city || b.destinationCity || '';
+
+        // Round trip detection — backend uses several names interchangeably
+        const tripTypeRaw = (b.trip_type || b.tripType || '').toString().toLowerCase();
+        const usageNameRaw = (b.usage_name || b.usagename || b.usageName || '').toString().toLowerCase();
+        const isRoundTrip = tripTypeRaw === 'round trip' ||
+            tripTypeRaw === 'roundtrip' ||
+            usageNameRaw === 'roundtrip' ||
+            usageNameRaw.includes('round');
+
+        // Intermediate stops — registry first (we control the format), then API/itinerary parsing.
+        // Registry stores `intermediate_cities_array` (string[]); API may surface various other shapes.
+        const intermediateCities = this.extractIntermediateCities(
+            { ...b, ...(registryData || {}) },
+            sourceCity,
+            destinationCity
+        );
+
+        const routeLine = this.buildRouteLine(sourceCity, intermediateCities, destinationCity, isRoundTrip);
+        const viaLine = this.buildViaLine(intermediateCities);
+
         return {
             bookingId: String(b.booking_id || b.bookingId || ''),
             reservationId: String(b.reservation_id || b.reservationId || ''),
-            // Prefer registry data (accurate from booking creation) over API fields
-            sourceCity: registryData?.pick_city || registryData?.source_city || b.pick_city || b.source_city || b.sourceCity || '',
-            destinationCity: registryData?.drop_city || registryData?.destination_city || b.drop_city || b.destination_city || b.destinationCity || '',
+            sourceCity,
+            destinationCity,
+            intermediateCities,
+            isRoundTrip,
+            routeLine,
+            viaLine,
             tripType: b.trip_type || b.tripType || '',
             usageName: b.usage_name || b.usagename || b.usageName || '',
             pickupAddress: b.pick_loc || b.pickup_address || b.pickupAddress || '',
@@ -588,8 +715,23 @@ export class BookingsComponent implements OnInit {
             driverName: driver?.driver_name || b.driverName || '',
             driverMobile: driver?.driver_number || b.driverMobile || '',
             carNumber: driver?.car_number || b.carNumber || '',
-            prePayment: parseFloat(b.prePayment || b.pre_payment) || 0,
-            cashToCollect: parseFloat(b.cashToCollect || b.cash_to_collect || b.cash_to_driver) || 0,
+            // Paid-amount resolution: prefer whichever source has the *higher*
+            // value.
+            //   - Registry is written client-side by updateRegistryPayment()
+            //     the moment a wallet / Razorpay payment succeeds, so it
+            //     knows about the 25% top-up instantly.
+            //   - API (b.prePayment) catches up later, and also reflects the
+            //     auto-debit cron once it fires 48h before pickup (option 2)
+            //     or a manual settle-now call.
+            // Using Math.max() means whichever side is ahead wins — the UI
+            // never shows a stale ₹0 "Paid Now" just because the API hasn't
+            // synced yet, and once the cron moves the API ahead of the
+            // registry the displayed amount tracks that too.
+            prePayment: Math.max(
+                parseFloat(registryData?.prePayment) || 0,
+                parseFloat(b.prePayment || b.pre_payment) || 0
+            ),
+            cashToCollect: parseFloat(b.cashToCollect || b.cash_to_collect || b.cash_to_driver || registryData?.cashToCollect) || 0,
             paymentMethod,
             paymentOption,
             paidVia: paidVia || (b.paidVia) || 'wallet',
@@ -951,7 +1093,13 @@ export class BookingsComponent implements OnInit {
                         onError();
                         return;
                     }
-                    const razorpayKey = order.razorpayKeyId || (window as any).environment?.razorpayKeyId || '';
+                    // Razorpay key: prefer server-supplied (lets backend rotate without
+                    // redeploy), fall back to the imported environment value. The old
+                    // `window.environment` lookup was a no-op — the env is never attached
+                    // to window, so the fallback silently collapsed to '' and the SDK
+                    // threw "Authentication key was missing". Mirrors the wallet top-up
+                    // pattern at line 263 which has always worked.
+                    const razorpayKey = order.razorpayKeyId || environment.razorpayKeyId;
                     const options: any = {
                         key: razorpayKey,
                         amount: order.amount,

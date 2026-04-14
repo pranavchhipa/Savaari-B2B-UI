@@ -68,28 +68,16 @@ export class BookingStateService {
         AVAILABILITY: 'savaari_availability'
     };
 
+    /**
+     * NO HARDCODED FALLBACKS.
+     * Previously had `fromCity: 'Bangalore', toCity: 'Mysore', name: 'Wagon R...', price: 2196`
+     * which leaked onto the booking + receipt pages whenever localStorage was cleared
+     * (incognito, fresh device, post-logout). Booking guard already redirects to /dashboard
+     * when itinerary is missing, so returning null is the correct behavior.
+     */
     private readonly DEFAULTS = {
-        ITINERARY: {
-            fromCity: 'Bangalore',
-            fromCityId: 377,
-            toCity: 'Mysore',
-            toCityId: 237,
-            pickupDate: new Date(),
-            pickupTime: '09:30 PM',
-            tripType: 'One Way',
-            subTripType: 'oneWay',
-        } as Itinerary,
-        CAR: {
-            id: 'wagonr',
-            name: 'Wagon R or Equivalent',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAKBTFNKprUPtjZWgRrKHWjKoz4HDXQ7PYzX30ay-EkYiGF6juj5nMkg65eKCBkcXeQUzKXd6N3S7d0oJxD1yBOlC5drsBC59oM2qY-GYx9G_qJQx7cdFEIikpe9R-RIw5PGiaSIUT7WfZ-GSBtgSt4D14Xvf65z7ELllXS-PyEnLJQ0EZaHNA-Ky6fcokHpewwFasZ6nbgcPt8r4cYX_0iJ6YV82OAKr0Wu5Imu88_RvHSUjuY2dfNHE2PyjWoQzV4LFjOCAnhboyj',
-            price: 2196,
-            kmsIncluded: '145 km',
-            seats: '4 Seater',
-            bags: '1 Bag',
-            ac: 'AC',
-            type: 'SEDAN'
-        } as SelectedCar
+        ITINERARY: null as Itinerary | null,
+        CAR: null as SelectedCar | null
     };
 
     private currentItinerarySubject = new BehaviorSubject<Itinerary | null>(this.loadFromStorage(this.STORAGE_KEYS.ITINERARY, true));
@@ -130,7 +118,8 @@ export class BookingStateService {
                             parsed.pickupDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
                         }
                     } else {
-                        parsed.pickupDate = this.DEFAULTS.ITINERARY.pickupDate;
+                        // Unparseable date — drop it; user will be redirected to dashboard by guard
+                        parsed.pickupDate = undefined;
                     }
                 } else {
                     parsed.pickupDate = date;
@@ -197,12 +186,17 @@ export class BookingStateService {
     }
 
     /**
-     * Resets the booking state to defaults (useful for new search flows)
+     * Resets the booking state — clears itinerary, selected car and availability.
+     * After reset, booking guard will redirect any /booking access to /dashboard.
      */
     resetState(): void {
-        this.setItinerary(this.DEFAULTS.ITINERARY);
-        this.setSelectedCar(this.DEFAULTS.CAR);
+        this.currentItinerarySubject.next(null);
+        this.selectedCarSubject.next(null);
         this.availabilityResponseSubject.next(null);
+        if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.removeItem(this.STORAGE_KEYS.ITINERARY);
+            localStorage.removeItem(this.STORAGE_KEYS.CAR);
+        }
         if (typeof window !== 'undefined' && window.sessionStorage) {
             sessionStorage.removeItem(this.STORAGE_KEYS.AVAILABILITY);
         }

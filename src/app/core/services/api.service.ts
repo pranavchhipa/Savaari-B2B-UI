@@ -195,6 +195,28 @@ export class ApiService {
   }
 
   /**
+   * POST to the Settlement API (api.alphasavaari.com/partner_api/public/).
+   * Used for: booking/settlement-payment (alpha-only — beta returns 404).
+   *
+   * Same wire shape as partnerPostForm (form-encoded body, token in ?token=
+   * query param) but routes through `/settlement-api` → alpha per the April
+   * 2026 settlement doc. The auto-pay cron (`cron_wallet_auto_pay_balance.php`)
+   * is also alpha-hosted, so settlement flow lives entirely on alpha even when
+   * the rest of the app runs against beta.
+   */
+  settlementPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>, queryParams?: Record<string, string>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    let url = `${environment.settlementApiBaseUrl}/${endpoint}`;
+    if (queryParams) {
+      const qp = new HttpParams({ fromObject: queryParams });
+      url += `?${qp.toString()}`;
+    }
+    return this.http.post<T>(url, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+  }
+
+  /**
    * POST to the System Bookings API (api.betasavaari.com/system_bookings/).
    * Used for: cancellation.php (booking cancellation).
    *

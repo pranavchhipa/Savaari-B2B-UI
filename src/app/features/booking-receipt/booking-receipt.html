@@ -89,7 +89,11 @@
             <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
               <tr>
                 <td class="px-5 py-3 text-slate-500 dark:text-slate-400 w-36 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Route</td>
-                <td class="px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ booking.itinerary || (booking.sourceCity + (booking.destinationCity ? ' → ' + booking.destinationCity : '')) }}</td>
+                <td class="px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ booking.routeLine || booking.itinerary || (booking.sourceCity + (booking.destinationCity ? ' → ' + booking.destinationCity : '')) }}</td>
+              </tr>
+              <tr *ngIf="booking.intermediateCities.length">
+                <td class="px-5 py-3 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Via Stops</td>
+                <td class="px-5 py-3 font-medium text-orange-600 dark:text-orange-400">{{ booking.intermediateCities.join(', ') }}</td>
               </tr>
               <tr *ngIf="booking.pickupAddress">
                 <td class="px-5 py-3 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Pickup Point</td>

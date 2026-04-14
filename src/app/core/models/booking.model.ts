@@ -17,7 +17,7 @@ export interface CreateBookingRequest {
   sourceCity: number;
   tripType: string;              // 'outstation' | 'local' | 'airport'
   subTripType: string;           // 'oneWay' | 'roundTrip' | '880' etc.
-  destinationCity?: number;      // Required for outstation (comma-separated for multicity round trips)
+  destinationCity?: number | string;  // Required for outstation. number for one-way, comma-separated string ("237,2342,3424") for multicity round trip — backend accepts both per live HAR.
   pickupDateTime: string;        // DD-MM-YYYY HH:MM
   duration?: number;             // Days (1 for oneWay)
 

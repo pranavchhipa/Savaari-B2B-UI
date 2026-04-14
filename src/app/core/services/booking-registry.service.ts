@@ -103,6 +103,33 @@ export class BookingRegistryService {
     return all[bookingId] || null;
   }
 
+  /**
+   * Grace period (ms) for an unpaid registry entry to remain visible.
+   * After this window, an entry with `paymentOption === 0` (user never
+   * picked + completed a payment option) is treated as an abandoned
+   * "orphan" and hidden / pruned. 10 minutes covers the slowest
+   * Razorpay redirect flow with a wide margin.
+   */
+  private static readonly ORPHAN_GRACE_MS = 10 * 60 * 1000;
+
+  /**
+   * True if a stored entry is an orphan: registerBookingData() was called
+   * (booking created server-side) but updateRegistryPayment() never ran
+   * (payment was abandoned / tab closed / refresh on payment page).
+   *
+   * Detection: paymentOption stays at the initial 0 in localStorage —
+   * legitimate completions always overwrite it with 1, 2, or 3.
+   */
+  private isOrphan(data: any): boolean {
+    if (!data) return false;
+    const paymentOpt = Number(data.paymentOption ?? 0);
+    if (paymentOpt !== 0) return false; // payment completed — not an orphan
+    const storedAtMs = data._storedAt ? Date.parse(data._storedAt) : 0;
+    if (!storedAtMs) return false; // no timestamp → can't decide → keep
+    const ageMs = Date.now() - storedAtMs;
+    return ageMs > BookingRegistryService.ORPHAN_GRACE_MS;
+  }
+
   /** Get all locally-stored booking details as BookingDetails-compatible objects. */
   getLocalBookings(): BookingDetails[] {
     const all = this.getAllStoredData();
@@ -111,7 +138,33 @@ export class BookingRegistryService {
       // Defense-in-depth: even within a scoped bucket, skip entries whose
       // stamped _userId doesn't match — protects against any cross-write.
       .filter(([, data]: [string, any]) => !data?._userId || !uid || String(data._userId) === uid)
+      // Hide orphans: booking was created server-side but the agent never
+      // completed a payment option, so the entry has no paymentOption set.
+      // Without this filter, `toBookingCard()` falls through to the
+      // "Wallet Pay" default label and the orphan keeps reappearing on
+      // the Upcoming tab after every reload.
+      .filter(([, data]: [string, any]) => !this.isOrphan(data))
       .map(([id, data]: [string, any]) => this.toBookingDetails(id, data));
+  }
+
+  /**
+   * Drop orphan entries from localStorage so they don't keep coming back
+   * on the next load. Returns the IDs that were pruned (for logging).
+   *
+   * Safe to call on every Bookings page load — short-circuits if no
+   * entries are stored. The grace window means brand-new bookings
+   * still in the payment flow won't be touched.
+   */
+  pruneOrphans(): string[] {
+    const all = this.getAllStoredData();
+    const removed: string[] = [];
+    for (const [id, data] of Object.entries(all) as [string, any][]) {
+      if (this.isOrphan(data)) {
+        removed.push(id);
+        this.removeBookingId(id);
+      }
+    }
+    return removed;
   }
 
   /** Remove a booking ID from the registry. */

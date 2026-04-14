@@ -66,7 +66,14 @@ export class ReportsComponent {
       next: (entries: ReportDetailedEntry[]) => {
         // Debug: log first entry to see actual field names from API
         if (entries?.length) console.log('[REPORTS] Sample API entry keys:', Object.keys(entries[0]), 'Values:', JSON.stringify(entries[0]).substring(0, 500));
-        this.trips = (entries || []).map(e => this.mapToTripReport(e));
+        // Drop "Potential" rows — server-side records for bookings that were
+        // created but never paid for. Including them would distort report
+        // totals and CSV exports with phantom revenue.
+        const real = (entries || []).filter((e: any) => {
+          const raw = String(e?.booking_status || e?.['Prepaid/Postpaid'] || '').toLowerCase().trim();
+          return raw !== 'potential';
+        });
+        this.trips = real.map(e => this.mapToTripReport(e));
         this.isLoading = false;
         this.hasViewed = true;
         this.cdr.markForCheck();

@@ -79,12 +79,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // Loading state for Explore Cabs button
   isSearching = false;
 
-  // Round Trip multi-city destinations (max 12)
+  // Round Trip multi-city destinations.
+  // Up to 20 extra stops allowed; the UI lays them out 5 per row and wraps
+  // the rest onto subsequent rows (see dashboard.html "Stops" grid).
   extraDestinations: City[] = [];
-  readonly MAX_DESTINATIONS = 12;
+  readonly MAX_DESTINATIONS = 20;
 
   addDestinationCity() {
-    if (this.extraDestinations.length >= this.MAX_DESTINATIONS - 1) return;
+    if (this.extraDestinations.length >= this.MAX_DESTINATIONS) return;
 
     // Don't add if main TO city isn't filled yet
     const toCity = this.bookingForm.get('toCity')?.value;
@@ -109,12 +111,52 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   onExtraDestinationSelect(event: any, index: number) {
     const city: City = event.value || event;
+
+    // Duplicate guard: don't let the same city be a stop twice.
+    // A city cannot be both the main TO and an extra stop, and no two extra
+    // stops can be the same. (FROM is allowed to repeat — that's normal for
+    // a round trip that loops back home.)
+    const used = this.getUsedDestinationCityIds(index);
+    if (city?.id && used.has(String(city.id))) {
+      // Reject the selection — clear the slot so the user picks a different city.
+      this.extraDestinations[index] = null as any;
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.extraDestinations[index] = city;
     this.saveSearchState();
   }
 
-  filterExtraDestCities(event: AutoCompleteCompleteEvent) {
-    this.filteredDestinationCities = this.filterCitiesRanked(this.destinationCities, event.query);
+  filterExtraDestCities(event: AutoCompleteCompleteEvent, index: number = -1) {
+    const ranked = this.filterCitiesRanked(this.destinationCities, event.query);
+    // Hide cities already chosen as the main TO or as another extra stop so
+    // the user can't accidentally re-pick a duplicate from the dropdown.
+    const used = this.getUsedDestinationCityIds(index);
+    this.filteredDestinationCities = used.size === 0
+      ? ranked
+      : ranked.filter(c => !used.has(String(c?.id)));
+  }
+
+  /**
+   * Collect IDs of every destination currently in use (main TO + each extra
+   * stop) so the autocomplete and select handlers can prevent duplicates.
+   * Pass `excludeIndex` to keep the current stop's own value in the set of
+   * allowed options (e.g. when the user re-opens the same dropdown).
+   */
+  private getUsedDestinationCityIds(excludeIndex: number = -1): Set<string> {
+    const ids = new Set<string>();
+    const toCity: any = this.bookingForm?.get('toCity')?.value;
+    if (toCity && typeof toCity === 'object' && toCity.id != null) {
+      ids.add(String(toCity.id));
+    }
+    this.extraDestinations.forEach((c: any, i: number) => {
+      if (i === excludeIndex) return;
+      if (c && typeof c === 'object' && c.id != null) {
+        ids.add(String(c.id));
+      }
+    });
+    return ids;
   }
 
   // Real business stats from API
@@ -438,8 +480,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
-        // Cast to any[] for flexible property access (API uses snake_case)
-        const all = bookings as any[];
+        // Cast to any[] for flexible property access (API uses snake_case).
+        // Drop "Potential" records — bookings created server-side but never
+        // paid for; including them would inflate revenue totals and surface
+        // them in the Recent Bookings widget without a valid payment method.
+        const all = (bookings as any[]).filter(b => {
+          const raw = String(b?.['booking_status'] || b?.['status'] || '').toLowerCase().trim();
+          return raw !== 'potential';
+        });
 
         // Filter bookings for this month
         const thisMonthBookings = all.filter(b => {

@@ -247,17 +247,19 @@
             </div>
           </div>
 
-          <!-- Row 2: Stops (only when stops exist) -->
+          <!-- Row 2: Stops (only when stops exist)
+               Layout: 1 per row on mobile, 2 on small screens, 5 per row on
+               lg+. The CSS grid wraps automatically so up to 20 stops spread
+               across four rows without the chips getting crushed. -->
           <div *ngIf="extraDestinations.length > 0"
-            class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 bg-orange-50/50 dark:bg-orange-900/10 rounded-xl p-3 border border-orange-200/60 dark:border-orange-700/30 mb-3">
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 bg-orange-50/50 dark:bg-orange-900/10 rounded-xl p-3 border border-orange-200/60 dark:border-orange-700/30 mb-3">
             <ng-container *ngFor="let dest of extraDestinations; let i = index">
-              <div *ngIf="i > 0" class="hidden lg:block w-px h-12 bg-orange-200 dark:bg-orange-700/40"></div>
-              <div class="search-cell flex-1 px-4 py-4 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-lg border border-orange-200/80 dark:border-orange-600/30">
+              <div class="search-cell px-4 py-4 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-lg border border-orange-200/80 dark:border-orange-600/30 min-w-0">
                 <lucide-icon name="map-pin" [size]="16" class="text-orange-400 shrink-0"></lucide-icon>
                 <div class="flex flex-col flex-1 min-w-0">
                   <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">Stop {{ i + 1 }}</span>
                   <p-autoComplete [ngModel]="extraDestinations[i]" [ngModelOptions]="{standalone: true}"
-                    [suggestions]="filteredDestinationCities" (completeMethod)="filterExtraDestCities($event)"
+                    [suggestions]="filteredDestinationCities" (completeMethod)="filterExtraDestCities($event, i)"
                     (onSelect)="onExtraDestinationSelect($event, i)" field="name" optionLabel="name" [minLength]="1"
                     placeholder="Enter city" styleClass="w-full search-bar-autocomplete"
                     inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
@@ -279,7 +281,7 @@
           </div>
 
           <!-- + Add Stop button -->
-          <div *ngIf="extraDestinations.length < MAX_DESTINATIONS - 1" class="flex items-center mt-2 mb-1">
+          <div *ngIf="extraDestinations.length < MAX_DESTINATIONS" class="flex items-center mt-2 mb-1">
             <button type="button" (click)="addDestinationCity()"
               class="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-3 py-1.5 transition-all cursor-pointer border-0 shadow-sm">
               <lucide-icon name="plus" [size]="13"></lucide-icon>

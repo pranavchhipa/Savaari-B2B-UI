@@ -342,12 +342,22 @@ export class PaymentService {
 
   /**
    * Step 6: Settlement payment — update booking as fully paid.
-   * POST /booking/settlement-payment (Partner API, form-encoded)
+   * POST /booking/settlement-payment (Settlement API, form-encoded)
    *
    * Per backend team's doc (April 2026):
    *   Sets pay_bal_amt=0, payment_status='Pre Paid', made_payment=2
    *   Removes booking from auto-pay cron queue (sv_booking_wallet_payment.balance_paid_status=1)
    *   Records payment in sv_advance_payment for auditing
+   *
+   * ROUTING NOTE: This endpoint is ALPHA-ONLY. Beta returns 404 because it's
+   * not deployed there. Confirmed via probe (April 2026): garbage token to
+   * api.alphasavaari.com returned errroCode=11001 (auth failed — meaning the
+   * route exists and validated), while the same request to beta returned 404
+   * "Not Found". Cron (`cron_wallet_auto_pay_balance.php`) is also alpha-
+   * hosted, so the whole settlement flow lives on alpha. We route it through
+   * the dedicated `/settlement-api` proxy rather than `/partner-api` so this
+   * one endpoint can live on a different domain from the rest of the Partner
+   * API surface without leaking alpha URLs into the rest of the app.
    *
    * Call this AFTER wallet deduction + confirmation.php (or Razorpay verify + confirmation.php).
    */
@@ -373,7 +383,7 @@ export class PaymentService {
       body['paymentId'] = params.paymentId;
     }
 
-    return this.api.partnerPostForm<any>('booking/settlement-payment', body, { token }).pipe(
+    return this.api.settlementPostForm<any>('booking/settlement-payment', body, { token }).pipe(
       map(response => {
         if (!environment.production) console.log('[PAYMENT] Settlement payment:', response);
         return response?.status === true || response?.status === 'success';

@@ -1294,18 +1294,24 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       locality,
       // alias_source_city_id comes from place_id API (source_city_map_info.city_id)
       // populated in onPickupAddressSelect when user picks a pickup suggestion.
-      // Fallback to itinerary.fromCityId so we never silently send 0 — backend uses
-      // this for pricing route lookup, sending 0 causes fare mismatch in db tables.
-      alias_source_city_id: this.pickupAliasSourceCityId || this.itinerary!.fromCityId || 0,
+      //
+      // IMPORTANT: do NOT fall back to itinerary.fromCityId (the canonical city ID like
+      // 377 for Bangalore). Live HAR shows alias_source_city_id is a LOCALITY ID
+      // (e.g. 414 for Koramangala), NOT a canonical city ID. Sending the canonical
+      // city ID makes the backend look up "locality 377" and default to the first
+      // locality alphabetically — which is why every Bangalore booking email was
+      // rendering as "Banglore(Dhanlauti)" before this fix (backend team confirmed,
+      // April 2026). When we don't have a real locality from place_id, send 0 so the
+      // backend uses its own default locality resolution rather than mis-rendering.
+      alias_source_city_id: this.pickupAliasSourceCityId || 0,
       dropAddress: this.dropAddress || '',
       dropLatLong: this.dropLatLng ? `${this.dropLatLng.lat},${this.dropLatLng.lng}` : '',
       dropLocality,
-      // alias_dest_city_id comes from place_id API (destination_city_map_info.city_id)
-      // populated in onDropAddressSelect. Per backend team (April 2026): backend pricing
-      // engine uses both alias IDs to compute correct fare — sending 0 causes the
-      // db amount columns to mismatch what the user was shown. Fall back to
-      // itinerary.toCityId / aliasDestCityId so the value is always meaningful.
-      alias_dest_city_id: this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || this.itinerary!.toCityId || 0,
+      // alias_dest_city_id comes from place_id API (destination_city_map_info.city_id).
+      // Same rule as alias_source_city_id: never fall back to a canonical city ID
+      // (toCityId), only to itinerary.aliasDestCityId which is set explicitly by the
+      // airport flow with a known-good locality ID.
+      alias_dest_city_id: this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || 0,
       customerTitle: 'Mr',
       customerName: this.guestName,
       // Per backend team (April 2026): customerEmail must hold AGENT email, and
@@ -1328,7 +1334,26 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       couponCode: '',
       device: 'DESKTOP',
       invoicePayer: this.commissionService.getInvoicePayer(),
-      ...(this.itinerary!.toCityId && { destinationCity: this.itinerary!.toCityId }),
+      // destinationCity: for round trip MULTICITY, must match what we sent to
+      // /availabilities — comma-separated list `<toCityId>,<stop1>,<stop2>,...`.
+      // Previously we sent only toCityId here, so backend lost all intermediate
+      // stops (Pune, Lonavala, Mumbai etc.) and re-priced the trip as a simple
+      // round trip to the final destination — causing payment-page and
+      // confirmation-page totals to drift from what the user picked. Reads
+      // both `id` (City model from dashboard) and `cityId` (ItineraryStop
+      // model) so it survives either shape in itinerary.extraDestinations.
+      ...(this.itinerary!.toCityId && {
+        destinationCity: (() => {
+          const isRoundTrip = apiParams.subTripType === 'roundTrip';
+          const stopIds: number[] = (this.itinerary?.extraDestinations || [])
+            .map((s: any) => Number(s?.id ?? s?.cityId))
+            .filter((id: number) => Number.isFinite(id) && id > 0);
+          if (isRoundTrip && stopIds.length > 0) {
+            return [this.itinerary!.toCityId!, ...stopIds].join(',');
+          }
+          return this.itinerary!.toCityId!;
+        })(),
+      }),
       ...(this.itinerary!.localityId && { localityId: this.itinerary!.localityId }),
       // Airport-specific params
       ...(isAirport && {
@@ -1360,6 +1385,27 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       response?.booking_key || dataItem?.booking_key || dataItem?.bookingKey || ''
     );
 
+    // Build the canonical intermediate-cities list ONCE and store it in two
+    // shapes so downstream consumers don't have to re-parse:
+    //   - intermediate_cities_array → string[] (preferred — bookings.ts reads this)
+    //   - intermediate_cities       → comma-separated string (legacy fallback)
+    // We also pre-compute the human-readable itinerary string with the round-trip
+    // return leg so the bookings list shows "BLR → Pune → Lonavala → Mumbai → HYD → BLR"
+    // instead of the backend's stripped "BLR → HYD → BLR" while data is fresh.
+    const stopNames: string[] = (this.itinerary?.extraDestinations || [])
+      .map(s => (s as any)?.cityOnly || (s as any)?.cityName || (s as any)?.name)
+      .filter((n: string) => typeof n === 'string' && n.trim().length > 0);
+    const isRoundTrip = (request.subTripType || '').toLowerCase() === 'roundtrip' ||
+                        (this.itinerary?.tripType || '').toLowerCase() === 'round trip';
+    const itineraryString = (() => {
+      const parts: string[] = [];
+      if (this.itinerary?.fromCity) parts.push(this.itinerary.fromCity);
+      parts.push(...stopNames);
+      if (this.itinerary?.toCity) parts.push(this.itinerary.toCity);
+      if (isRoundTrip && this.itinerary?.fromCity) parts.push(this.itinerary.fromCity);
+      return parts.join(' → ');
+    })();
+
     this.bookingRegistry.addBookingId(bkId);
     this.bookingRegistry.storeBookingData(bkId, {
       ...response,
@@ -1368,9 +1414,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       drop_city: this.itinerary?.toCity || '',
       source_city: this.itinerary?.fromCity || '',
       destination_city: this.itinerary?.toCity || '',
-      ...(this.itinerary?.extraDestinations?.length && {
-        intermediate_cities: this.itinerary.extraDestinations.map(s => s.cityOnly || s.cityName).join(', ')
+      ...(stopNames.length && {
+        intermediate_cities_array: stopNames,
+        intermediate_cities: stopNames.join(', '),
       }),
+      is_round_trip: isRoundTrip,
       pickup_address: this.pickupAddress || this.itinerary?.pickupAddress || '',
       drop_address: this.dropAddress || '',
       start_date_time: (() => {
@@ -1392,7 +1440,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       customer_name: this.guestName || '',
       customer_mobile: this.phone || '',
       customer_email: this.guestEmail || '',
-      itinerary: (this.itinerary?.fromCity || '') + (this.itinerary?.extraDestinations?.length ? ' → ' + this.itinerary.extraDestinations.map(s => s.cityOnly || s.cityName).join(' → ') : '') + ' → ' + (this.itinerary?.toCity || ''),
+      itinerary: itineraryString,
       prePayment: prePaymentAmount,
       cashToCollect: (this.selectedCar?.price || 0) - prePaymentAmount,
       carType: this.selectedCar?.carTypeId || request.carType || 0,
@@ -1877,7 +1925,8 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     let itineraryText = '';
     if (this.itinerary.tripType === 'Local') {
-      itineraryText = `${this.itinerary.fromCity} (Local - ${this.itinerary.localPackage || '8hr/80km'})`;
+      const pkg = this.itinerary.localPackage ? ` - ${this.itinerary.localPackage}` : '';
+      itineraryText = `${this.itinerary.fromCity} (Local${pkg})`;
     } else if (this.itinerary.tripType === 'Airport') {
       itineraryText = `${this.itinerary.fromCity} (Airport ${this.itinerary.airportSubType === 'pickup' ? 'Pickup' : 'Drop'})`;
     } else if (this.itinerary.tripType === 'Round Trip') {
@@ -1894,7 +1943,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       `Trip: ${itineraryText}`,
       `Pickup: ${pickupDate}, ${this.itinerary.pickupTime || ''}`,
       this.pickupAddress ? `Address: ${this.pickupAddress}` : '',
-      `Car: ${this.selectedCar.name || 'Sedan'}`,
+      this.selectedCar.name ? `Car: ${this.selectedCar.name}` : '',
       `Fare: ₹${(this.selectedCar.price || 0).toLocaleString('en-IN')}`,
       ``,
       `_Powered by ${environment.brandName} - India's #1 Cab Service since 2006_`,

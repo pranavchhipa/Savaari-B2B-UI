@@ -20,8 +20,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isUserDropdownOpen = false;
   isScrolled = false;
   showLogoutConfirm = false;
-  supportPhone = environment.supportPhone;
-  supportPhoneTel = environment.supportPhoneTel;
+  // Header is shown across both public and authenticated routes, but the
+  // call-us pill in the top-right is where logged-in agents reach us —
+  // so it uses the partner-facing number (`partnerSupport*`) rather than
+  // the retail `support*` number seen on landing/footer.
+  supportPhone = environment.partnerSupportPhone;
+  supportPhoneTel = environment.partnerSupportPhoneTel;
   brandName = environment.brandName;
   private routeSub!: Subscription;
   balance$!: Observable<number>;

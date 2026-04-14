@@ -37,6 +37,15 @@ export const environment = {
    */
   registrationApiBaseUrl: '/reg-api',
 
+  /**
+   * Settlement API: POST /booking/settlement-payment — alpha-only.
+   * Beta backend returns 404 for this endpoint (not deployed there). The
+   * related auto-pay cron (`cron_wallet_auto_pay_balance.php`) is also alpha-
+   * hosted per the April 2026 settlement doc, so the whole settlement flow
+   * runs against alpha even when the rest of the app is on beta.
+   */
+  settlementApiBaseUrl: '/settlement-api',
+
   /** Razorpay test key — updated per backend team (April 2026) */
   razorpayKeyId: 'rzp_test_SWAcB744ApXvsB',
 
@@ -64,6 +73,18 @@ export const environment = {
   supportPhone: '090 4545 0000',
   supportPhoneTel: 'tel:09045450000',
   supportEmail: 'info@savaari.com',
+
+  /**
+   * Partner-facing contact info — shown in the authenticated dashboard
+   * header and on the Contact Us page. Kept separate from the public
+   * `support*` fields so the landing page and general footer can keep
+   * using the retail customer-care number.
+   */
+  partnerSupportPhone: '079 7111 1865',
+  partnerSupportPhoneTel: 'tel:07971111865',
+  partnerSupportEmail: 'partners.holiday@savaari.com',
+  partnerSupportWhatsapp: '+91 63989 85092',
+  partnerSupportWhatsappUrl: 'https://wa.me/916398985092',
 
   /** New multi-step registration wizard */
   newRegistrationFlow: true,
