@@ -296,39 +296,44 @@ export class RegistrationService {
       });
     }
 
-    const fd = new FormData();
-    fd.append('referer', location.hostname + '/');
-    fd.append('userName', `${payload.firstName} ${payload.lastName}`.trim());
-    fd.append('userEmail', payload.email);
-    fd.append('userPhone', payload.mobile);
-    fd.append('countryCode', payload.countryCode);
-    fd.append('agentCompanyName', payload.companyName);
-    fd.append('agentCompanyAddress', payload.companyAddress);
-    fd.append('agentPAN', payload.panNumber);
-    fd.append('agentGST', payload.gstNumber ?? '');
-    fd.append('password', payload.password);
-
-    // City/state extracted from place_id API (autocomplete path) or GST address
-    fd.append('agentCity', payload.agentCity || '');
-    fd.append('agentState', payload.agentState || '');
-    fd.append('agentcityId', String(payload.agentCityId || 0));
-    fd.append('agentLogo', '');
-    fd.append('asAgent', '0');
-    fd.append('agentLocalCommission', '5');
-    fd.append('agentAirportCommission', '5');
-    fd.append('agentOutstationCommission', '5');
-    fd.append('clienttip', '');
-    fd.append('isAgent', 'true');
+    // Use application/x-www-form-urlencoded (NOT multipart/form-data).
+    // Alpha's PHP proxy reads the body via php://input; multipart is auto-parsed
+    // by PHP into $_POST and php://input returns empty — body never reaches
+    // the upstream backend and validation fails ("Please enter your name").
+    // URL-encoded body survives the proxy intact, like every other B2B endpoint.
+    const body: Record<string, string> = {
+      referer: location.hostname + '/',
+      userName: `${payload.firstName} ${payload.lastName}`.trim(),
+      userEmail: payload.email,
+      userPhone: payload.mobile,
+      countryCode: payload.countryCode,
+      agentCompanyName: payload.companyName,
+      agentCompanyAddress: payload.companyAddress,
+      agentPAN: payload.panNumber,
+      agentGST: payload.gstNumber ?? '',
+      password: payload.password,
+      // City/state extracted from place_id API (autocomplete path) or GST address
+      agentCity: payload.agentCity || '',
+      agentState: payload.agentState || '',
+      agentcityId: String(payload.agentCityId || 0),
+      agentLogo: '',
+      asAgent: '0',
+      agentLocalCommission: '5',
+      agentAirportCommission: '5',
+      agentOutstationCommission: '5',
+      clienttip: '',
+      isAgent: 'true',
+    };
 
     // New fields — ignored by backend until the extension ships, then validated
     if (payload.mobileVerificationToken) {
-      fd.append('mobileVerificationToken', payload.mobileVerificationToken);
+      body['mobileVerificationToken'] = payload.mobileVerificationToken;
     }
     if (payload.emailVerificationToken) {
-      fd.append('emailVerificationToken', payload.emailVerificationToken);
+      body['emailVerificationToken'] = payload.emailVerificationToken;
     }
 
-    return this.api.b2bPostFormData<any>('user', fd).pipe(
+    return this.api.b2bPostForm<any>('user', body).pipe(
       map(response => {
         if (response?.statusCode === 200 || response?.status === 'success' || response?.status === true) {
           const data = response?.data ?? response;
