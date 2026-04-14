@@ -19,6 +19,10 @@ RewriteEngine On
 RewriteCond %{REQUEST_URI} ^/(partner-api|b2b-api|wallet-api|address-api|payment-api|system-bookings-api)/
 RewriteRule ^(.*)$ /proxy.php [L,QSA]
 
+# Registration API uses separate proxy (reg-proxy.php) — proxy.php is server-managed
+RewriteCond %{REQUEST_URI} ^/reg-api/
+RewriteRule ^(.*)$ /reg-proxy.php [L,QSA]
+
 # ── SPA Fallback ──
 # All non-file, non-directory requests go to index.html (Angular handles routing)
 RewriteCond %{REQUEST_FILENAME} !-f

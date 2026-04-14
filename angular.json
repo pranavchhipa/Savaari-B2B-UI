@@ -32,6 +32,10 @@
               {
                 "glob": "proxy.php",
                 "input": "src"
+              },
+              {
+                "glob": "reg-proxy.php",
+                "input": "src"
               }
             ],
             "stylePreprocessorOptions": {
