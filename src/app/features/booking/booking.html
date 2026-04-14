@@ -332,11 +332,27 @@
                         <div class="min-w-0">
                             <p class="text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-widest">Trip Details</p>
                             <p class="text-[13px] sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5 leading-snug">
-                                {{ itinerary?.fromCity || 'Source' }}
-                                <ng-container *ngIf="itinerary?.extraDestinations?.length">
-                                    <ng-container *ngFor="let stop of itinerary?.extraDestinations"> → <span class="text-orange-600 dark:text-orange-400">{{stop.cityOnly || stop.cityName}}</span></ng-container>
+                                <!-- LOCAL: only show the city, no arrow -->
+                                <ng-container *ngIf="itinerary?.tripType === 'Local'">{{ itinerary?.fromCity || 'Source' }}</ng-container>
+
+                                <!-- AIRPORT: show direction based on sub-type -->
+                                <ng-container *ngIf="itinerary?.tripType === 'Airport'">
+                                    <ng-container *ngIf="itinerary?.airportSubType === 'pickup'; else airportDropHeader">
+                                        {{ itinerary?.airportName || itinerary?.dropAirport || (itinerary?.fromCity + ' Airport') }} → {{ itinerary?.fromCity || 'City' }}
+                                    </ng-container>
+                                    <ng-template #airportDropHeader>
+                                        {{ itinerary?.fromCity || 'City' }} → {{ itinerary?.airportName || itinerary?.dropAirport || (itinerary?.fromCity + ' Airport') }}
+                                    </ng-template>
                                 </ng-container>
-                                <ng-container *ngIf="itinerary?.toCity"> → {{ itinerary?.toCity }}</ng-container>
+
+                                <!-- ONE WAY / ROUND TRIP: original timeline -->
+                                <ng-container *ngIf="itinerary?.tripType !== 'Local' && itinerary?.tripType !== 'Airport'">
+                                    {{ itinerary?.fromCity || 'Source' }}
+                                    <ng-container *ngIf="itinerary?.extraDestinations?.length">
+                                        <ng-container *ngFor="let stop of itinerary?.extraDestinations"> → <span class="text-orange-600 dark:text-orange-400">{{stop.cityOnly || stop.cityName}}</span></ng-container>
+                                    </ng-container>
+                                    <ng-container *ngIf="itinerary?.toCity"> → {{ itinerary?.toCity }}</ng-container>
+                                </ng-container>
                             </p>
                             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
                                 <span class="text-[10px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{{ selectedCar?.name || 'Sedan' }}</span>
@@ -596,7 +612,7 @@
                         <div *ngIf="itinerary?.tripType === 'Local'" class="mt-1.5">
                             <p class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 <lucide-icon name="map-pin" [size]="12" class="text-primary"></lucide-icon>
-                                {{itinerary?.fromCity || 'Bangalore'}}
+                                {{itinerary?.fromCity}}
                             </p>
                             <p class="text-xs text-slate-500 mt-0.5 ml-5">Local</p>
                         </div>
@@ -605,7 +621,7 @@
                         <div *ngIf="itinerary?.tripType === 'Airport'" class="mt-1.5">
                             <p class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 <lucide-icon name="map-pin" [size]="12" class="text-primary"></lucide-icon>
-                                {{itinerary?.fromCity || 'Bangalore'}}
+                                {{itinerary?.fromCity}}
                             </p>
                             <p class="text-xs text-slate-500 mt-0.5 ml-5">{{itinerary?.airportSubType === 'pickup' ? 'Airport Pickup' : 'Airport Drop'}}</p>
                         </div>
@@ -614,7 +630,7 @@
                         <div *ngIf="itinerary?.tripType !== 'Local' && itinerary?.tripType !== 'Airport'" class="flex flex-col" [ngClass]="step1Complete ? 'mt-1.5 gap-0.5' : 'mt-2 gap-1'">
                             <div class="flex items-center" [ngClass]="step1Complete ? 'gap-2' : 'gap-2.5'">
                                 <lucide-icon name="map-pin" [size]="step1Complete ? 12 : 14" class="text-primary shrink-0"></lucide-icon>
-                                <span class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{itinerary?.fromCity || 'Bangalore'}}</span>
+                                <span class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{itinerary?.fromCity}}</span>
                             </div>
                             <!-- Intermediate stops for multicity round trip -->
                             <ng-container *ngIf="itinerary?.extraDestinations?.length">
@@ -629,13 +645,13 @@
                             <div class="w-px bg-slate-300 dark:bg-slate-600" [ngClass]="step1Complete ? 'h-3 ml-[5px]' : 'h-4 ml-[6px]'"></div>
                             <div class="flex items-center" [ngClass]="step1Complete ? 'gap-2' : 'gap-2.5'">
                                 <lucide-icon name="map-pin" [size]="step1Complete ? 12 : 14" class="text-rose-500 shrink-0"></lucide-icon>
-                                <span class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{itinerary?.toCity || 'Mysore'}}</span>
+                                <span class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{itinerary?.toCity}}</span>
                             </div>
                             <ng-container *ngIf="itinerary?.tripType === 'Round Trip'">
                                 <div class="w-px bg-slate-300 dark:bg-slate-600" [ngClass]="step1Complete ? 'h-3 ml-[5px]' : 'h-4 ml-[6px]'"></div>
                                 <div class="flex items-center" [ngClass]="step1Complete ? 'gap-2' : 'gap-2.5'">
                                     <lucide-icon name="map-pin" [size]="step1Complete ? 12 : 14" class="text-emerald-500 shrink-0"></lucide-icon>
-                                    <span class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{itinerary?.fromCity || 'Bangalore'}}</span>
+                                    <span class="font-bold text-slate-900 dark:text-white" [ngClass]="step1Complete ? 'text-sm' : 'text-[15px]'">{{itinerary?.fromCity}}</span>
                                 </div>
                             </ng-container>
                         </div>
@@ -954,8 +970,76 @@
 
                     <div class="p-5 space-y-5">
 
-                        <!-- Route with vertical line + markers (like timeline) -->
-                        <div class="relative">
+                        <!-- Route with vertical line + markers (like timeline).
+                             NOTE: must branch by tripType. For Local the booking has
+                             one point, for Airport it's customer-address ↔ airport
+                             (direction depends on airportSubType), and only for
+                             One Way / Round Trip do we have a real fromCity → toCity.
+                             Historically this card rendered `toCity` unconditionally,
+                             which surfaced the placeholder "Mysore" that dashboard
+                             writes to satisfy booking.guard for Local/Airport. -->
+
+                        <!-- LOCAL: single-point trip — city + package label -->
+                        <div *ngIf="itinerary?.tripType === 'Local'" class="relative">
+                            <div class="relative flex items-start gap-3">
+                                <div class="w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-[3px] border-primary flex-shrink-0 relative z-10 mt-0.5"></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Pickup City</p>
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white leading-snug">{{ itinerary?.fromCity }}</p>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ pickupAddress || 'Address will be shared with driver' }}</p>
+                                    <span class="inline-block mt-1.5 text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-wider">Local &middot; {{ itinerary?.localPackage || '8hr/80km' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AIRPORT: two-point trip; direction depends on airportSubType -->
+                        <div *ngIf="itinerary?.tripType === 'Airport'" class="relative">
+                            <!-- Vertical connecting line -->
+                            <div class="absolute left-[9px] top-3 bottom-3 w-0.5 bg-gradient-to-b from-primary to-orange-500"></div>
+
+                            <!-- Airport PICKUP: airport → customer address -->
+                            <ng-container *ngIf="itinerary?.airportSubType === 'pickup'; else airportDropTpl">
+                                <div class="relative flex items-start gap-3 pb-4">
+                                    <div class="w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-[3px] border-primary flex-shrink-0 relative z-10 mt-0.5"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Pickup (Airport)</p>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white leading-snug">{{ itinerary?.airportName || itinerary?.dropAirport || (itinerary?.fromCity + ' Airport') }}</p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">Terminal details confirmed with driver</p>
+                                    </div>
+                                </div>
+                                <div class="relative flex items-start gap-3">
+                                    <div class="w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-[3px] border-orange-500 flex-shrink-0 relative z-10 mt-0.5"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Drop</p>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white leading-snug">{{ itinerary?.fromCity }}</p>
+                                        <p *ngIf="pickupAddress" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ pickupAddress }}</p>
+                                    </div>
+                                </div>
+                            </ng-container>
+
+                            <!-- Airport DROP: customer address → airport -->
+                            <ng-template #airportDropTpl>
+                                <div class="relative flex items-start gap-3 pb-4">
+                                    <div class="w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-[3px] border-primary flex-shrink-0 relative z-10 mt-0.5"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Pickup</p>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white leading-snug">{{ itinerary?.fromCity }}</p>
+                                        <p *ngIf="pickupAddress" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ pickupAddress }}</p>
+                                    </div>
+                                </div>
+                                <div class="relative flex items-start gap-3">
+                                    <div class="w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-[3px] border-orange-500 flex-shrink-0 relative z-10 mt-0.5"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Drop (Airport)</p>
+                                        <p class="text-sm font-bold text-slate-900 dark:text-white leading-snug">{{ itinerary?.airportName || itinerary?.dropAirport || (itinerary?.fromCity + ' Airport') }}</p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">Airport terminal</p>
+                                    </div>
+                                </div>
+                            </ng-template>
+                        </div>
+
+                        <!-- ONE WAY / ROUND TRIP: fromCity → (stops) → toCity -->
+                        <div *ngIf="itinerary?.tripType !== 'Local' && itinerary?.tripType !== 'Airport'" class="relative">
                             <!-- Vertical connecting line -->
                             <div class="absolute left-[9px] top-3 bottom-3 w-0.5 bg-gradient-to-b from-primary via-orange-300 to-orange-500"></div>
 

@@ -10,11 +10,66 @@ import { BookingDetails } from '../models';
  * Stores full booking data from the create-booking API response so that
  * new bookings appear in the "Upcoming" list immediately — even when the
  * B2B listing API hasn't synced yet (common on beta servers).
+ *
+ * ============================================================================
+ * USER-SCOPED STORAGE (added 2026-04-14)
+ * ============================================================================
+ * Storage keys are namespaced by the logged-in agent's user_id so one agent's
+ * booking registry can NEVER be read by another agent on the same browser.
+ * A fresh account logging in on a device that previously had another agent
+ * signed in will see an empty registry — even if auto-login races the
+ * clearUserScopedStorage() wipe or a previous session never logged out.
+ *
+ * The legacy unscoped keys (savaari_b2b_booking_ids / savaari_b2b_booking_data)
+ * are wiped on first access so any pre-migration data can't leak.
+ * ============================================================================
  */
 @Injectable({ providedIn: 'root' })
 export class BookingRegistryService {
-  private readonly STORAGE_KEY = 'savaari_b2b_booking_ids';
-  private readonly DATA_KEY = 'savaari_b2b_booking_data';
+  private static readonly LEGACY_IDS_KEY = 'savaari_b2b_booking_ids';
+  private static readonly LEGACY_DATA_KEY = 'savaari_b2b_booking_data';
+  private legacyCleaned = false;
+
+  /** Current user's id from the login response (falsy = no scoped storage). */
+  private getCurrentUserId(): string {
+    if (typeof window === 'undefined' || !window.localStorage) return '';
+    try {
+      const raw = localStorage.getItem('loggedUserDetail');
+      if (!raw) return '';
+      const u = JSON.parse(raw);
+      const id = u?.user_id ?? u?.userId ?? u?.email ?? '';
+      return id ? String(id) : '';
+    } catch {
+      return '';
+    }
+  }
+
+  /** Per-user storage key for the ordered list of booking IDs. */
+  private get storageKey(): string {
+    const uid = this.getCurrentUserId();
+    return uid ? `savaari_b2b_booking_ids_${uid}` : '';
+  }
+
+  /** Per-user storage key for the booking-id → detail map. */
+  private get dataKey(): string {
+    const uid = this.getCurrentUserId();
+    return uid ? `savaari_b2b_booking_data_${uid}` : '';
+  }
+
+  /**
+   * Remove the legacy unscoped registry keys once per session.
+   * Any booking IDs that actually belong to the current user will come back
+   * on the next /booking-details API call (server-side filtered by email).
+   */
+  private cleanLegacyKeysOnce(): void {
+    if (this.legacyCleaned) return;
+    this.legacyCleaned = true;
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      localStorage.removeItem(BookingRegistryService.LEGACY_IDS_KEY);
+      localStorage.removeItem(BookingRegistryService.LEGACY_DATA_KEY);
+    } catch { /* non-fatal */ }
+  }
 
   /** Add a new booking ID to the registry. */
   addBookingId(bookingId: string): void {
@@ -28,16 +83,21 @@ export class BookingRegistryService {
   /** Store full booking data from the create-booking API response. */
   storeBookingData(bookingId: string, data: any): void {
     if (!bookingId) return;
+    const key = this.dataKey;
+    if (!key) return;  // no logged-in user → don't persist
     try {
       const all = this.getAllStoredData();
-      all[bookingId] = { ...data, _storedAt: new Date().toISOString() };
-      localStorage.setItem(this.DATA_KEY, JSON.stringify(all));
+      // Tag the entry with the owning user so a stray read by another agent
+      // (e.g. mid-login race) can still be filtered defensively.
+      const uid = this.getCurrentUserId();
+      all[bookingId] = { ...data, _storedAt: new Date().toISOString(), _userId: uid };
+      localStorage.setItem(key, JSON.stringify(all));
     } catch (e) {
       console.error('[BookingRegistry] Failed to store booking data:', e);
     }
   }
 
-  /** Get stored booking data for a specific ID. */
+  /** Get stored booking data for a specific ID (only for the current user). */
   getStoredBookingData(bookingId: string): any | null {
     const all = this.getAllStoredData();
     return all[bookingId] || null;
@@ -46,24 +106,35 @@ export class BookingRegistryService {
   /** Get all locally-stored booking details as BookingDetails-compatible objects. */
   getLocalBookings(): BookingDetails[] {
     const all = this.getAllStoredData();
-    return Object.entries(all).map(([id, data]: [string, any]) => this.toBookingDetails(id, data));
+    const uid = this.getCurrentUserId();
+    return Object.entries(all)
+      // Defense-in-depth: even within a scoped bucket, skip entries whose
+      // stamped _userId doesn't match — protects against any cross-write.
+      .filter(([, data]: [string, any]) => !data?._userId || !uid || String(data._userId) === uid)
+      .map(([id, data]: [string, any]) => this.toBookingDetails(id, data));
   }
 
   /** Remove a booking ID from the registry. */
   removeBookingId(bookingId: string): void {
+    const idsKey = this.storageKey;
+    const dKey = this.dataKey;
+    if (!idsKey || !dKey) return;
     const ids = this.getBookingIds().filter(id => id !== bookingId);
     this.saveBookingIds(ids);
     // Also remove stored data
     const all = this.getAllStoredData();
     delete all[bookingId];
-    try { localStorage.setItem(this.DATA_KEY, JSON.stringify(all)); } catch {}
+    try { localStorage.setItem(dKey, JSON.stringify(all)); } catch {}
   }
 
-  /** Get all stored booking IDs. */
+  /** Get all stored booking IDs (current user only). */
   getBookingIds(): string[] {
+    this.cleanLegacyKeysOnce();
+    const key = this.storageKey;
+    if (!key) return [];
     if (typeof window === 'undefined' || !window.localStorage) return [];
     try {
-      const data = localStorage.getItem(this.STORAGE_KEY);
+      const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : [];
     } catch {
       return [];
@@ -135,9 +206,12 @@ export class BookingRegistryService {
   }
 
   private getAllStoredData(): Record<string, any> {
+    this.cleanLegacyKeysOnce();
+    const key = this.dataKey;
+    if (!key) return {};
     if (typeof window === 'undefined' || !window.localStorage) return {};
     try {
-      const data = localStorage.getItem(this.DATA_KEY);
+      const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : {};
     } catch {
       return {};
@@ -145,9 +219,11 @@ export class BookingRegistryService {
   }
 
   private saveBookingIds(ids: string[]): void {
+    const key = this.storageKey;
+    if (!key) return;  // no logged-in user → don't persist
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(ids));
+        localStorage.setItem(key, JSON.stringify(ids));
       } catch (e) {
         console.error('[BookingRegistry] Failed to save booking IDs:', e);
       }

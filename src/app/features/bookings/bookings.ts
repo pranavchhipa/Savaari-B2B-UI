@@ -117,6 +117,14 @@ export class BookingsComponent implements OnInit {
         'Customer changed plans',
         'Wrong booking created',
     ];
+    /**
+     * Booking card stashed after a successful cancel so the success popup
+     * can show the route/id. Cleared by dismissCancelSuccess().
+     * Backend's cancellation.php is synchronous (sends the email before
+     * returning), so the in-flight spinner can sit for 20–30s — the
+     * success popup is what finally confirms it worked.
+     */
+    cancelSuccessBooking: BookingCard | null = null;
 
     /** Map of bookingId → settled amount, persisted in localStorage */
     private settledPayments: Record<string, number> = {};
@@ -1099,6 +1107,11 @@ export class BookingsComponent implements OnInit {
                 }
                 this.bookingRegistry.removeBookingId(id);
                 this.updateCalendarWithBookings();
+                // Show the success popup BEFORE closing the cancel modal so the
+                // user always gets a visual confirmation that the booking was
+                // cancelled (backend can take 20–30s to reply, so the email
+                // sometimes arrives before this response reaches the browser).
+                this.cancelSuccessBooking = cancelled || booking;
                 this.cancelProcessing = false;
                 this.cancelModalBooking = null;
                 this.cancelReason = '';
@@ -1111,6 +1124,12 @@ export class BookingsComponent implements OnInit {
                 this.cdr.markForCheck();
             }
         });
+    }
+
+    /** Close the "Booking Cancelled Successfully" confirmation popup. */
+    dismissCancelSuccess() {
+        this.cancelSuccessBooking = null;
+        this.cdr.markForCheck();
     }
 
     // ─── Share / Copy / Call ────────────────────────────────────
