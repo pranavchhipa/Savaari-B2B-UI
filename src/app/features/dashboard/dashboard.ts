@@ -76,6 +76,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
   filteredSourceCities: City[] = [];
   filteredDestinationCities: City[] = [];
 
+  /**
+   * Maximum suggestions rendered in the autocomplete dropdown across ALL
+   * tabs (outstation, local, airport, round-trip — source, destination,
+   * extra stops, airport search, locality search).
+   *
+   * Why 5 and not 20 or unlimited:
+   *   - 2000+ cities × 20 DOM nodes per suggestion = visible scroll lag on
+   *     every keystroke, especially on mid-range laptops where the tester
+   *     flagged the UI as "making the ui ux lag very much".
+   *   - The autocomplete is ranked (prefix > substring > fuzzy), so the
+   *     top 5 are overwhelmingly the correct choice. If the user's target
+   *     isn't in the first 5, typing one more character narrows it down
+   *     faster than scrolling.
+   */
+  private readonly MAX_SUGGESTIONS = 5;
+
   // Loading state for Explore Cabs button
   isSearching = false;
 
@@ -304,7 +320,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const lng = ll[1] || '';
     const request = this.bookingForm.get('tripType')?.value === 'pickup' ? 'to' : 'from';
     this.addressAutocomplete.searchAddress(q, request, cityName, lat, lng).subscribe(suggestions => {
-      this.filteredLocalities = suggestions;
+      // Cap address suggestions to keep the dropdown snappy — the first 5
+      // ranked results from Savaari's autocomplete API are virtually always
+      // the right pick for airport pickup/drop points.
+      this.filteredLocalities = (suggestions || []).slice(0, this.MAX_SUGGESTIONS);
       this.cdr.markForCheck();
     });
   }
@@ -374,7 +393,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const q = (event.query || '').toLowerCase();
     const airports = this.airportList;
     if (!q) {
-      this.filteredAirports = airports.slice(0, 20);
+      this.filteredAirports = airports.slice(0, this.MAX_SUGGESTIONS);
     } else {
       const prefix: City[] = [];
       const substring: City[] = [];
@@ -396,7 +415,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           substring.push(c);
         }
       }
-      this.filteredAirports = [...prefix, ...substring].slice(0, 20);
+      this.filteredAirports = [...prefix, ...substring].slice(0, this.MAX_SUGGESTIONS);
     }
     this.cdr.markForCheck();
   }
@@ -1038,7 +1057,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
    *  `[suggestions]` input sees a reference change and clears its loading state. */
   private filterCitiesRanked(cities: City[], query: string): City[] {
     const q = (query || '').toLowerCase();
-    if (!q) return cities.slice();
+    // Empty query (dropdown opened via focus, no typing) — show the first
+    // few cities as a "popular" hint rather than dumping 2000 rows into the
+    // DOM. The user will start typing anyway to narrow down.
+    if (!q) return cities.slice(0, this.MAX_SUGGESTIONS);
     const prefix: City[] = [];
     const substring: City[] = [];
     for (const c of cities) {
@@ -1051,9 +1073,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
     }
     // If strict match found something, or query is too short for fuzzy to be
-    // meaningful, return as-is.
+    // meaningful, return the top-N only. Prefix matches come first so they
+    // occupy the visible slots before substring matches fill the remainder.
     if (prefix.length > 0 || substring.length > 0 || q.length < 4) {
-      return [...prefix, ...substring];
+      return [...prefix, ...substring].slice(0, this.MAX_SUGGESTIONS);
     }
     // Fuzzy fallback — catches common typos / fast-typing misses that the
     // strict filter would otherwise reject. Reported April 2026: typing
@@ -1076,7 +1099,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (d <= maxDist) fuzzy.push({ city: c, distance: d });
     }
     fuzzy.sort((a, b) => a.distance - b.distance);
-    return fuzzy.map(f => f.city);
+    return fuzzy.slice(0, this.MAX_SUGGESTIONS).map(f => f.city);
   }
 
   /**
