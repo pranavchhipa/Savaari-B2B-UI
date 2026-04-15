@@ -96,7 +96,7 @@
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">From</span>
                 <p-autoComplete #fromCityAc1 formControlName="fromCity" [suggestions]="filteredSourceCities"
                   (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
-                  field="name" optionLabel="name" [minLength]="0" placeholder="Source city"
+                  field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true" placeholder="Source city"
                   styleClass="w-full search-bar-autocomplete"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
@@ -131,7 +131,7 @@
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
                 <p-autoComplete #toCityAc1 formControlName="toCity" [suggestions]="filteredDestinationCities"
-                  (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="0"
+                  (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true"
                   placeholder="Destination" styleClass="w-full search-bar-autocomplete"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
@@ -205,7 +205,7 @@
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">From</span>
                 <p-autoComplete #fromCityAc2 formControlName="fromCity" [suggestions]="filteredSourceCities"
                   (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
-                  field="name" optionLabel="name" [minLength]="0" placeholder="Source city"
+                  field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true" placeholder="Source city"
                   styleClass="w-full search-bar-autocomplete"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
@@ -236,7 +236,7 @@
               <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
                 <p-autoComplete #toCityAc2 formControlName="toCity" [suggestions]="filteredDestinationCities"
-                  (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="0"
+                  (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true"
                   placeholder="Destination city" styleClass="w-full search-bar-autocomplete"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
@@ -265,7 +265,7 @@
                   <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">Stop {{ i + 1 }}</span>
                   <p-autoComplete #stopAc [ngModel]="extraDestinations[i]" [ngModelOptions]="{standalone: true}"
                     [suggestions]="filteredDestinationCities" (completeMethod)="filterExtraDestCities($event, i)"
-                    (onSelect)="onExtraDestinationSelect($event, i)" field="name" optionLabel="name" [minLength]="0"
+                    (onSelect)="onExtraDestinationSelect($event, i)" field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true"
                     placeholder="Enter city" styleClass="w-full search-bar-autocomplete"
                     inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                     panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
@@ -377,7 +377,7 @@
               <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">City</span>
               <p-autoComplete #fromCityAc3 formControlName="fromCity" [suggestions]="filteredSourceCities"
                 (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
-                field="name" optionLabel="name" [minLength]="0" placeholder="Enter city — e.g. Bangalore"
+                field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true" placeholder="Enter city — e.g. Bangalore"
                 styleClass="w-full search-bar-autocomplete"
                 inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                 panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
@@ -489,7 +489,7 @@
                 </span>
                 <p-autoComplete #airportAc formControlName="airportLocality" [suggestions]="filteredAirports"
                   (completeMethod)="filterAirports($event)" (onSelect)="onAirportSelect($event)"
-                  field="name" optionLabel="name" [minLength]="0" placeholder="Search airport"
+                  field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true" placeholder="Search airport"
                   styleClass="w-full search-bar-autocomplete"
                   inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
