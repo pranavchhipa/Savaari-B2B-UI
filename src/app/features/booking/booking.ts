@@ -784,6 +784,31 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Auto-fill top-up amount with shortfall (required - available balance)
     this.autoFillTopUpShortfall();
     this.showTopUpConfirm = false;
+
+    // Tell the backend who pays the invoice — per backend team guidance
+    // (April 2026): this must fire on payment-option selection, NOT on
+    // booking creation. Option 1 / 2 → customer eventually pays (slider /
+    // auto-debit model), Option 3 → agent pre-pays in full.
+    //
+    // Guarded on bookingId so we never fire before Step 2 (booking create
+    // completed on "Proceed to Next"). Fire-and-forget: a failure here
+    // must not block the agent from picking an option, since the next
+    // screen (Razorpay / wallet settle) still works without this API
+    // succeeding. We just log so anything weird shows up in the console.
+    if (this.bookingId) {
+      const invoicePayer = option === 3 ? 'pay_by_agent' : 'pay_by_customer';
+      this.bookingApi.updateInvoicePayerInfo(this.bookingId, invoicePayer).subscribe({
+        next: () => {
+          if (!environment.production) {
+            console.log('[Booking] invoice_payer updated:', invoicePayer, '(option', option + ')');
+          }
+        },
+        error: (err) => {
+          console.warn('[Booking] update_invoice_payer_info failed (non-blocking):', err);
+        },
+      });
+    }
+
     this.cdr.markForCheck();
   }
 

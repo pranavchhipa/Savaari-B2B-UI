@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, switchMap, map } from 'rxjs';
+import { Observable, of, map } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
@@ -106,27 +106,16 @@ export class BookingApiService {
       fixed_amount: request.fixed_amount,
     };
 
+    // Note: update_invoice_payer_info used to be chained onto this call via
+    // switchMap(), firing a default "pay_by_customer" update the moment the
+    // booking was created. Per backend team guidance (April 2026), that API
+    // must fire ONLY after the agent actually picks a payment option on the
+    // Step 2 payment page, with the correct invoice_payer value:
+    //   Option 1 / 2  → pay_by_customer
+    //   Option 3      → pay_by_agent
+    // The booking component now calls updateInvoicePayerInfo() directly from
+    // setPaymentOption(), so this service stays booking-only.
     return this.api.partnerPostForm<CreateBookingResponse>('booking', formBody, { token }).pipe(
-      switchMap(response => {
-        // API response shape (we no longer send prePayment in request):
-        //   { data: [{ booking_id, reservation_id }] }  ← array form (current)
-        //   { data: { bookingId, reservationId, ... } } ← object form (legacy)
-        const raw = response.data as any;
-        const dataItem = Array.isArray(raw) ? raw[0] : raw;
-        const bookingId = dataItem?.booking_id || dataItem?.bookingId || response.booking_id || response.bookingId || '';
-        const reservationId = dataItem?.reservation_id || dataItem?.reservationId || response.reservation_id || '';
-
-        if (bookingId) {
-          return this.updateInvoicePayerInfo(
-            String(bookingId),
-            request.invoicePayer || 'pay_by_customer',
-          ).pipe(
-            map(() => response),
-            catchError(() => of(response)) // Don't fail booking if invoice update fails
-          );
-        }
-        return of(response);
-      }),
       // Normalize: always expose bookingId at the top level for consumers
       map(response => {
         const raw = response.data as any;
