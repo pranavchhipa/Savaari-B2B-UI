@@ -142,10 +142,6 @@ export class BookingsComponent implements OnInit {
      */
     cancelSuccessBooking: BookingCard | null = null;
 
-    /** Map of bookingId → settled amount, persisted in localStorage */
-    private settledPayments: Record<string, number> = {};
-    private readonly SETTLED_STORAGE_KEY = 'b2b_settled_payments';
-
     // Pagination
     currentPage = 1;
     readonly pageSize = 10;
@@ -182,38 +178,107 @@ export class BookingsComponent implements OnInit {
     pickerYear = new Date().getFullYear();
     readonly monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+    /**
+     * City → primary airport display name (+ IATA code).
+     *
+     * The /booking-details API does not return `airport_name` for airport
+     * bookings — only the customer's `pick_city` / `pick_loc`. To show
+     * "Bangalore → Kempegowda Airport (BLR)" instead of a generic
+     * "Bangalore → Airport" we resolve the airport ourselves from the
+     * pick city.
+     *
+     * Covers the 25 busiest Indian airports (AAI traffic, 2024). Keys are
+     * lower-cased city names; both common spellings (Bangalore/Bengaluru,
+     * Calcutta/Kolkata) are registered so older bookings match too.
+     */
+    private readonly CITY_TO_AIRPORT_MAP: Record<string, string> = {
+        'bangalore': 'Kempegowda Airport (BLR)',
+        'bengaluru': 'Kempegowda Airport (BLR)',
+        'mumbai': 'CSM Airport (BOM)',
+        'bombay': 'CSM Airport (BOM)',
+        'delhi': 'Indira Gandhi Airport (DEL)',
+        'new delhi': 'Indira Gandhi Airport (DEL)',
+        'kolkata': 'NSC Bose Airport (CCU)',
+        'calcutta': 'NSC Bose Airport (CCU)',
+        'chennai': 'Chennai Airport (MAA)',
+        'madras': 'Chennai Airport (MAA)',
+        'hyderabad': 'RGIA Airport (HYD)',
+        'pune': 'Pune Airport (PNQ)',
+        'ahmedabad': 'SVP Airport (AMD)',
+        'goa': 'Dabolim Airport (GOI)',
+        'panaji': 'Dabolim Airport (GOI)',
+        'kochi': 'Cochin Airport (COK)',
+        'cochin': 'Cochin Airport (COK)',
+        'ernakulam': 'Cochin Airport (COK)',
+        'jaipur': 'Jaipur Airport (JAI)',
+        'lucknow': 'CC Airport (LKO)',
+        'chandigarh': 'Chandigarh Airport (IXC)',
+        'thiruvananthapuram': 'Trivandrum Airport (TRV)',
+        'trivandrum': 'Trivandrum Airport (TRV)',
+        'bhubaneswar': 'Biju Patnaik Airport (BBI)',
+        'guwahati': 'LGB Airport (GAU)',
+        'nagpur': 'Nagpur Airport (NAG)',
+        'coimbatore': 'Coimbatore Airport (CJB)',
+        'indore': 'Devi Ahilya Bai Airport (IDR)',
+        'patna': 'Patna Airport (PAT)',
+        'visakhapatnam': 'Vizag Airport (VTZ)',
+        'vizag': 'Vizag Airport (VTZ)',
+        'mangalore': 'Mangaluru Airport (IXE)',
+        'mangaluru': 'Mangaluru Airport (IXE)',
+        'mysore': 'Mysuru Airport (MYQ)',
+        'mysuru': 'Mysuru Airport (MYQ)',
+        'varanasi': 'LBS Airport (VNS)',
+        'amritsar': 'SGR Dev Ji Airport (ATQ)',
+        'srinagar': 'Srinagar Airport (SXR)',
+        'dehradun': 'Jolly Grant Airport (DED)',
+        'udaipur': 'Maharana Pratap Airport (UDR)',
+        'jodhpur': 'Jodhpur Airport (JDH)',
+        'raipur': 'Swami Vivekananda Airport (RPR)',
+        'ranchi': 'Birsa Munda Airport (IXR)',
+    };
+
     ngOnInit() {
-        this.loadSettledPayments();
+        this.wipeLegacyLocalStorage();
         this.buildCalendarStrip();
         this.loadWalletBalance();
         this.loadBookings();
     }
 
-    /** Load settled payments map from localStorage */
-    private loadSettledPayments() {
+    /**
+     * One-time wipe of the legacy localStorage keys that used to enrich /
+     * override the bookings list: the per-user booking registry and the
+     * client-side "settled payments" map.
+     *
+     * Why: the bookings page now renders strictly what /booking-details
+     * returns. Any leftover registry / settled-payment entry from older
+     * builds would otherwise pollute the display (wrong "Paid Now",
+     * synthesized "Wallet Pay" label, ghost upcoming rows for bookings
+     * the agent never actually paid for).
+     *
+     * The wipe runs once per browser (sentinel key persists), so a fresh
+     * deploy auto-cleans existing users without nagging on every load.
+     */
+    private wipeLegacyLocalStorage() {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        const sentinel = 'b2b_bookings_pure_api_wipe_v1';
         try {
-            const raw = localStorage.getItem(this.SETTLED_STORAGE_KEY);
-            this.settledPayments = raw ? JSON.parse(raw) : {};
-        } catch { this.settledPayments = {}; }
-    }
-
-    /** Save settled payments map to localStorage */
-    private saveSettledPayment(bookingId: string, amount: number) {
-        this.settledPayments[bookingId] = (this.settledPayments[bookingId] || 0) + amount;
-        try { localStorage.setItem(this.SETTLED_STORAGE_KEY, JSON.stringify(this.settledPayments)); } catch {}
-    }
-
-    /** Apply persisted settlements to booking cards after API data loads */
-    private applySettledPayments(cards: BookingCard[]) {
-        for (const card of cards) {
-            const settled = this.settledPayments[card.bookingId];
-            if (settled && settled > 0) {
-                card.prePayment = Math.max(card.prePayment || 0, settled);
-                if (card.prePayment >= (card.fare || 0)) {
-                    card.cashToCollect = 0;
+            if (localStorage.getItem(sentinel)) return;
+            const drop: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i) || '';
+                if (
+                    k.startsWith('savaari_b2b_booking_data_') ||
+                    k.startsWith('savaari_b2b_booking_ids_') ||
+                    k === 'savaari_b2b_booking_data' ||
+                    k === 'savaari_b2b_booking_ids' ||
+                    k === 'b2b_settled_payments'
+                ) {
+                    drop.push(k);
                 }
             }
-        }
+            for (const k of drop) localStorage.removeItem(k);
+            localStorage.setItem(sentinel, new Date().toISOString());
+        } catch { /* non-fatal */ }
     }
 
     private loadWalletBalance() {
@@ -436,8 +501,8 @@ export class BookingsComponent implements OnInit {
     /**
      * Fetch the bookings list from the B2B API and categorize into tabs.
      *
-     * SOURCE OF TRUTH = backend API.
-     *   - The local booking registry is NOT used to *add* rows to this list.
+     * SOURCE OF TRUTH = backend API — strictly.
+     *   - No rows are added from the local booking registry or localStorage.
      *     Earlier versions merged registry entries on top of the API response
      *     so a just-created booking would show up instantly. That worked for
      *     the happy path but also surfaced "Potential" bookings — entries
@@ -445,26 +510,21 @@ export class BookingsComponent implements OnInit {
      *     completed payment (back-pressed, closed the tab, etc.). Those kept
      *     appearing on the Upcoming tab labelled "Wallet Pay" with phantom
      *     balance-due amounts, even after the server had filtered them out.
-     *   - The registry is still read per-booking inside `toBookingCard()` to
-     *     enrich the API row (paymentOption, prePayment, etc.) because the
-     *     beta booking-details API doesn't always surface those fields
-     *     immediately. That use is safe: it only fills in blanks for rows
-     *     that already exist in the API response — it never invents new rows.
+     *   - `toBookingCard()` no longer reads the registry to enrich rows. If a
+     *     field is absent from the API response it stays absent in the UI —
+     *     that is the correct signal that the backend didn't categorize /
+     *     attach it yet, and it prevents stale client state from contradicting
+     *     the authoritative backend view (e.g. showing Paid = full fare while
+     *     Balance Due was also the full fare).
      */
     private loadBookings() {
         this.isLoading = true;
         this.cdr.markForCheck();
 
-        // Housekeeping: drop abandoned registry entries so localStorage
-        // doesn't grow without bound. Not strictly required for display
-        // (we no longer render registry-sourced rows), but it prevents
-        // stale orphan data from leaking into the enrichment lookup in
-        // toBookingCard() if a future booking ever reused the same ID.
-        const pruned = this.bookingRegistry.pruneOrphans();
-        if (pruned.length && !environment.production) {
-            console.log('[BOOKINGS] Pruned orphan registry entries:', pruned);
-        }
-
+        // Pure API mode: the bookings list is rendered strictly from
+        // /booking-details. No registry enrichment, no localStorage
+        // override. Anything the backend categorizes into bookingUpcoming
+        // / bookingCompleted / bookingCancelled is what the agent sees.
         this.bookingApi.getAllBookings().subscribe({
             next: (bookings: BookingDetails[]) => {
                 this.categorizeBookings(bookings);
@@ -505,9 +565,6 @@ export class BookingsComponent implements OnInit {
         });
 
         const cards = real.map(b => this.toBookingCard(b));
-
-        // Apply any locally-persisted settlements before categorizing
-        this.applySettledPayments(cards);
 
         this.upcomingBookings = cards.filter(c =>
             c.status === 'confirmed' || c.status === 'assigned' || c.status === 'pending'
@@ -624,53 +681,74 @@ export class BookingsComponent implements OnInit {
         itinerary: string,
     ): string {
         const trimmedAirport = (airportName || '').trim();
-        const trimmedCustomer = (custShortAddress || '').trim();
         const subType = (airportSubType || '').toLowerCase();
 
-        // When both airport-name fields are empty (old bookings that pre-date our
-        // airport-aware schema), the backend's itinerary string is the most
-        // reliable source — it typically reads "Bangalore → Kempegowda Airport"
-        // or similar. Only fall through to this when we don't have a proper
-        // airport label, because the itinerary string for some airport bookings
-        // is just "pick_city → drop_city" which is what we're trying to avoid.
+        // Resolve the customer-side city (strip any ", <state>" suffix so we
+        // get "Bangalore" not "Bangalore, Karnataka").
+        const rawCity = (sourceCity || destinationCity || '').trim();
+        const customerCity = rawCity.split(',')[0].trim();
+
+        // Resolve the airport display name:
+        //   1. Backend-provided `airport_name` (rare — beta doesn't return it)
+        //   2. Our CITY_TO_AIRPORT_MAP lookup for the pick city
+        //   3. Plain "Airport" fallback
+        const mappedAirport = this.CITY_TO_AIRPORT_MAP[customerCity.toLowerCase()] || '';
+        const airportLabel = trimmedAirport || mappedAirport || 'Airport';
+
+        // Customer-side label: show the pickup landmark (first comma-separated
+        // segment of pick_loc) when it's meaningful. Example:
+        //   pick_loc = "Savaari Car Rentals, 100 Feet Road, Bangalore, Karnataka"
+        //   landmark = "Savaari Car Rentals"
+        // This is more descriptive than the bare city name and stays compact.
+        // Falls back to the city when pick_loc is missing or starts with the
+        // city itself.
+        const landmark = this.extractPickupLandmark(custShortAddress, customerCity);
+        const customerLabel = landmark || customerCity;
+
+        // Itinerary is useful only when it actually contains airport/terminal
+        // tokens. "N/A" or plain city → city strings are noise here.
         const itin = (itinerary || '').toString().replace(/&rarr;|&#8594;|&#x2192;/gi, '→');
         const itineraryHasAirport = itin.toLowerCase().includes('airport') ||
             itin.toLowerCase().includes('terminal');
 
-        // Prefer full airport/terminal name; fall back to drop_city so we never
-        // render just an arrow with one side empty.
-        const airportLabel = trimmedAirport || destinationCity || sourceCity || '';
-        const customerLabel = trimmedCustomer || sourceCity || destinationCity || '';
-
-        // Direction detection: explicit airportSubType wins; else parse the itinerary.
-        // "pickup" → from airport to customer; "drop" → from customer to airport.
-        if (subType === 'pickup' || subType === 'from_airport' || subType === 'fromairport') {
-            // If we have no proper airport label but the itinerary has one, use it.
-            if (!trimmedAirport && itineraryHasAirport) {
-                return itin.split('→').map((s: string) => s.trim()).filter((s: string) => s.length > 0).join(' → ');
-            }
-            return airportLabel && customerLabel ? `${airportLabel} → ${customerLabel}` : (airportLabel || customerLabel);
+        if (subType === 'pickup') {
+            // From airport: Airport → customer landmark
+            return customerLabel ? `${airportLabel} → ${customerLabel}` : airportLabel;
         }
-        if (subType === 'drop' || subType === 'to_airport' || subType === 'toairport') {
-            if (!trimmedAirport && itineraryHasAirport) {
-                return itin.split('→').map((s: string) => s.trim()).filter((s: string) => s.length > 0).join(' → ');
-            }
-            return customerLabel && airportLabel ? `${customerLabel} → ${airportLabel}` : (customerLabel || airportLabel);
+        if (subType === 'drop') {
+            // To airport: customer landmark → Airport
+            return customerLabel ? `${customerLabel} → ${airportLabel}` : airportLabel;
         }
 
-        // Unknown direction — prefer itinerary when it mentions an airport/terminal,
-        // otherwise fall back to whatever cities we have.
+        // Unknown direction — prefer itinerary when it mentions an airport,
+        // otherwise default to drop-style (customer → airport) since that's
+        // the more common airport booking shape.
         if (itineraryHasAirport && itin.includes('→')) {
-            return itin.split('→').map((s: string) => s.trim()).filter((s: string) => s.length > 0).join(' → ');
+            return itin.split('→').map(s => s.trim()).filter(Boolean).join(' → ');
         }
-        if (itin.includes('→')) {
-            return itin.split('→').map((s: string) => s.trim()).filter((s: string) => s.length > 0).join(' → ');
-        }
+        if (customerLabel) return `${customerLabel} → ${airportLabel}`;
+        return airportLabel;
+    }
 
-        // Last resort: generic city → airport (drop-style)
-        return customerLabel && airportLabel && customerLabel !== airportLabel
-            ? `${customerLabel} → ${airportLabel}`
-            : (airportLabel || customerLabel);
+    /**
+     * Pull the most meaningful "landmark" from a customer address string so
+     * the card heading reads "Savaari Car Rentals → Kempegowda Airport"
+     * instead of "Bangalore → Kempegowda Airport" (ambiguous) or the
+     * full-length address (wraps two lines).
+     *
+     * Strategy: use the FIRST comma-separated segment, unless that segment
+     * is just the city name (in which case there's no landmark to extract
+     * and we return empty, letting the caller fall back to the city).
+     */
+    private extractPickupLandmark(fullAddress: string, city: string): string {
+        const addr = (fullAddress || '').trim();
+        if (!addr) return '';
+        const first = addr.split(',')[0].trim();
+        if (!first) return '';
+        // If the first segment IS the city, there's no real landmark.
+        if (city && first.toLowerCase() === city.toLowerCase()) return '';
+        // Keep the landmark reasonably short so the header fits one line.
+        return first.length > 35 ? first.slice(0, 33).trim() + '…' : first;
     }
 
     /**
@@ -694,6 +772,15 @@ export class BookingsComponent implements OnInit {
         return cleanPkg ? `${base} · Local (${cleanPkg})` : `${base} · Local`;
     }
 
+    /**
+     * Map one /booking-details API row to the BookingCard view-model.
+     *
+     * Pure API mode: every field is read from the API row `b` only. No
+     * localStorage registry, no settled-payment overrides, no synthesized
+     * "Wallet Pay" labels. If the backend doesn't surface a value, the
+     * card simply shows what the API said (often empty / zero) — that's
+     * the truth the agent needs to act on.
+     */
     private toBookingCard(b: any): BookingCard {
         let pickupDate: Date | null = null;
         const dateStr = b.start_date_time || b.pickupDateTime;
@@ -721,29 +808,30 @@ export class BookingsComponent implements OnInit {
             itinerary = doc.body.textContent || itinerary;
         }
 
-        // Check bookingRegistry first — it has the accurate data from when we created the booking
-        const bookingId = String(b.booking_id || b.bookingId || '');
-        const registryData = bookingId ? this.bookingRegistry.getStoredBookingData(bookingId) : null;
-
+        // Payment plan derivation.
+        //
+        // /booking-details does not return an explicit `payment_option` field
+        // (verified from live beta response, April 2026 — the row exposes
+        // `pay_now_amt`, `pay_bal_amt`, `cashtocollect`, `gross_amount` and
+        // nothing else that maps to the UI's three payment plans).
+        //
+        // We infer the plan from the ratio of what the agent has already paid
+        // to the total fare:
+        //   ratio ≥ 0.99   → Option 3 (Zero Cash — full wallet upfront)
+        //   0.20 ≤ r ≤ 0.35 → Option 2 (Pay 25% now, rest auto-deduct)
+        //   0 < r < 0.20    → Option 1 (Pay Any Amount Now — custom %)
+        //   r === 0         → unpaid / potential (leave option = 0)
+        //
+        // If a backend revision later surfaces `payment_option` directly we
+        // honour it over the ratio heuristic.
         let paymentMethod = '';
         let paymentOption = 0;
-        let paidVia = '';
+        const explicitOpt = b.payment_option || b.paymentOption || b.prePaymentType || '';
+        if (explicitOpt === '1' || explicitOpt === 1) { paymentMethod = 'Pay Any Amount Now'; paymentOption = 1; }
+        else if (explicitOpt === '2' || explicitOpt === 2) { paymentMethod = 'Pay 25% Now, Rest Auto-Deducted'; paymentOption = 2; }
+        else if (explicitOpt === '3' || explicitOpt === 3) { paymentMethod = 'Zero Cash'; paymentOption = 3; }
 
-        if (registryData) {
-            // Registry has the truth — use it
-            paymentOption = registryData.paymentOption || 0;
-            paidVia = registryData.paymentMethod || 'wallet'; // 'wallet' or 'razorpay'
-            if (paymentOption === 1) paymentMethod = 'Pay Any Amount Now';
-            else if (paymentOption === 2) paymentMethod = 'Pay 25% Now, Rest Auto-Deducted';
-            else if (paymentOption === 3) paymentMethod = 'Zero Cash';
-        } else {
-            // Fallback: try API fields
-            const paymentOpt = b.payment_option || b.paymentOption || b.prePaymentType || '';
-            if (paymentOpt === '1' || paymentOpt === 1) { paymentMethod = 'Pay Any Amount Now'; paymentOption = 1; }
-            else if (paymentOpt === '2' || paymentOpt === 2) { paymentMethod = 'Pay 25% Now, Rest Auto-Deducted'; paymentOption = 2; }
-            else if (paymentOpt === '3' || paymentOpt === 3) { paymentMethod = 'Zero Cash'; paymentOption = 3; }
-            else { paymentMethod = 'Wallet Pay'; paymentOption = 0; }
-        }
+        const paidVia = String(b.paidVia || b.paid_via || '').toLowerCase();
 
         let pickupCountdown = '';
         if (pickupDate && status !== 'completed' && status !== 'cancelled') {
@@ -759,9 +847,9 @@ export class BookingsComponent implements OnInit {
             }
         }
 
-        // Resolve route information
-        const sourceCity = registryData?.pick_city || registryData?.source_city || b.pick_city || b.source_city || b.sourceCity || '';
-        const destinationCity = registryData?.drop_city || registryData?.destination_city || b.drop_city || b.destination_city || b.destinationCity || '';
+        // Resolve route information — API only.
+        const sourceCity = b.pick_city || b.source_city || b.sourceCity || '';
+        const destinationCity = b.drop_city || b.destination_city || b.destinationCity || '';
 
         // Trip-type detection — backend uses several names interchangeably
         const tripTypeRaw = (b.trip_type || b.tripType || '').toString().toLowerCase();
@@ -773,47 +861,46 @@ export class BookingsComponent implements OnInit {
         const isAirport = tripTypeRaw.includes('airport') || usageNameRaw.includes('airport');
         const isLocal = tripTypeRaw.includes('local') || usageNameRaw.includes('local');
 
-        // Airport-specific fields — the generic source/dest cities alone are semantically
-        // wrong for airport bookings, which need the airport/terminal name rendered in
-        // the correct direction. Read from both API (snake_case) and registry shapes.
-        const airportName = registryData?.airport_name || registryData?.airportName ||
-            b.airport_name || b.airportName || b.airportname || '';
-        const terminalName = registryData?.terminalname || registryData?.terminal_name ||
-            b.terminalname || b.terminal_name || '';
-        // airport_sub_type: 'drop' (to airport) vs 'pickup' (from airport).
-        // `subTripType` from the booking create request is the same value for airport trips.
-        const airportSubTypeRaw = registryData?.airport_sub_type || registryData?.airportSubType ||
-            registryData?.subTripType || registryData?.usage_name ||
-            b.airport_sub_type || b.airportSubType || b.sub_trip_type || b.subTripType || '';
-        const airportSubType = String(airportSubTypeRaw || '').toLowerCase();
-        // custShortAddress = the **customer's** address, which lives in different API
-        // fields depending on direction:
-        //   - drop (to airport):   pick_loc  = customer address (→), drop_loc = airport
-        //   - pickup (from airport): pick_loc = airport, drop_loc = customer address (→)
-        // Prefer the explicit custShortAddress when present (registry always has it);
-        // fall back to the direction-appropriate *_loc field so the route line never
-        // shows the airport name on both sides.
+        // Airport-specific fields — API only.
+        //
+        // The /booking-details response uses `trip_sub_type_name` (values:
+        // "drop_airport" / "pickup_airport") to indicate direction. It does
+        // NOT populate `airport_name`, `terminal_name`, or `drop_city` for
+        // airport rows — only `pick_city` and `pick_loc` (customer address).
+        // Older API revisions used `airport_sub_type` / `sub_trip_type`, so
+        // those fallbacks are kept for compatibility.
+        const airportName = b.airport_name || b.airportName || b.airportname || '';
+        const terminalName = b.terminalname || b.terminal_name || '';
+        const airportSubTypeRaw = b.trip_sub_type_name || b.airport_sub_type ||
+            b.airportSubType || b.sub_trip_type || b.subTripType || '';
+        const rawSubTypeStr = String(airportSubTypeRaw || '').toLowerCase();
+        // Normalise: "drop_airport" / "to_airport" / "drop" → "drop"
+        //            "pickup_airport" / "from_airport" / "pickup" → "pickup"
+        let airportSubType = '';
+        if (rawSubTypeStr.includes('drop') || rawSubTypeStr.includes('to_air') || rawSubTypeStr.includes('toair')) {
+            airportSubType = 'drop';
+        } else if (rawSubTypeStr.includes('pickup') || rawSubTypeStr.includes('from_air') || rawSubTypeStr.includes('fromair')) {
+            airportSubType = 'pickup';
+        }
+        // custShortAddress = the customer's long-form address. For airport
+        // bookings this goes into the EXPANDED-details pane only; the card
+        // header uses pick_city so the title stays short.
+        //   - drop (to airport):   pick_loc = customer address, drop_loc = airport
+        //   - pickup (from airport): pick_loc = airport,         drop_loc = customer address
         const pickupLocStr = b.pick_loc || b.pickup_address || b.pickupAddress || '';
         const dropLocStr = b.drop_loc || b.drop_address || b.dropAddress || '';
-        const isPickupFromAirport = airportSubType === 'pickup' ||
-            airportSubType === 'from_airport' ||
-            airportSubType === 'fromairport';
-        const custShortAddress = registryData?.custShortAddress || registryData?.cust_short_address ||
-            b.custShortAddress || b.cust_short_address ||
+        const isPickupFromAirport = airportSubType === 'pickup';
+        const custShortAddress = b.custShortAddress || b.cust_short_address ||
             (isPickupFromAirport ? dropLocStr : pickupLocStr);
-        // Combine airport + terminal for the richest label (e.g. "Kempegowda Airport · Terminal 2")
         const airportFullName = airportName && terminalName && !airportName.includes(terminalName)
             ? `${airportName}, ${terminalName}`
             : (airportName || terminalName || '');
 
-        // Local-specific: package label from usage_name or explicit field
-        const localPackage = registryData?.local_package || registryData?.localPackage ||
-            b.local_package || b.localPackage || b.package_name || '';
+        const localPackage = b.local_package || b.localPackage || b.package_name || '';
 
         // Intermediate stops only apply to outstation — airport/local don't have vias.
-        // Registry stores `intermediate_cities_array` (string[]); API may surface various other shapes.
         const intermediateCities = (isAirport || isLocal) ? [] : this.extractIntermediateCities(
-            { ...b, ...(registryData || {}) },
+            b,
             sourceCity,
             destinationCity
         );
@@ -831,13 +918,78 @@ export class BookingsComponent implements OnInit {
                 itinerary,
             );
         } else if (isLocal) {
-            // Local trips use pick_city (no destination). Fall back to drop_city if
-            // pick_city is empty (some old bookings only populate drop_city).
             routeLine = this.buildLocalRouteLine(sourceCity || destinationCity, localPackage, usageNameRaw);
         } else {
             routeLine = this.buildRouteLine(sourceCity, intermediateCities, destinationCity, isRoundTrip);
         }
         const viaLine = this.buildViaLine(intermediateCities);
+
+        // Paid-amount derivation — API only.
+        //
+        // Field names confirmed from the live /booking-details response
+        // (api23.betasavaari.com, April 2026):
+        //   gross_amount   → total fare (string, e.g. "41184")
+        //   pay_now_amt    → amount the agent has already paid (string)
+        //   pay_bal_amt    → balance still owed by the agent
+        //   cashtocollect  → amount the driver will collect in cash at pickup
+        //
+        // Earlier drafts looked for `cash_to_collect` / `cash_to_driver` with
+        // underscores and fell back to 0 when the real field (`cashtocollect`,
+        // no underscores) was not matched. That produced prePayment = fare on
+        // every booking, which rendered as a false "Fully Paid" badge.
+        //
+        // Canonical mapping:
+        //   prePayment     = pay_now_amt       (authoritative paid amount)
+        //   cashToCollect  = cashtocollect     (driver's collection at pickup)
+        // pay_bal_amt is kept for the template's Balance Due line so we don't
+        // have to re-derive it — pay_now + pay_bal = gross for every row we
+        // have seen (potential, Option 1, 2, 3, settled).
+        const fare = parseFloat(b.gross_amount) || parseFloat(b.total_amount) || b.totalFare || b.fare || 0;
+        const cashToCollect = parseFloat(
+            b.cashtocollect ?? b.cashToCollect ?? b.cash_to_collect ?? b.cash_to_driver ?? b.cashToDriver
+        ) || 0;
+        const payNow = parseFloat(b.pay_now_amt ?? b.payNowAmt) || 0;
+        const apiPrePayment = parseFloat(b.prePayment || b.pre_payment);
+        // Preference order: explicit prePayment → pay_now_amt → derive from
+        // fare & cashtocollect. We only fall back to the derivation when
+        // neither of the first two is available; never when they exist and
+        // are 0 (0 is meaningful — it means "unpaid", not "use fare").
+        let prePayment: number;
+        if (!isNaN(apiPrePayment) && apiPrePayment > 0) {
+            prePayment = apiPrePayment;
+        } else if (b.pay_now_amt !== undefined || b.payNowAmt !== undefined) {
+            prePayment = payNow;
+        } else {
+            prePayment = Math.max(0, fare - cashToCollect);
+        }
+
+        // Balance the agent still owes (as opposed to what the driver
+        // collects from the customer). This is the key signal that
+        // distinguishes Option 1 from Option 2:
+        //   Option 1 — agent paid X, driver collects (fare - X) from CUSTOMER.
+        //              pay_bal = 0, cashtocollect > 0.
+        //   Option 2 — agent paid 25%, cron debits 75% from AGENT's wallet.
+        //              pay_bal > 0, cashtocollect > 0 (same value).
+        //   Option 3 — agent paid everything upfront.
+        //              pay_bal = 0, cashtocollect = 0.
+        const agentOwes = parseFloat(b.pay_bal_amt ?? b.payBalAmt) || 0;
+
+        // If the backend didn't give us an explicit payment_option, infer it
+        // from (prePayment, agentOwes, cashToCollect). This powers the
+        // auto-debit countdown (Option 2 only) and the settle-button label.
+        if (paymentOption === 0 && fare > 0 && prePayment >= 0) {
+            if (prePayment >= fare * 0.99 && cashToCollect === 0) {
+                paymentOption = 3; paymentMethod = 'Zero Cash';
+            } else if (agentOwes > 0) {
+                // Agent still owes money — auto-debit plan.
+                paymentOption = 2; paymentMethod = 'Pay 25% Now, Rest Auto-Deducted';
+            } else if (prePayment > 0 && cashToCollect > 0 && agentOwes === 0) {
+                // Agent paid advance, driver collects the rest from customer.
+                paymentOption = 1; paymentMethod = 'Pay Any Amount Now';
+            }
+            // Otherwise (prePayment === 0 or all three zero) → leave paymentOption = 0
+            // so the UI falls back to the neutral "—" label instead of inventing one.
+        }
 
         return {
             bookingId: String(b.booking_id || b.bookingId || ''),
@@ -859,7 +1011,7 @@ export class BookingsComponent implements OnInit {
             pickupDate,
             pickupTime,
             status,
-            fare: parseFloat(b.gross_amount) || parseFloat(b.total_amount) || b.totalFare || b.fare || 0,
+            fare,
             customerName: b.customer_name || b.customerName || '',
             customerMobile: b.customer_mobile || b.customerMobile || '',
             customerEmail: b.customer_email || b.customerEmail || '',
@@ -868,37 +1020,20 @@ export class BookingsComponent implements OnInit {
             driverName: driver?.driver_name || b.driverName || '',
             driverMobile: driver?.driver_number || b.driverMobile || '',
             carNumber: driver?.car_number || b.carNumber || '',
-            // Paid-amount resolution: prefer whichever source has the *higher*
-            // value.
-            //   - Registry is written client-side by updateRegistryPayment()
-            //     the moment a wallet / Razorpay payment succeeds, so it
-            //     knows about the 25% top-up instantly.
-            //   - API (b.prePayment) catches up later, and also reflects the
-            //     auto-debit cron once it fires 48h before pickup (option 2)
-            //     or a manual settle-now call.
-            // Using Math.max() means whichever side is ahead wins — the UI
-            // never shows a stale ₹0 "Paid Now" just because the API hasn't
-            // synced yet, and once the cron moves the API ahead of the
-            // registry the displayed amount tracks that too.
-            prePayment: Math.max(
-                parseFloat(registryData?.prePayment) || 0,
-                parseFloat(b.prePayment || b.pre_payment) || 0
-            ),
-            cashToCollect: parseFloat(b.cashToCollect || b.cash_to_collect || b.cash_to_driver || registryData?.cashToCollect) || 0,
+            prePayment,
+            cashToCollect,
             paymentMethod,
             paymentOption,
-            paidVia: paidVia || (b.paidVia) || 'wallet',
-            // Real B2B API uses `package_kms` (confirmed from live booking-details response, April 2026).
-            // `min_km_quota_per_day` is the same value for outstation/local; kept as fallback.
+            paidVia,
             kmsIncluded: b.package_kms || b.min_km_quota_per_day || b.kms_included || b.kmsIncluded || '',
             duration: parseInt(b.duration) || 0,
             extraKmRate: parseFloat(b.extra_km_rate || b.extraKmRate) || 0,
-            bookedAt: b.created_at ? new Date(b.created_at) : b.createdAt ? new Date(b.createdAt) : b._storedAt ? new Date(b._storedAt) : null,
+            bookedAt: b.created_at ? new Date(b.created_at) : b.createdAt ? new Date(b.createdAt) : null,
             pickupCountdown,
             billFlag: Number(b.bill_flag) || 0,
             billUrl: b.bill_url || '',
             cancelFlag: b.cancel_flag === '1' || b.cancel_flag === 1 || b.cancel_flag_web === '1' || b.cancel_flag_web === 1,
-            bookingKey: String(b.booking_key || b.bookingKey || registryData?.booking_key || registryData?.bookingKey || ''),
+            bookingKey: String(b.booking_key || b.bookingKey || ''),
             cancelDateTime: String(b.cancel_date_time || b.cancelDateTime || ''),
         };
     }
@@ -937,28 +1072,33 @@ export class BookingsComponent implements OnInit {
         return Math.max(0, booking.fare - paid);
     }
 
-    /** Short label for payment method — matches payment page option names exactly */
+    /** Short label for payment method — matches payment page option names exactly. */
     getPaymentMethodShort(booking: BookingCard): string {
         if (booking.paymentOption === 1) return 'Pay Any Amount Now';
         if (booking.paymentOption === 2) return 'Pay 25% Now';
         if (booking.paymentOption === 3) return 'Zero Cash';
         if (booking.prePayment && booking.fare && booking.prePayment >= booking.fare) return 'Fully Paid';
-        if (booking.prePayment && booking.cashToCollect && booking.cashToCollect > 0) return 'Pay 25% Now';
-        return booking.paymentMethod || 'Wallet Pay';
+        return booking.paymentMethod || '—';
     }
 
-    /** Full label for payment method (used in expanded detail view) */
+    /** Full label for payment method (used in expanded detail view). */
     getPaymentMethodLabel(booking: BookingCard): string {
         if (booking.paymentOption === 1) return 'Pay Any Amount Now — Customer pays driver';
         if (booking.paymentOption === 2) return 'Pay 25% Now, Rest Auto-Deducted';
         if (booking.paymentOption === 3) return 'Zero Cash';
         if (booking.prePayment && booking.fare && booking.prePayment >= booking.fare) return 'Fully Paid';
-        return booking.paymentMethod || 'Wallet Pay';
+        return booking.paymentMethod || '—';
     }
 
-    /** Auto-debit countdown text */
+    /**
+     * Auto-debit countdown text — shown only for Option 2 bookings where the
+     * agent paid 25% upfront and the backend cron debits the remaining 75%
+     * 48 hours before pickup. For every other payment plan (or unknown
+     * option) the countdown is meaningless, so we return empty.
+     */
     getAutoDebitCountdown(booking: BookingCard): string {
-        if (!booking.pickupDate || booking.paymentOption === 1) return '';
+        if (!booking.pickupDate) return '';
+        if (booking.paymentOption !== 2) return '';
         const balanceDue = this.getBalanceDue(booking);
         if (balanceDue <= 0) return '';
 
@@ -1195,9 +1335,10 @@ export class BookingsComponent implements OnInit {
             });
 
             // Update UI immediately (don't block on API calls)
+            // Note: settlement persistence is handled by the backend (confirmation.php + settlement-payment API);
+            // on next reload, toBookingCard() re-derives prePayment from the API response.
             booking.prePayment = (booking.prePayment || 0) + amount;
             booking.cashToCollect = 0;
-            this.saveSettledPayment(booking.bookingId, booking.prePayment);
             this.settleProcessing = false;
             this.settleBookingId = null;
             this.settledBookingId = booking.bookingId;
@@ -1214,9 +1355,10 @@ export class BookingsComponent implements OnInit {
         };
 
         // Flexible (option 1) — guest pays driver, just mark settled with a brief delay for UX
+        // Note: for option 1 there is no backend settle call, so this flip is session-only
+        // and will revert on reload unless the backend eventually reflects it.
         if (booking.paymentOption === 1) {
             booking.prePayment = booking.fare;
-            this.saveSettledPayment(booking.bookingId, booking.fare);
             setTimeout(() => {
                 // No wallet/razorpay involved — just update UI
                 this.settleProcessing = false;
