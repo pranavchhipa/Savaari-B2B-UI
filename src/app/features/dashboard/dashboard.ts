@@ -1050,7 +1050,58 @@ export class DashboardComponent implements OnInit, OnDestroy {
         substring.push(c);
       }
     }
-    return [...prefix, ...substring];
+    // If strict match found something, or query is too short for fuzzy to be
+    // meaningful, return as-is.
+    if (prefix.length > 0 || substring.length > 0 || q.length < 4) {
+      return [...prefix, ...substring];
+    }
+    // Fuzzy fallback — catches common typos / fast-typing misses that the
+    // strict filter would otherwise reject. Reported April 2026: typing
+    // "banglor" (missing the second 'a') returned "No results found" even
+    // though Bangalore is clearly the intended city. Same for "mumbi",
+    // "hydrabad", "chenai" etc.
+    //
+    // Tolerance scales with query length so a 4-char typo can only be 1
+    // edit away, while longer queries allow up to 2 edits.
+    const maxDist = q.length >= 6 ? 2 : 1;
+    const fuzzy: { city: City; distance: number }[] = [];
+    for (const c of cities) {
+      const cityOnly = (c.cityOnly || c.name || '').toLowerCase();
+      // Compare query against the leading portion of cityOnly that's within
+      // `maxDist` characters of the query length. This lets "banglor" (7)
+      // match "bangalore" (9) since |9-7| = 2 ≤ maxDist.
+      const compareLen = Math.min(cityOnly.length, q.length + maxDist);
+      const truncated = cityOnly.substring(0, compareLen);
+      const d = this.levenshtein(q, truncated);
+      if (d <= maxDist) fuzzy.push({ city: c, distance: d });
+    }
+    fuzzy.sort((a, b) => a.distance - b.distance);
+    return fuzzy.map(f => f.city);
+  }
+
+  /**
+   * Classic iterative Levenshtein distance (two-row rolling buffer).
+   * Used only by the fuzzy fallback in filterCitiesRanked, so called at most
+   * ~2000 times per keystroke on a typo — well under 5ms on typical inputs.
+   */
+  private levenshtein(a: string, b: string): number {
+    const m = a.length, n = b.length;
+    if (m === 0) return n;
+    if (n === 0) return m;
+    const dp: number[] = new Array(n + 1);
+    for (let j = 0; j <= n; j++) dp[j] = j;
+    for (let i = 1; i <= m; i++) {
+      let prev = dp[0];
+      dp[0] = i;
+      for (let j = 1; j <= n; j++) {
+        const tmp = dp[j];
+        dp[j] = a.charCodeAt(i - 1) === b.charCodeAt(j - 1)
+          ? prev
+          : Math.min(prev, dp[j - 1], dp[j]) + 1;
+        prev = tmp;
+      }
+    }
+    return dp[n];
   }
 
   /** When source city is selected, load destinations */
