@@ -1300,14 +1300,32 @@ export class BookingsComponent implements OnInit {
         this.settleProcessing = true;
         this.cdr.markForCheck();
 
-        /** After payment succeeds, call backend APIs to persist settlement, then update UI. */
-        const onSuccess = (transactionId: string, paymentMethod: 'Wallet' | 'Razorpay', paymentId?: string) => {
+        /**
+         * After payment succeeds, call backend APIs to persist settlement, then update UI.
+         *
+         * The two IDs are NOT the same for Razorpay — per backend team's
+         * "B2B Settlement Payment API" doc (April 2026):
+         *   - confirmation.php wants the razorpay PAYMENT id (matches how the
+         *     new-booking flow calls confirmation.php in booking.ts).
+         *   - settlement-payment wants `transactionId` = razorpay ORDER id
+         *     and `paymentId` = razorpay PAYMENT id.
+         * For Wallet both IDs collapse to the single wallet transaction id.
+         */
+        const onSuccess = (params: {
+            paymentMethod: 'Wallet' | 'Razorpay';
+            /** Goes to confirmation.php `transaction_id` — razorpay payment id OR wallet txn id */
+            confirmationTxnId: string;
+            /** Goes to settlement-payment `transactionId` — razorpay ORDER id OR wallet txn id */
+            settlementTxnId: string;
+            /** Goes to settlement-payment `paymentId` — razorpay payment id only (optional for wallet) */
+            paymentId?: string;
+        }) => {
             // Step 1: confirmation.php — record the payment in sv_advance_payment
             this.paymentService.confirmPayment({
-                source: paymentMethod === 'Wallet' ? 'B2B_WALLET' : 'B2B_RAZORPAY',
+                source: params.paymentMethod === 'Wallet' ? 'B2B_WALLET' : 'B2B_RAZORPAY',
                 booking_id: booking.bookingId,
                 payment_option: booking.paymentOption || 2,
-                transaction_id: transactionId,
+                transaction_id: params.confirmationTxnId,
                 totalAmount: booking.fare || 0,
                 bufferAmount: 0,
                 advancedAmount: amount,
@@ -1317,9 +1335,9 @@ export class BookingsComponent implements OnInit {
                     this.paymentService.settlementPayment({
                         bookingId: booking.bookingId,
                         paymentAmount: amount,
-                        paymentMethod,
-                        transactionId,
-                        paymentId,
+                        paymentMethod: params.paymentMethod,
+                        transactionId: params.settlementTxnId,
+                        paymentId: params.paymentId,
                     }).subscribe({
                         next: (settled) => {
                             if (!environment.production) console.log('[BOOKINGS] Settlement API result:', settled);
@@ -1396,14 +1414,25 @@ export class BookingsComponent implements OnInit {
                         order_id: order.orderId,
                         handler: (response: any) => {
                             const rzpPaymentId = response.razorpay_payment_id || '';
+                            const rzpOrderId = response.razorpay_order_id || '';
                             this.walletService.verifyBookingPayment(
-                                response.razorpay_order_id,
+                                rzpOrderId,
                                 rzpPaymentId,
                                 response.razorpay_signature,
                                 amount,
                                 booking.bookingId
                             ).subscribe({
-                                next: () => setTimeout(() => onSuccess(rzpPaymentId, 'Razorpay', rzpPaymentId), 800),
+                                // Per B2B Settlement Payment API doc (April 2026):
+                                // settlement-payment's `transactionId` must be the razorpay
+                                // ORDER id (not payment id). `paymentId` carries the payment id.
+                                // confirmation.php still takes payment id (unchanged — matches
+                                // new-booking flow in booking.ts).
+                                next: () => setTimeout(() => onSuccess({
+                                    paymentMethod: 'Razorpay',
+                                    confirmationTxnId: rzpPaymentId,
+                                    settlementTxnId: rzpOrderId,
+                                    paymentId: rzpPaymentId,
+                                }), 800),
                                 error: () => onError()
                             });
                         },
@@ -1429,7 +1458,14 @@ export class BookingsComponent implements OnInit {
             next: (result) => {
                 if (result.success) {
                     const txnId = result.transactionId || '';
-                    setTimeout(() => onSuccess(txnId, 'Wallet'), 1200);
+                    // Wallet path: both IDs collapse to the single wallet transaction id.
+                    // Per B2B Settlement Payment API doc, `paymentMethod=Wallet` →
+                    // `transactionId` = Wallet Transaction ID, `paymentId` omitted.
+                    setTimeout(() => onSuccess({
+                        paymentMethod: 'Wallet',
+                        confirmationTxnId: txnId,
+                        settlementTxnId: txnId,
+                    }), 1200);
                 } else {
                     onError();
                 }

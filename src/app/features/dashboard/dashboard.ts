@@ -136,6 +136,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.filteredDestinationCities = used.size === 0
       ? ranked
       : ranked.filter(c => !used.has(String(c?.id)));
+    this.cdr.markForCheck();
   }
 
   /**
@@ -437,9 +438,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private readonly SEARCH_STATE_KEY = 'b2b_search_state';
 
+  // localStorage cache keys for instant autocomplete suggestions.
+  // TTL is 7 days — city/airport lists rarely change and users get an instant
+  // dropdown on every visit after the first. API still refreshes in background.
+  private readonly CACHE_KEY_SOURCE_CITIES = 'b2b_cache_source_cities';
+  private readonly CACHE_KEY_DEST_CITIES = 'b2b_cache_dest_cities';
+  private readonly CACHE_KEY_AIRPORTS = 'b2b_cache_airports';
+  private readonly CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+  /**
+   * Hardcoded fallback for first-time users who have no cache yet.
+   * Real IDs from the live beta source-cities API so clicking these actually
+   * resolves to valid selections. Covers the top metro origins nationally.
+   */
+  private readonly POPULAR_CITIES: City[] = [
+    { id: 377,  name: 'Bangalore, Karnataka', cityOnly: 'Bangalore', state: 'Karnataka' },
+    { id: 3858, name: 'Mumbai, Maharashtra',  cityOnly: 'Mumbai',    state: 'Maharashtra' },
+    { id: 1442, name: 'Delhi, Delhi',         cityOnly: 'Delhi',     state: 'Delhi' },
+    { id: 829,  name: 'Chennai, Tamil Nadu',  cityOnly: 'Chennai',   state: 'Tamil Nadu' },
+    { id: 2163, name: 'Hyderabad, Telangana', cityOnly: 'Hyderabad', state: 'Telangana' },
+    { id: 1263, name: 'Pune, Maharashtra',    cityOnly: 'Pune',      state: 'Maharashtra' },
+  ];
+
   ngOnInit() {
     this.initForm();
     this.restoreSearchState();
+    // Hydrate autocomplete lists from localStorage synchronously BEFORE the
+    // API calls fire so the dropdowns have data to show on the very first
+    // click. API refresh in the background replaces stale entries silently.
+    this.hydrateCaches();
 
     // Refresh partner token first (prevents stale token errors), then load data
     this.authService.fetchPartnerToken().subscribe({
@@ -892,31 +919,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.cityService.getSourceCities(apiParams.tripType, apiParams.subTripType).subscribe({
       next: (cities) => {
         this.sourceCities = cities;
+        this.writeCache(this.CACHE_KEY_SOURCE_CITIES, cities);
         this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('Failed to load source cities:', err);
-        this.sourceCities = [];
+        // Keep whatever we hydrated from cache / popular fallback so the user
+        // still sees suggestions — don't wipe it to an empty array on error.
         this.cdr.markForCheck();
       }
     });
   }
 
   /** Load airport list from CityService */
-  private loadAirportList() { 
+  private loadAirportList() {
     this.cityService.getAirportList().subscribe({
       next: (cities) => {
         this.airportList = cities;
+        this.writeCache(this.CACHE_KEY_AIRPORTS, cities);
         this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('Failed to load airport list:', err);
-        this.airportList = [];
         this.cdr.markForCheck();
       }
     });
   }
-  
+
 
   /** Load destination cities based on selected source city.
    *  Airport & Local tabs don't use destination cities — skip to avoid "Invalid trip type" 400. */
@@ -926,14 +955,55 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.cityService.getDestinationCities(apiParams.tripType, apiParams.subTripType, 377).subscribe({
       next: (cities) => {
         this.destinationCities = cities;
+        this.writeCache(this.CACHE_KEY_DEST_CITIES, cities);
         this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('Failed to load destination cities:', err);
-        this.destinationCities = [];
         this.cdr.markForCheck();
       }
     });
+  }
+
+  /**
+   * Synchronously populate sourceCities / destinationCities / airportList from
+   * the last cached API response (localStorage, 7-day TTL). Runs before the
+   * token refresh + network calls in ngOnInit, so the first click on any
+   * autocomplete has data to show. If no cache exists (first-time user), seeds
+   * the two city lists with POPULAR_CITIES as a minimal but real fallback.
+   * Silent: any localStorage / JSON failure just leaves the arrays empty.
+   */
+  private hydrateCaches(): void {
+    const cachedSource = this.readCache<City[]>(this.CACHE_KEY_SOURCE_CITIES);
+    const cachedDest   = this.readCache<City[]>(this.CACHE_KEY_DEST_CITIES);
+    const cachedAir    = this.readCache<City[]>(this.CACHE_KEY_AIRPORTS);
+
+    this.sourceCities      = (cachedSource && cachedSource.length) ? cachedSource : this.POPULAR_CITIES.slice();
+    this.destinationCities = (cachedDest   && cachedDest.length)   ? cachedDest   : this.POPULAR_CITIES.slice();
+    this.airportList       = (cachedAir    && cachedAir.length)    ? cachedAir    : [];
+  }
+
+  /** Persist an autocomplete list to localStorage with a timestamp. */
+  private writeCache<T>(key: string, value: T): void {
+    try {
+      localStorage.setItem(key, JSON.stringify({ t: Date.now(), v: value }));
+    } catch {
+      // Quota / private mode — cache is best-effort, ignore.
+    }
+  }
+
+  /** Read a cached autocomplete list; returns null if missing or stale. */
+  private readCache<T>(key: string): T | null {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { t: number; v: T };
+      if (!parsed || typeof parsed.t !== 'number') return null;
+      if (Date.now() - parsed.t > this.CACHE_TTL_MS) return null;
+      return parsed.v;
+    } catch {
+      return null;
+    }
   }
 
   /** Get API tripType/subTripType from current UI tab */
@@ -947,20 +1017,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** PrimeNG AutoComplete: filter source cities (prefix matches first) */
+  /** PrimeNG AutoComplete: filter source cities (prefix matches first).
+   *  IMPORTANT: must return a NEW array reference every call — PrimeNG's
+   *  `handleSuggestionsChange` only clears the loading spinner when the
+   *  `[suggestions]` input reference changes. Returning the same `sourceCities`
+   *  array on empty-query clicks leaves the spinner stuck forever. */
   filterSourceCities(event: AutoCompleteCompleteEvent) {
     this.filteredSourceCities = this.filterCitiesRanked(this.sourceCities, event.query);
+    this.cdr.markForCheck();
   }
 
   /** PrimeNG AutoComplete: filter destination cities (prefix matches first) */
   filterDestinationCities(event: AutoCompleteCompleteEvent) {
     this.filteredDestinationCities = this.filterCitiesRanked(this.destinationCities, event.query);
+    this.cdr.markForCheck();
   }
 
-  /** Filter cities: prefix matches on cityOnly first, then substring matches */
+  /** Filter cities: prefix matches on cityOnly first, then substring matches.
+   *  Always returns a NEW array (even for empty queries) so PrimeNG's
+   *  `[suggestions]` input sees a reference change and clears its loading state. */
   private filterCitiesRanked(cities: City[], query: string): City[] {
     const q = (query || '').toLowerCase();
-    if (!q) return cities;
+    if (!q) return cities.slice();
     const prefix: City[] = [];
     const substring: City[] = [];
     for (const c of cities) {
@@ -1055,10 +1133,58 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /** Open a PrimeNG datepicker from the parent cell click.
-   *  Skips if the click landed on the datepicker's own input (PrimeNG handles that). */
+   *  Skips if the click landed on the datepicker's own input or a nested
+   *  button — PrimeNG handles the input click on its own. Defensive against
+   *  a missing picker ref (no-op rather than throwing). */
   openPicker(event: Event, picker: any) {
-    if ((event.target as HTMLElement).tagName === 'INPUT') return;
-    picker.showOverlay();
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    if (target.tagName === 'INPUT' || target.closest('button')) return;
+    if (!picker) return;
+    if (typeof picker.showOverlay === 'function') {
+      try { picker.showOverlay(); } catch { /* no-op */ }
+    } else if (typeof picker.show === 'function') {
+      try { picker.show(); } catch { /* no-op */ }
+    }
+  }
+
+  /** Click-anywhere-in-cell handler for autocomplete / select fields.
+   *  Autocomplete: focus the inner <input> AND trigger an empty search so the
+   *  dropdown panel pops up with values right away (filterCitiesRanked etc.
+   *  return the full list when the query is empty).
+   *  Select: open the dropdown overlay (no inner input exists).
+   *  Ignores clicks on the input itself and on nested buttons (clear X). */
+  focusField(event: Event, ref: any): void {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    if (target.tagName === 'INPUT' || target.closest('button')) return;
+
+    const nativeEl: HTMLElement | undefined = ref?.el?.nativeElement;
+    if (!nativeEl) return;
+
+    // Autocomplete renders a real <input> inside — prefer focusing that.
+    // p-select (no filter) renders no <input>, so we open the overlay instead.
+    const input = nativeEl.querySelector('input') as HTMLInputElement | null;
+    if (input) {
+      input.focus();
+      // Some browsers don't move the caret on programmatic focus — nudge it.
+      try { input.setSelectionRange(input.value.length, input.value.length); } catch { /* no-op */ }
+      // PrimeNG v21 autocomplete: use source='dropdown' so the internal guard
+      // (`source === 'input' && query.trim().length === 0`) does NOT drop the
+      // empty query. `completeMethod` fires → our filter populates the list.
+      // Then call show() so the overlay is visible even if it wasn't already.
+      if (typeof ref.search === 'function') {
+        try { ref.search(event, '', 'dropdown'); } catch { /* no-op */ }
+      }
+      if (typeof ref.show === 'function') {
+        try { ref.show(); } catch { /* no-op */ }
+      }
+      return;
+    }
+    // No inner input → p-select. Open its overlay.
+    if (typeof ref.show === 'function') {
+      try { ref.show(); } catch { /* no-op */ }
+    }
   }
 
   private getAnalyticsSubtype(tab: any): string {
@@ -1105,21 +1231,44 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const fromCityObj: City | string = val.fromCity;
     const toCityObj: City | string = val.toCity;
 
-    // Validation — airport tab uses free-text fields, skip city autocomplete checks
+    // Validation — every autocomplete must hold a real selected object (City
+     // with `id`), not a free-typed string. `isValidCity` checks for that shape;
+     // `formSubmitted` must be reset to false on every failure so the red error
+     // line renders (`*ngIf="showError && !formSubmitted"` in the template).
     const isValidCity = (c: any) => c && typeof c === 'object' && c.id;
     if (!isAirport && !isValidCity(fromCityObj)) {
+      this.formSubmitted = false;
       this.showError = true;
-      this.errorMessage = 'Please select the source city.';
+      this.errorMessage = 'Please select the source city from the dropdown suggestions.';
       this.analytics.trackFromCityError(typeof fromCityObj === 'string' ? fromCityObj : '', tripType, 'empty_or_invalid');
       this.analytics.trackExploreButtonError('from_city_empty', tripType, this.getAnalyticsSubtype(this.selectedTab));
+      this.cdr.markForCheck();
       return;
     }
     if (!isLocal && !isAirport && !isValidCity(toCityObj)) {
+      this.formSubmitted = false;
       this.showError = true;
-      this.errorMessage = 'Please select valid destination city';
+      this.errorMessage = 'Please select the destination city from the dropdown suggestions.';
       this.analytics.trackToCityError(typeof toCityObj === 'string' ? toCityObj : '', this.getAnalyticsSubtype(this.selectedTab), 'empty_or_invalid');
       this.analytics.trackExploreButtonError('to_city_empty', tripType, this.getAnalyticsSubtype(this.selectedTab));
+      this.cdr.markForCheck();
       return;
+    }
+
+    // Round Trip extra stops: any stop the user started typing in but didn't
+    // pick from the dropdown leaves a non-object in `extraDestinations[i]`
+    // (or the old value cleared by `forceSelection` but never repicked).
+    // Block explore so we never send half-typed city names to /availability.
+    if (isRoundTrip && this.extraDestinations.length > 0) {
+      for (let i = 0; i < this.extraDestinations.length; i++) {
+        if (!isValidCity(this.extraDestinations[i])) {
+          this.formSubmitted = false;
+          this.showError = true;
+          this.errorMessage = `Please select Stop ${i + 1} from the dropdown suggestions.`;
+          this.cdr.markForCheck();
+          return;
+        }
+      }
     }
 
     // Airport validation: require airport selection + address selection from suggestions.
@@ -1129,13 +1278,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (!this.selectedAirportCity && !val.airportLocality?.id) {
         this.formSubmitted = false;
         this.showError = true;
-        this.errorMessage = 'Please select an airport.';
+        this.errorMessage = 'Please select an airport from the dropdown suggestions.';
+        this.cdr.markForCheck();
         return;
       }
       if (!this.selectedPlaceDetails) {
         this.formSubmitted = false;
         this.showError = true;
-        this.errorMessage = 'Please select a pickup/drop address from the suggestions.';
+        this.errorMessage = 'Please select a pickup/drop address from the dropdown suggestions.';
+        this.cdr.markForCheck();
         return;
       }
     }
@@ -1353,6 +1504,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.bookingState.setAvailabilityResponse(response);
         this.isSearching = false;
         this.cdr.markForCheck();
+        // Lifecycle event: agent successfully submitted Explore Cabs — funnel
+        // step 1 in the B2B analytics pipeline (backend team spec, April 2026).
+        this.analytics.trackSelectTrip({
+          trip_type: tripType,
+          trip_subtype: this.getAnalyticsSubtype(this.selectedTab),
+          from_city: fromCityName,
+          to_city: isLocal || isAirport ? '' : toCityName,
+          pickup_date: toSavaariDateTime(pickupDate, pickupTimeStr),
+          pickup_time: pickupTimeStr,
+        });
         this.router.navigate(['/select-car']);
       },
       error: (err) => {
@@ -1558,6 +1719,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   onConversionPopupOk() {
     this.showConversionPopup = false;
     this.cdr.markForCheck();
+    // Lifecycle event: airport request got auto-converted to a One Way trip
+    // by the backend. Still counts as a successful trip selection for the
+    // B2B analytics funnel (backend team spec, April 2026).
+    const converted = this.bookingState.getItinerary();
+    if (converted) {
+      this.analytics.trackSelectTrip({
+        trip_type: converted.tripType || 'One Way',
+        trip_subtype: converted.subTripType || 'oneway',
+        from_city: converted.fromCity || '',
+        to_city: converted.toCity || '',
+        pickup_date: converted.pickupDate ? String(converted.pickupDate) : '',
+        pickup_time: converted.pickupTime || '',
+      });
+    }
     this.router.navigate(['/select-car']);
   }
 

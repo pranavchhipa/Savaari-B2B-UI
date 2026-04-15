@@ -347,9 +347,43 @@ export class WalletService {
         // DEBUG: log full response to trace transaction_id extraction
         console.log('[WALLET] pay-booking raw response:', JSON.stringify(response));
         if (response?.statusCode === 200 || response?.status === 'success') {
-          const data = response.data ?? response;
-          const transactionId = data.transaction_id ?? data.transactionId ?? '';
-          console.log('[WALLET] extracted transactionId:', transactionId, 'from data:', JSON.stringify(data));
+          // Transaction ID can live at several paths depending on the backend
+          // build (QA reported April 2026 that alpha returned empty when we
+          // only checked response.data.transaction_id — the real field was
+          // nested one level deeper). Try every known shape before giving up:
+          //   1. response.transaction_id / response.transactionId / response.id
+          //   2. response.data.transaction_id / .transactionId / .id
+          //   3. response.data.data.* (some endpoints double-wrap)
+          //   4. response.data.transaction?.id (nested object)
+          //
+          // Mirrors the fallback chain used by mapTransaction() for the
+          // wallet history endpoint, where `id` is actually the primary key.
+          const extractTxnId = (obj: any): string => {
+            if (!obj || typeof obj !== 'object') return '';
+            return String(
+              obj.transaction_id
+                ?? obj.transactionId
+                ?? obj.txn_id
+                ?? obj.txnId
+                ?? obj.payment_id
+                ?? obj.paymentId
+                ?? obj.wallet_transaction_id
+                ?? obj.walletTransactionId
+                ?? obj.id
+                ?? obj.transaction?.id
+                ?? obj.transaction?.transaction_id
+                ?? ''
+            );
+          };
+          const transactionId =
+            extractTxnId(response)
+            || extractTxnId(response?.data)
+            || extractTxnId(response?.data?.data)
+            || '';
+          console.log('[WALLET] extracted transactionId:', transactionId, 'from response:', JSON.stringify(response));
+          if (!transactionId) {
+            console.warn('[WALLET] pay-booking succeeded but NO transaction_id found in any known field — settlement API will reject this. Response keys:', Object.keys(response || {}), 'data keys:', Object.keys(response?.data || {}));
+          }
           this.loadBalance();
           this.loadHistory();
           return { success: true, transactionId };

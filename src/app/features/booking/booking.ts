@@ -17,6 +17,7 @@ import { CountryCodeService, CountryCodeEntry } from '../../core/services/countr
 import { LocalityService } from '../../core/services/locality.service';
 import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
 import { CityService } from '../../core/services/city.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 // AvailabilityService removed — fare recalculation is now client-side (Haversine distance)
 import { CreateBookingRequest } from '../../core/models';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
@@ -192,6 +193,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   // availabilityService removed — fare recalc is now client-side
   private addressAutocomplete = inject(AddressAutocompleteService);
   private cityService = inject(CityService);
+  private analytics = inject(AnalyticsService);
 
   // Confetti canvas
   @ViewChild('confettiCanvas') confettiCanvas!: ElementRef<HTMLCanvasElement>;
@@ -246,6 +248,18 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.itinerary = this.bookingState.getItinerary();
     this.selectedCar = this.bookingState.getSelectedCar();
 
+    // Analytics: fired once when the passenger details page (Step 1) becomes visible.
+    // Per backend team spec (April 2026), "enter-info" maps to the agent landing on
+    // the booking page before entering passenger details.
+    if (this.itinerary && this.selectedCar) {
+      this.analytics.trackEnterInfo({
+        trip_type: this.itinerary.tripType || '',
+        trip_subtype: this.itinerary.subTripType || this.itinerary.airportSubType || this.itinerary.localPackage || '',
+        car_type: this.selectedCar.type || '',
+        fare: this.selectedCar.price || 0,
+      });
+    }
+
     // Resolve city lat/lng for autocomplete API — fetch source cities to get ll field
     this.fetchCityLatLng();
 
@@ -291,6 +305,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (event.type === 'popstate' && this.step1Complete && !this.bookingConfirmed) {
         // Push state back so we stay on this page
         this.location.go(this.router.url);
+        // Same cleanup as goBackFromBooking — coming back to Step 2 must
+        // always start from "Select a plan" (no pre-selected option).
+        this.paymentOption = 0;
+        this.paymentMethod = 'wallet';
+        this.showWalletConfirm = false;
+        this.showTopUpConfirm = false;
         this.step1Complete = false;
         window.scrollTo({ top: 0, behavior: 'smooth' });
         this.cdr.markForCheck();
@@ -454,6 +474,14 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         // Booking created → show payment page
         this.isCreatingBooking = false;
+        // Analytics: agent has moved from Step 1 (passenger info) to Step 2 (payment).
+        // Backend team spec calls this event "enter-payment".
+        this.analytics.trackEnterPayment({
+          booking_id: bkId,
+          trip_type: this.itinerary?.tripType || '',
+          trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
+          fare: this.selectedCar?.price || 0,
+        });
         this.step1Complete = true;
         history.pushState({ step: 'payment' }, '', this.router.url);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1190,6 +1218,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 this.isProcessingRazorpay = false;
                 this.isConfirmingPayment = false;
                 this.bookingConfirmed = true;
+                // Analytics: booking successfully confirmed via Razorpay.
+                this.analytics.trackBookingConfirmed({
+                  booking_id: bkId,
+                  trip_type: this.itinerary?.tripType || '',
+                  trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
+                  payment_option: this.paymentOption,
+                  payment_method: 'razorpay',
+                  amount_paid: advanceAmount,
+                  fare: this.selectedCar?.price || 0,
+                });
                 this.clearPassengerState();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 this.cdr.markForCheck();
@@ -1557,6 +1595,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   this.isProcessingWallet = false;
                   this.isConfirmingPayment = false;
                   this.bookingConfirmed = true;
+                  // Analytics: booking successfully confirmed via wallet.
+                  this.analytics.trackBookingConfirmed({
+                    booking_id: bkId,
+                    trip_type: this.itinerary?.tripType || '',
+                    trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
+                    payment_option: this.paymentOption,
+                    payment_method: 'wallet',
+                    amount_paid: payNow,
+                    fare: this.selectedCar?.price || 0,
+                  });
                   this.clearPassengerState();
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                   this.cdr.markForCheck();
@@ -1570,6 +1618,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 this.isProcessingWallet = false;
                 this.isConfirmingPayment = false;
                 this.bookingConfirmed = true;
+                // Analytics: booking confirmed (wallet path, confirmation.php errored but payment taken).
+                this.analytics.trackBookingConfirmed({
+                  booking_id: bkId,
+                  trip_type: this.itinerary?.tripType || '',
+                  trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
+                  payment_option: this.paymentOption,
+                  payment_method: 'wallet',
+                  amount_paid: payNow,
+                  fare: this.selectedCar?.price || 0,
+                });
                 this.clearPassengerState();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 this.cdr.markForCheck();
@@ -1595,6 +1653,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.updateRegistryPayment(bkId, 0, 'wallet');
       this.isProcessingWallet = false;
       this.bookingConfirmed = true;
+      // Analytics: zero-amount wallet path (no money moved, booking confirmed).
+      this.analytics.trackBookingConfirmed({
+        booking_id: bkId,
+        trip_type: this.itinerary?.tripType || '',
+        trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
+        payment_option: this.paymentOption,
+        payment_method: 'wallet',
+        amount_paid: 0,
+        fare: this.selectedCar?.price || 0,
+      });
       this.clearPassengerState();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       this.cdr.markForCheck();
@@ -1633,8 +1701,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.dropAddress = '';
       if (state.landmark) this.landmark = state.landmark;
       if (state.needsGstInvoice !== undefined) this.needsGstInvoice = state.needsGstInvoice;
-      if (state.paymentOption) this.paymentOption = state.paymentOption;
-      if (state.paymentMethod) this.paymentMethod = state.paymentMethod;
+      // paymentOption / paymentMethod are intentionally NOT restored. Reported
+      // by QA (April 2026): if the agent picked an option earlier, navigated
+      // away and came back, the Booking Summary card kept showing the old
+      // "Amount to Pay Now ₹X" even though the agent hadn't consciously
+      // re-selected anything. Always land on Step 2 with "Select a plan" so
+      // the agent has to make an explicit choice before paying.
       if (state.selectedCountryCode) this.selectedCountryCode = state.selectedCountryCode;
       this.cdr.markForCheck();
     } catch {}
@@ -1681,7 +1753,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   /** Navigate back: payment → passenger details → select-car → dashboard */
   goBackFromBooking() {
     if (this.step1Complete) {
-      // On payment step → go back to passenger details
+      // On payment step → go back to passenger details.
+      // Clear any previously-selected payment option so when the agent comes
+      // forward again, the Booking Summary shows "Select a plan" instead of
+      // a stale amount. Prevents the QA-reported case where the summary
+      // card looked like an option was already picked without the agent
+      // consciously choosing one in this view.
+      this.paymentOption = 0;
+      this.paymentMethod = 'wallet';
+      this.showWalletConfirm = false;
+      this.showTopUpConfirm = false;
       this.step1Complete = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
       this.cdr.markForCheck();

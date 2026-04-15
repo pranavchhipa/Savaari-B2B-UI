@@ -789,6 +789,17 @@ export class SelectCarComponent implements OnInit {
       urgentBookingFlag: car.urgentBookingFlag,
     };
     this.bookingState.setSelectedCar(selectedCar);
+    // Lifecycle event: agent picked a car — funnel step 2 in B2B analytics
+    // pipeline (backend team spec, April 2026).
+    this.analytics.trackSelectCar({
+      trip_type: this.itinerary?.tripType || '',
+      trip_subtype: this.itinerary?.subTripType || '',
+      car_type: car.type || '',
+      car_name: car.name || '',
+      fare: selectedCar.price,
+      from_city: this.itinerary?.fromCity || '',
+      to_city: this.itinerary?.toCity || '',
+    });
     this.router.navigate(['/booking']);
   }
 

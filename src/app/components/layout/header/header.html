@@ -14,8 +14,9 @@
           <img *ngIf="agentLogo" [src]="agentLogo" alt="Company Logo"
             class="h-10 sm:h-12 md:h-14 max-w-[180px] object-contain rounded" />
           <!-- Default B2B CAB logo (shown when no agent logo) -->
+          <!-- Heights reduced 20% from h-16/20/24/28 per visual-density feedback -->
           <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo-white.webp" [alt]="brandName"
-            class="h-16 sm:h-20 md:h-24 lg:h-28 object-contain" />
+            class="h-[51px] sm:h-16 md:h-[77px] lg:h-[90px] object-contain" />
         </div>
 
         <!-- Company Name (shown when logged in) -->
