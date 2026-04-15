@@ -30,6 +30,14 @@ export interface BookingCard {
     viaLine: string;
     tripType: string;
     usageName: string;
+    /** Airport-specific: 'drop' (to airport) | 'pickup' (from airport) | '' (non-airport) */
+    airportSubType?: string;
+    /** Airport/terminal full name — e.g. "Terminal 2, Kempegowda International Airport, Bangalore" */
+    airportName?: string;
+    /** Customer's short address label for airport trips — e.g. "Koramangala, Bangalore" */
+    custShortAddress?: string;
+    /** Local trip package label — e.g. "8hr/80km" | "12hr/120km" */
+    localPackage?: string;
     pickupAddress: string;
     dropAddress: string;
     pickupDate: Date | null;
@@ -602,6 +610,102 @@ export class BookingsComponent implements OnInit {
         return 'via ' + intermediates.join(', ');
     }
 
+    /**
+     * Build the route line for an **Airport** booking.
+     *
+     * Why this exists: the generic `buildRouteLine()` joins pick_city → drop_city,
+     * which for airport bookings wrongly reads "Bangalore → Mysore" (two city names)
+     * instead of the expected "Bangalore → Kempegowda Airport, Terminal 2".
+     * Airport bookings need the airport/terminal name rendered in the correct
+     * direction based on `airportSubType`.
+     *
+     *   drop (to airport):   customer address/city  →  airport name
+     *   pickup (from airport): airport name         →  customer address/city
+     *
+     * Fallback order (per side):
+     *   1. airportName / terminal full string from API (preferred)
+     *   2. itinerary-derived airport segment (when backend only stores it in the itinerary string)
+     *   3. empty string — template will fall back to `itinerary` / `sourceCity → destinationCity`
+     */
+    private buildAirportRouteLine(
+        sourceCity: string,
+        destinationCity: string,
+        airportName: string,
+        custShortAddress: string,
+        airportSubType: string,
+        itinerary: string,
+    ): string {
+        const trimmedAirport = (airportName || '').trim();
+        const trimmedCustomer = (custShortAddress || '').trim();
+        const subType = (airportSubType || '').toLowerCase();
+
+        // When both airport-name fields are empty (old bookings that pre-date our
+        // airport-aware schema), the backend's itinerary string is the most
+        // reliable source — it typically reads "Bangalore → Kempegowda Airport"
+        // or similar. Only fall through to this when we don't have a proper
+        // airport label, because the itinerary string for some airport bookings
+        // is just "pick_city → drop_city" which is what we're trying to avoid.
+        const itin = (itinerary || '').toString().replace(/&rarr;|&#8594;|&#x2192;/gi, '→');
+        const itineraryHasAirport = itin.toLowerCase().includes('airport') ||
+            itin.toLowerCase().includes('terminal');
+
+        // Prefer full airport/terminal name; fall back to drop_city so we never
+        // render just an arrow with one side empty.
+        const airportLabel = trimmedAirport || destinationCity || sourceCity || '';
+        const customerLabel = trimmedCustomer || sourceCity || destinationCity || '';
+
+        // Direction detection: explicit airportSubType wins; else parse the itinerary.
+        // "pickup" → from airport to customer; "drop" → from customer to airport.
+        if (subType === 'pickup' || subType === 'from_airport' || subType === 'fromairport') {
+            // If we have no proper airport label but the itinerary has one, use it.
+            if (!trimmedAirport && itineraryHasAirport) {
+                return itin.split('→').map((s: string) => s.trim()).filter((s: string) => s.length > 0).join(' → ');
+            }
+            return airportLabel && customerLabel ? `${airportLabel} → ${customerLabel}` : (airportLabel || customerLabel);
+        }
+        if (subType === 'drop' || subType === 'to_airport' || subType === 'toairport') {
+            if (!trimmedAirport && itineraryHasAirport) {
+                return itin.split('→').map((s: string) => s.trim()).filter((s: string) => s.length > 0).join(' → ');
+            }
+            return customerLabel && airportLabel ? `${customerLabel} → ${airportLabel}` : (customerLabel || airportLabel);
+        }
+
+        // Unknown direction — prefer itinerary when it mentions an airport/terminal,
+        // otherwise fall back to whatever cities we have.
+        if (itineraryHasAirport && itin.includes('→')) {
+            return itin.split('→').map((s: string) => s.trim()).filter((s: string) => s.length > 0).join(' → ');
+        }
+        if (itin.includes('→')) {
+            return itin.split('→').map((s: string) => s.trim()).filter((s: string) => s.length > 0).join(' → ');
+        }
+
+        // Last resort: generic city → airport (drop-style)
+        return customerLabel && airportLabel && customerLabel !== airportLabel
+            ? `${customerLabel} → ${airportLabel}`
+            : (airportLabel || customerLabel);
+    }
+
+    /**
+     * Build the route line for a **Local** booking.
+     *
+     * Local trips don't have a destination city — the cab stays within the pickup
+     * city for the package duration (8hr/80km, 12hr/120km). Rendering "Bangalore →"
+     * with an empty second side looks broken, so we show a single-city pill
+     * with the package label appended.
+     *
+     * Format: "Bangalore · Local (8hr/80km)"
+     * Falls back to just the city when package isn't known.
+     */
+    private buildLocalRouteLine(city: string, localPackage: string, usageName: string): string {
+        const base = (city || '').trim();
+        if (!base) return '';
+        const pkg = (localPackage || usageName || '').toString().trim();
+        // Extract only the package portion if usageName is "Local (8hr/80km)" or similar
+        const pkgMatch = pkg.match(/(\d+\s*hr[^)]*\d+\s*km)/i);
+        const cleanPkg = pkgMatch ? pkgMatch[1] : pkg;
+        return cleanPkg ? `${base} · Local (${cleanPkg})` : `${base} · Local`;
+    }
+
     private toBookingCard(b: any): BookingCard {
         let pickupDate: Date | null = null;
         const dateStr = b.start_date_time || b.pickupDateTime;
@@ -671,23 +775,80 @@ export class BookingsComponent implements OnInit {
         const sourceCity = registryData?.pick_city || registryData?.source_city || b.pick_city || b.source_city || b.sourceCity || '';
         const destinationCity = registryData?.drop_city || registryData?.destination_city || b.drop_city || b.destination_city || b.destinationCity || '';
 
-        // Round trip detection — backend uses several names interchangeably
+        // Trip-type detection — backend uses several names interchangeably
         const tripTypeRaw = (b.trip_type || b.tripType || '').toString().toLowerCase();
         const usageNameRaw = (b.usage_name || b.usagename || b.usageName || '').toString().toLowerCase();
         const isRoundTrip = tripTypeRaw === 'round trip' ||
             tripTypeRaw === 'roundtrip' ||
             usageNameRaw === 'roundtrip' ||
             usageNameRaw.includes('round');
+        const isAirport = tripTypeRaw.includes('airport') || usageNameRaw.includes('airport');
+        const isLocal = tripTypeRaw.includes('local') || usageNameRaw.includes('local');
 
-        // Intermediate stops — registry first (we control the format), then API/itinerary parsing.
+        // Airport-specific fields — the generic source/dest cities alone are semantically
+        // wrong for airport bookings, which need the airport/terminal name rendered in
+        // the correct direction. Read from both API (snake_case) and registry shapes.
+        const airportName = registryData?.airport_name || registryData?.airportName ||
+            b.airport_name || b.airportName || b.airportname || '';
+        const terminalName = registryData?.terminalname || registryData?.terminal_name ||
+            b.terminalname || b.terminal_name || '';
+        // airport_sub_type: 'drop' (to airport) vs 'pickup' (from airport).
+        // `subTripType` from the booking create request is the same value for airport trips.
+        const airportSubTypeRaw = registryData?.airport_sub_type || registryData?.airportSubType ||
+            registryData?.subTripType || registryData?.usage_name ||
+            b.airport_sub_type || b.airportSubType || b.sub_trip_type || b.subTripType || '';
+        const airportSubType = String(airportSubTypeRaw || '').toLowerCase();
+        // custShortAddress = the **customer's** address, which lives in different API
+        // fields depending on direction:
+        //   - drop (to airport):   pick_loc  = customer address (→), drop_loc = airport
+        //   - pickup (from airport): pick_loc = airport, drop_loc = customer address (→)
+        // Prefer the explicit custShortAddress when present (registry always has it);
+        // fall back to the direction-appropriate *_loc field so the route line never
+        // shows the airport name on both sides.
+        const pickupLocStr = b.pick_loc || b.pickup_address || b.pickupAddress || '';
+        const dropLocStr = b.drop_loc || b.drop_address || b.dropAddress || '';
+        const isPickupFromAirport = airportSubType === 'pickup' ||
+            airportSubType === 'from_airport' ||
+            airportSubType === 'fromairport';
+        const custShortAddress = registryData?.custShortAddress || registryData?.cust_short_address ||
+            b.custShortAddress || b.cust_short_address ||
+            (isPickupFromAirport ? dropLocStr : pickupLocStr);
+        // Combine airport + terminal for the richest label (e.g. "Kempegowda Airport · Terminal 2")
+        const airportFullName = airportName && terminalName && !airportName.includes(terminalName)
+            ? `${airportName}, ${terminalName}`
+            : (airportName || terminalName || '');
+
+        // Local-specific: package label from usage_name or explicit field
+        const localPackage = registryData?.local_package || registryData?.localPackage ||
+            b.local_package || b.localPackage || b.package_name || '';
+
+        // Intermediate stops only apply to outstation — airport/local don't have vias.
         // Registry stores `intermediate_cities_array` (string[]); API may surface various other shapes.
-        const intermediateCities = this.extractIntermediateCities(
+        const intermediateCities = (isAirport || isLocal) ? [] : this.extractIntermediateCities(
             { ...b, ...(registryData || {}) },
             sourceCity,
             destinationCity
         );
 
-        const routeLine = this.buildRouteLine(sourceCity, intermediateCities, destinationCity, isRoundTrip);
+        // Dispatch route-line construction by trip type so the card heading shows
+        // semantically correct text instead of a generic "source → destination".
+        let routeLine: string;
+        if (isAirport) {
+            routeLine = this.buildAirportRouteLine(
+                sourceCity,
+                destinationCity,
+                airportFullName,
+                custShortAddress,
+                airportSubType,
+                itinerary,
+            );
+        } else if (isLocal) {
+            // Local trips use pick_city (no destination). Fall back to drop_city if
+            // pick_city is empty (some old bookings only populate drop_city).
+            routeLine = this.buildLocalRouteLine(sourceCity || destinationCity, localPackage, usageNameRaw);
+        } else {
+            routeLine = this.buildRouteLine(sourceCity, intermediateCities, destinationCity, isRoundTrip);
+        }
         const viaLine = this.buildViaLine(intermediateCities);
 
         return {
@@ -701,6 +862,10 @@ export class BookingsComponent implements OnInit {
             viaLine,
             tripType: b.trip_type || b.tripType || '',
             usageName: b.usage_name || b.usagename || b.usageName || '',
+            airportSubType,
+            airportName: airportFullName,
+            custShortAddress,
+            localPackage,
             pickupAddress: b.pick_loc || b.pickup_address || b.pickupAddress || '',
             dropAddress: b.drop_loc || b.drop_address || b.dropAddress || '',
             pickupDate,

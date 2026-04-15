@@ -76,8 +76,25 @@ export class BookingApiService {
       // partner API to mark `book_flag = 1` prematurely, breaking
       // confirmation.php update logic. Reported by backend team.
       locality: request.locality,
-      alias_source_city_id: request.alias_source_city_id ?? 0,
-      alias_dest_city_id: request.alias_dest_city_id ?? 0,
+      // alias_source_city_id / alias_dest_city_id — NEVER sent from this portal.
+      //
+      // Backend expects these to be LOCALITY IDs (e.g. 414 for Koramangala).
+      // Any ID the backend can't find in its locality table triggers an
+      // alphabetical-first fallback, so emails render as "Bangalore (Dhanaulti)",
+      // "Mysore (Kevadiya)" etc. regardless of which value is sent.
+      //
+      // The only data source we have for these fields is Savaari's place_id
+      // API (`source_city_map_info.city_id` / `destination_city_map_info.city_id`)
+      // — and that endpoint returns CANONICAL city IDs, not locality IDs
+      // (e.g. 377 for Bangalore, same value as the outstation source-city list).
+      // The airport-to-oneway conversion path also only has canonical city
+      // IDs to offer. There is no reliable frontend source for a real
+      // locality ID here, so any value we send is guaranteed to mis-resolve
+      // on the server.
+      //
+      // Omitting both fields entirely tells the backend to skip the alias
+      // lookup and render the plain city name ("Bangalore", "Mysore") across
+      // all four trip types (One Way, Round Trip, Local, Airport).
       app_user_id: request.app_user_id,
       couponCode: request.couponCode ?? '',
       agentId: btoa(this.auth.getAgentId()),

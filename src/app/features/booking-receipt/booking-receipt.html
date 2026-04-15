@@ -18,7 +18,7 @@
 
     <!-- ═══ HEADER ═══ -->
     <div class="receipt-header bg-slate-900 px-8 py-5 flex items-center justify-between">
-      <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-12">
+      <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-14">
       <div class="text-right">
         <div class="text-white font-bold text-base">Booking Receipt</div>
         <div class="text-slate-400 text-xs mt-1">{{ receiptDate | date:'dd MMM yyyy, h:mm a' }}</div>
@@ -89,7 +89,7 @@
             <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
               <tr>
                 <td class="px-5 py-3 text-slate-500 dark:text-slate-400 w-36 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Route</td>
-                <td class="px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ booking.routeLine || booking.itinerary || (booking.sourceCity + (booking.destinationCity ? ' → ' + booking.destinationCity : '')) }}</td>
+                <td class="px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ booking.routeLine || booking.itinerary || booking.sourceCity || '—' }}</td>
               </tr>
               <tr *ngIf="booking.intermediateCities.length">
                 <td class="px-5 py-3 text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium">Via Stops</td>

@@ -41,7 +41,7 @@ export const TNC_DATA: Record<string, TncPage> = {
         icon: 'x-circle',
         items: [
           'Cancellations must be made at least 24 hours in advance.',
-          'Cancellations can only be made by calling 090 4545 0000.',
+          'Cancellations can only be made by calling 079 7111 1865.',
           'Changes to itinerary are subject to availability.',
           'No-show or cancellation within 6 hours may result in up to 100% fare deduction.',
           'B2B Cab may cancel with 4 hours notice due to force majeure.'
@@ -97,7 +97,7 @@ export const TNC_DATA: Record<string, TncPage> = {
         heading: 'Cancellations and Changes to Itinerary',
         icon: 'x-circle',
         items: [
-          'Cancel at least 24 hours in advance by calling 090 4545 0000.',
+          'Cancel at least 24 hours in advance by calling 079 7111 1865.',
           'Changes subject to availability.',
           'No-show: up to 100% fare deduction, advance forfeited.',
           'B2B Cab may cancel with 4 hours notice.'
@@ -153,7 +153,7 @@ export const TNC_DATA: Record<string, TncPage> = {
         icon: 'x-circle',
         items: [
           'Cancel at least 24 hours in advance.',
-          'Cancel by calling 090 4545 0000 or email from registered email.',
+          'Cancel by calling 079 7111 1865 or email from registered email.',
           'No-show: up to 100% fare deduction.',
           'B2B Cab may cancel with 4 hours notice.'
         ]
@@ -207,7 +207,7 @@ export const TNC_DATA: Record<string, TncPage> = {
         icon: 'x-circle',
         items: [
           'Cancel at least 24 hours in advance.',
-          'Cancel by calling 090 4545 0000 or email from registered email.',
+          'Cancel by calling 079 7111 1865 or email from registered email.',
           'No-show: up to 100% fare deduction.',
           'B2B Cab may cancel with 4 hours notice.'
         ]
@@ -257,7 +257,7 @@ export const TNC_DATA: Record<string, TncPage> = {
         heading: 'Cancellations and Changes to Itinerary',
         icon: 'x-circle',
         items: [
-          'Cancel at least 24 hours in advance by calling 090 4545 0000.',
+          'Cancel at least 24 hours in advance by calling 079 7111 1865.',
           'Changes subject to availability.',
           'No-show: up to 100% fare deduction.',
           'B2B Cab may cancel with 4 hours notice.'
@@ -311,7 +311,7 @@ export const TNC_DATA: Record<string, TncPage> = {
         heading: 'Cancellations and Changes to Itinerary',
         icon: 'x-circle',
         items: [
-          'Cancel at least 24 hours in advance by calling 090 4545 0000.',
+          'Cancel at least 24 hours in advance by calling 079 7111 1865.',
           'Changes subject to availability.',
           'No-show: up to 100% fare deduction.',
           'B2B Cab may cancel with 4 hours notice.'

@@ -11,6 +11,7 @@ import { environment } from '../../../../../environments/environment';
 })
 export class LandingFooterComponent {
     supportPhone = environment.supportPhone;
+    supportPhoneTel = environment.supportPhoneTel;
     companyName = environment.companyName;
     brandName = environment.brandName;
     supportEmail = environment.supportEmail;

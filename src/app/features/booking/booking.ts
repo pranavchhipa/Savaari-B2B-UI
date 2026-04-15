@@ -47,6 +47,14 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   private destroyRef = inject(DestroyRef);
 
   Math = Math; // expose for template
+
+  // Shared brand/support info from environment (single source of truth)
+  supportPhone = environment.supportPhone;
+  supportPhoneTel = environment.supportPhoneTel;
+  brandName = environment.brandName;
+  companyName = environment.companyName;
+  supportEmail = environment.supportEmail;
+
   itinerary: Itinerary | null = null;
   selectedCar: SelectedCar | null = null;
 
@@ -1292,26 +1300,19 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       pickupAddress: pickupAddr || this.itinerary!.pickupAddress || '',
       customerLatLong: this.pickupLatLng ? `${this.pickupLatLng.lat},${this.pickupLatLng.lng}` : (this.itinerary?.customerLatLong || ''),
       locality,
-      // alias_source_city_id comes from place_id API (source_city_map_info.city_id)
-      // populated in onPickupAddressSelect when user picks a pickup suggestion.
-      //
-      // IMPORTANT: do NOT fall back to itinerary.fromCityId (the canonical city ID like
-      // 377 for Bangalore). Live HAR shows alias_source_city_id is a LOCALITY ID
-      // (e.g. 414 for Koramangala), NOT a canonical city ID. Sending the canonical
-      // city ID makes the backend look up "locality 377" and default to the first
-      // locality alphabetically — which is why every Bangalore booking email was
-      // rendering as "Banglore(Dhanlauti)" before this fix (backend team confirmed,
-      // April 2026). When we don't have a real locality from place_id, send 0 so the
-      // backend uses its own default locality resolution rather than mis-rendering.
-      alias_source_city_id: this.pickupAliasSourceCityId || 0,
+      // alias_source_city_id / alias_dest_city_id — populated on the request
+      // object for completeness, but booking-api.service DROPS them before
+      // hitting the network across all four trip types (One Way / Round Trip
+      // / Local / Airport). Reason: Savaari's place_id API returns CANONICAL
+      // city IDs (e.g. 377 for Bangalore) not LOCALITY IDs — sending those
+      // mis-resolves on the server and emails come out as "Bangalore
+      // (Dhanaulti)" or "Mysore (Kevadiya)". See the long comment in
+      // booking-api.service.ts for the full rationale.
+      alias_source_city_id: this.pickupAliasSourceCityId || undefined,
       dropAddress: this.dropAddress || '',
       dropLatLong: this.dropLatLng ? `${this.dropLatLng.lat},${this.dropLatLng.lng}` : '',
       dropLocality,
-      // alias_dest_city_id comes from place_id API (destination_city_map_info.city_id).
-      // Same rule as alias_source_city_id: never fall back to a canonical city ID
-      // (toCityId), only to itinerary.aliasDestCityId which is set explicitly by the
-      // airport flow with a known-good locality ID.
-      alias_dest_city_id: this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || 0,
+      alias_dest_city_id: this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || undefined,
       customerTitle: 'Mr',
       customerName: this.guestName,
       // Per backend team (April 2026): customerEmail must hold AGENT email, and
@@ -1433,6 +1434,17 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       // through the same `package_kms` path used for synced bookings.
       package_kms: packageKms,
       min_km_quota_per_day: packageKms,
+      // Airport-specific fields — required by bookings.ts toBookingCard()
+      // to build the correct route line (e.g. "Bangalore → Kempegowda Airport, T2")
+      // instead of a generic "pick_city → drop_city" which is semantically wrong
+      // for airport trips. Populated from the itinerary state; empty for non-airport.
+      airport_name: this.itinerary?.airportName || '',
+      terminalname: this.itinerary?.terminalId || '',
+      airport_id: this.itinerary?.airportId ? String(this.itinerary.airportId) : '',
+      custShortAddress: this.itinerary?.custShortAddress || this.pickupAddress || '',
+      airport_sub_type: this.itinerary?.airportSubType || '',
+      // Local-specific field
+      local_package: this.itinerary?.localPackage || '',
       booking_status: 'CONFIRMED',
       car_name: this.selectedCar?.name || '',
       gross_amount: this.selectedCar?.price || 0,

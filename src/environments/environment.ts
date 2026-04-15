@@ -70,8 +70,8 @@ export const environment = {
   brandName: 'B2B CAB',
   companyName: 'Savaari Car Rentals Pvt Ltd',
   companyAddress: 'No 1137, 2nd Floor, RG Towers, Indiranagar, Bangalore - 560038',
-  supportPhone: '090 4545 0000',
-  supportPhoneTel: 'tel:09045450000',
+  supportPhone: '079 7111 1865',
+  supportPhoneTel: 'tel:07971111865',
   supportEmail: 'info@savaari.com',
 
   /**

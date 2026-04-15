@@ -249,6 +249,18 @@ export class BookingRegistryService {
       // for newly-created bookings before they sync to the B2B API.
       package_kms: data.package_kms || data.packageKms || data.kms_included || data.kmsIncluded || '',
       min_km_quota_per_day: data.min_km_quota_per_day || data.package_kms || '',
+      // Airport-specific fields — preserved so the Manage Bookings page can
+      // render the correct route (e.g. "Bangalore → Kempegowda Airport, T2")
+      // for newly-created airport bookings before they sync to the B2B API.
+      // Without these, bookings.ts falls back to pick_city → drop_city which
+      // is semantically wrong for airport trips.
+      airport_name: data.airport_name || data.airportName || '',
+      terminalname: data.terminalname || data.terminal_name || data.terminalName || '',
+      airport_id: data.airport_id || data.airportId || '',
+      custShortAddress: data.custShortAddress || data.cust_short_address || '',
+      airport_sub_type: data.airport_sub_type || data.airportSubType || data.subTripType || '',
+      // Local-specific
+      local_package: data.local_package || data.localPackage || '',
       prePayment: data.prePayment || 0,
       cashToCollect: data.cashToCollect || 0,
       carType: data.carType || 0,

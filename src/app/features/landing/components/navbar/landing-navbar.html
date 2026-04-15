@@ -9,15 +9,25 @@
     <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan/40 to-transparent"></div>
 
     <!-- Main nav bar -->
-    <div class="container mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
+    <div class="container mx-auto flex items-center h-16 px-4 lg:px-8 relative">
 
         <!-- Left: Logo -->
         <a href="#" class="flex items-center group flex-shrink-0">
-            <img src="assets/logos/b2b-cab-logo.png" alt="B2B CAB" class="h-10 sm:h-12 md:h-14 object-contain" />
+            <img src="assets/logos/b2b-cab-logo-white.webp" alt="B2B CAB" class="h-14 sm:h-16 md:h-20 object-contain" />
+        </a>
+
+        <!-- Center: 24x7 Support pill (absolute-centered on desktop) -->
+        <a [href]="supportPhoneTel"
+            class="hidden md:inline-flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center text-white/90 hover:text-white border-2 border-white/30 hover:border-white/50 rounded-md pl-3 pr-5 py-1.5 transition-all cursor-pointer whitespace-nowrap bg-white/5">
+            <span class="inline-flex items-center text-sm font-bold tracking-wide mr-3 border-r-2 border-white/30 pr-3">
+                <lucide-icon name="phone" [size]="14" class="mr-1.5"></lucide-icon>
+                24x7
+            </span>
+            <span class="text-base font-bold tracking-wider">{{ supportPhone }}</span>
         </a>
 
         <!-- Right: Login + Register buttons (desktop) -->
-        <div class="hidden md:flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-3 ml-auto">
             <a routerLink="/login"
                 class="inline-flex items-center justify-center text-sm font-bold text-white bg-amber hover:bg-amber-hover rounded-md px-5 py-2 transition-all cursor-pointer shadow-md shadow-amber/20">
                 Login
@@ -28,8 +38,13 @@
             </a>
         </div>
 
-        <!-- Mobile: hamburger only -->
-        <div class="md:hidden flex items-center gap-2">
+        <!-- Mobile: compact phone + hamburger (ml-auto pushes to right) -->
+        <div class="md:hidden flex items-center gap-2 ml-auto">
+            <a [href]="supportPhoneTel"
+                class="inline-flex items-center gap-1 text-white/90 hover:text-white border border-white/30 rounded-md px-2 py-1 text-[11px] font-bold cursor-pointer">
+                <lucide-icon name="phone" [size]="12"></lucide-icon>
+                {{ supportPhone }}
+            </a>
             <button (click)="toggleMobile()" class="p-2 text-slate-300 bg-transparent border-0 cursor-pointer">
                 <lucide-icon [name]="mobileOpen ? 'x' : 'menu'" [size]="20"></lucide-icon>
             </button>
@@ -40,6 +55,14 @@
     <div *ngIf="mobileOpen"
         class="md:hidden overflow-hidden bg-slate-900 border-t border-white/5 animate-in slide-in-from-top-2 duration-200">
         <div class="px-4 py-4 flex flex-col gap-3">
+            <!-- Support phone banner -->
+            <a [href]="supportPhoneTel"
+                class="flex items-center justify-center gap-2 text-sm font-bold text-white border-2 border-white/30 rounded-md py-2.5 cursor-pointer hover:bg-white/5 transition-colors">
+                <lucide-icon name="phone" [size]="14"></lucide-icon>
+                <span>24x7 Support</span>
+                <span class="text-primary">·</span>
+                <span class="tracking-wider">{{ supportPhone }}</span>
+            </a>
             <div class="flex gap-3 pt-2">
                 <a routerLink="/login" (click)="toggleMobile()"
                     class="flex-1 text-center text-sm font-bold text-white bg-amber hover:bg-amber-hover rounded-md px-4 py-2.5 cursor-pointer transition-colors">
