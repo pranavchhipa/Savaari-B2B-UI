@@ -15,7 +15,11 @@
             class="h-10 sm:h-12 md:h-14 max-w-[180px] object-contain rounded" />
           <!-- Default B2B CAB logo (shown when no agent logo) -->
           <!-- Heights reduced 20% from h-16/20/24/28 per visual-density feedback -->
-          <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo-white.webp" [alt]="brandName"
+          <!-- ?v=20260415 is a cache-buster: .htaccess marks .webp as Cache-Control: immutable
+               max-age=1yr, so when the logo file itself is replaced in-place the browser keeps
+               serving the stale cached copy. Bump this version string whenever the logo binary
+               changes so clients fetch the new file immediately. -->
+          <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo-white.webp?v=20260415" [alt]="brandName"
             class="h-[51px] sm:h-16 md:h-[77px] lg:h-[90px] object-contain" />
         </div>
 
