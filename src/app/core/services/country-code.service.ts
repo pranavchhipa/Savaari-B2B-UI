@@ -3,7 +3,6 @@ import { Observable, of } from 'rxjs';
 import { map, tap, shareReplay, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { environment } from '../../../environments/environment';
 
 export interface CountryCodeEntry {
   countryName: string;
@@ -36,10 +35,6 @@ export class CountryCodeService {
    * Cached after first call.
    */
   getCountryCodes(): Observable<CountryCodeEntry[]> {
-    if (environment.useMockData) {
-      return of(this.defaultCodes());
-    }
-
     if (this.cachedCodes) {
       return of(this.cachedCodes);
     }

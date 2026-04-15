@@ -33,10 +33,6 @@ export class CommissionService {
    * Returns the commission object from the API with all fields.
    */
   getCommission(): Observable<CommissionData> {
-    if (environment.useMockData) {
-      return of(this.mockCommissionData());
-    }
-
     if (this.cachedCommission) {
       return of(this.cachedCommission);
     }
@@ -50,10 +46,11 @@ export class CommissionService {
       token: this.auth.getB2bToken(),
     }).pipe(
       map(response => {
-        // Extract the commission object from the wrapper
+        // Commission is agent-specific — can't proceed with defaults because
+        // markup, display flag, invoice payer, and enabled trip types all
+        // drive real money + UI gating.
         if (!response || !response.commission) {
-          console.warn('[COMMISSION] No commission data in response');
-          return this.mockCommissionData();
+          throw new Error('Commission data missing from API response');
         }
         return response.commission;
       }),
@@ -153,16 +150,6 @@ export class CommissionService {
    *   Returns: { statusCode: 200, message, result: true }
    */
   updateCommission(updates: Record<string, string | number>): Observable<{ statusCode: number; message: string; result: boolean }> {
-    if (environment.useMockData) {
-      // Update cached data locally for mock mode
-      if (this.cachedCommission) {
-        Object.entries(updates).forEach(([key, val]) => {
-          (this.cachedCommission as any)[key] = String(val);
-        });
-      }
-      return of({ statusCode: 200, message: 'Mock updated', result: true });
-    }
-
     const body = {
       userEmail: this.auth.getUserEmail(),
       token: this.auth.getB2bToken(),
@@ -185,45 +172,5 @@ export class CommissionService {
   clearCache(): void {
     this.cachedCommission = null;
     this.inFlight$ = null;
-  }
-
-  /** Mock data for development mode */
-  private mockCommissionData(): CommissionData {
-    return {
-      id: '0',
-      user_id: '983680',
-      state_id: '10',
-      city_id: '145',
-      agent_gst: '',
-      airport_commision: '10.00',
-      local_commision: '8.00',
-      outstation_commision: '10.00',
-      airport_commission_amount: '0',
-      local_commission_amount: '0',
-      outstation_commission_amount: '0',
-      airport_rate_bump_up: '0',
-      local_rate_bump_up: '0',
-      outstation_rate_bump_up: '0',
-      airport_rate_bump_up_amt: '0',
-      local_rate_bump_up_amt: '0',
-      outstation_rate_bump_up_amt: '0',
-      display_commission_flag: '1',
-      disable_commission_update: '0',
-      savaari_commission: '0',
-      enable_oneway: '1',
-      enable_roundtrip: '1',
-      enable_local: '1',
-      enable_transfer: '1',
-      invoice_payer: 'pay_by_agent',
-      wallet_user: '0',
-      enable_no_payment: '0',
-      block_agent: '0',
-      block_agent_invoice: '0',
-      block_customer_invoice: '0',
-      block_customer_communication: '0',
-      display_only_premium: '0',
-      unrealized_full_paid_bookings: '0',
-      remark: '',
-    };
   }
 }

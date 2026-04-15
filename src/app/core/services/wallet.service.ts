@@ -42,8 +42,8 @@ export interface TopUpInitiateResponse {
  *   POST /wallet/refund          — Refund on booking cancellation
  *
  * NOTE: Wallet APIs are under active development (March 2026).
- * When useMockData=false and the API isn't deployed yet, all calls
- * gracefully fall back to no-op / zero balance.
+ * When the API isn't deployed yet, all calls gracefully fall back
+ * to no-op / zero balance.
  *
  * Payment Options (TRD § Business Logic):
  *   Option 1: 25% now from wallet, 75% driver-collected at trip end
@@ -84,11 +84,6 @@ export class WalletService {
    * Call when agent first accesses the wallet module.
    */
   createWallet(): Observable<boolean> {
-    if (environment.useMockData) {
-      this.walletStatusSubject.next({ balance: 0, status: 'ACTIVE' });
-      return of(true);
-    }
-
     const payload = this.buildPayload({});
 
     return this.api.walletPost<any>('create', payload, this.getWalletToken()).pipe(
@@ -123,14 +118,6 @@ export class WalletService {
    * POST /wallet/balance → { statusCode, balance, walletStatus, walletId }
    */
   loadBalance(): void {
-    if (environment.useMockData) {
-      this.walletStatusSubject.next({
-        balance: this.balanceSubject.getValue(),
-        status: 'ACTIVE',
-      });
-      return;
-    }
-
     this.isLoadingSubject.next(true);
 
     this.api.walletPost<any>('balance', this.buildPayload({}), this.getWalletToken()).pipe(
@@ -162,11 +149,6 @@ export class WalletService {
    * POST /wallet/history → { statusCode, transactions: [...] }
    */
   loadHistory(page = 1, limit = 50): void {
-    if (environment.useMockData) {
-      // In mock mode keep existing in-memory transactions
-      return;
-    }
-
     this.api.walletPost<any>('history', this.buildPayload({ page, limit }), this.getWalletToken()).pipe(
       tap(response => {
         if (response?.statusCode === 200 || response?.status === 'success') {
@@ -198,10 +180,9 @@ export class WalletService {
    * in a non-ACTIVE state (BLOCKED / FROZEN / CLOSED / PENDING). If the
    * status hasn't loaded yet (null) we assume ACTIVE — blocking here would
    * prevent first-time users from ever completing a payment before the
-   * wallet/balance round-trip finishes. Mock mode is always active.
+   * wallet/balance round-trip finishes.
    */
   isWalletActive(): boolean {
-    if (environment.useMockData) return true;
     const s = this.walletStatusSubject.getValue();
     if (!s) return true; // not loaded yet — don't block
     return s.status === 'ACTIVE';
@@ -232,15 +213,6 @@ export class WalletService {
       console.warn('[WALLET] initiateTopUp blocked —', this.getInactiveReason());
       return of(null);
     }
-    if (environment.useMockData) {
-      const mockOrderId = 'order_mock_' + Math.random().toString(36).substring(2, 10);
-      return of({
-        orderId: mockOrderId,
-        amount: amount * 100,
-        currency: 'INR',
-        razorpayKeyId: 'rzp_test_mock',
-      } as TopUpInitiateResponse);
-    }
 
     return this.api.walletPost<any>('topup/initiate', this.buildPayload({ amount }), this.getWalletToken()).pipe(
       map(response => {
@@ -269,11 +241,6 @@ export class WalletService {
    * Call this from the Razorpay payment handler callback.
    */
   verifyTopUp(orderId: string, paymentId: string, signature: string, amount: number): Observable<boolean> {
-    if (environment.useMockData) {
-      this.addTopUp(amount, paymentId);
-      return of(true);
-    }
-
     const payload = this.buildPayload({ order_id: orderId, payment_id: paymentId, signature });
 
     return this.api.walletPost<any>('topup/verify', payload, this.getWalletToken()).pipe(
@@ -310,15 +277,6 @@ export class WalletService {
       console.warn('[WALLET] createBookingOrder blocked —', this.getInactiveReason());
       return of(null);
     }
-    if (environment.useMockData) {
-      const mockOrderId = 'order_booking_' + Math.random().toString(36).substring(2, 10);
-      return of({
-        orderId: mockOrderId,
-        amount: amount * 100,
-        currency: 'INR',
-        razorpayKeyId: 'rzp_test_mock',
-      } as TopUpInitiateResponse);
-    }
 
     return this.api.walletPost<any>('topup/initiate', this.buildPayload({ amount, type: 'booking_payment' }), this.getWalletToken()).pipe(
       map(response => {
@@ -343,13 +301,8 @@ export class WalletService {
 
   /**
    * Verify a direct Razorpay booking payment (no wallet credit).
-   * In mock mode, just returns success.
    */
   verifyBookingPayment(orderId: string, paymentId: string, signature: string, amount: number, bookingId: string): Observable<boolean> {
-    if (environment.useMockData) {
-      return of(true);
-    }
-
     const payload = this.buildPayload({ order_id: orderId, payment_id: paymentId, signature, booking_id: bookingId, amount, type: 'booking_payment' });
     return this.api.walletPost<any>('topup/verify', payload, this.getWalletToken()).pipe(
       map(response => {
@@ -385,10 +338,6 @@ export class WalletService {
       console.warn('[WALLET] payForBooking blocked —', this.getInactiveReason());
       return of({ success: false });
     }
-    if (environment.useMockData) {
-      const success = this.deductForBooking(amount, bookingId);
-      return of({ success, transactionId: success ? 'mock_txn_' + Date.now() : undefined });
-    }
 
     // Let the server validate balance — client-side check can be stale
     const payload = this.buildPayload({ booking_id: bookingId, amount, payment_option: paymentOption });
@@ -422,23 +371,6 @@ export class WalletService {
    * Usually triggered by the booking cancellation flow.
    */
   refundBooking(bookingId: string, amount: number): Observable<boolean> {
-    if (environment.useMockData) {
-      const newBalance = this.balanceSubject.getValue() + amount;
-      this.balanceSubject.next(newBalance);
-      const tx: WalletTransaction = {
-        id: 'tx_' + Math.random().toString(36).substr(2, 9),
-        date: new Date(),
-        type: 'REFUND',
-        amount,
-        balanceAfter: newBalance,
-        description: `Refund for Booking #${bookingId}`,
-        referenceId: bookingId,
-        status: 'SUCCESS',
-      };
-      this.transactionsSubject.next([tx, ...this.transactionsSubject.getValue()]);
-      return of(true);
-    }
-
     return this.api.walletPost<any>('refund', this.buildPayload({ booking_id: bookingId, amount }), this.getWalletToken()).pipe(
       map(response => {
         if (response?.statusCode === 200 || response?.status === 'success') {
@@ -456,11 +388,13 @@ export class WalletService {
     );
   }
 
-  // ─── Legacy mock methods (kept for backward compatibility) ─────────────────
+  // ─── Local credit fallback ─────────────────────────────────────────────────
 
   /**
-   * Directly credit wallet in mock mode.
-   * In real mode, use verifyTopUp() after Razorpay callback.
+   * Credit the wallet in-memory (and to the visible transaction list) when
+   * the verify-topup API is unavailable but Razorpay payment did succeed.
+   * Called from `verifyTopUp` catchError / unconfirmed-response paths so the
+   * UI reflects the user's payment even before the wallet API is deployed.
    */
   addTopUp(amount: number, referenceId: string): void {
     const newBalance = this.balanceSubject.getValue() + amount;
@@ -477,31 +411,6 @@ export class WalletService {
       status: 'SUCCESS',
     };
     this.transactionsSubject.next([tx, ...this.transactionsSubject.getValue()]);
-  }
-
-  /**
-   * Synchronously deduct balance in mock mode.
-   * In real mode, use payForBooking() instead.
-   */
-  deductForBooking(amount: number, bookingId: string): boolean {
-    const currentBalance = this.balanceSubject.getValue();
-    if (currentBalance < amount) return false;
-
-    const newBalance = currentBalance - amount;
-    this.balanceSubject.next(newBalance);
-
-    const tx: WalletTransaction = {
-      id: 'tx_' + Math.random().toString(36).substr(2, 9),
-      date: new Date(),
-      type: 'BOOKING_PAYMENT',
-      amount: -amount,
-      balanceAfter: newBalance,
-      description: `Wallet Payment for Booking #${bookingId}`,
-      referenceId: bookingId,
-      status: 'SUCCESS',
-    };
-    this.transactionsSubject.next([tx, ...this.transactionsSubject.getValue()]);
-    return true;
   }
 
   // ─── Private helpers ───────────────────────────────────────────────────────

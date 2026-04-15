@@ -1,13 +1,12 @@
 /**
  * Production / Alpha environment configuration.
  *
- * useMockData: false — hits real Savaari APIs via .htaccess proxy rewrites.
- * API prefixes (/partner-api, /b2b-api, /wallet-api) are rewritten by
- * Apache .htaccess to the actual Savaari domains.
+ * Hits real Savaari APIs via .htaccess proxy rewrites. API prefixes
+ * (/partner-api, /b2b-api, /wallet-api) are rewritten by Apache .htaccess
+ * to the actual Savaari domains.
  */
 export const environment = {
   production: true,
-  useMockData: false,
 
   /** Partner API: cities, availability (proxied via .htaccess) */
   partnerApiBaseUrl: '/partner-api',

@@ -106,13 +106,6 @@ export class AddressAutocompleteService {
    * @param lng Optional longitude
    */
   searchAddress(query: string, request: 'from' | 'to' = 'from', city?: string, lat?: string, lng?: string): Observable<AddressSuggestion[]> {
-    if (environment.useMockData) {
-      return of([
-        { description: `${query} - Mock Address 1, Bangalore`, place_id: 'mock_place_1', main_text: `${query} - Mock Address 1`, secondary_text: 'Bangalore' },
-        { description: `${query} - Mock Address 2, Bangalore`, place_id: 'mock_place_2', main_text: `${query} - Mock Address 2`, secondary_text: 'Bangalore' },
-      ]);
-    }
-
     if (!query || query.length < 2) return of([]);
 
     const token = this.getSessionToken();
@@ -149,21 +142,6 @@ export class AddressAutocompleteService {
    * @param request 'from' or 'to'
    */
   getPlaceDetails(placeId: string, request: 'from' | 'to' = 'from'): Observable<PlaceDetails | null> {
-    if (environment.useMockData) {
-      return of({
-        place_id: placeId,
-        name: 'Mock Address',
-        formatted_address: 'Mock Address, Bangalore, Karnataka',
-        lat: 12.9716,
-        lng: 77.5946,
-        aliasSourceCityId: 377,
-        aliasDestCityId: 0,
-        sublocality: 'Koramangala',
-        city: 'Bangalore',
-        state: 'Karnataka',
-      });
-    }
-
     if (!placeId) return of(null);
 
     const token = this.getSessionToken();

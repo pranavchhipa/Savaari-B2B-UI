@@ -3,7 +3,6 @@ import { Observable, of } from 'rxjs';
 import { catchError, map, shareReplay } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { environment } from '../../../environments/environment';
 
 export interface BannerImage {
   imageUrl: string;
@@ -36,10 +35,6 @@ export class BannerService {
    * sourceCity is optional — empty string returns global banners.
    */
   getBanners(sourceCity?: string | number): Observable<BannerImage[]> {
-    if (environment.useMockData) {
-      return of([]);
-    }
-
     if (this.cache$) return this.cache$;
 
     this.cache$ = this.api.b2bGet<any>('banner-images-list', {

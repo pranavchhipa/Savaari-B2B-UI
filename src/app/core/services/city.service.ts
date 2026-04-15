@@ -5,8 +5,6 @@ import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { ErrorHandlerService } from './error-handler.service';
 import { City, CityApiResponse, toCity, toAirportListCity, AirportListRow, Locality } from '../models';
-import { environment } from '../../../environments/environment';
-import { MOCK_SOURCE_CITIES, MOCK_DESTINATION_CITIES, MOCK_LOCALITIES, MOCK_AIRPORT_LIST } from '../mocks/mock-cities';
 
 /**
  * Service for city and locality lookups.
@@ -35,10 +33,6 @@ export class CityService {
    * GET /source-cities?tripType=...&subTripType=...&token=...
    */
   getSourceCities(tripType: string, subTripType: string): Observable<City[]> {
-    if (environment.useMockData) {
-      return of(MOCK_SOURCE_CITIES);
-    }
-
     const cacheKey = `sourceCities`;
     if (this.sourceCitiesCache.has(cacheKey)) {
       return of(this.sourceCitiesCache.get(cacheKey)!);
@@ -57,9 +51,6 @@ export class CityService {
   }
 
   getAirportList(): Observable<City[]> {
-    if (environment.useMockData) {
-      return of(MOCK_AIRPORT_LIST.map(row => toAirportListCity(row as AirportListRow)));
-    }
     const cacheKey = `airportList`;
     if (this.airportListCache.has(cacheKey)) {
       return of(this.airportListCache.get(cacheKey)!);
@@ -79,10 +70,6 @@ export class CityService {
    * GET /destination-cities?tripType=...&subTripType=...&sourceCity=...&token=...
    */
   getDestinationCities(tripType: string, subTripType: string, sourceCityId: number): Observable<City[]> {
-    if (environment.useMockData) {
-      return of(MOCK_DESTINATION_CITIES);
-    }
-
     const cacheKey = `destinationCities`;
     if (this.destinationCitiesCache.has(cacheKey)) {
       return of(this.destinationCitiesCache.get(cacheKey)!);
@@ -106,10 +93,6 @@ export class CityService {
    * GET /localities (endpoint not yet confirmed on live site)
    */
   getLocalities(): Observable<Locality[]> {
-    if (environment.useMockData) {
-      return of(MOCK_LOCALITIES);
-    }
-
     if (this.localitiesCache) {
       return of(this.localitiesCache);
     }

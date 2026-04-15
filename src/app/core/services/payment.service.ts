@@ -102,15 +102,6 @@ export class PaymentService {
    * Returns the advance amount the agent must pay upfront.
    */
   checkAdvancePayment(request: AdvancePaymentCheckRequest): Observable<AdvancePaymentCheckResponse> {
-    if (environment.useMockData) {
-      const advanceAmount = Math.round(request.tot_amt * 0.2); // 20% advance
-      return of({
-        status: 'success',
-        advance_amount: advanceAmount,
-        advance_percentage: 20,
-      });
-    }
-
     return this.api.paymentPost<AdvancePaymentCheckResponse>(
       'payment_confirmation/advance_payment_check.php',
       {
@@ -158,14 +149,6 @@ export class PaymentService {
    * Returns a Razorpay order_id to open the payment modal.
    */
   createRazorpayOrder(request: RazorpayOrderRequest): Observable<RazorpayOrderResponse | null> {
-    if (environment.useMockData) {
-      return of({
-        order_id: 'order_mock_' + Math.random().toString(36).substring(2, 10),
-        amount: request.amount,
-        status: 'created',
-      });
-    }
-
     // Per backend team (April 2026): do NOT send encoded_amount for now —
     // it forces snapping to 25/50/100 buckets and breaks Payment Option 1
     // slider. Backend will re-enable a raw-amount path later.
@@ -206,10 +189,6 @@ export class PaymentService {
    *   3. No file uploads needed — all fields are plain strings
    */
   verifyRazorpayPayment(request: RazorpayVerifyRequest): Observable<boolean> {
-    if (environment.useMockData) {
-      return of(true);
-    }
-
     return this.api.paymentPost<any>('razor_checkhash.php', {
       razorpay_order_id: request.razorpay_order_id,
       razorpay_payment_id: request.razorpay_payment_id,
@@ -253,10 +232,6 @@ export class PaymentService {
    *   Wallet:   source=B2B_WALLET, booking_id, payment_option, transaction_id
    */
   confirmPayment(request: PaymentConfirmationRequest): Observable<boolean> {
-    if (environment.useMockData) {
-      return of(true);
-    }
-
     // Build params based on flow type (wallet vs razorpay).
     // Per backend team's April 2026 doc, BOTH wallet and razorpay flows MUST send:
     //   source, booking_id, payment_option, transaction_id, totalAmount, bufferAmount
@@ -326,10 +301,6 @@ export class PaymentService {
    * Response: {"status":"success","data":{"sentemail":"","payment_gateway":"16"}}
    */
   sendConfirmationEmail(bookingId: string): Observable<unknown> {
-    if (environment.useMockData) {
-      return of({ status: 'success', data: { sentemail: '', payment_gateway: '16' } });
-    }
-
     return this.api.partnerPostForm('email_sent', {
       booking_id: bookingId,
     }).pipe(
@@ -368,10 +339,6 @@ export class PaymentService {
     transactionId: string;
     paymentId?: string;
   }): Observable<boolean> {
-    if (environment.useMockData) {
-      return of(true);
-    }
-
     const token = this.auth.getPartnerToken() ?? '';
     const body: Record<string, any> = {
       bookingId: params.bookingId,

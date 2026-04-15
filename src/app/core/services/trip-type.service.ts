@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { tap, shareReplay, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { ErrorHandlerService } from './error-handler.service';
 import { TripType, SubTripType, TRIP_TYPE_VALUES, SUB_TRIP_TYPE_VALUES } from '../models';
-import { environment } from '../../../environments/environment';
 
 /**
  * Fetches and caches trip types and sub-trip types from the Savaari API.
@@ -28,14 +27,6 @@ export class TripTypeService {
 
   /** GET /trip-types.php */
   getTripTypes(): Observable<TripType[]> {
-    if (environment.useMockData) {
-      return of([
-        { name: 'Local', value: TRIP_TYPE_VALUES.LOCAL },
-        { name: 'Outstation', value: TRIP_TYPE_VALUES.OUTSTATION },
-        { name: 'Airport', value: TRIP_TYPE_VALUES.AIRPORT },
-      ]);
-    }
-
     if (!this.tripTypesCache$) {
       this.tripTypesCache$ = this.api.partnerGet<TripType[]>('trip-types', {
         token: this.auth.getPartnerToken(),
@@ -49,10 +40,6 @@ export class TripTypeService {
 
   /** GET /sub-trip-types.php */
   getSubTripTypes(tripType: string): Observable<SubTripType[]> {
-    if (environment.useMockData) {
-      return of(this.getMockSubTripTypes(tripType));
-    }
-
     if (!this.subTripTypesCache.has(tripType)) {
       const obs$ = this.api.partnerGet<SubTripType[]>('sub-trip-types', {
         token: this.auth.getPartnerToken(),
@@ -68,10 +55,6 @@ export class TripTypeService {
 
   /** GET /local-sub-trip-types.php */
   getLocalSubTripTypes(sourceCityId: number): Observable<SubTripType[]> {
-    if (environment.useMockData) {
-      return of(this.getMockSubTripTypes('local'));
-    }
-
     return this.api.partnerGet<SubTripType[]>('local-sub-trip-types', {
       token: this.auth.getPartnerToken(),
       sourceCity: sourceCityId,
@@ -111,26 +94,4 @@ export class TripTypeService {
     }
   }
 
-  private getMockSubTripTypes(tripType: string): SubTripType[] {
-    switch (tripType) {
-      case TRIP_TYPE_VALUES.OUTSTATION:
-        return [
-          { name: 'One Way', value: SUB_TRIP_TYPE_VALUES.ONE_WAY },
-          { name: 'Round Trip', value: SUB_TRIP_TYPE_VALUES.ROUND_TRIP },
-        ];
-      case TRIP_TYPE_VALUES.LOCAL:
-        return [
-          { name: '8 Hours / 80 KM', value: SUB_TRIP_TYPE_VALUES.LOCAL_8HR_80KM },
-          { name: '4 Hours / 40 KM', value: SUB_TRIP_TYPE_VALUES.LOCAL_4HR_40KM },
-          { name: '12 Hours / 120 KM', value: SUB_TRIP_TYPE_VALUES.LOCAL_12HR_120KM },
-        ];
-      case TRIP_TYPE_VALUES.AIRPORT:
-        return [
-          { name: 'Airport Pickup', value: SUB_TRIP_TYPE_VALUES.AIRPORT_PICKUP },
-          { name: 'Airport Drop', value: SUB_TRIP_TYPE_VALUES.AIRPORT_DROP },
-        ];
-      default:
-        return [];
-    }
-  }
 }

@@ -346,17 +346,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Save passenger details before proceeding
     this.savePassengerState();
 
-    // Mock mode: skip API calls, go straight to payment page
-    if (environment.useMockData) {
-      this.bookingId = 'MOCK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      this.advanceAmount = this.getPayNowAmount(1); // default 25%
-      this.step1Complete = true;
-      history.pushState({ step: 'payment' }, '', this.router.url);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      this.cdr.markForCheck();
-      return;
-    }
-
     // Live flow (HAR-confirmed): booking create fires on "Proceed to Next"
     // 1. Refresh partner token
     // 2. advance_payment_check → get advance amount
@@ -557,7 +546,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /** Fire advance_payment_check on page load (matches live site behavior) */
   private fireAdvancePaymentCheck(): void {
-    if (!this.itinerary || !this.selectedCar || environment.useMockData) return;
+    if (!this.itinerary || !this.selectedCar) return;
 
     const apiParams = this.tripTypeService.mapUiTabToApiParams(this.itinerary.tripType, {
       localPackage: this.itinerary.localPackage,
@@ -1083,18 +1072,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.razorpayProcessingStage = 'payment';
     this.bookingError = '';
     this.cdr.markForCheck();
-
-    // Mock mode: skip Razorpay, simulate payment success
-    if (environment.useMockData) {
-      setTimeout(() => {
-        this.isProcessingRazorpay = false;
-        this.bookingConfirmed = true;
-        this.clearPassengerState();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        this.cdr.markForCheck();
-      }, 1500);
-      return;
-    }
 
     const bkId = this.bookingId;
 
@@ -1758,21 +1735,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.topUpSuccess = false;
     this.bookingError = '';
     this.cdr.markForCheck();
-
-    // Mock mode: skip Razorpay, credit wallet directly
-    if (environment.useMockData) {
-      this.walletService.verifyTopUp('mock_order', 'mock_pay', 'mock_sig', this.topUpAmount).subscribe(success => {
-        this.isProcessingTopUp = false;
-        if (success) {
-          this.topUpSuccess = true;
-          this.topUpAmount = 0;
-          this.showTopUpConfirm = false;
-          setTimeout(() => { this.topUpSuccess = false; this.showTopUpModal = false; this.cdr.markForCheck(); }, 2000);
-        }
-        this.cdr.markForCheck();
-      });
-      return;
-    }
 
     // Step 1: Initiate top-up order on backend
     this.walletService.initiateTopUp(this.topUpAmount).subscribe({

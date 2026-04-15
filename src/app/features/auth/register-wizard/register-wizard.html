@@ -261,13 +261,6 @@
             }
 
             @if (contactPhase === 'otp') {
-              @if (showMockOtpHint) {
-                <div class="bg-cyan-50/60 dark:bg-cyan-500/5 border border-cyan-200/60 dark:border-cyan-500/20 rounded-xl p-3 text-xs text-cyan-800 dark:text-cyan-300 flex items-start gap-2">
-                  <lucide-icon name="info" [size]="14" class="mt-0.5 shrink-0"></lucide-icon>
-                  <span><strong>Demo mode:</strong> Mobile OTP is <strong>{{ MOCK_MOBILE_OTP }}</strong>, email OTP is <strong>{{ MOCK_EMAIL_OTP }}</strong>.</span>
-                </div>
-              }
-
               <!-- Mobile OTP row -->
               <div>
                 <div class="flex items-center justify-between mb-2">

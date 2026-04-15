@@ -4,6 +4,7 @@ import { environment } from '../../../environments/environment';
 import { ApiService } from './api.service';
 import { LoginRequest, LoginResponse, UserProfile, UserGst, WebTokenResponse } from '../models/auth.model';
 
+
 /**
  * Manages authentication for the Savaari B2B portal.
  *
@@ -33,20 +34,6 @@ export class AuthService {
 
   /** Full login: calls login API then fetches partner token. */
   login(email: string, password: string): Observable<UserProfile> {
-    if (environment.useMockData) {
-      const mockUser: UserProfile = {
-        user_id: 983680, email: 'mock@savaari.com', firstname: 'Mock', lastname: 'User',
-        phone: '1234567890', mobileno: '911234567890', companyname: 'Mock Corp',
-        is_agent: 1, user_type: 2, user_subtype: 1, travel_partner_type: 1,
-        user_active: 1, billingaddress: 'Mock', city: 'Bangalore', title: 'Mr.'
-      };
-      this.b2bToken = 'MOCK_B2B_TOKEN';
-      this.partnerToken = 'MOCK_PARTNER_TOKEN';
-      this.user = mockUser;
-      this.userGst = { user_id: '983680', gst_number: '27AABCU9603R1ZM', pan_number: 'AABCU9603R', company_logo: '', is_agent: '1' };
-      return of(mockUser);
-    }
-
     const body: LoginRequest = { userEmail: email, password, isAgent: true };
 
     // Beta site HAR (FLOW.md): login body is raw JSON sent as Content-Type: text/plain.
@@ -82,7 +69,6 @@ export class AuthService {
    * Content-Type: text/plain (confirmed from Postman)
    */
   autoLogin(): Observable<UserProfile | null> {
-    if (environment.useMockData) return of(this.user);
     if (!this.b2bToken || !this.user?.email) return of(null);
 
     return this.api.b2bPostRaw<LoginResponse>('user/autologin', JSON.stringify({
@@ -121,13 +107,6 @@ export class AuthService {
    * Backend emails a new password directly — no OTP, no reset link.
    */
   forgotPassword(email: string): Observable<{ success: boolean; message: string }> {
-    if (environment.useMockData) {
-      return of({
-        success: true,
-        message: 'Password has been sent to your email address (mock).',
-      });
-    }
-
     const ensureToken$: Observable<string> = this.partnerToken
       ? of(this.partnerToken)
       : this.fetchPartnerToken();
@@ -185,8 +164,6 @@ export class AuthService {
    * Also calls /date_time for server time sync (confirmed from Postman).
    */
   fetchPartnerToken(): Observable<string> {
-    if (environment.useMockData) return of('MOCK_PARTNER_TOKEN');
-
     return this.api.partnerGetNoParams<WebTokenResponse>('auth/webtoken').pipe(
       tap(resp => {
         this.partnerToken = resp.data.token;
@@ -247,19 +224,16 @@ export class AuthService {
 
   /** Get the partner API token (HMAC HS512). */
   getPartnerToken(): string | null {
-    if (environment.useMockData) return 'MOCK_PARTNER_TOKEN';
     return this.partnerToken;
   }
 
   /** Get the B2B API token (RSA RS256). */
   getB2bToken(): string | null {
-    if (environment.useMockData) return 'MOCK_B2B_TOKEN';
     return this.b2bToken;
   }
 
   /** Get the logged-in user's email. */
   getUserEmail(): string {
-    if (environment.useMockData) return 'mock@savaari.com';
     return this.user?.email ?? '';
   }
 
@@ -270,7 +244,6 @@ export class AuthService {
 
   /** Get the agent ID (numeric user_id). */
   getAgentId(): string {
-    if (environment.useMockData) return '983680';
     return String(this.user?.user_id ?? '');
   }
 
@@ -296,7 +269,6 @@ export class AuthService {
 
   /** Check if the user is authenticated (has both tokens). */
   isAuthenticated(): boolean {
-    if (environment.useMockData) return true;
     return !!this.b2bToken && !!this.partnerToken;
   }
 
@@ -317,14 +289,12 @@ export class AuthService {
   }
 
   authenticate(): Observable<string> {
-    if (environment.useMockData) return of('MOCK_PARTNER_TOKEN');
     if (this.partnerToken) return of(this.partnerToken);
     return this.fetchPartnerToken();
   }
 
   /** Load persisted tokens from localStorage on startup. */
   private loadFromStorage(): void {
-    if (environment.useMockData) return;
     try {
       this.b2bToken = localStorage.getItem(AuthService.STORAGE_B2B_TOKEN);
       this.partnerToken = localStorage.getItem(AuthService.STORAGE_PARTNER_TOKEN);

@@ -11,8 +11,6 @@ import {
   CancelBookingResponse,
   BookingDetails,
 } from '../models';
-import { environment } from '../../../environments/environment';
-import { MOCK_BOOKING_DETAILS, MOCK_BOOKINGS_LIST } from '../mocks/mock-bookings';
 
 /**
  * Handles booking operations with the Savaari API.
@@ -42,11 +40,6 @@ export class BookingApiService {
    * Immediately followed by update_invoice_payer_info with agent details.
    */
   createBooking(request: CreateBookingRequest): Observable<CreateBookingResponse> {
-    if (environment.useMockData) {
-      const mockId = 'MOCK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      return of({ bookingId: mockId, booking_id: mockId, status: 'confirmed', message: 'Mock booking created' });
-    }
-
     const token: string = this.auth.getPartnerToken() ?? '';
 
     // Build form body with all required fields
@@ -175,10 +168,6 @@ export class BookingApiService {
    * Called after successful booking if any VAS options were selected.
    */
   updateVasBooking(bookingId: string, options: { luggageCarrier?: boolean; languageDriver?: boolean }): Observable<unknown> {
-    if (environment.useMockData) {
-      return of({ status: 'success', message: 'Mock VAS updated' });
-    }
-
     const token: string = this.auth.getPartnerToken() ?? '';
     return this.api.partnerPostForm('vas_booking_update', {
       booking_id: bookingId,
@@ -217,16 +206,6 @@ export class BookingApiService {
     comments: string = '',
     bookingKey: string = ''
   ): Observable<CancelBookingResponse> {
-    if (environment.useMockData) {
-      return of({
-        status: 'cancelled',
-        status_code: 101,
-        status_description: 'SUCCESS',
-        reservation_id: reservationId,
-        message: 'Mock booking cancelled'
-      });
-    }
-
     return this.api.systemBookingsPostForm<any>('cancellation.php', {
       booking_id: bookingId,
       reservation_id: reservationId,
@@ -258,10 +237,6 @@ export class BookingApiService {
    * Confirmed from Postman: called after successful booking + payment.
    */
   sendBookingEmail(bookingId: string): Observable<unknown> {
-    if (environment.useMockData) {
-      return of({ status: 'success', message: 'Mock email sent' });
-    }
-
     return this.api.partnerPostForm('email_sent', {
       booking_id: bookingId,
     }).pipe(
@@ -288,10 +263,6 @@ export class BookingApiService {
    *   pick_loc, trip_type, customer_name, car_name, driver_details, etc.
    */
   getAllBookings(): Observable<BookingDetails[]> {
-    if (environment.useMockData) {
-      return of(MOCK_BOOKINGS_LIST);
-    }
-
     return this.api.b2bGet<any>('booking-details', {
       userEmail: this.auth.getUserEmail(),
       token: this.auth.getB2bToken(),
@@ -314,10 +285,6 @@ export class BookingApiService {
    * Filters from the getAllBookings response.
    */
   getBookingDetails(bookingId: string): Observable<BookingDetails> {
-    if (environment.useMockData) {
-      return of({ ...MOCK_BOOKING_DETAILS, bookingId });
-    }
-
     return this.api.b2bGet<any>('booking-details', {
       userEmail: this.auth.getUserEmail(),
       token: this.auth.getB2bToken(),

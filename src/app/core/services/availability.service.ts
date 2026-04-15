@@ -1,12 +1,10 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, map } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { ErrorHandlerService } from './error-handler.service';
 import { AvailabilityRequest, AvailabilityResponse, RawAvailabilityResponse, RawAvailableCar, AvailableCar } from '../models';
-import { environment } from '../../../environments/environment';
-import { MOCK_AVAILABILITY_RESPONSE } from '../mocks/mock-cars';
 
 /**
  * Checks cab availability for a given itinerary.
@@ -26,10 +24,6 @@ export class AvailabilityService {
   ) {}
 
   checkAvailability(request: AvailabilityRequest): Observable<AvailabilityResponse> {
-    if (environment.useMockData) {
-      return of(MOCK_AVAILABILITY_RESPONSE);
-    }
-
     const isOutstation = request.tripType === 'outstation';
     const isLocal = request.tripType === 'local';
     const isAirport = request.tripType === 'airport';

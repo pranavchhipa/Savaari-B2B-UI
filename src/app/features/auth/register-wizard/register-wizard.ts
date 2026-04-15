@@ -4,12 +4,7 @@ import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validat
 import { Router, RouterLink } from '@angular/router';
 import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { LucideAngularModule } from 'lucide-angular';
-import { environment } from '../../../../environments/environment';
-import {
-  RegistrationService,
-  MOCK_MOBILE_OTP,
-  MOCK_EMAIL_OTP,
-} from '../../../core/services/registration.service';
+import { RegistrationService } from '../../../core/services/registration.service';
 import { AddressAutocompleteService, AddressSuggestion } from '../../../core/services/address-autocomplete.service';
 
 /** localStorage key shared with login page so it can pre-fill the freshly-registered email/password */
@@ -32,10 +27,9 @@ const WIZARD_STATE_KEY = 'b2bcab.registerWizardState';
  *   Step 5 — Company (name + address; locked if auto-filled from GST)
  *   Step 6 — Password (+ confirm)
  *
- * All API calls go through RegistrationService which handles the alpha-hosted
- * registration endpoints (GST, OTP, register) with graceful fallback to mock
- * responses when the endpoints are unreachable — so the wizard stays fully
- * testable during development even before the backend ships the OTP endpoints.
+ * All API calls go through RegistrationService which hits the alpha-hosted
+ * registration endpoints (GST, OTP, register). Failures surface as user-facing
+ * errors — no mock fallbacks.
  */
 type StepKey = 'name' | 'contact' | 'gst' | 'pan' | 'company' | 'password';
 
@@ -53,15 +47,6 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private registrationService = inject(RegistrationService);
   private addressAutocomplete = inject(AddressAutocompleteService);
-
-  /**
-   * Mock OTPs exposed to the template for the "Demo mode" hint banner.
-   * Only shown when `environment.useMockData` is true (i.e. Vercel demo).
-   * Real dev / alpha get real OTPs from the backend.
-   */
-  readonly MOCK_MOBILE_OTP = MOCK_MOBILE_OTP;
-  readonly MOCK_EMAIL_OTP = MOCK_EMAIL_OTP;
-  readonly showMockOtpHint = environment.useMockData;
 
   readonly STEP_ORDER: StepKey[] = ['name', 'contact', 'gst', 'pan', 'company', 'password'];
   currentStep: StepKey = 'name';

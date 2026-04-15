@@ -11,7 +11,6 @@ import { AnalyticsService } from '../../core/services/analytics.service';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { TripTypeService } from '../../core/services/trip-type.service';
 import { AvailableCar, AvailabilityRequest, City } from '../../core/models';
-import { CAR_DISPLAY_INFO } from '../../core/mocks/mock-cars';
 import { CityService } from '../../core/services/city.service';
 import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
 import { AddressAutocompleteService } from '../../core/services/address-autocomplete.service';
@@ -206,7 +205,7 @@ export class SelectCarComponent implements OnInit {
       seats,
       bags,
       ac: 'AC',
-      type: car.carType || CAR_DISPLAY_INFO[typeId]?.type || 'SEDAN',
+      type: car.carType || 'SEDAN',
       extraKmRate: extraKm,
       nightAllowance: nightAllow,
       packageId: car.packageId ? String(car.packageId) : undefined,

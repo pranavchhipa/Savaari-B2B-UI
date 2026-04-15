@@ -15,8 +15,7 @@ import { environment } from '../../../environments/environment';
  *   5. POST /partner_api/public/otp/email/verify              — Verify email OTP (6-digit)
  *   6. POST /b2b-api/user (multipart)                         — Register account
  *
- * Mock mode (environment.useMockData === true) returns hardcoded responses
- * for Vercel demo only. Real API failures surface as user-facing errors.
+ * API failures surface as user-facing errors via the standard error handler.
  */
 
 // ─── Response types ────────────────────────────────────────────────────────
@@ -74,13 +73,6 @@ export interface RegisterResult {
   errorCode?: string;
 }
 
-// ─── Mock constants (Vercel demo only — shown in hint banner) ──────────────
-
-/** Mock OTPs — only used when environment.useMockData is true (Vercel demo). */
-export const MOCK_MOBILE_OTP = '123456';
-export const MOCK_EMAIL_OTP = '567890';
-
-
 @Injectable({ providedIn: 'root' })
 export class RegistrationService {
   private api = inject(ApiService);
@@ -98,18 +90,6 @@ export class RegistrationService {
    * error or fall back to manual entry.
    */
   verifyGst(gstNumber: string): Observable<GstVerificationResult> {
-    if (environment.useMockData) {
-      const pan = this.derivePanFromGst(gstNumber);
-      return of({
-        success: true,
-        legalName: 'DEMO COMPANY',
-        businessName: 'DEMO COMPANY',
-        panNumber: pan || 'AAACX1234F',
-        address: 'Demo Address, Bangalore',
-        gstinStatus: 'Active',
-      });
-    }
-
     return this.api.regPostForm<any>('general/gst_verification.php', { gstNumber }).pipe(
       map(response => {
         if (response?.status === true && response?.data?.fields) {
@@ -159,10 +139,6 @@ export class RegistrationService {
    * POST /otp/email/send  { email }      @noauth
    */
   sendOtps(mobile: string, email: string): Observable<SendOtpResult> {
-    if (environment.useMockData) {
-      return of(this.mockSendOtpSuccess());
-    }
-
     const sms$ = this.api.regPostForm<any>('partner_api/public/otp/sms/send', { mobile }).pipe(
       map(res => this.parseSendResponse(res)),
       catchError(err => of({ ok: false, error: this.extractErrorMsg(err) }))
@@ -186,7 +162,7 @@ export class RegistrationService {
           } as SendOtpResult;
         }
         // Mobile sent — proceed even if email failed
-        const result = this.mockSendOtpSuccess();
+        const result = this.buildSendOtpSuccess();
         result.mobileOtpSent = true;
         result.emailOtpSent = emailRes.ok;
         return result;
@@ -200,10 +176,6 @@ export class RegistrationService {
 
   /** Resend OTP for a single channel (5/day rate limit per backend spec). */
   resendOtp(channel: 'mobile' | 'email', contact: string): Observable<SendOtpResult> {
-    if (environment.useMockData) {
-      return of(this.mockSendOtpSuccess());
-    }
-
     const endpoint = channel === 'mobile' ? 'partner_api/public/otp/sms/send' : 'partner_api/public/otp/email/send';
     const body: Record<string, string> = {};
     if (channel === 'mobile') body['mobile'] = contact;
@@ -213,7 +185,7 @@ export class RegistrationService {
       map(res => {
         const parsed = this.parseSendResponse(res);
         if (!parsed.ok) return { success: false, mobileOtpSent: false, emailOtpSent: false, expiresInSeconds: 0, errorMessage: parsed.error } as SendOtpResult;
-        return this.mockSendOtpSuccess();
+        return this.buildSendOtpSuccess();
       }),
       catchError(err => of({
         success: false,
@@ -238,10 +210,6 @@ export class RegistrationService {
    * No verificationToken returned — backend records status in DB.
    */
   verifyOtp(channel: 'mobile' | 'email', contact: string, otp: string): Observable<VerifyOtpResult> {
-    if (environment.useMockData) {
-      return of(this.mockVerifyOtp(channel, otp));
-    }
-
     const endpoint = channel === 'mobile' ? 'partner_api/public/otp/sms/verify' : 'partner_api/public/otp/email/verify';
     const body: Record<string, string> = { otp };
     if (channel === 'mobile') body['mobile'] = contact;
@@ -288,14 +256,6 @@ export class RegistrationService {
    * and the registration will still succeed based on the current validation.
    */
   registerAccount(payload: RegisterPayload): Observable<RegisterResult> {
-    if (environment.useMockData) {
-      return of({
-        success: true,
-        userId: 983680,
-        message: 'Account created (mock)',
-      });
-    }
-
     // Use application/x-www-form-urlencoded (NOT multipart/form-data).
     // Alpha's PHP proxy reads the body via php://input; multipart is auto-parsed
     // by PHP into $_POST and php://input returns empty — body never reaches
@@ -393,30 +353,14 @@ export class RegistrationService {
     return err?.message || 'Something went wrong. Please try again.';
   }
 
-  private mockSendOtpSuccess(): SendOtpResult {
+  /** Build a SendOtpResult representing a successful send (used by both
+   *  bulk and resend paths once the underlying API call succeeds). */
+  private buildSendOtpSuccess(): SendOtpResult {
     return {
       success: true,
       mobileOtpSent: true,
       emailOtpSent: true,
       expiresInSeconds: 300, // 5 minutes per backend spec
     };
-  }
-
-  private mockVerifyOtp(channel: 'mobile' | 'email', otp: string): VerifyOtpResult {
-    const expected = channel === 'mobile' ? MOCK_MOBILE_OTP : MOCK_EMAIL_OTP;
-    if (otp === expected) {
-      return { success: true, verified: true };
-    }
-    return { success: false, verified: false, errorMessage: 'Invalid OTP' };
-  }
-
-  /**
-   * Extract PAN from GSTIN as a fallback when we don't have a real response.
-   * GSTIN format: SSPPPPPPPPPPZEC where characters 3-12 are the PAN.
-   */
-  private derivePanFromGst(gst: string): string {
-    if (!gst || gst.length < 15) return '';
-    const pan = gst.substring(2, 12).toUpperCase();
-    return /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan) ? pan : '';
   }
 }

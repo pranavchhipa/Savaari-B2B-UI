@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
@@ -7,10 +7,6 @@ import { ErrorHandlerService } from './error-handler.service';
 import {
   ReportDetailedEntry,
 } from '../models';
-import { environment } from '../../../environments/environment';
-import {
-  MOCK_REPORT_DETAILED,
-} from '../mocks/mock-reports';
 
 /**
  * Fetches booking reports from the Savaari B2B API.
@@ -51,7 +47,6 @@ export class ReportApiService {
    * Dates must be Unix timestamps in seconds.
    */
   getReport(fromDate: number, toDate: number): Observable<ReportDetailedEntry[]> {
-    if (environment.useMockData) return of(MOCK_REPORT_DETAILED);
     return this.api.b2bGet<any>(
       'booking-details-report', this.reportParams(fromDate, toDate)
     ).pipe(

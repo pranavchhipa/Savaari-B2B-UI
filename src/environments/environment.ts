@@ -9,9 +9,6 @@
 export const environment = {
   production: false,
 
-  /** Master safety switch — true = all services return mock data */
-  useMockData: false,
-
   /** Partner API: cities, availability (proxied to api.betasavaari.com) */
   partnerApiBaseUrl: '/partner-api',
 
