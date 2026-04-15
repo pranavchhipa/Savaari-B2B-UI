@@ -848,8 +848,39 @@ export class BookingsComponent implements OnInit {
         }
 
         // Resolve route information — API only.
-        const sourceCity = b.pick_city || b.source_city || b.sourceCity || '';
-        const destinationCity = b.drop_city || b.destination_city || b.destinationCity || '';
+        const sourceCity = b.pick_city || b.source_city || b.sourceCity || b.from_city || b.fromCity || '';
+        let destinationCity = b.drop_city || b.destination_city || b.destinationCity
+            || b.to_city || b.toCity || b.end_city || b.endCity || '';
+
+        // Some /booking-details rows omit drop_city entirely for outstation
+        // bookings (observed April 2026: one-way Mumbai→Bangalore returned
+        // pick_city="Mumbai, Maharashtra" and drop_city=""). The itinerary
+        // string does contain both cities, so parse it as a last-resort
+        // fallback before the route line collapses to just the source.
+        //
+        // itinerary formats seen on the B2B backend:
+        //   "Mumbai, Maharashtra → Bangalore, Karnataka"
+        //   "Mumbai, Maharashtra - Bangalore, Karnataka"
+        //   "Mumbai to Bangalore"
+        //   "Mumbai → Pune → Bangalore"  (multi-stop; last segment is final dest)
+        if (!destinationCity && itinerary) {
+            // Strip source prefix if present, then split on the first route
+            // arrow / dash / "to" token. Keep the LAST non-empty segment as
+            // the destination so multi-stop itineraries still resolve the
+            // final city, not the first intermediate.
+            const cleaned = itinerary.replace(/\s+/g, ' ').trim();
+            const segments: string[] = cleaned.split(/\s*(?:→|->|-->|\u2192|\sto\s|\s-\s|\s>\s)\s*/i)
+                .map((s: string) => s.trim()).filter((s: string) => !!s);
+            if (segments.length >= 2) {
+                const last = segments[segments.length - 1];
+                // Avoid picking up the source city if the itinerary was just
+                // "Mumbai → Mumbai" (round trip without stops — shouldn't
+                // hit this branch, but defensive).
+                if (last && last.toLowerCase() !== sourceCity.toLowerCase()) {
+                    destinationCity = last;
+                }
+            }
+        }
 
         // Trip-type detection — backend uses several names interchangeably
         const tripTypeRaw = (b.trip_type || b.tripType || '').toString().toLowerCase();
