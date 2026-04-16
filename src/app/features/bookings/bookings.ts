@@ -1443,49 +1443,63 @@ export class BookingsComponent implements OnInit {
             return;
         }
 
-        // Razorpay settlement — open Razorpay modal
+        // Razorpay settlement — uses payment API (razor_createorder + razor_checkhash)
+        // NOT wallet APIs. The wallet topup endpoints credit money INTO the wallet,
+        // which is wrong for settlement — we want Razorpay to pay the booking directly.
         if (this.settlePaymentMethod === 'razorpay') {
-            this.walletService.createBookingOrder(amount).subscribe({
-                next: (order) => {
-                    if (!order || !order.orderId) {
+            const savaariPayId = this.paymentService.generateSavaariPaymentId(booking.bookingId);
+            this.paymentService.createRazorpayOrder({
+                amount,
+                savaari_payment_id: savaariPayId,
+            }).subscribe({
+                next: (orderResp) => {
+                    const razorpayOrderId = orderResp?.razorpay_order_id || orderResp?.order_id || '';
+                    if (!orderResp || !razorpayOrderId) {
                         onError();
                         return;
                     }
-                    // Razorpay key: prefer server-supplied (lets backend rotate without
-                    // redeploy), fall back to the imported environment value. The old
-                    // `window.environment` lookup was a no-op — the env is never attached
-                    // to window, so the fallback silently collapsed to '' and the SDK
-                    // threw "Authentication key was missing". Mirrors the wallet top-up
-                    // pattern at line 263 which has always worked.
-                    const razorpayKey = order.razorpayKeyId || environment.razorpayKeyId;
                     const options: any = {
-                        key: razorpayKey,
-                        amount: order.amount,
-                        currency: order.currency || 'INR',
+                        key: environment.razorpayKeyId,
+                        amount: amount * 100, // Razorpay expects paise
+                        currency: 'INR',
                         name: environment.brandName,
                         description: `Settle Booking #${booking.bookingId} — ₹${amount}`,
-                        order_id: order.orderId,
+                        order_id: razorpayOrderId,
                         handler: (response: any) => {
                             const rzpPaymentId = response.razorpay_payment_id || '';
-                            const rzpOrderId = response.razorpay_order_id || '';
-                            this.walletService.verifyBookingPayment(
-                                rzpOrderId,
-                                rzpPaymentId,
-                                response.razorpay_signature,
-                                amount,
-                                booking.bookingId
-                            ).subscribe({
-                                // Per B2B Settlement Payment API doc (April 2026):
-                                // settlement-payment's `transactionId` must be the razorpay
-                                // ORDER id (not payment id). `paymentId` carries the payment id.
-                                // confirmation.php still takes payment id (unchanged — matches
-                                // new-booking flow in booking.ts).
-                                next: () => setTimeout(() => onSuccess({
-                                    paymentMethod: 'Razorpay',
-                                    confirmationTxnId: rzpPaymentId,
-                                    settlementTxnId: rzpOrderId,
-                                    paymentId: rzpPaymentId,
-                                }), 800),
+                            const rzpOrderId = response.razorpay_order_id || razorpayOrderId;
+                            const rzpSignature = response.razorpay_signature || '';
+
+                            if (!rzpPaymentId || !rzpOrderId || !rzpSignature) {
+                                this.settleProcessing = false;
+                                this.settleError = 'Payment response incomplete. Please contact support.';
+                                this.cdr.markForCheck();
+                                return;
+                            }
+
+                            // Verify payment via razor_checkhash (NOT wallet verify)
+                            this.paymentService.verifyRazorpayPayment({
+                                razorpay_order_id: rzpOrderId,
+                                razorpay_payment_id: rzpPaymentId,
+                                razorpay_signature: rzpSignature,
+                                savaari_pay_id: savaariPayId,
+                                selectedAmount: amount,
+                            }).subscribe({
+                                next: (verified) => {
+                                    if (!verified) {
+                                        this.settleProcessing = false;
+                                        this.settleError = 'Payment verification failed. Contact support with payment ID: ' + rzpPaymentId;
+                                        this.cdr.markForCheck();
+                                        return;
+                                    }
+                                    // Verified — proceed to confirmation + settlement APIs
+                                    setTimeout(() => onSuccess({
+                                        paymentMethod: 'Razorpay',
+                                        confirmationTxnId: rzpPaymentId,
+                                        settlementTxnId: rzpOrderId,
+                                        paymentId: rzpPaymentId,
+                                    }), 800);
+                                },
                                 error: () => onError()
                             });
                         },
