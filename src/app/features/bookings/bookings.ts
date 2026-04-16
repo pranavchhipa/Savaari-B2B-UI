@@ -122,6 +122,7 @@ export class BookingsComponent implements OnInit {
     settleConfirmStep = false;
     settleProcessing = false;
     settlePaymentMethod: 'wallet' | 'razorpay' = 'wallet';
+    settleError = '';
 
     // Cancel modal — reasons match the live b2bcab.in portal (April 2026 HAR).
     cancelModalBooking: BookingCard | null = null;
@@ -1307,6 +1308,7 @@ export class BookingsComponent implements OnInit {
     openSettlePanel(booking: BookingCard) {
         this.expandedBookingId = booking.bookingId;
         this.settleBookingId = booking.bookingId;
+        this.settleError = '';
         this.cdr.markForCheck();
     }
 
@@ -1363,6 +1365,7 @@ export class BookingsComponent implements OnInit {
             } as any).subscribe({
                 next: () => {
                     // Step 2: settlement-payment — sets pay_bal_amt=0, payment_status='Pre Paid'
+                    // Wait for response before updating UI to prevent false "settled" state
                     this.paymentService.settlementPayment({
                         bookingId: booking.bookingId,
                         paymentAmount: amount,
@@ -1372,29 +1375,48 @@ export class BookingsComponent implements OnInit {
                     }).subscribe({
                         next: (settled) => {
                             if (!environment.production) console.log('[BOOKINGS] Settlement API result:', settled);
+                            // Only update UI after backend confirms settlement
+                            booking.prePayment = (booking.prePayment || 0) + amount;
+                            booking.cashToCollect = 0;
+                            this.settleProcessing = false;
+                            this.settleBookingId = null;
+                            this.settledBookingId = booking.bookingId;
+                            this.settlePaymentMethod = 'wallet';
+                            this.updateCalendarWithBookings();
+                            this.cdr.markForCheck();
+                            setTimeout(() => { this.settledBookingId = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
                         },
                         error: (err) => {
                             if (!environment.production) console.warn('[BOOKINGS] settlement-payment API error:', err);
+                            // Settlement failed — refund wallet and show error
+                            if (params.paymentMethod === 'Wallet') {
+                                this.walletService.refundBooking(booking.bookingId, amount).subscribe({
+                                    next: () => { if (!environment.production) console.log('[BOOKINGS] Wallet refunded after settlement failure'); },
+                                    error: (refundErr) => { if (!environment.production) console.warn('[BOOKINGS] Wallet refund failed:', refundErr); },
+                                });
+                            }
+                            this.settleProcessing = false;
+                            this.settleBookingId = null;
+                            this.settleError = 'Settlement could not be completed. Amount has been refunded to your wallet.';
+                            this.cdr.markForCheck();
                         },
                     });
                 },
                 error: (err) => {
                     if (!environment.production) console.warn('[BOOKINGS] confirmation.php error:', err);
+                    // confirmation.php failed — refund wallet and show error
+                    if (params.paymentMethod === 'Wallet') {
+                        this.walletService.refundBooking(booking.bookingId, amount).subscribe({
+                            next: () => { if (!environment.production) console.log('[BOOKINGS] Wallet refunded after confirmation failure'); },
+                            error: (refundErr) => { if (!environment.production) console.warn('[BOOKINGS] Wallet refund failed:', refundErr); },
+                        });
+                    }
+                    this.settleProcessing = false;
+                    this.settleBookingId = null;
+                    this.settleError = 'Settlement confirmation failed. Amount has been refunded to your wallet.';
+                    this.cdr.markForCheck();
                 },
             });
-
-            // Update UI immediately (don't block on API calls)
-            // Note: settlement persistence is handled by the backend (confirmation.php + settlement-payment API);
-            // on next reload, toBookingCard() re-derives prePayment from the API response.
-            booking.prePayment = (booking.prePayment || 0) + amount;
-            booking.cashToCollect = 0;
-            this.settleProcessing = false;
-            this.settleBookingId = null;
-            this.settledBookingId = booking.bookingId;
-            this.settlePaymentMethod = 'wallet'; // Reset for next settle
-            this.updateCalendarWithBookings();
-            this.cdr.markForCheck();
-            setTimeout(() => { this.settledBookingId = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
         };
 
         const onError = () => {

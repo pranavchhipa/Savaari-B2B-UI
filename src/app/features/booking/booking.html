@@ -1441,7 +1441,7 @@
         <!-- Stage message -->
         <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-1.5">
             <ng-container *ngIf="confirmationStage === 'deducting'">Deducting from Wallet...</ng-container>
-            <ng-container *ngIf="confirmationStage === 'verifying'">Verifying Payment...</ng-container>
+            <ng-container *ngIf="confirmationStage === 'verifying'">Verifying Booking...</ng-container>
             <ng-container *ngIf="confirmationStage === 'confirming'">Confirming Your Booking...</ng-container>
             <ng-container *ngIf="confirmationStage === 'finalizing'">Almost Done...</ng-container>
         </h2>
@@ -1449,7 +1449,7 @@
         <!-- Sub-message -->
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">
             <ng-container *ngIf="confirmationStage === 'deducting'">Processing wallet deduction</ng-container>
-            <ng-container *ngIf="confirmationStage === 'verifying'">Verifying payment with bank</ng-container>
+            <ng-container *ngIf="confirmationStage === 'verifying'">Checking booking with server before payment</ng-container>
             <ng-container *ngIf="confirmationStage === 'confirming'">Recording payment in system — this may take a few seconds</ng-container>
             <ng-container *ngIf="confirmationStage === 'finalizing'">Preparing your booking confirmation</ng-container>
         </p>

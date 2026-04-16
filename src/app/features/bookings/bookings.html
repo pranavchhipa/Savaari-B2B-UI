@@ -587,6 +587,12 @@
                             <span class="text-slate-400 text-[10px]">After payment: ₹{{ (walletBalance - getBalanceDue(booking)) | number:'1.0-0' }}</span>
                         </div>
 
+                        <!-- Settlement error -->
+                        <div *ngIf="settleError" class="flex items-center gap-2 py-2 px-3 bg-red-50 dark:bg-red-900/20 rounded-lg mb-2">
+                            <lucide-icon name="alert-triangle" [size]="14" class="text-red-500 flex-shrink-0"></lucide-icon>
+                            <span class="text-xs font-medium text-red-600 dark:text-red-400">{{ settleError }}</span>
+                        </div>
+
                         <!-- Processing spinner -->
                         <div *ngIf="settleProcessing" class="flex items-center justify-center gap-2 py-2">
                             <lucide-icon name="loader-2" [size]="14" class="text-primary animate-spin"></lucide-icon>

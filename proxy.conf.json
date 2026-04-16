@@ -1,18 +1,18 @@
 {
   "/payment-api": {
-    "target": "https://b2bcab.alphasavaari.com",
+    "target": "https://b2bcab.betasavaari.com",
     "secure": true,
     "changeOrigin": true,
     "logLevel": "debug"
   },
   "/payment_confirmation": {
-    "target": "https://b2bcab.alphasavaari.com",
+    "target": "https://b2bcab.betasavaari.com",
     "secure": true,
     "changeOrigin": true,
     "logLevel": "debug"
   },
   "/razor_": {
-    "target": "https://b2bcab.alphasavaari.com",
+    "target": "https://b2bcab.betasavaari.com",
     "secure": true,
     "changeOrigin": true,
     "logLevel": "debug"
@@ -39,7 +39,7 @@
     "logLevel": "debug"
   },
   "/wallet-api": {
-    "target": "https://apiext.alphasavaari.com/wallet/public",
+    "target": "https://apiext.betasavaari.com/wallet/public",
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": { "^/wallet-api": "" },
@@ -60,14 +60,14 @@
     "logLevel": "debug"
   },
   "/reg-api": {
-    "target": "https://api.alphasavaari.com",
+    "target": "https://api.betasavaari.com",
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": { "^/reg-api": "" },
     "logLevel": "debug"
   },
   "/settlement-api": {
-    "target": "https://api.alphasavaari.com/partner_api/public",
+    "target": "https://api.betasavaari.com/partner_api/public",
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": { "^/settlement-api": "" },

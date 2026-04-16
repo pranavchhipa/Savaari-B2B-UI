@@ -1048,21 +1048,64 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       return;
     }
 
+    if (!this.bookingId) {
+      this.bookingError = 'No booking found. Please go back and try again.';
+      this.cdr.markForCheck();
+      return;
+    }
+
     const payNow = this.getPayNowAmount();
 
-    if (this.paymentMethod === 'razorpay') {
-      // Booking already created on "Proceed to Next" — just handle Razorpay payment
-      this.processRazorpayPayment(payNow);
-    } else {
-      // Wallet payment — booking already created, just deduct wallet
+    // Wallet balance check (early — before hitting server)
+    if (this.paymentMethod === 'wallet') {
       const currentBalance = this.walletService.getCurrentBalance();
       if (payNow > 0 && currentBalance < payNow) {
         this.bookingError = `Insufficient wallet balance. You need ₹${payNow.toLocaleString('en-IN')} but have ₹${currentBalance.toLocaleString('en-IN')}. Please top up your wallet or switch to Razorpay.`;
         this.cdr.markForCheck();
         return;
       }
-      this.processWalletPayment(payNow);
     }
+
+    // Safety: verify booking exists on server BEFORE any money is deducted.
+    // This prevents wallet deduction for bookings that weren't actually created
+    // (e.g. when backend servers are misconfigured or API returned a fake ID).
+    this.isConfirmingPayment = true;
+    this.confirmationStage = 'verifying';
+    this.confirmationPaidAmount = payNow;
+    this.confirmationPaidVia = this.paymentMethod;
+    this.cdr.markForCheck();
+
+    this.bookingApi.getBookingDetails(this.bookingId).subscribe({
+      next: (booking) => {
+        const foundId = booking?.bookingId || (booking as any)?.booking_id || '';
+        if (!foundId) {
+          this.isConfirmingPayment = false;
+          this.bookingError = 'Booking could not be verified on the server. Payment was not processed. Please try again or contact support.';
+          this.cdr.markForCheck();
+          return;
+        }
+
+        if (!environment.production) {
+          console.log('[BOOKING] Pre-payment verification passed. Booking', foundId, 'exists on server.');
+        }
+
+        // Booking verified — proceed with payment
+        if (this.paymentMethod === 'razorpay') {
+          this.isConfirmingPayment = false;
+          this.cdr.markForCheck();
+          this.processRazorpayPayment(payNow);
+        } else {
+          this.isConfirmingPayment = false;
+          this.cdr.markForCheck();
+          this.processWalletPayment(payNow);
+        }
+      },
+      error: () => {
+        this.isConfirmingPayment = false;
+        this.bookingError = 'Could not verify booking on the server. Payment was not processed. Please check your connection and try again.';
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   /**
