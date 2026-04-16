@@ -58,6 +58,7 @@ export interface BookingCard {
     paymentMethod?: string;
     paymentOption?: number;
     paidVia?: string; // 'wallet' or 'razorpay'
+    bufferAmount?: number;
     // Trip details
     kmsIncluded?: string;
     duration?: number;
@@ -811,20 +812,16 @@ export class BookingsComponent implements OnInit {
 
         // Payment plan derivation.
         //
-        // /booking-details does not return an explicit `payment_option` field
-        // (verified from live beta response, April 2026 — the row exposes
-        // `pay_now_amt`, `pay_bal_amt`, `cashtocollect`, `gross_amount` and
-        // nothing else that maps to the UI's three payment plans).
+        // Backend returns `payment_option` ("1"/"2"/"3"),
+        // `payment_method` ("razorpay"/"wallet"), and `buffer_amount`
+        // directly in the /booking-details response (added April 2026).
         //
-        // We infer the plan from the ratio of what the agent has already paid
-        // to the total fare:
-        //   ratio ≥ 0.99   → Option 3 (Zero Cash — full wallet upfront)
-        //   0.20 ≤ r ≤ 0.35 → Option 2 (Pay 25% now, rest auto-deduct)
-        //   0 < r < 0.20    → Option 1 (Pay Any Amount Now — custom %)
-        //   r === 0         → unpaid / potential (leave option = 0)
-        //
-        // If a backend revision later surfaces `payment_option` directly we
-        // honour it over the ratio heuristic.
+        // When `payment_option` is present, we use it directly.
+        // Fallback heuristic (for older bookings without the field):
+        //   ratio ≥ 0.99 + cash=0         → Option 3 (Zero Cash)
+        //   pay_bal > 0                    → Option 2 (Pay 25% now, rest auto)
+        //   paid > 0 + cash > 0 + bal = 0  → Option 1 (Pay Any Amount Now)
+        //   all 0                          → unpaid (leave option = 0)
         let paymentMethod = '';
         let paymentOption = 0;
         const explicitOpt = b.payment_option || b.paymentOption || b.prePaymentType || '';
@@ -832,7 +829,9 @@ export class BookingsComponent implements OnInit {
         else if (explicitOpt === '2' || explicitOpt === 2) { paymentMethod = 'Pay 25% Now, Rest Auto-Deducted'; paymentOption = 2; }
         else if (explicitOpt === '3' || explicitOpt === 3) { paymentMethod = 'Zero Cash'; paymentOption = 3; }
 
-        const paidVia = String(b.paidVia || b.paid_via || '').toLowerCase();
+        // payment_method from backend: "razorpay" or "wallet"
+        const paidVia = String(b.payment_method || b.paidVia || b.paid_via || '').toLowerCase();
+        const bufferAmount = parseFloat(b.buffer_amount ?? b.bufferAmount) || 0;
 
         let pickupCountdown = '';
         if (pickupDate && status !== 'completed' && status !== 'cancelled') {
@@ -1057,6 +1056,7 @@ export class BookingsComponent implements OnInit {
             paymentMethod,
             paymentOption,
             paidVia,
+            bufferAmount,
             kmsIncluded: b.package_kms || b.min_km_quota_per_day || b.kms_included || b.kmsIncluded || '',
             duration: parseInt(b.duration) || 0,
             extraKmRate: parseFloat(b.extra_km_rate || b.extraKmRate) || 0,
