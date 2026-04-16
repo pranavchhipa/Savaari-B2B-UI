@@ -49,6 +49,10 @@ Thumbs.db
 *.secret
 *.credentials
 
+# Alpha server files — NEVER push to any remote
+proxy.php
+.htaccess
+
 # Claude Code / AI tooling
 .claude/
 .agents/
