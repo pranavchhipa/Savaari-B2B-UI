@@ -502,6 +502,13 @@
                                         </ng-container>
                                     </span>
                                 </div>
+                                <div *ngIf="booking.paymentOption === 3 && booking.bufferAmount" class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Buffer Deposit</span>
+                                    <span class="font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1">
+                                        ₹{{ booking.bufferAmount | number:'1.0-0' }}
+                                        <span class="text-[9px] text-slate-400 font-normal">(refundable)</span>
+                                    </span>
+                                </div>
                                 <div *ngIf="getBalanceDue(booking) > 0" class="flex justify-between">
                                     <span class="text-amber-500 font-semibold">Balance Due</span>
                                     <span class="font-bold text-amber-600">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
