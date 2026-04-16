@@ -9,7 +9,7 @@ import { environment } from '../../../environments/environment';
  *
  * API: POST /analytics-api/analytics_data?token=<SavaariToken>
  * Content-Type: application/x-www-form-urlencoded
- * Body: s_id=<sessionId>&event_name=<name>&event_data=<plain JSON>
+ * Body: session_id=<sessionId>&event_name=<name>&event_data=<plain JSON>
  *
  * Per backend team guidance (April 2026):
  *   - event_data is sent as plain JSON (NOT base64-encoded).
@@ -54,7 +54,7 @@ export class AnalyticsService {
       if (utm_campaign) enriched['utm_campaign'] = utm_campaign;
 
       const body = new URLSearchParams();
-      body.set('s_id', this.getSessionId());
+      body.set('session_id', this.getSessionId());
       body.set('event_name', eventName);
       // Per backend team (April 2026): event_data is sent as PLAIN JSON, NOT
       // base64-encoded. Previously we wrapped this in btoa(...) to match the
