@@ -3,6 +3,7 @@
     "target": "https://b2bcab.betasavaari.com",
     "secure": true,
     "changeOrigin": true,
+    "pathRewrite": { "^/payment-api": "" },
     "logLevel": "debug"
   },
   "/payment_confirmation": {

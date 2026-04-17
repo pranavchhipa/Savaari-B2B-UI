@@ -1343,6 +1343,15 @@ export class BookingsComponent implements OnInit {
          *   - settlement-payment wants `transactionId` = razorpay ORDER id
          *     and `paymentId` = razorpay PAYMENT id.
          * For Wallet both IDs collapse to the single wallet transaction id.
+         *
+         * Persistence fix (April 2026): the Razorpay path was previously calling
+         * confirmation.php WITHOUT `orderId`/`paymentId`/`paymentmode`. Without
+         * the savaari_payment_id (orderId) that razor_createorder was called
+         * with, the backend cannot tie the new payment row back to the booking
+         * — the row gets created but the booking flags (pay_bal_amt,
+         * payment_status, made_payment) never flip, so the UI reverts to
+         * "Settle Now" on refresh. Aligned with the new-booking flow at
+         * `features/booking/booking.ts:1308` which sends all three fields.
          */
         const onSuccess = (params: {
             paymentMethod: 'Wallet' | 'Razorpay';
@@ -1352,9 +1361,15 @@ export class BookingsComponent implements OnInit {
             settlementTxnId: string;
             /** Goes to settlement-payment `paymentId` — razorpay payment id only (optional for wallet) */
             paymentId?: string;
+            /** Razorpay only: the savaari_payment_id used for razor_createorder/razor_checkhash.
+             *  REQUIRED for confirmation.php to persist the settlement on the booking row. */
+            savaariPayId?: string;
         }) => {
-            // Step 1: confirmation.php — record the payment in sv_advance_payment
-            this.paymentService.confirmPayment({
+            // Step 1: confirmation.php — record the payment in sv_advance_payment.
+            // For Razorpay we MUST include orderId (savaari_payment_id) + paymentId
+            // + paymentmode so the backend can link the payment to the booking
+            // and flip pay_bal_amt/payment_status/made_payment.
+            const confirmBody: any = {
                 source: params.paymentMethod === 'Wallet' ? 'B2B_WALLET' : 'B2B_RAZORPAY',
                 booking_id: booking.bookingId,
                 payment_option: booking.paymentOption || 2,
@@ -1362,8 +1377,15 @@ export class BookingsComponent implements OnInit {
                 totalAmount: booking.fare || 0,
                 bufferAmount: 0,
                 advancedAmount: amount,
-            } as any).subscribe({
-                next: () => {
+            };
+            if (params.paymentMethod === 'Razorpay') {
+                confirmBody.orderId = params.savaariPayId;
+                confirmBody.paymentId = params.paymentId;
+                confirmBody.paymentmode = 'savaariwebsite';
+            }
+            this.paymentService.confirmPayment(confirmBody).subscribe({
+                next: (confirmed) => {
+                    if (!environment.production) console.log('[BOOKINGS] confirmation.php result:', confirmed);
                     // Step 2: settlement-payment — sets pay_bal_amt=0, payment_status='Pre Paid'
                     // Wait for response before updating UI to prevent false "settled" state
                     this.paymentService.settlementPayment({
@@ -1375,7 +1397,25 @@ export class BookingsComponent implements OnInit {
                     }).subscribe({
                         next: (settled) => {
                             if (!environment.production) console.log('[BOOKINGS] Settlement API result:', settled);
-                            // Only update UI after backend confirms settlement
+                            // If settlement-payment returned an explicit failure,
+                            // refund (wallet path) and show the error instead of
+                            // pretending the booking is settled.
+                            if (!settled) {
+                                if (params.paymentMethod === 'Wallet') {
+                                    this.walletService.refundBooking(booking.bookingId, amount).subscribe({
+                                        next: () => { if (!environment.production) console.log('[BOOKINGS] Wallet refunded after settlement rejection'); },
+                                        error: (refundErr) => { if (!environment.production) console.warn('[BOOKINGS] Wallet refund failed:', refundErr); },
+                                    });
+                                }
+                                this.settleProcessing = false;
+                                this.settleBookingId = null;
+                                this.settleError = params.paymentMethod === 'Wallet'
+                                    ? 'Settlement could not be completed. Amount has been refunded to your wallet.'
+                                    : 'Settlement could not be recorded. Payment ID: ' + (params.paymentId || params.confirmationTxnId) + '. Please contact support.';
+                                this.cdr.markForCheck();
+                                return;
+                            }
+                            // Backend confirmed — update UI as settled
                             booking.prePayment = (booking.prePayment || 0) + amount;
                             booking.cashToCollect = 0;
                             this.settleProcessing = false;
@@ -1397,7 +1437,9 @@ export class BookingsComponent implements OnInit {
                             }
                             this.settleProcessing = false;
                             this.settleBookingId = null;
-                            this.settleError = 'Settlement could not be completed. Amount has been refunded to your wallet.';
+                            this.settleError = params.paymentMethod === 'Wallet'
+                                ? 'Settlement could not be completed. Amount has been refunded to your wallet.'
+                                : 'Settlement could not be recorded. Payment ID: ' + (params.paymentId || params.confirmationTxnId) + '. Please contact support.';
                             this.cdr.markForCheck();
                         },
                     });
@@ -1413,7 +1455,9 @@ export class BookingsComponent implements OnInit {
                     }
                     this.settleProcessing = false;
                     this.settleBookingId = null;
-                    this.settleError = 'Settlement confirmation failed. Amount has been refunded to your wallet.';
+                    this.settleError = params.paymentMethod === 'Wallet'
+                        ? 'Settlement confirmation failed. Amount has been refunded to your wallet.'
+                        : 'Settlement confirmation failed. Payment ID: ' + (params.paymentId || params.confirmationTxnId) + '. Please contact support.';
                     this.cdr.markForCheck();
                 },
             });
@@ -1453,9 +1497,32 @@ export class BookingsComponent implements OnInit {
                 savaari_payment_id: savaariPayId,
             }).subscribe({
                 next: (orderResp) => {
-                    const razorpayOrderId = orderResp?.razorpay_order_id || orderResp?.order_id || '';
-                    if (!orderResp || !razorpayOrderId) {
-                        onError();
+                    // Backend razor_createorder.php sometimes nests the order under
+                    // a `data` key — accept both top-level and nested shapes so we
+                    // don't silently fail when only the wrapper changes.
+                    const r: any = orderResp || {};
+                    const d: any = r.data || {};
+                    const razorpayOrderId =
+                        r.razorpay_order_id ||
+                        r.order_id ||
+                        r.orderId ||
+                        r.id ||
+                        d.razorpay_order_id ||
+                        d.order_id ||
+                        d.orderId ||
+                        d.id ||
+                        '';
+                    if (!razorpayOrderId) {
+                        // Surface the failure so it doesn't look like the click
+                        // did nothing — and log the raw response so we can see
+                        // why the backend didn't return an order id (alpha PHP
+                        // is known to return `{ order_id: null }` when the
+                        // amount/savaari_payment_id pair fails validation).
+                        if (!environment.production) console.error('[BOOKINGS] Razorpay createorder returned no order_id:', orderResp);
+                        this.settleProcessing = false;
+                        this.settleConfirmStep = false;
+                        this.settleError = 'Could not start Razorpay. Backend did not return an order ID. Try again or use Wallet.';
+                        this.cdr.markForCheck();
                         return;
                     }
                     const options: any = {
@@ -1492,12 +1559,17 @@ export class BookingsComponent implements OnInit {
                                         this.cdr.markForCheck();
                                         return;
                                     }
-                                    // Verified — proceed to confirmation + settlement APIs
+                                    // Verified — proceed to confirmation + settlement APIs.
+                                    // Pass `savaariPayId` so confirmation.php can persist the
+                                    // settlement against the booking row (without it the
+                                    // payment row is orphaned and the booking flips back
+                                    // to "Settle Now" on refresh).
                                     setTimeout(() => onSuccess({
                                         paymentMethod: 'Razorpay',
                                         confirmationTxnId: rzpPaymentId,
                                         settlementTxnId: rzpOrderId,
                                         paymentId: rzpPaymentId,
+                                        savaariPayId,
                                     }), 800);
                                 },
                                 error: () => onError()
@@ -1512,10 +1584,35 @@ export class BookingsComponent implements OnInit {
                         prefill: { email: this.authService.getUserEmail() },
                         theme: { color: '#00ace6' },
                     };
-                    const rzp = new (window as any).Razorpay(options);
-                    rzp.open();
+                    // Defensive: SDK may not have loaded (CSP block, ad-blocker,
+                    // offline). Surface an actionable error instead of failing
+                    // silently when `window.Razorpay` is undefined.
+                    if (!(window as any).Razorpay) {
+                        if (!environment.production) console.error('[BOOKINGS] window.Razorpay is undefined — checkout.js failed to load');
+                        this.settleProcessing = false;
+                        this.settleConfirmStep = false;
+                        this.settleError = 'Razorpay SDK failed to load. Disable ad-blockers or use Wallet payment.';
+                        this.cdr.markForCheck();
+                        return;
+                    }
+                    try {
+                        const rzp = new (window as any).Razorpay(options);
+                        rzp.open();
+                    } catch (e) {
+                        if (!environment.production) console.error('[BOOKINGS] Razorpay.open() threw:', e);
+                        this.settleProcessing = false;
+                        this.settleConfirmStep = false;
+                        this.settleError = 'Could not open Razorpay checkout. ' + (e instanceof Error ? e.message : '');
+                        this.cdr.markForCheck();
+                    }
                 },
-                error: () => onError()
+                error: (err) => {
+                    if (!environment.production) console.error('[BOOKINGS] razor_createorder HTTP error:', err);
+                    this.settleProcessing = false;
+                    this.settleConfirmStep = false;
+                    this.settleError = 'Could not reach payment server. Check your connection and try again.';
+                    this.cdr.markForCheck();
+                }
             });
             return;
         }

@@ -164,6 +164,32 @@ export class PaymentService {
         return response;
       }),
       catchError(err => {
+        // Salvage path: backend (especially beta) sometimes returns HTTP 200
+        // with a body that has PHP warnings/notices PREPENDED to the JSON,
+        // so Angular's auto-JSON parse fails and surfaces an HttpErrorResponse
+        // with status:200/ok:false. The raw text lives at `err.error.text`
+        // (when responseType was JSON and parse failed) or `err.error` (when
+        // it's already a string). If we can find a `{...}` substring with an
+        // order_id, return that — otherwise log the raw body so we can see
+        // exactly what backend sent and return null to trigger the UI error.
+        const raw: string =
+          (typeof err?.error === 'string' ? err.error : '') ||
+          (err?.error?.text || '') ||
+          '';
+        if (raw) {
+          if (!environment.production) console.warn('[PAYMENT] razor_createorder body was non-JSON. Raw text:', raw);
+          // Try to extract the JSON object from anywhere in the body.
+          const match = raw.match(/\{[\s\S]*\}/);
+          if (match) {
+            try {
+              const parsed = JSON.parse(match[0]);
+              if (parsed && (parsed.razorpay_order_id || parsed.order_id)) {
+                if (!environment.production) console.log('[PAYMENT] Razorpay order salvaged from non-JSON body:', parsed);
+                return of(parsed as RazorpayOrderResponse);
+              }
+            } catch { /* fall through to error path */ }
+          }
+        }
         console.error('[PAYMENT] razor_createorder failed:', err);
         return of(null);
       })
@@ -353,7 +379,25 @@ export class PaymentService {
     return this.api.settlementPostForm<any>('booking/settlement-payment', body, { token }).pipe(
       map(response => {
         if (!environment.production) console.log('[PAYMENT] Settlement payment:', response);
-        return response?.status === true || response?.status === 'success';
+        // Settlement endpoint follows the same Savaari PHP convention as the
+        // other booking endpoints: status_code=101 OK, 301 FAILURE. Earlier
+        // we only checked `status === true || 'success'` which silently
+        // missed the success case when the backend returned the canonical
+        // `{ status_code: 101, status_description: 'SUCCESS' }` shape — the
+        // booking would API-succeed but our caller would treat it as a
+        // failure (or vice versa). Mirror the `confirmPayment` /
+        // `verifyRazorpayPayment` logic: only treat an EXPLICIT failure as
+        // failed; everything else (status_code=101, status='success',
+        // status=true, missing-but-non-error) counts as success.
+        const r: any = response || {};
+        const code = Number(r.status_code ?? r.statusCode ?? 0);
+        const status = String(r.status ?? '').toUpperCase();
+        const desc = String(r.status_description ?? '').toUpperCase();
+        const explicitSuccess = code === 101 || status === 'SUCCESS' || status === 'TRUE' || r.status === true || desc === 'SUCCESS';
+        const explicitFailure = code === 301 || status === 'FAILURE' || status === 'FAILED' || status === 'ERROR' || r.status === false;
+        // Prefer explicit success, then fall back to "no explicit failure".
+        // This keeps current callers unbroken while fixing the 101 case.
+        return explicitSuccess || !explicitFailure;
       }),
       catchError(err => {
         console.error('[PAYMENT] settlement-payment failed:', err);
