@@ -102,8 +102,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   vasLuggageCarrier = false;
   vasLanguageDriver = false;
 
-  // 0 = no selection, 1/2/3 = B2B payment choices
-  paymentOption = 0;
+  // 1 = "Pay any amount now" (default), 2 = "Pay 25% now, rest auto-deducted",
+  // 3 = "Zero cash". Defaulting to 1 per April 2026 QA direction so the
+  // Booking Summary lands on a sensible amount instead of "Select a plan".
+  // 0 is still reachable if the agent explicitly toggles the active card off.
+  paymentOption = 1;
 
   // Payment method: wallet deduction or direct Razorpay
   paymentMethod: 'wallet' | 'razorpay' = 'wallet';
@@ -305,9 +308,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (event.type === 'popstate' && this.step1Complete && !this.bookingConfirmed) {
         // Push state back so we stay on this page
         this.location.go(this.router.url);
-        // Same cleanup as goBackFromBooking — coming back to Step 2 must
-        // always start from "Select a plan" (no pre-selected option).
-        this.paymentOption = 0;
+        // Same cleanup as goBackFromBooking — coming back to Step 2 lands
+        // on Option 1 (Pay any amount now) per April 2026 default-payment
+        // direction so the Booking Summary always shows a usable amount.
+        this.paymentOption = 1;
         this.paymentMethod = 'wallet';
         this.showWalletConfirm = false;
         this.showTopUpConfirm = false;
@@ -1554,8 +1558,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /**
    * Update the booking registry with the correct payment option and amount
-   * AFTER the user has completed payment. This fixes the mismatch where
-   * registerBookingData() is called before payment option selection (paymentOption=0).
+   * AFTER the user has completed payment. registerBookingData() runs earlier
+   * in the flow and stamps the registry with the current paymentOption at
+   * that moment (which may be the April 2026 default of 1, or whatever the
+   * agent picked). If the agent then switched options or the actual paid
+   * amount differs from the default-slider amount, this keeps the registry
+   * aligned with what was really paid.
    */
   private updateRegistryPayment(bkId: string, paidAmount: number, method: 'wallet' | 'razorpay') {
     const existing = this.bookingRegistry.getStoredBookingData(bkId);
@@ -1744,12 +1752,11 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.dropAddress = '';
       if (state.landmark) this.landmark = state.landmark;
       if (state.needsGstInvoice !== undefined) this.needsGstInvoice = state.needsGstInvoice;
-      // paymentOption / paymentMethod are intentionally NOT restored. Reported
-      // by QA (April 2026): if the agent picked an option earlier, navigated
-      // away and came back, the Booking Summary card kept showing the old
-      // "Amount to Pay Now ₹X" even though the agent hadn't consciously
-      // re-selected anything. Always land on Step 2 with "Select a plan" so
-      // the agent has to make an explicit choice before paying.
+      // paymentOption / paymentMethod are intentionally NOT restored from
+      // sessionStorage. The class-level default of paymentOption = 1
+      // (Pay any amount now, per April 2026 direction) takes over instead,
+      // so re-entering Step 2 always lands on the canonical default rather
+      // than carrying a stale selection forward from an earlier visit.
       if (state.selectedCountryCode) this.selectedCountryCode = state.selectedCountryCode;
       this.cdr.markForCheck();
     } catch {}
@@ -1797,12 +1804,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   goBackFromBooking() {
     if (this.step1Complete) {
       // On payment step → go back to passenger details.
-      // Clear any previously-selected payment option so when the agent comes
-      // forward again, the Booking Summary shows "Select a plan" instead of
-      // a stale amount. Prevents the QA-reported case where the summary
-      // card looked like an option was already picked without the agent
-      // consciously choosing one in this view.
-      this.paymentOption = 0;
+      // Reset the payment option to 1 (Pay any amount now) so when the
+      // agent moves forward again, Step 2 lands on the new April 2026
+      // default instead of a stale selection from a prior pass. We
+      // intentionally do NOT carry the previous option forward — agents
+      // should re-confirm their choice each time they re-enter Step 2.
+      this.paymentOption = 1;
       this.paymentMethod = 'wallet';
       this.showWalletConfirm = false;
       this.showTopUpConfirm = false;
