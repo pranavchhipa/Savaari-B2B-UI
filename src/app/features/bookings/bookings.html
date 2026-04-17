@@ -259,47 +259,64 @@
                         <div class="hidden lg:flex flex-col items-center w-52 shrink-0">
                             <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payment method</p>
                             <p class="text-xs font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">{{ getPaymentMethodLabel(booking) }}</p>
-                            <div *ngIf="getAutoDebitCountdown(booking) as countdown"
-                                class="mt-2 flex items-center group/debit relative">
-                                <span class="text-sm font-extrabold leading-tight"
-                                    [ngClass]="{'text-red-700': countdown === 'Due now', 'text-amber-800': countdown !== 'Due now'}">
-                                    -₹{{ getBalanceDue(booking) | number:'1.0-0' }} {{ countdown }}
-                                </span>
-                                <div class="relative ml-1.5">
-                                    <lucide-icon name="alert-triangle" [size]="14" class="cursor-help"
-                                        [ngClass]="{'text-red-400': countdown === 'Due now', 'text-amber-500': countdown !== 'Due now'}">
-                                    </lucide-icon>
-                                    <div class="absolute bottom-full right-0 mb-2 w-64 bg-slate-800 text-white text-[11px] leading-normal rounded-lg px-4 py-3 shadow-xl opacity-0 invisible group-hover/debit:opacity-100 group-hover/debit:visible transition-all z-50 pointer-events-none">
-                                        <p class="font-bold mb-1.5 text-xs">Auto-debit from wallet</p>
-                                        <p class="text-white/80">Insufficient wallet balance will auto-cancel this booking.</p>
-                                        <div class="absolute top-full right-4 border-4 border-transparent border-t-slate-800"></div>
+                            <!-- Payment status badges — only relevant while booking is still upcoming.
+                                 Hidden in Completed / Cancelled tabs because the warnings (auto-debit due,
+                                 "rest paid to driver", etc.) describe an active payment state that no longer
+                                 applies once the trip has wrapped up or been cancelled. -->
+                            <ng-container *ngIf="activeTab === 'upcoming'">
+                                <div *ngIf="getAutoDebitCountdown(booking) as countdown"
+                                    class="mt-2 flex items-center group/debit relative">
+                                    <span class="text-sm font-extrabold leading-tight"
+                                        [ngClass]="{'text-red-700': countdown === 'Due now', 'text-amber-800': countdown !== 'Due now'}">
+                                        -₹{{ getBalanceDue(booking) | number:'1.0-0' }} {{ countdown }}
+                                    </span>
+                                    <div class="relative ml-1.5">
+                                        <lucide-icon name="alert-triangle" [size]="14" class="cursor-help"
+                                            [ngClass]="{'text-red-400': countdown === 'Due now', 'text-amber-500': countdown !== 'Due now'}">
+                                        </lucide-icon>
+                                        <div class="absolute bottom-full right-0 mb-2 w-64 bg-slate-800 text-white text-[11px] leading-normal rounded-lg px-4 py-3 shadow-xl opacity-0 invisible group-hover/debit:opacity-100 group-hover/debit:visible transition-all z-50 pointer-events-none">
+                                            <p class="font-bold mb-1.5 text-xs">Auto-debit from wallet</p>
+                                            <p class="text-white/80">Insufficient wallet balance will auto-cancel this booking.</p>
+                                            <div class="absolute top-full right-4 border-4 border-transparent border-t-slate-800"></div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1"
-                                class="mt-2 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
-                                <lucide-icon name="check-circle" [size]="13" class="text-emerald-500"></lucide-icon>
-                                <span class="text-[10px] font-bold text-emerald-600 leading-tight">No dues</span>
-                            </div>
-                            <div *ngIf="booking.paymentOption === 1 && booking.prePayment"
-                                class="mt-2 flex items-center gap-1.5 bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1.5 max-w-[200px]">
-                                <lucide-icon name="info" [size]="13" class="text-sky-500 shrink-0"></lucide-icon>
-                                <span class="text-[10px] font-bold text-sky-600 leading-tight truncate">Rest paid to driver</span>
-                            </div>
+                                <div *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1"
+                                    class="mt-2 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
+                                    <lucide-icon name="check-circle" [size]="13" class="text-emerald-500"></lucide-icon>
+                                    <span class="text-[10px] font-bold text-emerald-600 leading-tight">No dues</span>
+                                </div>
+                                <div *ngIf="booking.paymentOption === 1 && booking.prePayment"
+                                    class="mt-2 flex items-center gap-1.5 bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1.5 max-w-[200px]">
+                                    <lucide-icon name="info" [size]="13" class="text-sky-500 shrink-0"></lucide-icon>
+                                    <span class="text-[10px] font-bold text-sky-600 leading-tight truncate">Rest paid to driver</span>
+                                </div>
+                            </ng-container>
                         </div>
                         <!-- Amount -->
                         <div class="w-28 shrink-0 text-right">
                             <p class="text-xl font-black text-slate-800 dark:text-white leading-tight">₹{{ booking.fare | number:'1.0-0' }}</p>
-                            <p *ngIf="getBalanceDue(booking) > 0" class="text-[11px] text-slate-400 mt-1">
-                                Balance due:<br/>
-                                <span class="font-semibold">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
-                            </p>
-                            <p *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1" class="text-[11px] text-emerald-500 font-semibold mt-1">
-                                Fully paid
-                            </p>
-                            <p *ngIf="booking.paymentOption === 1 && booking.prePayment" class="text-[11px] text-sky-500 font-semibold mt-1">
-                                ₹{{ booking.prePayment | number:'1.0-0' }} paid
-                            </p>
+                            <!-- Payment-state breakdown (Balance due / Fully paid / amount paid) only
+                                 makes sense while the booking is still live. After completion the trip
+                                 is wrapped up and these labels become noise next to the gross fare. -->
+                            <ng-container *ngIf="activeTab === 'upcoming'">
+                                <p *ngIf="getBalanceDue(booking) > 0" class="text-[11px] text-slate-400 mt-1">
+                                    Balance due:<br/>
+                                    <span class="font-semibold">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
+                                    <!-- Option 3 (Zero Cash): the balance is fare-paid PLUS the 20%
+                                         refundable buffer. Show the breakdown so the agent understands
+                                         why this number is higher than (fare - paid). -->
+                                    <span *ngIf="booking.paymentOption === 3 && booking.bufferAmount" class="block text-[10px] text-violet-500 font-medium mt-0.5">
+                                        ₹{{ (booking.fare - (booking.prePayment || 0)) | number:'1.0-0' }} + ₹{{ booking.bufferAmount | number:'1.0-0' }} buffer
+                                    </span>
+                                </p>
+                                <p *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1" class="text-[11px] text-emerald-500 font-semibold mt-1">
+                                    Fully paid
+                                </p>
+                                <p *ngIf="booking.paymentOption === 1 && booking.prePayment" class="text-[11px] text-sky-500 font-semibold mt-1">
+                                    ₹{{ booking.prePayment | number:'1.0-0' }} paid
+                                </p>
+                            </ng-container>
                         </div>
                         <!-- Status + Action -->
                         <div class="w-32 shrink-0 flex flex-col items-end gap-1.5">
@@ -381,15 +398,25 @@
                             </div>
                             <div class="shrink-0 text-right">
                                 <p class="text-base font-black text-slate-800 dark:text-white leading-tight">₹{{ booking.fare | number:'1.0-0' }}</p>
-                                <p *ngIf="getBalanceDue(booking) > 0" class="text-[10px] text-amber-600 font-semibold">
-                                    Due: ₹{{ getBalanceDue(booking) | number:'1.0-0' }}
-                                </p>
-                                <p *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1" class="text-[10px] text-emerald-500 font-semibold">
-                                    Paid
-                                </p>
-                                <p *ngIf="booking.paymentOption === 1 && booking.prePayment" class="text-[10px] text-sky-500 font-semibold">
-                                    ₹{{ booking.prePayment | number:'1.0-0' }} paid
-                                </p>
+                                <!-- Mobile mirror of the desktop amount-column payment lines: only
+                                     surface them while the booking is still upcoming. Suppressed in
+                                     Completed / Cancelled so the trip wrap-up view stays clean. -->
+                                <ng-container *ngIf="activeTab === 'upcoming'">
+                                    <p *ngIf="getBalanceDue(booking) > 0" class="text-[10px] text-amber-600 font-semibold">
+                                        Due: ₹{{ getBalanceDue(booking) | number:'1.0-0' }}
+                                    </p>
+                                    <!-- Option 3 buffer breakdown (mobile mirror of desktop card) -->
+                                    <p *ngIf="getBalanceDue(booking) > 0 && booking.paymentOption === 3 && booking.bufferAmount"
+                                       class="text-[9px] text-violet-500 font-medium leading-tight">
+                                        ₹{{ (booking.fare - (booking.prePayment || 0)) | number:'1.0-0' }} + ₹{{ booking.bufferAmount | number:'1.0-0' }} buffer
+                                    </p>
+                                    <p *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1" class="text-[10px] text-emerald-500 font-semibold">
+                                        Paid
+                                    </p>
+                                    <p *ngIf="booking.paymentOption === 1 && booking.prePayment" class="text-[10px] text-sky-500 font-semibold">
+                                        ₹{{ booking.prePayment | number:'1.0-0' }} paid
+                                    </p>
+                                </ng-container>
                             </div>
                         </div>
                         <!-- Row 2: Status badge + Action button -->
@@ -511,7 +538,15 @@
                                 </div>
                                 <div *ngIf="getBalanceDue(booking) > 0" class="flex justify-between">
                                     <span class="text-amber-500 font-semibold">Balance Due</span>
-                                    <span class="font-bold text-amber-600">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
+                                    <span class="font-bold text-amber-600 text-right">
+                                        ₹{{ getBalanceDue(booking) | number:'1.0-0' }}
+                                        <!-- Option 3 breakdown: make it obvious the balance already
+                                             includes the refundable buffer so the agent doesn't think
+                                             the number is wrong vs. (fare - paid). -->
+                                        <span *ngIf="booking.paymentOption === 3 && booking.bufferAmount" class="block text-[10px] text-violet-500 font-medium mt-0.5">
+                                            ₹{{ (booking.fare - (booking.prePayment || 0)) | number:'1.0-0' }} + ₹{{ booking.bufferAmount | number:'1.0-0' }} buffer
+                                        </span>
+                                    </span>
                                 </div>
                                 <div *ngIf="getAutoDebitCountdown(booking)" class="flex justify-between">
                                     <span class="text-amber-500 font-semibold">Auto-Debit</span>

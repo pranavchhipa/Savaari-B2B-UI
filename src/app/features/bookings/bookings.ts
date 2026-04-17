@@ -1113,7 +1113,7 @@ export class BookingsComponent implements OnInit {
 
     // ─── Payment Helpers ───────────────────────────────────────
 
-    /** Balance remaining to be paid (fare - what was already paid) */
+    /** Balance remaining to be paid (fare - what was already paid + buffer for Option 3) */
     getBalanceDue(booking: BookingCard): number {
         if (!booking.fare) return 0;
         // Option 1: remaining is paid by customer to driver — no agent balance due
@@ -1128,7 +1128,14 @@ export class BookingsComponent implements OnInit {
         // Honouring this flag fixes both bugs in one place.
         if (booking.balancePaidStatus === 1) return 0;
         const paid = booking.prePayment || 0;
-        return Math.max(0, booking.fare - paid);
+        // Option 3 (Zero Cash) — total agent commitment is fare + 20% buffer
+        // (the buffer is held as a refundable deposit). Without including it
+        // here the UI showed a balance of (fare - paid), which under-charged
+        // the agent at Settle Now and silently dropped the buffer obligation.
+        // Mirrors the create-booking flow at booking.ts:1298 which sends the
+        // same buffer amount to confirmation.php on initial payment.
+        const buffer = booking.paymentOption === 3 ? (booking.bufferAmount || 0) : 0;
+        return Math.max(0, booking.fare - paid + buffer);
     }
 
     /** Short label for payment method — matches payment page option names exactly. */
@@ -1406,7 +1413,13 @@ export class BookingsComponent implements OnInit {
                 payment_option: booking.paymentOption || 2,
                 transaction_id: params.confirmationTxnId,
                 totalAmount: booking.fare || 0,
-                bufferAmount: 0,
+                // Option 3 (Zero Cash): pass the 20% refundable buffer through to
+                // confirmation.php so the backend records the correct deposit
+                // alongside the fare. Previously hardcoded to 0, which left the
+                // buffer obligation un-tracked when an Option 3 booking was
+                // settled later from the Manage Bookings page. Mirrors the
+                // create-booking flow at booking.ts:1298.
+                bufferAmount: booking.paymentOption === 3 ? (booking.bufferAmount || 0) : 0,
                 advancedAmount: amount,
             };
             if (params.paymentMethod === 'Razorpay') {
