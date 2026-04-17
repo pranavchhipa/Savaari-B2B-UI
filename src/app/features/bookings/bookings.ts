@@ -85,6 +85,16 @@ export interface BookingCard {
      * rows from agents re-clicking Settle Now on already-settled bookings.
      */
     balancePaidStatus?: number;
+    /**
+     * Source bucket from the backend's pre-categorized response
+     * (bookingUpcoming / bookingCompleted / bookingCancelled). Tagged on each
+     * row in BookingApiService.getAllBookings so the UI can categorize using
+     * the backend's authoritative grouping instead of re-deriving from the
+     * status field. The status mapping has a finite allowlist and any
+     * unrecognized booking_status value would silently drop the row from
+     * every tab — _bucket prevents that.
+     */
+    _bucket?: 'upcoming' | 'completed' | 'cancelled';
 }
 
 /** Calendar day model for the week strip */
@@ -579,11 +589,28 @@ export class BookingsComponent implements OnInit {
 
         const cards = real.map(b => this.toBookingCard(b));
 
-        this.upcomingBookings = cards.filter(c =>
-            c.status === 'confirmed' || c.status === 'assigned' || c.status === 'pending'
-        );
-        this.cancelledBookings = cards.filter(c => c.status === 'cancelled');
-        this.completedBookings = cards.filter(c => c.status === 'completed' || c.status === 'billed');
+        // Categorize using the backend's pre-grouped bucket (bookingUpcoming
+        // / bookingCompleted / bookingCancelled), tagged in
+        // BookingApiService.getAllBookings as `_bucket`. The previous
+        // approach re-derived buckets from `status`, but the status mapping
+        // only handles a finite set of values — any new or unfamiliar
+        // `booking_status` from the backend would fall through every tab
+        // and the booking would disappear from the UI entirely (e.g. today's
+        // bookings created by the backend team weren't showing up).
+        // Fallback to status-based categorization only if `_bucket` is
+        // missing (defensive — should not happen in practice).
+        this.upcomingBookings = cards.filter(c => {
+            if (c._bucket) return c._bucket === 'upcoming';
+            return c.status !== 'cancelled' && c.status !== 'completed' && c.status !== 'billed';
+        });
+        this.cancelledBookings = cards.filter(c => {
+            if (c._bucket) return c._bucket === 'cancelled';
+            return c.status === 'cancelled';
+        });
+        this.completedBookings = cards.filter(c => {
+            if (c._bucket) return c._bucket === 'completed';
+            return c.status === 'completed' || c.status === 'billed';
+        });
     }
 
     /**
@@ -1085,6 +1112,10 @@ export class BookingsComponent implements OnInit {
             // never trust them in isolation. Accept both snake- and camel-case
             // field names plus string-encoded numerics from PHP.
             balancePaidStatus: Number(b.balance_paid_status ?? b.balancePaidStatus ?? 0) || 0,
+            // Propagate the source bucket tag from BookingApiService so the
+            // categorization filter can group rows by what the backend
+            // already decided, instead of re-deriving from `status`.
+            _bucket: b._bucket,
         };
     }
 

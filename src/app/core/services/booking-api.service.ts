@@ -257,12 +257,18 @@ export class BookingApiService {
       token: this.auth.getB2bToken(),
     }).pipe(
       map(response => {
-        // API returns wrapped object with pre-categorized arrays
+        // API returns wrapped object with pre-categorized arrays. We preserve
+        // the source bucket on each row as `_bucket` so the UI can categorize
+        // by what the backend already decided, rather than re-deriving from
+        // the `booking_status` field. Re-deriving was fragile: any status
+        // value not in our hardcoded allowlist (e.g. a new backend status,
+        // or a row with `status: "1"` and an unfamiliar `booking_status`)
+        // would fall through every tab filter and silently disappear.
         const details = response?.bookingDetails;
         if (!details) return [];
-        const upcoming: any[] = details.bookingUpcoming || [];
-        const completed: any[] = details.bookingCompleted || [];
-        const cancelled: any[] = details.bookingCancelled || [];
+        const upcoming: any[] = (details.bookingUpcoming || []).map((b: any) => ({ ...b, _bucket: 'upcoming' }));
+        const completed: any[] = (details.bookingCompleted || []).map((b: any) => ({ ...b, _bucket: 'completed' }));
+        const cancelled: any[] = (details.bookingCancelled || []).map((b: any) => ({ ...b, _bucket: 'cancelled' }));
         return [...upcoming, ...completed, ...cancelled];
       }),
       catchError(err => this.errorHandler.handleApiError(err, 'BookingApiService.getAllBookings'))
