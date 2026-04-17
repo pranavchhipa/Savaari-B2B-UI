@@ -61,7 +61,7 @@
     "logLevel": "debug"
   },
   "/reg-api": {
-    "target": "https://api.betasavaari.com",
+    "target": "https://api.alphasavaari.com",
     "secure": true,
     "changeOrigin": true,
     "pathRewrite": { "^/reg-api": "" },

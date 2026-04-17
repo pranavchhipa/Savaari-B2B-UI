@@ -415,6 +415,13 @@
               }
             </div>
 
+            @if (gstError) {
+              <div class="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
+                <lucide-icon name="alert-triangle" [size]="16" class="text-red-500 mt-0.5 shrink-0"></lucide-icon>
+                <p class="text-[12px] text-red-700 dark:text-red-300 leading-relaxed">{{ gstError }}</p>
+              </div>
+            }
+
             <button type="submit" [disabled]="gstLookupLoading"
               class="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:shadow-lg hover:shadow-primary/30 text-white font-semibold text-sm py-3.5 px-5 rounded-xl shadow-md shadow-primary/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
               @if (gstLookupLoading) {

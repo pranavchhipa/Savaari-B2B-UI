@@ -120,10 +120,20 @@ export class RegistrationService {
         if (!environment.production) {
           console.warn('[REGISTRATION] verifyGst API error:', err?.status ?? err?.message);
         }
-        return of({
-          success: false,
-          errorMessage: err?.error?.message ?? err?.message ?? 'GST verification failed. Please try again.',
-        });
+        // Surface a meaningful message based on HTTP status. Generic err.message
+        // (e.g. "Http failure response for /reg-api/...") is useless to a user.
+        const status = err?.status;
+        let errorMessage: string;
+        if (status === 404) {
+          errorMessage = 'GST verification service is unavailable right now. Please try again in a moment, or skip GST and proceed manually.';
+        } else if (status === 0 || status === 502 || status === 503 || status === 504) {
+          errorMessage = 'Could not reach the GST verification service. Check your internet and try again.';
+        } else if (status === 400 || status === 422) {
+          errorMessage = err?.error?.message ?? err?.error?.msg ?? 'Invalid GST Number. Please check and try again.';
+        } else {
+          errorMessage = err?.error?.message ?? err?.error?.msg ?? `GST verification failed (${status || 'network error'}). Please try again.`;
+        }
+        return of({ success: false, errorMessage });
       })
     );
   }

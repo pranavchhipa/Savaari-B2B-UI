@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 import { decodeGSTIN, isValidGSTIN, isValidPAN, GSTINDecodeResult } from '../../core/utils/gstin-decoder';
 
-type AccountSection = 'personal' | 'password';
+type AccountSection = 'personal';
 
 @Component({
   selector: 'app-account-settings',
@@ -48,15 +48,6 @@ export class AccountSettingsComponent implements OnInit {
 
   logoPreview: string | null = null;
 
-  // Password model
-  passwords = {
-    current: '',
-    newPass: '',
-    confirm: ''
-  };
-
-  passwordError = '';
-  passwordSuccess = false;
   profileSuccess = false;
   profileError = '';
   isSaving = false;
@@ -333,56 +324,6 @@ export class AccountSettingsComponent implements OnInit {
       error: (err) => {
         this.gstSaving = false;
         this.gstError = err?.error?.message || err?.message || 'Failed to update GST number. Please try again.';
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  changePassword() {
-    this.passwordError = '';
-    this.passwordSuccess = false;
-    if (!this.passwords.current) {
-      this.passwordError = 'Please enter your current password.';
-      return;
-    }
-    if (this.passwords.newPass.length < 8) {
-      this.passwordError = 'New password must be at least 8 characters.';
-      return;
-    }
-    if (this.passwords.newPass !== this.passwords.confirm) {
-      this.passwordError = 'New passwords do not match.';
-      return;
-    }
-
-    this.isSaving = true;
-    this.cdr.markForCheck();
-
-    // POST /user/change-password
-    const payload = {
-      userEmail: this.profile.email,
-      token: this.auth.getB2bToken(),
-      currentPassword: this.passwords.current,
-      newPassword: this.passwords.newPass,
-    };
-
-    this.api.b2bPost<any>('user/change-password', payload).subscribe({
-      next: (response) => {
-        this.isSaving = false;
-        if (response?.statusCode === 200) {
-          this.passwordSuccess = true;
-          this.passwords = { current: '', newPass: '', confirm: '' };
-          setTimeout(() => {
-            this.passwordSuccess = false;
-            this.cdr.markForCheck();
-          }, 3000);
-        } else {
-          this.passwordError = response?.message || 'Failed to change password.';
-        }
-        this.cdr.markForCheck();
-      },
-      error: (err) => {
-        this.isSaving = false;
-        this.passwordError = err?.error?.message || 'Failed to change password. Please try again.';
         this.cdr.markForCheck();
       }
     });

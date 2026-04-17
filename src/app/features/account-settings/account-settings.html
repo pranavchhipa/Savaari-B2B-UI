@@ -43,16 +43,6 @@
               </button>
             </li>
 
-            <!-- Password & Security -->
-            <li class="flex-1 lg:flex-none">
-              <button (click)="activeSection = 'password'"
-                [ngClass]="activeSection === 'password' ? 'text-primary border-b-2 lg:border-b-0 lg:border-l-4 border-primary bg-blue-50/60 dark:bg-blue-900/20 font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b-2 lg:border-b-0 lg:border-l-4 border-transparent'"
-                class="w-full flex items-center justify-center lg:justify-start gap-1.5 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3.5 text-xs sm:text-sm transition-all text-center lg:text-left">
-                <lucide-icon name="lock" [size]="16" class="flex-shrink-0 sm:!w-[18px] sm:!h-[18px]"></lucide-icon>
-                Password & Security
-              </button>
-            </li>
-
           </ul>
         </div>
       </aside>
@@ -258,113 +248,6 @@
                   <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-75"></path>
                 </svg>
                 {{ isSaving ? 'Saving...' : 'Update Profile' }}
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- ===== PASSWORD & SECURITY ===== -->
-        <div *ngIf="activeSection === 'password'">
-          <div
-            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-6 lg:p-8">
-
-            <div class="mb-4 sm:mb-6">
-              <h2 class="text-base sm:text-xl font-bold text-slate-900 dark:text-white">Password & Security</h2>
-              <p class="text-[11px] sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">Update your password to keep your account
-                secure. Use at least 8 characters.</p>
-            </div>
-
-            <!-- Success Banner -->
-            <p *ngIf="passwordSuccess" class="mb-4 text-sm text-emerald-600 dark:text-emerald-400">Password changed successfully!</p>
-            <p *ngIf="passwordError" class="mb-4 text-sm text-red-500">{{ passwordError }}</p>
-
-            <div class="space-y-5 max-w-md">
-
-              <!-- Current Password -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Current
-                  Password <span class="text-red-500">*</span></label>
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <lucide-icon name="lock" [size]="16" class="text-slate-400"></lucide-icon>
-                  </div>
-                  <input type="password" [(ngModel)]="passwords.current" placeholder="Enter current password"
-                    class="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
-                </div>
-              </div>
-
-              <!-- New Password -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">New Password <span
-                    class="text-red-500">*</span></label>
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <lucide-icon name="key-round" [size]="16" class="text-slate-400"></lucide-icon>
-                  </div>
-                  <input type="password" [(ngModel)]="passwords.newPass" placeholder="Min. 8 characters"
-                    class="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
-                </div>
-                <!-- Password strength bar -->
-                <div *ngIf="passwords.newPass.length > 0" class="mt-2">
-                  <div class="flex gap-1">
-                    <div class="h-1.5 flex-1 rounded-full transition-all"
-                      [ngClass]="passwords.newPass.length >= 4 ? 'bg-red-400' : 'bg-slate-200 dark:bg-slate-600'"></div>
-                    <div class="h-1.5 flex-1 rounded-full transition-all"
-                      [ngClass]="passwords.newPass.length >= 8 ? 'bg-yellow-400' : 'bg-slate-200 dark:bg-slate-600'">
-                    </div>
-                    <div class="h-1.5 flex-1 rounded-full transition-all"
-                      [ngClass]="passwords.newPass.length >= 12 ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-600'">
-                    </div>
-                  </div>
-                  <p class="text-xs text-slate-400 mt-1">
-                    {{ passwords.newPass.length < 4 ? 'Too short' : passwords.newPass.length < 8 ? 'Weak' :
-                      passwords.newPass.length < 12 ? 'Good' : 'Strong' }} </p>
-                </div>
-              </div>
-
-              <!-- Confirm New Password -->
-              <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirm New
-                  Password <span class="text-red-500">*</span></label>
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <lucide-icon name="key-round" [size]="16" class="text-slate-400"></lucide-icon>
-                  </div>
-                  <input type="password" [(ngModel)]="passwords.confirm" placeholder="Repeat new password"
-                    class="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition"
-                    [ngClass]="passwords.confirm && passwords.confirm !== passwords.newPass ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : ''" />
-                  <div *ngIf="passwords.confirm && passwords.confirm === passwords.newPass"
-                    class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <lucide-icon name="check-circle" [size]="16" class="text-emerald-500"></lucide-icon>
-                  </div>
-                </div>
-                <p *ngIf="passwords.confirm && passwords.confirm !== passwords.newPass"
-                  class="mt-1 text-xs text-red-500">Passwords do not match</p>
-              </div>
-
-            </div>
-
-            <!-- Security tips -->
-            <div class="mt-5 sm:mt-8 p-3 sm:p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
-              <div class="flex items-start gap-2 sm:gap-3">
-                <lucide-icon name="shield-check" [size]="16" class="text-primary flex-shrink-0 mt-0.5 sm:!w-[20px] sm:!h-[20px]"></lucide-icon>
-                <div>
-                  <p class="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 sm:mb-2">Security Tips</p>
-                  <ul class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 space-y-0.5 sm:space-y-1 list-disc list-inside">
-                    <li>Use a mix of letters, numbers, and symbols</li>
-                    <li>Avoid reusing passwords from other services</li>
-                    <li>Never share your password with anyone</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-4 sm:mt-6 flex justify-end">
-              <button (click)="changePassword()"
-                class="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-primary hover:bg-sky-600 shadow-lg shadow-primary/30 rounded-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
-                <lucide-icon name="shield" [size]="14" class="sm:!w-[16px] sm:!h-[16px]"></lucide-icon>
-                Change Password
               </button>
             </div>
 
