@@ -1070,46 +1070,26 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     }
 
-    // Safety: verify booking exists on server BEFORE any money is deducted.
-    // This prevents wallet deduction for bookings that weren't actually created
-    // (e.g. when backend servers are misconfigured or API returned a fake ID).
-    this.isConfirmingPayment = true;
-    this.confirmationStage = 'verifying';
-    this.confirmationPaidAmount = payNow;
-    this.confirmationPaidVia = this.paymentMethod;
-    this.cdr.markForCheck();
-
-    this.bookingApi.getBookingDetails(this.bookingId).subscribe({
-      next: (booking) => {
-        const foundId = booking?.bookingId || (booking as any)?.booking_id || '';
-        if (!foundId) {
-          this.isConfirmingPayment = false;
-          this.bookingError = 'Booking could not be verified on the server. Payment was not processed. Please try again or contact support.';
-          this.cdr.markForCheck();
-          return;
-        }
-
-        if (!environment.production) {
-          console.log('[BOOKING] Pre-payment verification passed. Booking', foundId, 'exists on server.');
-        }
-
-        // Booking verified — proceed with payment
-        if (this.paymentMethod === 'razorpay') {
-          this.isConfirmingPayment = false;
-          this.cdr.markForCheck();
-          this.processRazorpayPayment(payNow);
-        } else {
-          this.isConfirmingPayment = false;
-          this.cdr.markForCheck();
-          this.processWalletPayment(payNow);
-        }
-      },
-      error: () => {
-        this.isConfirmingPayment = false;
-        this.bookingError = 'Could not verify booking on the server. Payment was not processed. Please check your connection and try again.';
-        this.cdr.markForCheck();
-      }
-    });
+    // Trust the bookingId returned by partner-API POST /booking (the
+    // authoritative create response). We previously did a pre-flight call
+    // to b2b-api/booking-details to verify the booking existed before
+    // charging, but that endpoint runs against the b2b reporting DB which
+    // has eventual-consistency lag for freshly-created bookings (returns
+    // 204 No Content for several seconds after creation). That was
+    // wrongly blocking the Razorpay flow for every new agent — Pay click
+    // never reached razor_createorder.php.
+    //
+    // Both downstream payment APIs perform their own server-side
+    // validation, so a fake/invalid bookingId still surfaces a meaningful
+    // error from them — no risk of silent money deduction:
+    //   - Razorpay: razor_createorder.php rejects bad IDs (modal never
+    //     opens, no charge possible)
+    //   - Wallet: wallet/pay rejects bad IDs (no deduction)
+    if (this.paymentMethod === 'razorpay') {
+      this.processRazorpayPayment(payNow);
+    } else {
+      this.processWalletPayment(payNow);
+    }
   }
 
   /**
