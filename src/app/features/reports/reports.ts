@@ -104,9 +104,27 @@ export class ReportsComponent {
 
     // Extract route from "Itinerary" field (e.g. "Bangalore &rarr; Mysore &rarr; Coorg→Bangalore")
     const itinerary = (entry['Itinerary'] || '').replace(/&rarr;/g, '→').trim();
-    const routeParts = itinerary.split('→').map((s: string) => s.trim()).filter(Boolean);
+    const routeParts = itinerary
+      .split('→')
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 0 && s.toUpperCase() !== 'N/A');
     const pickupCity = entry['City Name'] || (routeParts.length > 0 ? routeParts[0] : '');
-    const dropCity = routeParts.length > 1 ? routeParts[routeParts.length - 1] : '';
+    let dropCity = routeParts.length > 1 ? routeParts[routeParts.length - 1] : '';
+
+    // Trip type normalization for route display.
+    // The booking-details-report API (as of April 2026) does NOT include a
+    // local-package field (e.g. "8hr/80km") or an airport-name field
+    // (e.g. "Kempegowda International Airport"). For Local and Airport
+    // trips the Itinerary field is typically empty or "N/A", which
+    // previously rendered as "City →" with a stray empty arrow. Clear
+    // dropCity explicitly for these trip types so the template can
+    // render just the city without a hanging arrow. If/when the backend
+    // adds those fields, swap dropCity here for the proper destination.
+    const tripType = entry['Trip Type'] || entry.trip_type || '';
+    const tripTypeLower = String(tripType).toLowerCase();
+    if (tripTypeLower.includes('local') || tripTypeLower.includes('airport')) {
+      dropCity = '';
+    }
 
     // Map status from "Prepaid/Postpaid" or booking status
     const rawStatus = (entry['Prepaid/Postpaid'] || entry.booking_status || '').toLowerCase();
@@ -120,7 +138,7 @@ export class ReportsComponent {
       passengerName: entry['Customer Name'] || entry.customer_name || '',
       pickupCity,
       dropCity,
-      tripType: entry['Trip Type'] || entry.trip_type || '',
+      tripType,
       status,
       fare: (() => { const f = parseFloat(entry['Booking Amount'] || entry.gross_amount); return Number.isNaN(f) ? 0 : f; })(),
     };
