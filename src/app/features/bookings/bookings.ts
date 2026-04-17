@@ -74,6 +74,17 @@ export interface BookingCard {
     bookingKey?: string;
     /** Backend-computed cancellation deadline ("DD-MM-YYYY HH:MM") — shown as tooltip when button is hidden. */
     cancelDateTime?: string;
+    /**
+     * Canonical "is the booking fully settled" flag from booking-details API
+     * (`balance_paid_status` — 0 = pending, 1 = settled). Per backend team's
+     * direction (April 2026), this is the AUTHORITATIVE signal for whether
+     * the agent has paid off the balance — NOT pay_now_amt or pay_bal_amt,
+     * which can stay stale after settlement-payment. When 1, the UI must
+     * suppress the Settle Now button and Payment Pending badge regardless
+     * of what the amount fields say. Prevents duplicate sv_advance_payment
+     * rows from agents re-clicking Settle Now on already-settled bookings.
+     */
+    balancePaidStatus?: number;
 }
 
 /** Calendar day model for the week strip */
@@ -1067,6 +1078,13 @@ export class BookingsComponent implements OnInit {
             cancelFlag: b.cancel_flag === '1' || b.cancel_flag === 1 || b.cancel_flag_web === '1' || b.cancel_flag_web === 1,
             bookingKey: String(b.booking_key || b.bookingKey || ''),
             cancelDateTime: String(b.cancel_date_time || b.cancelDateTime || ''),
+            // Per backend team's direction (April 2026): `balance_paid_status` is
+            // the canonical settled flag — read it as a number so the UI can
+            // gate Settle Now / Payment Pending on it. `pay_now_amt` /
+            // `pay_bal_amt` can stay stale after settlement-payment runs, so
+            // never trust them in isolation. Accept both snake- and camel-case
+            // field names plus string-encoded numerics from PHP.
+            balancePaidStatus: Number(b.balance_paid_status ?? b.balancePaidStatus ?? 0) || 0,
         };
     }
 
@@ -1100,12 +1118,24 @@ export class BookingsComponent implements OnInit {
         if (!booking.fare) return 0;
         // Option 1: remaining is paid by customer to driver — no agent balance due
         if (booking.paymentOption === 1) return 0;
+        // CANONICAL settled check (per backend team's April 2026 direction):
+        // `balance_paid_status === 1` means the booking is fully settled,
+        // regardless of what `pay_now_amt` / `pay_bal_amt` say. The backend
+        // currently does not always update `pay_now_amt` after a successful
+        // settlement-payment call, which causes the UI to keep showing
+        // "Settle Now" forever and lets agents accidentally re-settle the
+        // same booking (3+ duplicate sv_advance_payment rows seen in prod).
+        // Honouring this flag fixes both bugs in one place.
+        if (booking.balancePaidStatus === 1) return 0;
         const paid = booking.prePayment || 0;
         return Math.max(0, booking.fare - paid);
     }
 
     /** Short label for payment method — matches payment page option names exactly. */
     getPaymentMethodShort(booking: BookingCard): string {
+        // Settled bookings always show "Fully Paid" — overrides the per-option
+        // labels because the agent has nothing left to pay regardless of plan.
+        if (booking.balancePaidStatus === 1) return 'Fully Paid';
         if (booking.paymentOption === 1) return 'Pay Any Amount Now';
         if (booking.paymentOption === 2) return 'Pay 25% Now';
         if (booking.paymentOption === 3) return 'Zero Cash';
@@ -1115,6 +1145,7 @@ export class BookingsComponent implements OnInit {
 
     /** Full label for payment method (used in expanded detail view). */
     getPaymentMethodLabel(booking: BookingCard): string {
+        if (booking.balancePaidStatus === 1) return 'Fully Paid';
         if (booking.paymentOption === 1) return 'Pay Any Amount Now — Customer pays driver';
         if (booking.paymentOption === 2) return 'Pay 25% Now, Rest Auto-Deducted';
         if (booking.paymentOption === 3) return 'Zero Cash';
@@ -1415,7 +1446,16 @@ export class BookingsComponent implements OnInit {
                                 this.cdr.markForCheck();
                                 return;
                             }
-                            // Backend confirmed — update UI as settled
+                            // Backend confirmed — update UI as settled.
+                            // Set `balancePaidStatus = 1` locally so the gate
+                            // in getBalanceDue / getPaymentMethodShort flips
+                            // immediately (without waiting for a refresh).
+                            // Also keep updating prePayment/cashToCollect so
+                            // the existing "Paid Now" / "Cash to Collect"
+                            // numbers in the expanded view stay coherent —
+                            // the canonical settled signal is balancePaidStatus,
+                            // but the amount fields are still shown elsewhere.
+                            booking.balancePaidStatus = 1;
                             booking.prePayment = (booking.prePayment || 0) + amount;
                             booking.cashToCollect = 0;
                             this.settleProcessing = false;
