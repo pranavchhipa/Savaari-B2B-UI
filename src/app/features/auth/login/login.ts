@@ -36,6 +36,15 @@ export class LoginComponent implements OnInit {
   isForgotMode = signal(false);
   forgotSuccess = signal('');
 
+  /**
+   * True only on the very first login attempt after the wizard finishes
+   * registration. Used by onSubmit() to proactively create the agent's wallet
+   * record so brand-new users don't hit "Wallet not found for agent" the
+   * first time they try to top up directly from the booking page.
+   * Reset to false after consumption so re-logins don't trigger create again.
+   */
+  isFirstLoginAfterRegister = signal(false);
+
   ngOnInit(): void {
     // If user just registered via the new wizard, pre-fill the email + password
     // they chose during sign-up. Stored in localStorage by register-wizard.
@@ -46,6 +55,9 @@ export class LoginComponent implements OnInit {
         if (email && password) {
           this.loginForm.patchValue({ email, password, rememberMe: true });
           this.successMessage.set('Account created! Sign in to continue.');
+          // Mark this session as "fresh from registration" so onSubmit() can
+          // ensure the wallet exists right after the first successful login.
+          this.isFirstLoginAfterRegister.set(true);
         }
         // Consume once — don't leak credentials across future sessions
         localStorage.removeItem('b2bcab.pendingLogin');
@@ -67,8 +79,23 @@ export class LoginComponent implements OnInit {
       next: (user) => {
         if (!environment.production) console.log('[Login] Success for', user.email);
         this.isLoading.set(false);
-        // Load wallet balance immediately after login so header shows correct amount
-        this.walletService.loadBalance();
+
+        if (this.isFirstLoginAfterRegister()) {
+          // Brand-new agent — make sure the wallet record exists before they
+          // can land anywhere that needs it (booking/top-up flow). The
+          // backend's create endpoint is idempotent ("Already Exists" is
+          // returned as 400 but treated as success inside createWallet), so
+          // this is safe even if a wallet was auto-provisioned elsewhere.
+          this.isFirstLoginAfterRegister.set(false);
+          this.walletService.createWallet().subscribe(() => {
+            this.walletService.loadBalance();
+          });
+        } else {
+          // Returning user — wallet already exists, just refresh the balance
+          // so the header shows the correct amount.
+          this.walletService.loadBalance();
+        }
+
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {

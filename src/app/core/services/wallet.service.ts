@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
@@ -207,32 +207,74 @@ export class WalletService {
    * Initiate a Razorpay top-up order.
    * POST /wallet/topup/initiate → { orderId, amount (paise), currency, razorpayKeyId }
    * Use the returned orderId to open the Razorpay JS SDK.
+   *
+   * Self-heals "Wallet not found for agent" by silently calling createWallet()
+   * and retrying once. Covers users who registered before the auto-create-on-
+   * first-login fix shipped, or any edge case where the wallet record never
+   * got provisioned (e.g. user landed on booking page before the wallet
+   * dashboard was ever opened).
+   *
+   * @param _isRetry  Internal flag — leave default. Used to break the
+   *                  self-heal recursion so a genuinely-broken create call
+   *                  can't loop forever.
    */
-  initiateTopUp(amount: number): Observable<TopUpInitiateResponse | null> {
+  initiateTopUp(amount: number, _isRetry = false): Observable<TopUpInitiateResponse | null> {
     if (!this.isWalletActive()) {
       console.warn('[WALLET] initiateTopUp blocked —', this.getInactiveReason());
       return of(null);
     }
 
     return this.api.walletPost<any>('topup/initiate', this.buildPayload({ amount }), this.getWalletToken()).pipe(
-      map(response => {
+      // Some backends embed "Wallet not found" inside a 200 body instead of
+      // returning an HTTP error — switchMap lets us branch into the create-
+      // and-retry path from either source without duplicating the logic.
+      switchMap(response => {
+        const bodyMsg = (response?.message ?? '').toString().toLowerCase();
+        if (!_isRetry && this.looksLikeMissingWallet(undefined, bodyMsg)) {
+          if (!environment.production) console.log('[WALLET] initiateTopUp body says wallet missing — auto-creating + retrying once');
+          return this.createWallet().pipe(
+            switchMap(() => this.initiateTopUp(amount, true))
+          );
+        }
         if (response?.statusCode === 200 || response?.status === 'success') {
           const data = response.data ?? response;
-          return {
+          return of({
             orderId: data.orderId ?? data.order_id ?? '',
             amount: data.amount ?? (amount * 100),
             currency: data.currency ?? 'INR',
             razorpayKeyId: data.razorpayKeyId ?? data.razorpay_key_id,
-          } as TopUpInitiateResponse;
+          } as TopUpInitiateResponse);
         }
         console.warn('[WALLET] initiateTopUp unexpected response:', response?.message);
-        return null;
+        return of(null);
       }),
       catchError(err => {
+        const status = err?.status;
+        const errMsg = (err?.error?.message ?? err?.error?.msg ?? '').toString().toLowerCase();
+        if (!_isRetry && this.looksLikeMissingWallet(status, errMsg)) {
+          if (!environment.production) console.log(`[WALLET] initiateTopUp returned wallet-missing error (status=${status}) — auto-creating + retrying once`);
+          return this.createWallet().pipe(
+            switchMap(() => this.initiateTopUp(amount, true))
+          );
+        }
         console.warn('[WALLET] initiateTopUp error:', err?.status ?? err?.message);
         return of(null);
       })
     );
+  }
+
+  /**
+   * Decide whether an error / response body indicates the agent simply has
+   * no wallet record yet (vs a genuine API failure). Centralised so the
+   * 200-with-error-body and HTTP-404 paths in initiateTopUp use the same
+   * detection rules.
+   */
+  private looksLikeMissingWallet(status: number | undefined, lowerMsg: string): boolean {
+    if (status === 404) return true;
+    return lowerMsg.includes('wallet not found') ||
+           lowerMsg.includes('no wallet') ||
+           lowerMsg.includes('wallet does not exist') ||
+           lowerMsg.includes('wallet not exist');
   }
 
   /**
