@@ -1169,49 +1169,6 @@ export class BookingsComponent implements OnInit {
         return Math.max(0, booking.fare - paid + buffer);
     }
 
-    /**
-     * Amount displayed as "Paid Now" on the bookings list card.
-     *
-     * Bug context (April 2026 tester report): for Option 3 (Zero Cash) urgent
-     * bookings (<48h), the booking confirmation page correctly shows
-     * "Paid Now" = trip fare + 20% buffer (e.g. ₹1,875 + ₹375 = ₹2,250),
-     * but the bookings card was showing only ₹1,875.
-     *
-     * Root cause: `booking.prePayment` is mapped from the backend's
-     * `pay_now_amt` field, which holds ONLY the trip fare. The 20% refundable
-     * buffer is stored in a separate `buffer_amount` column and was being
-     * shown only as the "Buffer Deposit" row — never folded into "Paid Now".
-     * Meanwhile the booking confirmation page derives its number from
-     * `getPayNowAmount()` which already sums fare + buffer for urgent Option 3.
-     *
-     * Fix: when the agent is on Option 3 AND has actually paid the fare in
-     * full (urgent → 100% upfront, or advance → after the 48h cron), the
-     * buffer has been charged too, so include it in the displayed amount.
-     * Conservative gate (paid >= fare OR balance_paid_status === 1) ensures
-     * Option 3 ADVANCE bookings still showing the 25% upfront amount don't
-     * incorrectly tack the buffer on before the auto-debit has run.
-     *
-     * Other payment plans are untouched — early return preserves the
-     * existing "Paid Now" semantics for Options 1 and 2.
-     */
-    getCardPaidNow(booking: BookingCard): number {
-        const paid = booking.prePayment || 0;
-        if (booking.paymentOption !== 3) return paid;
-        const buffer = booking.bufferAmount || 0;
-        if (buffer === 0) return paid;
-        // Buffer was charged together with the full fare. Two ways to detect
-        // that has happened:
-        //   1. Backend marked the booking as fully settled (balance_paid_status
-        //      = 1) — applies to both urgent (charged at booking) and advance
-        //      after the cron has run.
-        //   2. The recorded paid amount already covers the trip fare — the
-        //      classic urgent case where pay_now_amt == gross_amount on row
-        //      insert because Razorpay processed (fare + buffer) in one go.
-        const fullyPaid = booking.balancePaidStatus === 1
-            || (booking.fare > 0 && paid >= booking.fare);
-        return fullyPaid ? paid + buffer : paid;
-    }
-
     /** Short label for payment method — matches payment page option names exactly. */
     getPaymentMethodShort(booking: BookingCard): string {
         // Settled bookings always show "Fully Paid" — overrides the per-option

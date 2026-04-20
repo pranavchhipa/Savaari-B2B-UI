@@ -41,42 +41,15 @@ export class BookingReceiptComponent implements OnInit {
     this.agentCompany = profile?.companyname || '';
   }
 
-  /**
-   * Total amount the agent has actually been charged at this point.
-   *
-   * For Options 1 and 2 (and Option 3 advance bookings before the 48h cron
-   * has run) this equals `prePayment` — the trip-fare portion the agent
-   * paid up front. For Option 3 (Zero Cash) bookings where the full fare
-   * has been collected — urgent at booking time, or advance after the
-   * auto-debit — the 20% refundable buffer was charged in the same swipe,
-   * so it must be added back to match what the agent actually saw on
-   * their card / wallet statement and what the booking confirmation page
-   * computed via getPayNowAmount().
-   *
-   * Mirrors getCardPaidNow() in bookings.ts so the receipt's
-   * "Total Charged to Agent" line and the bookings list "Paid Now" line
-   * agree on a single canonical figure.
-   */
-  get totalChargedToAgent(): number {
-    if (!this.booking) return 0;
-    const paid = this.booking.prePayment || 0;
-    if (this.booking.paymentOption !== 3) return paid;
-    const buffer = this.booking.bufferAmount || 0;
-    if (buffer === 0) return paid;
-    const fullyPaid = this.booking.balancePaidStatus === 1
-      || (this.booking.fare > 0 && paid >= this.booking.fare);
-    return fullyPaid ? paid + buffer : paid;
-  }
-
   get walletPaid(): number {
     if (!this.booking) return 0;
-    if (this.booking.paidVia === 'wallet') return this.totalChargedToAgent;
+    if (this.booking.paidVia === 'wallet') return this.booking.prePayment || 0;
     return 0;
   }
 
   get razorpayPaid(): number {
     if (!this.booking) return 0;
-    if (this.booking.paidVia === 'razorpay') return this.totalChargedToAgent;
+    if (this.booking.paidVia === 'razorpay') return this.booking.prePayment || 0;
     return 0;
   }
 

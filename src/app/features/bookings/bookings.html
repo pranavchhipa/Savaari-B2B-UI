@@ -512,7 +512,7 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Paid Now</span>
-                                    <span class="font-bold text-emerald-600">₹{{ getCardPaidNow(booking) | number:'1.0-0' }}</span>
+                                    <span class="font-bold text-emerald-600">₹{{ booking.prePayment || 0 | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Payment Plan</span>
