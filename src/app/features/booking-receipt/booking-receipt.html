@@ -156,7 +156,7 @@
           <!-- Total Bar -->
           <div class="receipt-total-bar bg-slate-900 dark:bg-slate-950 px-5 py-3.5 flex items-center justify-between">
             <span class="text-white font-bold text-sm">Total Charged to Agent</span>
-            <span class="text-white font-black text-lg">₹{{ (booking.prePayment || 0) | number:'1.0-0' }}</span>
+            <span class="text-white font-black text-lg">₹{{ totalChargedToAgent | number:'1.0-0' }}</span>
           </div>
         </div>
       </div>
