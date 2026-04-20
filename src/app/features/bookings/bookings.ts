@@ -1169,6 +1169,39 @@ export class BookingsComponent implements OnInit {
         return Math.max(0, booking.fare - paid + buffer);
     }
 
+    /**
+     * Buffer consumed by trip extras after a completed Option 3 booking.
+     *
+     * Reuses the same arithmetic as `getBalanceDue` (fare - paid + buffer)
+     * but reframes it for post-trip settlement: once the trip is done,
+     * any positive number here represents how much of the refundable
+     * buffer was eaten up by extra km / wait time / tolls etc. — capped
+     * at the original buffer amount so we never claim more was used than
+     * was held.
+     *
+     * Returns 0 for non-Option-3 bookings so the settlement block stays
+     * hidden everywhere else.
+     */
+    getBufferUsed(booking: BookingCard): number {
+        if (booking.paymentOption !== 3) return 0;
+        if (!booking.fare) return 0;
+        const buffer = booking.bufferAmount || 0;
+        if (buffer === 0) return 0;
+        const paid = booking.prePayment || 0;
+        const used = Math.max(0, booking.fare - paid + buffer);
+        return Math.min(used, buffer);
+    }
+
+    /**
+     * Amount being refunded to the agent for a completed Option 3 booking
+     * — whatever portion of the buffer wasn't consumed by trip extras.
+     */
+    getRefundDue(booking: BookingCard): number {
+        if (booking.paymentOption !== 3) return 0;
+        const buffer = booking.bufferAmount || 0;
+        return Math.max(0, buffer - this.getBufferUsed(booking));
+    }
+
     /** Short label for payment method — matches payment page option names exactly. */
     getPaymentMethodShort(booking: BookingCard): string {
         // Settled bookings always show "Fully Paid" — overrides the per-option

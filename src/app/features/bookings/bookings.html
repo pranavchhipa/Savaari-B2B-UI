@@ -536,7 +536,11 @@
                                         <span class="text-[9px] text-slate-400 font-normal">(refundable)</span>
                                     </span>
                                 </div>
-                                <div *ngIf="getBalanceDue(booking) > 0" class="flex justify-between">
+                                <!-- Balance Due: hidden for completed Option 3 bookings — those
+                                     get the dedicated Trip Settlement block below which reframes
+                                     the same number as "Buffer Used" (post-trip accounting), so
+                                     showing both would be confusing. -->
+                                <div *ngIf="getBalanceDue(booking) > 0 && !(activeTab === 'completed' && booking.paymentOption === 3)" class="flex justify-between">
                                     <span class="text-amber-500 font-semibold">Balance Due</span>
                                     <span class="font-bold text-amber-600 text-right">
                                         ₹{{ getBalanceDue(booking) | number:'1.0-0' }}
@@ -547,6 +551,37 @@
                                             ₹{{ (booking.fare - (booking.prePayment || 0)) | number:'1.0-0' }} + ₹{{ booking.bufferAmount | number:'1.0-0' }} buffer
                                         </span>
                                     </span>
+                                </div>
+
+                                <!-- ═══ TRIP SETTLEMENT (completed Option 3 only) ═══
+                                     Replaces the cryptic "Balance Due ₹X" line with a
+                                     post-trip breakdown:
+                                       • Buffer Used — how much of the refundable buffer
+                                         was consumed by trip extras (extra km / wait /
+                                         tolls). Hidden when 0 (clean trip).
+                                       • Refund Due — leftover buffer being refunded.
+                                         Hidden when 0 (extras ate the entire buffer). -->
+                                <div *ngIf="activeTab === 'completed' && booking.paymentOption === 3 && booking.bufferAmount && (getBufferUsed(booking) > 0 || getRefundDue(booking) > 0)"
+                                     class="mt-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200 dark:border-slate-700">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                        Trip Settlement
+                                    </div>
+
+                                    <div *ngIf="getBufferUsed(booking) > 0" class="flex justify-between text-xs">
+                                        <span class="text-orange-600 font-semibold">Buffer Used</span>
+                                        <span class="text-orange-600 font-bold">₹{{ getBufferUsed(booking) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <p *ngIf="getBufferUsed(booking) > 0" class="text-[10px] text-slate-400 mb-2">
+                                        Trip extras covered by buffer
+                                    </p>
+
+                                    <div *ngIf="getRefundDue(booking) > 0" class="flex justify-between text-xs">
+                                        <span class="text-emerald-600 font-semibold">Refund Due</span>
+                                        <span class="text-emerald-600 font-bold">₹{{ getRefundDue(booking) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <p *ngIf="getRefundDue(booking) > 0" class="text-[10px] text-slate-400">
+                                        Refund in 5-7 working days
+                                    </p>
                                 </div>
                                 <div *ngIf="getAutoDebitCountdown(booking)" class="flex justify-between">
                                     <span class="text-amber-500 font-semibold">Auto-Debit</span>
