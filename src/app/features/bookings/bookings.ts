@@ -1436,145 +1436,107 @@ export class BookingsComponent implements OnInit {
         this.cdr.markForCheck();
 
         /**
-         * After payment succeeds, call backend APIs to persist settlement, then update UI.
+         * After payment succeeds, persist settlement via the dedicated
+         * `settlement-payment` API and update UI.
          *
-         * The two IDs are NOT the same for Razorpay — per backend team's
-         * "B2B Settlement Payment API" doc (April 2026):
-         *   - confirmation.php wants the razorpay PAYMENT id (matches how the
-         *     new-booking flow calls confirmation.php in booking.ts).
-         *   - settlement-payment wants `transactionId` = razorpay ORDER id
-         *     and `paymentId` = razorpay PAYMENT id.
-         * For Wallet both IDs collapse to the single wallet transaction id.
+         * IMPORTANT: We do NOT call `confirmation.php` here.
          *
-         * Persistence fix (April 2026): the Razorpay path was previously calling
-         * confirmation.php WITHOUT `orderId`/`paymentId`/`paymentmode`. Without
-         * the savaari_payment_id (orderId) that razor_createorder was called
-         * with, the backend cannot tie the new payment row back to the booking
-         * — the row gets created but the booking flags (pay_bal_amt,
-         * payment_status, made_payment) never flip, so the UI reverts to
-         * "Settle Now" on refresh. Aligned with the new-booking flow at
-         * `features/booking/booking.ts:1308` which sends all three fields.
+         * Why: per backend team's "B2B Settlement Payment API" doc,
+         * `settlement-payment` alone handles every persistence step needed
+         * at settle time:
+         *   - records the payment in sv_advance_payment for auditing
+         *   - sets pay_bal_amt=0, payment_status='Pre Paid', made_payment=2
+         *   - flips balance_paid_status=1 (removes booking from auto-pay
+         *     cron queue)
+         *
+         * Earlier this flow ALSO called confirmation.php as "Step 1" before
+         * settlement-payment. That second confirmation.php write created a
+         * duplicate row in sv_advance_payment with the same shape as the
+         * initial-booking row, which polluted backend's cancellation-refund
+         * logic — cancel only refunded the latest (settle) amount instead
+         * of the full (initial + settle) sum. Removed because the
+         * settlement-payment endpoint already covers everything.
+         *
+         * confirmation.php is still the right call for the *initial* booking
+         * payment (see `features/booking/booking.ts`) — that's the first /
+         * only payment record for a fresh booking. Settlement is different.
+         *
+         * For Razorpay: `transactionId` = razorpay ORDER id, `paymentId` =
+         * razorpay PAYMENT id. For Wallet both IDs collapse to the single
+         * wallet transaction id.
          */
         const onSuccess = (params: {
             paymentMethod: 'Wallet' | 'Razorpay';
-            /** Goes to confirmation.php `transaction_id` — razorpay payment id OR wallet txn id */
-            confirmationTxnId: string;
             /** Goes to settlement-payment `transactionId` — razorpay ORDER id OR wallet txn id */
             settlementTxnId: string;
             /** Goes to settlement-payment `paymentId` — razorpay payment id only (optional for wallet) */
             paymentId?: string;
-            /** Razorpay only: the savaari_payment_id used for razor_createorder/razor_checkhash.
-             *  REQUIRED for confirmation.php to persist the settlement on the booking row. */
-            savaariPayId?: string;
         }) => {
-            // Step 1: confirmation.php — record the payment in sv_advance_payment.
-            // For Razorpay we MUST include orderId (savaari_payment_id) + paymentId
-            // + paymentmode so the backend can link the payment to the booking
-            // and flip pay_bal_amt/payment_status/made_payment.
-            const confirmBody: any = {
-                source: params.paymentMethod === 'Wallet' ? 'B2B_WALLET' : 'B2B_RAZORPAY',
-                booking_id: booking.bookingId,
-                payment_option: booking.paymentOption || 2,
-                transaction_id: params.confirmationTxnId,
-                totalAmount: booking.fare || 0,
-                // Option 3 (Zero Cash): pass the 20% refundable buffer through to
-                // confirmation.php so the backend records the correct deposit
-                // alongside the fare. Previously hardcoded to 0, which left the
-                // buffer obligation un-tracked when an Option 3 booking was
-                // settled later from the Manage Bookings page. Mirrors the
-                // create-booking flow at booking.ts:1298.
-                bufferAmount: booking.paymentOption === 3 ? (booking.bufferAmount || 0) : 0,
-                advancedAmount: amount,
-            };
-            if (params.paymentMethod === 'Razorpay') {
-                confirmBody.orderId = params.savaariPayId;
-                confirmBody.paymentId = params.paymentId;
-                confirmBody.paymentmode = 'savaariwebsite';
-            }
-            this.paymentService.confirmPayment(confirmBody).subscribe({
-                next: (confirmed) => {
-                    if (!environment.production) console.log('[BOOKINGS] confirmation.php result:', confirmed);
-                    // Step 2: settlement-payment — sets pay_bal_amt=0, payment_status='Pre Paid'
-                    // Wait for response before updating UI to prevent false "settled" state
-                    this.paymentService.settlementPayment({
-                        bookingId: booking.bookingId,
-                        paymentAmount: amount,
-                        paymentMethod: params.paymentMethod,
-                        transactionId: params.settlementTxnId,
-                        paymentId: params.paymentId,
-                    }).subscribe({
-                        next: (settled) => {
-                            if (!environment.production) console.log('[BOOKINGS] Settlement API result:', settled);
-                            // If settlement-payment returned an explicit failure,
-                            // refund (wallet path) and show the error instead of
-                            // pretending the booking is settled.
-                            if (!settled) {
-                                if (params.paymentMethod === 'Wallet') {
-                                    this.walletService.refundBooking(booking.bookingId, amount).subscribe({
-                                        next: () => { if (!environment.production) console.log('[BOOKINGS] Wallet refunded after settlement rejection'); },
-                                        error: (refundErr) => { if (!environment.production) console.warn('[BOOKINGS] Wallet refund failed:', refundErr); },
-                                    });
-                                }
-                                this.settleProcessing = false;
-                                this.settleBookingId = null;
-                                this.settleError = params.paymentMethod === 'Wallet'
-                                    ? 'Settlement could not be completed. Amount has been refunded to your wallet.'
-                                    : 'Settlement could not be recorded. Payment ID: ' + (params.paymentId || params.confirmationTxnId) + '. Please contact support.';
-                                this.cdr.markForCheck();
-                                return;
-                            }
-                            // Backend confirmed — update UI as settled.
-                            // Set `balancePaidStatus = 1` locally so the gate
-                            // in getBalanceDue / getPaymentMethodShort flips
-                            // immediately (without waiting for a refresh).
-                            // Also keep updating prePayment/cashToCollect so
-                            // the existing "Paid Now" / "Cash to Collect"
-                            // numbers in the expanded view stay coherent —
-                            // the canonical settled signal is balancePaidStatus,
-                            // but the amount fields are still shown elsewhere.
-                            booking.balancePaidStatus = 1;
-                            booking.prePayment = (booking.prePayment || 0) + amount;
-                            booking.cashToCollect = 0;
-                            this.settleProcessing = false;
-                            this.settleBookingId = null;
-                            this.settledBookingId = booking.bookingId;
-                            this.settlePaymentMethod = 'wallet';
-                            this.updateCalendarWithBookings();
-                            this.cdr.markForCheck();
-                            setTimeout(() => { this.settledBookingId = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
-                        },
-                        error: (err) => {
-                            if (!environment.production) console.warn('[BOOKINGS] settlement-payment API error:', err);
-                            // Settlement failed — refund wallet and show error
-                            if (params.paymentMethod === 'Wallet') {
-                                this.walletService.refundBooking(booking.bookingId, amount).subscribe({
-                                    next: () => { if (!environment.production) console.log('[BOOKINGS] Wallet refunded after settlement failure'); },
-                                    error: (refundErr) => { if (!environment.production) console.warn('[BOOKINGS] Wallet refund failed:', refundErr); },
-                                });
-                            }
-                            this.settleProcessing = false;
-                            this.settleBookingId = null;
-                            this.settleError = params.paymentMethod === 'Wallet'
-                                ? 'Settlement could not be completed. Amount has been refunded to your wallet.'
-                                : 'Settlement could not be recorded. Payment ID: ' + (params.paymentId || params.confirmationTxnId) + '. Please contact support.';
-                            this.cdr.markForCheck();
-                        },
-                    });
+            // settlement-payment is the ONLY backend call here. It records
+            // the audit row in sv_advance_payment AND flips the canonical
+            // settled flags. Wait for the response before updating UI so
+            // we don't show a false "settled" state.
+            this.paymentService.settlementPayment({
+                bookingId: booking.bookingId,
+                paymentAmount: amount,
+                paymentMethod: params.paymentMethod,
+                transactionId: params.settlementTxnId,
+                paymentId: params.paymentId,
+            }).subscribe({
+                next: (settled) => {
+                    if (!environment.production) console.log('[BOOKINGS] Settlement API result:', settled);
+                    // If settlement-payment returned an explicit failure,
+                    // refund (wallet path) and show the error instead of
+                    // pretending the booking is settled.
+                    if (!settled) {
+                        if (params.paymentMethod === 'Wallet') {
+                            this.walletService.refundBooking(booking.bookingId, amount).subscribe({
+                                next: () => { if (!environment.production) console.log('[BOOKINGS] Wallet refunded after settlement rejection'); },
+                                error: (refundErr) => { if (!environment.production) console.warn('[BOOKINGS] Wallet refund failed:', refundErr); },
+                            });
+                        }
+                        this.settleProcessing = false;
+                        this.settleBookingId = null;
+                        this.settleError = params.paymentMethod === 'Wallet'
+                            ? 'Settlement could not be completed. Amount has been refunded to your wallet.'
+                            : 'Settlement could not be recorded. Payment ID: ' + (params.paymentId || params.settlementTxnId) + '. Please contact support.';
+                        this.cdr.markForCheck();
+                        return;
+                    }
+                    // Backend confirmed — update UI as settled.
+                    // Set `balancePaidStatus = 1` locally so the gate
+                    // in getBalanceDue / getPaymentMethodShort flips
+                    // immediately (without waiting for a refresh).
+                    // Also keep updating prePayment/cashToCollect so
+                    // the existing "Paid Now" / "Cash to Collect"
+                    // numbers in the expanded view stay coherent —
+                    // the canonical settled signal is balancePaidStatus,
+                    // but the amount fields are still shown elsewhere.
+                    booking.balancePaidStatus = 1;
+                    booking.prePayment = (booking.prePayment || 0) + amount;
+                    booking.cashToCollect = 0;
+                    this.settleProcessing = false;
+                    this.settleBookingId = null;
+                    this.settledBookingId = booking.bookingId;
+                    this.settlePaymentMethod = 'wallet';
+                    this.updateCalendarWithBookings();
+                    this.cdr.markForCheck();
+                    setTimeout(() => { this.settledBookingId = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
                 },
                 error: (err) => {
-                    if (!environment.production) console.warn('[BOOKINGS] confirmation.php error:', err);
-                    // confirmation.php failed — refund wallet and show error
+                    if (!environment.production) console.warn('[BOOKINGS] settlement-payment API error:', err);
+                    // Settlement failed — refund wallet and show error
                     if (params.paymentMethod === 'Wallet') {
                         this.walletService.refundBooking(booking.bookingId, amount).subscribe({
-                            next: () => { if (!environment.production) console.log('[BOOKINGS] Wallet refunded after confirmation failure'); },
+                            next: () => { if (!environment.production) console.log('[BOOKINGS] Wallet refunded after settlement failure'); },
                             error: (refundErr) => { if (!environment.production) console.warn('[BOOKINGS] Wallet refund failed:', refundErr); },
                         });
                     }
                     this.settleProcessing = false;
                     this.settleBookingId = null;
                     this.settleError = params.paymentMethod === 'Wallet'
-                        ? 'Settlement confirmation failed. Amount has been refunded to your wallet.'
-                        : 'Settlement confirmation failed. Payment ID: ' + (params.paymentId || params.confirmationTxnId) + '. Please contact support.';
+                        ? 'Settlement could not be completed. Amount has been refunded to your wallet.'
+                        : 'Settlement could not be recorded. Payment ID: ' + (params.paymentId || params.settlementTxnId) + '. Please contact support.';
                     this.cdr.markForCheck();
                 },
             });
@@ -1676,17 +1638,14 @@ export class BookingsComponent implements OnInit {
                                         this.cdr.markForCheck();
                                         return;
                                     }
-                                    // Verified — proceed to confirmation + settlement APIs.
-                                    // Pass `savaariPayId` so confirmation.php can persist the
-                                    // settlement against the booking row (without it the
-                                    // payment row is orphaned and the booking flips back
-                                    // to "Settle Now" on refresh).
+                                    // Verified — proceed to settlement-payment API.
+                                    // settlement-payment expects:
+                                    //   transactionId = razorpay ORDER id (rzpOrderId)
+                                    //   paymentId     = razorpay PAYMENT id (rzpPaymentId)
                                     setTimeout(() => onSuccess({
                                         paymentMethod: 'Razorpay',
-                                        confirmationTxnId: rzpPaymentId,
                                         settlementTxnId: rzpOrderId,
                                         paymentId: rzpPaymentId,
-                                        savaariPayId,
                                     }), 800);
                                 },
                                 error: () => onError()
@@ -1739,12 +1698,11 @@ export class BookingsComponent implements OnInit {
             next: (result) => {
                 if (result.success) {
                     const txnId = result.transactionId || '';
-                    // Wallet path: both IDs collapse to the single wallet transaction id.
-                    // Per B2B Settlement Payment API doc, `paymentMethod=Wallet` →
-                    // `transactionId` = Wallet Transaction ID, `paymentId` omitted.
+                    // Wallet path: per B2B Settlement Payment API doc,
+                    // `paymentMethod=Wallet` → `transactionId` = Wallet
+                    // Transaction ID, `paymentId` omitted.
                     setTimeout(() => onSuccess({
                         paymentMethod: 'Wallet',
-                        confirmationTxnId: txnId,
                         settlementTxnId: txnId,
                     }), 1200);
                 } else {
