@@ -54,6 +54,17 @@ export interface RazorpayOrderRequest {
   amount: number;                  // Amount in INR (not paise)
   encoded_amount?: string;         // (currently unused — backend will re-enable later)
   savaari_payment_id: string;      // Format: SW{agentId}S{mmYY}-{bookingId}
+  /**
+   * Distinguishes initial-booking payment from a settle-balance payment.
+   *   0 → initial booking (first advance)
+   *   1 → settlement (settle-now flow paying off the remaining balance)
+   *
+   * Backend uses this to decide whether `settlement-payment` should INSERT
+   * a new sv_advance_payment row or UPDATE the existing latest row.
+   * Without it, settlement-payment was overwriting the initial payment row's
+   * payment_gateway/payment_gateway_order_id (e.g. wallet 17 → razorpay 16).
+   */
+  settlement_flag: 0 | 1;
 }
 
 export interface RazorpayOrderResponse {
@@ -157,6 +168,7 @@ export class PaymentService {
       {
         amount: request.amount,
         savaari_payment_id: request.savaari_payment_id,
+        settlement_flag: request.settlement_flag,
       }
     ).pipe(
       map(response => {

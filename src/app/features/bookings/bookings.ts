@@ -1574,6 +1574,10 @@ export class BookingsComponent implements OnInit {
             this.paymentService.createRazorpayOrder({
                 amount,
                 savaari_payment_id: savaariPayId,
+                // Settle-balance flow — flag tells backend this is a settlement
+                // payment so settlement-payment INSERTs a new sv_advance_payment
+                // row instead of overwriting the initial-payment row.
+                settlement_flag: 1,
             }).subscribe({
                 next: (orderResp) => {
                     // Backend razor_createorder.php sometimes nests the order under

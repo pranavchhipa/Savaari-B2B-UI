@@ -1183,6 +1183,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.paymentService.createRazorpayOrder({
       amount: advanceAmount,
       savaari_payment_id: savaariPayId,
+      // Initial booking — first advance payment, NOT a settle-balance call.
+      // Backend keys off this to INSERT a fresh sv_advance_payment row instead
+      // of UPDATEing the latest one (which would overwrite a prior payment).
+      settlement_flag: 0,
     }).subscribe({
       next: (orderResp) => {
         const razorpayOrderId = orderResp?.razorpay_order_id || orderResp?.order_id || '';
