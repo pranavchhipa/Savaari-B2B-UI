@@ -359,7 +359,6 @@
                         <div class="text-right shrink-0">
                             <p class="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</p>
                             <p *ngIf="surgeDetails && surgeDetails.surge > 0" class="text-[10px] text-slate-500 font-semibold">({{surgeDetails.oldPrice | number:'1.0-0'}} + {{surgeDetails.surge | number:'1.0-0'}})</p>
-                            <p class="text-[9px] sm:text-[10px] text-emerald-500 font-semibold">All inclusive</p>
                         </div>
                     </div>
                     <!-- Surge breakdown details (KMs + Fare) — matches beta -->
@@ -1144,7 +1143,6 @@
                                     Total Fare
                                 </div>
                                 <p class="text-sm font-bold text-emerald-600">₹{{ selectedCar?.price || 0 | number:'1.0-0' }}</p>
-                                <p class="text-[11px] text-emerald-600/70">All inclusive</p>
                             </div>
                         </div>
 
