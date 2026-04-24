@@ -41,20 +41,20 @@
                             <!-- Airport-converted: show plane icon before source city -->
                             <lucide-icon *ngIf="isAirportConverted" name="plane" [size]="14"
                                 class="text-primary mr-0.5 sm:mr-1 sm:!w-4 sm:!h-4 align-middle inline-block"></lucide-icon>
-                            <span class="text-orange-600 dark:text-orange-400">{{ getCityOnly(itinerary.fromCity) }}</span>
+                            <span>{{ getCityOnly(itinerary.fromCity) }}</span>
                             <!-- One Way uses → arrow, Round Trip uses / -->
                             <span *ngIf="itinerary.tripType === 'One Way'" class="text-slate-400 mx-1 sm:mx-2">&rarr;</span>
                             <span *ngIf="itinerary.tripType !== 'One Way'" class="text-slate-300 mx-1 sm:mx-2">/</span>
-                            <span class="text-orange-600 dark:text-orange-400">{{ getCityOnly(itinerary.toCity) }}</span>
+                            <span>{{ getCityOnly(itinerary.toCity) }}</span>
                             <ng-container *ngIf="itinerary.extraDestinations?.length">
                                 <ng-container *ngFor="let stop of itinerary.extraDestinations">
                                     <span class="text-slate-300 mx-1 sm:mx-2">/</span>
-                                    <span class="text-orange-600 dark:text-orange-400">{{ stop.cityOnly || getCityOnly(stop.cityName) }}</span>
+                                    <span>{{ stop.cityOnly || getCityOnly(stop.cityName) }}</span>
                                 </ng-container>
                             </ng-container>
                             <ng-container *ngIf="itinerary.tripType === 'Round Trip'">
                                 <span class="text-slate-300 mx-1 sm:mx-2">/</span>
-                                <span class="text-orange-600 dark:text-orange-400">{{ getCityOnly(itinerary.fromCity) }}</span>
+                                <span>{{ getCityOnly(itinerary.fromCity) }}</span>
                             </ng-container>
                             <span
                                 class="ml-1.5 sm:ml-3 text-[8px] sm:text-[11px] px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400 uppercase font-bold tracking-tight align-middle">
