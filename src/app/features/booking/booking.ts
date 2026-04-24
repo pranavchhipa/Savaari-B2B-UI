@@ -20,7 +20,7 @@ import { CityService } from '../../core/services/city.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 // AvailabilityService removed — fare recalculation is now client-side (Haversine distance)
 import { CreateBookingRequest } from '../../core/models';
-import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
+import { toSavaariDateTime, calculateDuration, toSavaariDate, to24HourTime } from '../../core/utils/date-format.util';
 import { decodeGSTIN, GSTINDecodeResult } from '../../core/utils/gstin-decoder';
 import { Observable } from 'rxjs';
 import { FooterComponent } from '../../components/layout/footer/footer';
@@ -1302,6 +1302,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   car_rate: this.selectedCar?.price || 0,
                   booking_amount: this.selectedCar?.price || 0,
                   booking_type: 'Confirmed booking',
+                  ...this.buildBookingTripContext(),
                 });
                 this.clearPassengerState();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1607,6 +1608,43 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /**
+   * Build the trip-context fields shared by every booking-confirmed analytics
+   * payload. Backend INSERT requires these (NOT NULL columns) — without them
+   * the analytics endpoint replied "Error while data insert" and the funnel's
+   * terminal event was lost. Mirrors the consumer site's payload shape (April
+   * 2026 reference), trimmed to fields available in the B2B booking flow.
+   *
+   * drop_city / drop_address blank for Local & Round Trip (no separate
+   * destination). Date/time emitted in DD-MM-YYYY + 24-hour HH:MM to match
+   * the convention used by trackSelectTrip on the dashboard.
+   */
+  private buildBookingTripContext() {
+    const tt = this.itinerary?.tripType || '';
+    const isLocalOrRound = tt === 'Local' || tt === 'Round Trip';
+    let startDate = '';
+    let startTime = '';
+    if (this.itinerary?.pickupDate) {
+      const d = new Date(this.itinerary.pickupDate);
+      if (!isNaN(d.getTime())) startDate = toSavaariDate(d);
+    }
+    if (this.itinerary?.pickupTime) {
+      startTime = to24HourTime(this.itinerary.pickupTime);
+    }
+    return {
+      pickup_city: this.itinerary?.fromCity || '',
+      drop_city: isLocalOrRound ? '' : (this.itinerary?.toCity || ''),
+      start_date: startDate,
+      start_time: startTime,
+      customer_name: this.guestName || '',
+      customer_email: this.guestEmail || '',
+      customer_country_code: this.selectedCountryCode?.isdCode || '91',
+      customer_phone: this.phone || '',
+      pickup_address: this.pickupAddress || '',
+      drop_address: isLocalOrRound ? '' : (this.dropAddress || ''),
+    };
+  }
+
+  /**
    * Process wallet payment for already-created booking.
    * Booking was already created on "Proceed to Next" — just deduct wallet + confirm.
    *
@@ -1687,6 +1725,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                     car_rate: this.selectedCar?.price || 0,
                     booking_amount: this.selectedCar?.price || 0,
                     booking_type: 'Confirmed booking',
+                    ...this.buildBookingTripContext(),
                   });
                   this.clearPassengerState();
                   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1714,6 +1753,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   car_rate: this.selectedCar?.price || 0,
                   booking_amount: this.selectedCar?.price || 0,
                   booking_type: 'Confirmed booking',
+                  ...this.buildBookingTripContext(),
                 });
                 this.clearPassengerState();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1753,6 +1793,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         car_rate: this.selectedCar?.price || 0,
         booking_amount: this.selectedCar?.price || 0,
         booking_type: 'Confirmed booking',
+        ...this.buildBookingTripContext(),
       });
       this.clearPassengerState();
       window.scrollTo({ top: 0, behavior: 'smooth' });

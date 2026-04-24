@@ -235,7 +235,20 @@ export class AnalyticsService {
     });
   }
 
-  /** Fired after the agent's payment succeeds and the booking is confirmed. */
+  /**
+   * Fired after the agent's payment succeeds and the booking is confirmed.
+   *
+   * The trip-context fields (pickup_city, drop_city, start_date, start_time,
+   * customer_*, pickup_address, drop_address) are required by the backend
+   * INSERT — without them the analytics ingest replied "Error while data
+   * insert" and dropped the funnel's terminal event. Field shape mirrors the
+   * consumer site's booking-confirmed payload (April 2026 reference) so both
+   * funnels write the same columns.
+   *
+   * drop_address (and drop_city) are sent empty for Local & Round Trip flows
+   * because there's no separate destination — caller is responsible for
+   * blanking them when not applicable.
+   */
   trackBookingConfirmed(payload: {
     booking_id: string;
     trip_type: string;
@@ -248,6 +261,17 @@ export class AnalyticsService {
     car_rate?: number;
     booking_amount?: number;
     booking_type?: string;
+    // Trip context — required by backend INSERT (see docblock above).
+    pickup_city?: string;
+    drop_city?: string;
+    start_date?: string;              // DD-MM-YYYY
+    start_time?: string;              // HH:MM (24-hour)
+    customer_name?: string;
+    customer_email?: string;
+    customer_country_code?: string;   // numeric only, e.g. "91"
+    customer_phone?: string;
+    pickup_address?: string;
+    drop_address?: string;
   }): void {
     this.track('booking-confirmed', {
       page_url: window.location.pathname,
