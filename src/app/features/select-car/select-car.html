@@ -300,6 +300,12 @@
                                             </div>
                                             <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{{car.seats}}</span>
                                         </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <div class="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                                <lucide-icon name="briefcase" [size]="10" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{{car.bags}}</span>
+                                        </div>
                                     </div>
                                     <!-- T&C -->
                                     <div [hidden]="activeTab[car.id] !== 'tc'" class="space-y-1">
