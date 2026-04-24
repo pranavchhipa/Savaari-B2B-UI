@@ -477,14 +477,27 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         // Analytics: enter-info fires here — booking_id now available from API.
         // Fires before enter-payment (Step 1 complete → Step 2 about to show).
         this.analytics.trackEnterInfo({
-          booking_id: bkId,
+          booking_id: String(bkId),
           trip_type: this.itinerary?.tripType || '',
           trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
           car_type: this.selectedCar?.type || '',
           car_rate: this.selectedCar?.price || 0,
         });
-        // NOTE: enter-payment fires in setPaymentOption() when agent selects
-        // a payment option card — not here on page load.
+        // Analytics: enter-payment fires here too because Step 2 lands with a
+        // pre-selected payment option (default = Option 1). If the agent never
+        // changes the radio selection, setPaymentOption() never runs, so
+        // enter-payment would otherwise never fire. We mirror the values
+        // setPaymentOption() would compute for the current paymentOption.
+        const paymentType: 'PARTPAID' | 'FULLPAID' = this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID';
+        const paymentPercentage = this.paymentOption === 3 ? 100 : this.paymentOption === 2 ? 25 : this.option1SliderPercent;
+        this.analytics.trackEnterPayment({
+          booking_id: String(bkId),
+          trip_type: this.itinerary?.tripType || '',
+          trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
+          car_rate: this.selectedCar?.price || 0,
+          payment_type: paymentType,
+          payment_percentage: paymentPercentage,
+        });
         this.step1Complete = true;
         history.pushState({ step: 'payment' }, '', this.router.url);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -823,7 +836,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       const paymentType = option === 3 ? 'FULLPAID' : 'PARTPAID';
       const paymentPercentage = option === 3 ? 100 : option === 2 ? 25 : this.option1SliderPercent;
       this.analytics.trackEnterPayment({
-        booking_id: this.bookingId,
+        booking_id: String(this.bookingId),
         trip_type: this.itinerary?.tripType || '',
         trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
         car_rate: this.selectedCar?.price || 0,
@@ -1266,7 +1279,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 this.bookingConfirmed = true;
                 // Analytics: booking successfully confirmed via Razorpay.
                 this.analytics.trackBookingConfirmed({
-                  booking_id: bkId,
+                  booking_id: String(bkId),
                   trip_type: this.itinerary?.tripType || '',
                   trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
                   payment_option: this.paymentOption,
@@ -1651,7 +1664,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   this.bookingConfirmed = true;
                   // Analytics: booking successfully confirmed via wallet.
                   this.analytics.trackBookingConfirmed({
-                    booking_id: bkId,
+                    booking_id: String(bkId),
                     trip_type: this.itinerary?.tripType || '',
                     trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
                     payment_option: this.paymentOption,
@@ -1678,7 +1691,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 this.bookingConfirmed = true;
                 // Analytics: booking confirmed (wallet path, confirmation.php errored but payment taken).
                 this.analytics.trackBookingConfirmed({
-                  booking_id: bkId,
+                  booking_id: String(bkId),
                   trip_type: this.itinerary?.tripType || '',
                   trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
                   payment_option: this.paymentOption,
@@ -1717,7 +1730,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.bookingConfirmed = true;
       // Analytics: zero-amount wallet path (no money moved, booking confirmed).
       this.analytics.trackBookingConfirmed({
-        booking_id: bkId,
+        booking_id: String(bkId),
         trip_type: this.itinerary?.tripType || '',
         trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
         payment_option: this.paymentOption,
