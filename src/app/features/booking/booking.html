@@ -349,11 +349,11 @@
                                 </ng-container>
                             </p>
                             <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span *ngIf="selectedCar?.name" class="text-[10px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{{ selectedCar?.name }}</span>
+                                <span *ngIf="selectedCar?.name" class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{{ selectedCar?.name }}</span>
                                 <span *ngIf="selectedCar?.name" class="text-[10px] text-slate-400">·</span>
-                                <span class="text-[10px] text-slate-400">{{ itinerary?.tripType }}<ng-container *ngIf="itinerary?.tripType === 'Local' && itinerary?.localPackage"> ({{ itinerary?.localPackage }})</ng-container></span>
+                                <span class="text-[10px] text-slate-600 dark:text-slate-300">{{ itinerary?.tripType }}<ng-container *ngIf="itinerary?.tripType === 'Local' && itinerary?.localPackage"> ({{ itinerary?.localPackage }})</ng-container></span>
                                 <span class="text-[10px] text-slate-400">·</span>
-                                <span class="text-[10px] text-slate-400">{{ itinerary?.pickupDate | date:'dd MMM' }} · {{ itinerary?.pickupTime }}</span>
+                                <span class="text-[10px] text-slate-600 dark:text-slate-300">{{ itinerary?.pickupDate | date:'dd MMM' }} · {{ itinerary?.pickupTime }}</span>
                             </div>
                         </div>
                         <div class="text-right shrink-0">
@@ -384,7 +384,7 @@
                 <!-- ═══════════════════════════════════════════════ -->
                 <div class="flex items-center gap-1.5 mb-2">
                     <lucide-icon name="credit-card" [size]="13" class="text-primary"></lucide-icon>
-                    <p class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Choose Payment Plan</p>
+                    <p class="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Choose Payment Plan</p>
                 </div>
 
                 <div class="space-y-1.5 mb-1.5 sm:mb-3">
@@ -407,14 +407,14 @@
                             <!-- Text -->
                             <div class="flex-1 min-w-0">
                                 <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Pay Any Amount Now</h4>
-                                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                <p class="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 mt-0.5">
                                     Pay {{ option1SliderPercent }}% now (₹{{ getPayNowAmount(1) | number:'1.0-0' }}). Remaining fare & extras (toll, parking, extra KMs) payable to driver during the trip.
                                 </p>
                             </div>
                             <!-- Amount badge -->
                             <div class="text-right shrink-0">
                                 <p class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">₹{{ getPayNowAmount(1) | number:'1.0-0' }}</p>
-                                <p class="text-[10px] text-slate-400">{{ option1SliderPercent }}% of fare</p>
+                                <p class="text-[10px] text-slate-600 dark:text-slate-300">{{ option1SliderPercent }}% of fare</p>
                             </div>
                         </div>
 
@@ -424,14 +424,14 @@
                             <div class="border-t border-slate-100 dark:border-slate-800 pt-3">
                                 <!-- Slider row -->
                                 <div class="flex items-center gap-3 mb-1">
-                                    <span class="text-[10px] text-slate-400 shrink-0">25%</span>
+                                    <span class="text-[10px] text-slate-600 dark:text-slate-300 shrink-0">25%</span>
                                     <input type="range"
                                         [min]="SLIDER_MIN" [max]="SLIDER_MAX" [step]="SLIDER_STEP"
                                         [value]="option1SliderPercent"
                                         (input)="onSliderChange($event)"
                                         [style.--slider-fill]="((option1SliderPercent - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN) * 100) + '%'"
                                         class="payment-slider flex-1 h-1.5 rounded-full appearance-none cursor-pointer" />
-                                    <span class="text-[10px] text-slate-400 shrink-0">100%</span>
+                                    <span class="text-[10px] text-slate-600 dark:text-slate-300 shrink-0">100%</span>
                                     <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{{ option1SliderPercent }}%</span>
                                 </div>
                                 <!-- Compact breakdown -->
@@ -440,7 +440,7 @@
                                     <span class="text-slate-400">|</span>
                                     <span class="text-slate-600 font-semibold">Driver collects ₹{{ getDriverCollectsAmount() | number:'1.0-0' }} + extras</span>
                                 </div>
-                                <p class="text-[10px] text-slate-400 mt-1">Remaining fare + extras (toll, parking, extra KMs) — payable directly to driver</p>
+                                <p class="text-[10px] text-slate-600 dark:text-slate-300 mt-1">Remaining fare + extras (toll, parking, extra KMs) — payable directly to driver</p>
                             </div>
                         </div>
                     </div>
@@ -462,7 +462,7 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Pay 25% Now, Rest Auto-Deducted</h4>
-                                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                <p class="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 mt-0.5">
                                     Pay 25% now (₹{{ getPayNowAmount(2) | number:'1.0-0' }}). Remaining will be auto-deducted 48h before trip. Extras payable to driver.
                                 </p>
                             </div>
@@ -490,7 +490,7 @@
                                     <span class="font-semibold">Customer pays driver</span>
                                     <span class="font-bold">Extras only</span>
                                 </div>
-                                <p class="text-[10px] text-slate-400">Extras include toll, parking & extra KMs — payable directly to driver</p>
+                                <p class="text-[10px] text-slate-600 dark:text-slate-300">Extras include toll, parking & extra KMs — payable directly to driver</p>
                                 <div class="mt-2 space-y-1">
                                     <p class="text-[10px] text-sky-600">
                                         <lucide-icon name="info" [size]="10" class="inline-block mr-0.5"></lucide-icon>
@@ -525,7 +525,7 @@
                                     <span class="px-2 py-0.5 text-[7px] font-bold uppercase tracking-wider rounded text-emerald-50 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_0_8px_rgba(16,185,129,0.4)] animate-pulse">Recommended</span>
                                     <span class="px-2 py-0.5 text-[7px] font-bold uppercase tracking-wider rounded text-amber-50 bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.4)] animate-pulse">Best Value</span>
                                 </div>
-                                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                <p class="text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 mt-0.5">
                                     <ng-container *ngIf="!isBookingUrgent()">
                                         Pay 25% now (₹{{ getPayNowAmount(3) | number:'1.0-0' }}). Remaining ₹{{ getDeferredAmount(3) | number:'1.0-0' }} (75% fare + 20% refundable deposit) will be auto-deducted 48h before trip. Unutilized deposit will be refunded after trip &amp; invoice.
                                     </ng-container>
@@ -544,11 +544,11 @@
                             class="px-3 pb-2.5 pt-0" (click)="$event.stopPropagation()">
                             <div class="border-t border-slate-100 dark:border-slate-800 pt-2 space-y-0.5 text-[10px]">
                                 <div class="flex justify-between">
-                                    <span class="text-slate-500">Trip fare</span>
+                                    <span class="text-slate-700 dark:text-slate-300">Trip fare</span>
                                     <span class="font-bold text-slate-700">₹{{ (selectedCar?.price || 0) | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-slate-500">20% refundable deposit (extra KM/toll)</span>
+                                    <span class="text-slate-700 dark:text-slate-300">20% refundable deposit (extra KM/toll)</span>
                                     <span class="font-bold text-slate-700">₹{{ getOption3BufferAmount() | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between">
@@ -684,7 +684,7 @@
                         <lucide-icon name="car" [size]="15" class="text-slate-400 shrink-0"></lucide-icon>
                         <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{{selectedCar?.name || '—'}}</span>
                         <span *ngIf="selectedCar?.type" class="text-[9px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-black uppercase shrink-0 whitespace-nowrap">{{selectedCar?.type}}</span>
-                        <span class="text-xs text-slate-500 ml-auto shrink-0 whitespace-nowrap">
+                        <span class="text-xs text-slate-700 dark:text-slate-300 ml-auto shrink-0 whitespace-nowrap">
                             <ng-container *ngIf="surgeDetails && surgeDetails.newKm > surgeDetails.oldKm; else normalKms">
                                 {{surgeDetails.newKm}} ({{surgeDetails.oldKm}} + {{surgeDetails.newKm - surgeDetails.oldKm}}) km
                             </ng-container>
@@ -695,7 +695,7 @@
                     <!-- Fare — prominent -->
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="font-bold text-slate-400 uppercase tracking-widest" [ngClass]="step1Complete ? 'text-[9px]' : 'text-[10px]'">Estimated Total Fare</p>
+                            <p class="font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest" [ngClass]="step1Complete ? 'text-[9px]' : 'text-[10px]'">Estimated Total Fare</p>
                             <p class="font-black text-slate-900 dark:text-white tracking-tight" [ngClass]="step1Complete ? 'text-lg' : 'text-xl'">
                                 ₹ {{(selectedCar?.price || 0) | number:'1.0-0'}}
                             </p>
@@ -716,16 +716,16 @@
                                 <p *ngIf="paymentOption !== 0" class="text-xl font-black text-primary tracking-tight">₹{{ getPayNowAmount() | number:'1.0-0' }}</p>
                             </div>
                             <div *ngIf="paymentOption === 1 && getDriverCollectsAmount() > 0" class="text-right">
-                                <p class="text-[9px] text-slate-400">Driver collects</p>
+                                <p class="text-[9px] text-slate-600 dark:text-slate-300">Driver collects</p>
                                 <p class="text-xs font-bold text-slate-600">₹{{ getDriverCollectsAmount() | number:'1.0-0' }} + extras</p>
                             </div>
                             <div *ngIf="paymentOption === 2" class="text-right">
-                                <p class="text-[9px] text-slate-400">Driver collects</p>
-                                <p class="text-[10px] font-semibold text-slate-500">Extras only</p>
+                                <p class="text-[9px] text-slate-600 dark:text-slate-300">Driver collects</p>
+                                <p class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">Extras only</p>
                             </div>
                         </div>
                         <div *ngIf="getDeferredAmount() > 0" class="flex justify-between items-center text-[10px] py-1 border-t border-primary/10">
-                            <span class="text-slate-400">Auto-deducted 48h before</span>
+                            <span class="text-slate-600 dark:text-slate-300">Auto-deducted 48h before</span>
                             <span class="font-bold text-amber-600">₹{{ getDeferredAmount() | number:'1.0-0' }}</span>
                         </div>
 
