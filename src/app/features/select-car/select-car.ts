@@ -209,7 +209,15 @@ export class SelectCarComponent implements OnInit {
       urgentBookingFlag: car.urgentBookingFlag,
       tc,
       inclusions: car.inclusions?.length ? car.inclusions.map(t => this.decodeUnicode(t)) : ['Fuel Charges', 'Driver Allowance', `${kmsInc} KMs`],
-      exclusions: car.exclusions?.length ? car.exclusions.map(t => this.decodeUnicode(t)) : ['Tolls & Parking', 'State Taxes']
+      exclusions: car.exclusions?.length
+        ? car.exclusions.map(t => {
+            const decoded = this.decodeUnicode(t);
+            if (/night allowance/i.test(decoded) && nightAllow > 0) {
+              return `Night Allowance (₹${nightAllow})`;
+            }
+            return decoded;
+          })
+        : ['Tolls & Parking', 'State Taxes']
     };
   }
 
