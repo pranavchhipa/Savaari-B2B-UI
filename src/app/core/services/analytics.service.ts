@@ -153,14 +153,25 @@ export class AnalyticsService {
   // enter-payment, booking-confirmed) conventions. Kept verbatim so the
   // backend ingest doesn't need renaming on their side.
 
-  /** Fired on the dashboard when the agent submits a valid Explore Cabs search. */
+  /**
+   * Fired on the dashboard when the agent submits a valid Explore Cabs search.
+   *
+   * Field shape per backend team spec (April 2026), aligned with savaari.com's
+   * select_trip event:
+   *   - pickup_city / drop_city — full "City, State" strings (drop_city empty
+   *     for Local & Airport since they don't have a separate destination)
+   *   - start_date / end_date   — DD-MM-YYYY (end_date == start_date for
+   *     non-round-trip flows; round trip sends the return date)
+   *   - start_time              — HH:MM in 24-hour format (no AM/PM)
+   */
   trackSelectTrip(payload: {
     trip_type: string;
     trip_subtype?: string;
-    from_city?: string;
-    to_city?: string;
-    pickup_date?: string;
-    pickup_time?: string;
+    pickup_city?: string;
+    drop_city?: string;
+    start_date?: string;
+    end_date?: string;
+    start_time?: string;
   }): void {
     this.track('select_trip', {
       page_url: window.location.pathname,
@@ -168,15 +179,26 @@ export class AnalyticsService {
     });
   }
 
-  /** Fired on select-car when the agent picks a cab and proceeds to booking. */
+  /**
+   * Fired on select-car when the agent picks a cab and proceeds to booking.
+   *
+   * Field shape per backend team spec (April 2026), aligned with savaari.com's
+   * select_car event:
+   *   - car_type     — numeric carTypeId as a string (e.g. "18"), NOT the
+   *                    display label like "AC Mid-Size Plus"
+   *   - car_rate     — fare in INR (renamed from `fare`)
+   *   - pickup_city / drop_city — same shape as select_trip
+   *
+   * Note: `car_name` (display string like "Toyota Etios or Equivalent") is
+   * intentionally NOT sent — backend spec doesn't include it.
+   */
   trackSelectCar(payload: {
     trip_type: string;
     trip_subtype?: string;
     car_type?: string;
-    car_name?: string;
-    fare?: number;
-    from_city?: string;
-    to_city?: string;
+    car_rate?: number;
+    pickup_city?: string;
+    drop_city?: string;
   }): void {
     this.track('select_car', {
       page_url: window.location.pathname,
@@ -184,12 +206,13 @@ export class AnalyticsService {
     });
   }
 
-  /** Fired when the booking page loads Step 1 (passenger details entry). */
+  /** Fired when agent completes Step 1 (passenger details) and booking is created. */
   trackEnterInfo(payload: {
+    booking_id: string;
     trip_type: string;
     trip_subtype?: string;
     car_type?: string;
-    fare?: number;
+    car_rate?: number;
   }): void {
     this.track('enter-info', {
       page_url: window.location.pathname,
@@ -197,12 +220,14 @@ export class AnalyticsService {
     });
   }
 
-  /** Fired when the booking page transitions to Step 2 (payment options). */
+  /** Fired when agent selects a payment option (radio button click on Step 2). */
   trackEnterPayment(payload: {
     booking_id: string;
     trip_type: string;
     trip_subtype?: string;
-    fare?: number;
+    car_rate?: number;
+    payment_type: 'PARTPAID' | 'FULLPAID';
+    payment_percentage: number;
   }): void {
     this.track('enter-payment', {
       page_url: window.location.pathname,
@@ -215,10 +240,14 @@ export class AnalyticsService {
     booking_id: string;
     trip_type: string;
     trip_subtype?: string;
-    payment_option: number;      // 1 | 2 | 3
+    payment_option: number;           // 1 | 2 | 3 (B2B-specific)
     payment_method: 'wallet' | 'razorpay';
-    amount_paid: number;
-    fare?: number;
+    payment_type: 'PARTPAID' | 'FULLPAID';
+    payment_percentage: number;
+    payment_amount: number;
+    car_rate?: number;
+    booking_amount?: number;
+    booking_type?: string;
   }): void {
     this.track('booking-confirmed', {
       page_url: window.location.pathname,

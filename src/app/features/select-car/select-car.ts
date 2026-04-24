@@ -136,13 +136,10 @@ export class SelectCarComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
 
-    // Track page-load (mirrors savaari.com select-car page behaviour, 2s delay)
-    setTimeout(() => {
-      this.analytics.trackPageLoad(
-        this.itinerary?.fromCity ?? '',
-        this.itinerary?.toCity ?? ''
-      );
-    }, 2000);
+    // NOTE: page-load event is NOT fired on select-car. It fires only once
+    // per session entry on the dashboard. Re-firing it here was causing a
+    // duplicate page-load in analytics for every search → select-car
+    // navigation. Removed (April 2026).
 
     // Show loading briefly then reveal
     setTimeout(() => {
@@ -791,14 +788,17 @@ export class SelectCarComponent implements OnInit {
     this.bookingState.setSelectedCar(selectedCar);
     // Lifecycle event: agent picked a car — funnel step 2 in B2B analytics
     // pipeline (backend team spec, April 2026).
+    // Field shape mirrors savaari.com select_car — car_type is the numeric
+    // carTypeId (e.g. "18"), NOT the display label (e.g. "AC Mid-Size Plus").
+    // car_rate replaces `fare`. pickup_city/drop_city replace from_city/to_city.
+    // car_name is intentionally omitted per backend spec.
     this.analytics.trackSelectCar({
       trip_type: this.itinerary?.tripType || '',
       trip_subtype: this.itinerary?.subTripType || '',
-      car_type: car.type || '',
-      car_name: car.name || '',
-      fare: selectedCar.price,
-      from_city: this.itinerary?.fromCity || '',
-      to_city: this.itinerary?.toCity || '',
+      car_type: car.carTypeId ? String(car.carTypeId) : '',
+      car_rate: selectedCar.price,
+      pickup_city: this.itinerary?.fromCity || '',
+      drop_city: this.itinerary?.toCity || '',
     });
     this.router.navigate(['/booking']);
   }

@@ -13,7 +13,7 @@ import { TripTypeService } from '../../core/services/trip-type.service';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { BookingApiService } from '../../core/services/booking-api.service';
 import { City, AvailabilityRequest } from '../../core/models';
-import { toSavaariDateTime, calculateDuration } from '../../core/utils/date-format.util';
+import { toSavaariDateTime, calculateDuration, toSavaariDate, to24HourTime } from '../../core/utils/date-format.util';
 import { BannerService, BannerImage } from '../../core/services/banner.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { LocalityService, Locality } from '../../core/services/locality.service';
@@ -1580,13 +1580,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
         // Lifecycle event: agent successfully submitted Explore Cabs — funnel
         // step 1 in the B2B analytics pipeline (backend team spec, April 2026).
+        // Field shape mirrors savaari.com select_trip — pickup_city/drop_city,
+        // start_date/end_date (DD-MM-YYYY), start_time (24h HH:MM). end_date
+        // equals start_date for non-round-trip flows.
         this.analytics.trackSelectTrip({
           trip_type: tripType,
           trip_subtype: this.getAnalyticsSubtype(this.selectedTab),
-          from_city: fromCityName,
-          to_city: isLocal || isAirport ? '' : toCityName,
-          pickup_date: toSavaariDateTime(pickupDate, pickupTimeStr),
-          pickup_time: pickupTimeStr,
+          pickup_city: fromCityName,
+          drop_city: isLocal || isAirport ? '' : toCityName,
+          start_date: toSavaariDate(pickupDate),
+          end_date: isRoundTrip ? toSavaariDate(returnDate) : toSavaariDate(pickupDate),
+          start_time: to24HourTime(pickupTimeStr),
         });
         this.router.navigate(['/select-car']);
       },
@@ -1796,15 +1800,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Lifecycle event: airport request got auto-converted to a One Way trip
     // by the backend. Still counts as a successful trip selection for the
     // B2B analytics funnel (backend team spec, April 2026).
+    //
+    // Airport-converted-to-OneWay never has a return date, so end_date mirrors
+    // start_date. pickupDate may be a Date or a stringified Date depending on
+    // how the itinerary was hydrated — normalise defensively before formatting.
     const converted = this.bookingState.getItinerary();
     if (converted) {
+      const rawDate: any = converted.pickupDate;
+      const pickupDateObj: Date = rawDate instanceof Date
+        ? rawDate
+        : (rawDate ? new Date(rawDate) : new Date());
+      const startDate = isNaN(pickupDateObj.getTime()) ? '' : toSavaariDate(pickupDateObj);
       this.analytics.trackSelectTrip({
         trip_type: converted.tripType || 'One Way',
         trip_subtype: converted.subTripType || 'oneway',
-        from_city: converted.fromCity || '',
-        to_city: converted.toCity || '',
-        pickup_date: converted.pickupDate ? String(converted.pickupDate) : '',
-        pickup_time: converted.pickupTime || '',
+        pickup_city: converted.fromCity || '',
+        drop_city: converted.toCity || '',
+        start_date: startDate,
+        end_date: startDate, // airport conversion is always one-way
+        start_time: converted.pickupTime ? to24HourTime(converted.pickupTime) : '',
       });
     }
     this.router.navigate(['/select-car']);

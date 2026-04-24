@@ -251,17 +251,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.itinerary = this.bookingState.getItinerary();
     this.selectedCar = this.bookingState.getSelectedCar();
 
-    // Analytics: fired once when the passenger details page (Step 1) becomes visible.
-    // Per backend team spec (April 2026), "enter-info" maps to the agent landing on
-    // the booking page before entering passenger details.
-    if (this.itinerary && this.selectedCar) {
-      this.analytics.trackEnterInfo({
-        trip_type: this.itinerary.tripType || '',
-        trip_subtype: this.itinerary.subTripType || this.itinerary.airportSubType || this.itinerary.localPackage || '',
-        car_type: this.selectedCar.type || '',
-        fare: this.selectedCar.price || 0,
-      });
-    }
+    // NOTE: enter-info analytics event is NOT fired here on page load.
+    // It fires in proceedToPayment() after the agent fills details and
+    // clicks "Proceed to Next" — matching the backend team spec (April 2026)
+    // which maps enter-info to the agent completing Step 1 and moving to Step 2.
 
     // Resolve city lat/lng for autocomplete API — fetch source cities to get ll field
     this.fetchCityLatLng();
@@ -366,6 +359,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.isPickupDetailsValid()) {
       return;
     }
+
+    // NOTE: enter-info fires in executeBookingOnProceed() success callback
+    // (after booking is created) so booking_id is available in the payload.
 
     // Save passenger details before proceeding
     this.savePassengerState();
@@ -478,14 +474,17 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         // Booking created → show payment page
         this.isCreatingBooking = false;
-        // Analytics: agent has moved from Step 1 (passenger info) to Step 2 (payment).
-        // Backend team spec calls this event "enter-payment".
-        this.analytics.trackEnterPayment({
+        // Analytics: enter-info fires here — booking_id now available from API.
+        // Fires before enter-payment (Step 1 complete → Step 2 about to show).
+        this.analytics.trackEnterInfo({
           booking_id: bkId,
           trip_type: this.itinerary?.tripType || '',
           trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
-          fare: this.selectedCar?.price || 0,
+          car_type: this.selectedCar?.type || '',
+          car_rate: this.selectedCar?.price || 0,
         });
+        // NOTE: enter-payment fires in setPaymentOption() when agent selects
+        // a payment option card — not here on page load.
         this.step1Complete = true;
         history.pushState({ step: 'payment' }, '', this.router.url);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -816,6 +815,22 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Auto-fill top-up amount with shortfall (required - available balance)
     this.autoFillTopUpShortfall();
     this.showTopUpConfirm = false;
+
+    // Analytics: agent selected a payment option — fire enter-payment.
+    // payment_type: Option 3 (full wallet) = FULLPAID, options 1/2 = PARTPAID.
+    // payment_percentage: option 1 uses slider value, option 2 = 25%, option 3 = 100%.
+    if (this.bookingId) {
+      const paymentType = option === 3 ? 'FULLPAID' : 'PARTPAID';
+      const paymentPercentage = option === 3 ? 100 : option === 2 ? 25 : this.option1SliderPercent;
+      this.analytics.trackEnterPayment({
+        booking_id: this.bookingId,
+        trip_type: this.itinerary?.tripType || '',
+        trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
+        car_rate: this.selectedCar?.price || 0,
+        payment_type: paymentType,
+        payment_percentage: paymentPercentage,
+      });
+    }
 
     // Tell the backend who pays the invoice — per backend team guidance
     // (April 2026): this must fire on payment-option selection, NOT on
@@ -1256,8 +1271,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
                   payment_option: this.paymentOption,
                   payment_method: 'razorpay',
-                  amount_paid: advanceAmount,
-                  fare: this.selectedCar?.price || 0,
+                  payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
+                  payment_percentage: this.paymentOption === 3 ? 100 : this.paymentOption === 2 ? 25 : this.option1SliderPercent,
+                  payment_amount: advanceAmount,
+                  car_rate: this.selectedCar?.price || 0,
+                  booking_amount: this.selectedCar?.price || 0,
+                  booking_type: 'Confirmed booking',
                 });
                 this.clearPassengerState();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1637,8 +1656,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                     trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
                     payment_option: this.paymentOption,
                     payment_method: 'wallet',
-                    amount_paid: payNow,
-                    fare: this.selectedCar?.price || 0,
+                    payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
+                    payment_percentage: this.paymentOption === 3 ? 100 : this.paymentOption === 2 ? 25 : this.option1SliderPercent,
+                    payment_amount: payNow,
+                    car_rate: this.selectedCar?.price || 0,
+                    booking_amount: this.selectedCar?.price || 0,
+                    booking_type: 'Confirmed booking',
                   });
                   this.clearPassengerState();
                   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1660,8 +1683,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
                   payment_option: this.paymentOption,
                   payment_method: 'wallet',
-                  amount_paid: payNow,
-                  fare: this.selectedCar?.price || 0,
+                  payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
+                  payment_percentage: this.paymentOption === 3 ? 100 : this.paymentOption === 2 ? 25 : this.option1SliderPercent,
+                  payment_amount: payNow,
+                  car_rate: this.selectedCar?.price || 0,
+                  booking_amount: this.selectedCar?.price || 0,
+                  booking_type: 'Confirmed booking',
                 });
                 this.clearPassengerState();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1695,8 +1722,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
         payment_option: this.paymentOption,
         payment_method: 'wallet',
-        amount_paid: 0,
-        fare: this.selectedCar?.price || 0,
+        payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
+        payment_percentage: this.paymentOption === 3 ? 100 : this.paymentOption === 2 ? 25 : this.option1SliderPercent,
+        payment_amount: 0,
+        car_rate: this.selectedCar?.price || 0,
+        booking_amount: this.selectedCar?.price || 0,
+        booking_type: 'Confirmed booking',
       });
       this.clearPassengerState();
       window.scrollTo({ top: 0, behavior: 'smooth' });

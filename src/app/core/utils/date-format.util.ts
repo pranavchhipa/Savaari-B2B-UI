@@ -75,3 +75,30 @@ export function toSavaariDate(date: Date): string {
 export function toUnixTimestamp(date: Date): number {
   return Math.floor(date.getTime() / 1000);
 }
+
+/**
+ * Returns "HH:MM" in 24-hour format from either a Date or a 12-hour string
+ * like "06:00 PM". Used by analytics events that follow the savaari.com
+ * convention of sending start_time as 24-hour without AM/PM.
+ *
+ * Examples:
+ *   to24HourTime(new Date(2026,3,17,18,0)) → "18:00"
+ *   to24HourTime("06:00 PM")               → "18:00"
+ *   to24HourTime("06:00")                  → "06:00" (already 24h, returned as-is)
+ */
+export function to24HourTime(value: Date | string): string {
+  if (value instanceof Date) {
+    return `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
+  }
+  const ampmMatch = value.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (ampmMatch) {
+    let hours = parseInt(ampmMatch[1], 10);
+    const minutes = ampmMatch[2];
+    const period = ampmMatch[3].toUpperCase();
+    if (period === 'PM' && hours < 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    return `${String(hours).padStart(2, '0')}:${minutes}`;
+  }
+  // Already in 24h "HH:MM" format (or unrecognised — return as-is)
+  return value;
+}
