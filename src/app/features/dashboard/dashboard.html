@@ -262,7 +262,7 @@
                 (click)="focusField($event, stopAc)">
                 <lucide-icon name="map-pin" [size]="16" class="text-orange-400 shrink-0"></lucide-icon>
                 <div class="flex flex-col flex-1 min-w-0">
-                  <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">Stop {{ i + 1 }}</span>
+                  <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">City {{ i + 1 }}</span>
                   <p-autoComplete #stopAc [ngModel]="extraDestinations[i]" [ngModelOptions]="{standalone: true}"
                     [suggestions]="filteredDestinationCities" (completeMethod)="filterExtraDestCities($event, i)"
                     (onSelect)="onExtraDestinationSelect($event, i)" field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true"
@@ -290,7 +290,7 @@
             <button type="button" (click)="addDestinationCity()"
               class="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-3 py-1.5 transition-all cursor-pointer border-0 shadow-sm">
               <lucide-icon name="plus" [size]="13"></lucide-icon>
-              Add Stop {{ extraDestinations.length > 0 ? extraDestinations.length + 1 : 1 }}
+              Add City {{ extraDestinations.length > 0 ? extraDestinations.length + 1 : 1 }}
             </button>
           </div>
 
