@@ -108,6 +108,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   // 0 is still reachable if the agent explicitly toggles the active card off.
   paymentOption = 1;
 
+  // Analytics dedup: tracks the last paymentOption we fired enter-payment for.
+  // Prevents duplicate events when the agent re-clicks the same option, while
+  // still firing fresh events when they switch options. Set on entry fire and
+  // updated inside setPaymentOption() before each fire.
+  private lastFiredPaymentOption: number | null = null;
+
   // Payment method: wallet deduction or direct Razorpay
   paymentMethod: 'wallet' | 'razorpay' = 'wallet';
   isProcessingRazorpay = false;
@@ -498,6 +504,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           payment_type: paymentType,
           payment_percentage: paymentPercentage,
         });
+        // Remember which option we just fired for so setPaymentOption() can
+        // skip duplicate fires when the agent re-clicks the same option.
+        this.lastFiredPaymentOption = this.paymentOption;
         this.step1Complete = true;
         history.pushState({ step: 'payment' }, '', this.router.url);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -832,7 +841,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Analytics: agent selected a payment option — fire enter-payment.
     // payment_type: Option 3 (full wallet) = FULLPAID, options 1/2 = PARTPAID.
     // payment_percentage: option 1 uses slider value, option 2 = 25%, option 3 = 100%.
-    if (this.bookingId) {
+    // Dedup: skip if the agent re-clicked the same option we already fired
+    // (entry fire on Step 2 sets lastFiredPaymentOption to the default).
+    if (this.bookingId && option !== this.lastFiredPaymentOption) {
       const paymentType = option === 3 ? 'FULLPAID' : 'PARTPAID';
       const paymentPercentage = option === 3 ? 100 : option === 2 ? 25 : this.option1SliderPercent;
       this.analytics.trackEnterPayment({
@@ -843,6 +854,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         payment_type: paymentType,
         payment_percentage: paymentPercentage,
       });
+      this.lastFiredPaymentOption = option;
     }
 
     // Tell the backend who pays the invoice — per backend team guidance
