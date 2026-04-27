@@ -1292,8 +1292,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 // Analytics: booking successfully confirmed via Razorpay.
                 this.analytics.trackBookingConfirmed({
                   booking_id: String(bkId),
-                  payment_option: this.paymentOption,
-                  payment_method: 'razorpay',
                   payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
                   payment_percentage: this.paymentOption === 3 ? 100 : this.paymentOption === 2 ? 25 : this.option1SliderPercent,
                   payment_amount: advanceAmount,
@@ -1780,8 +1778,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   // Analytics: booking successfully confirmed via wallet.
                   this.analytics.trackBookingConfirmed({
                     booking_id: String(bkId),
-                    payment_option: this.paymentOption,
-                    payment_method: 'wallet',
                     payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
                     payment_percentage: this.paymentOption === 3 ? 100 : this.paymentOption === 2 ? 25 : this.option1SliderPercent,
                     payment_amount: payNow,
@@ -1806,8 +1802,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 // Analytics: booking confirmed (wallet path, confirmation.php errored but payment taken).
                 this.analytics.trackBookingConfirmed({
                   booking_id: String(bkId),
-                  payment_option: this.paymentOption,
-                  payment_method: 'wallet',
                   payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
                   payment_percentage: this.paymentOption === 3 ? 100 : this.paymentOption === 2 ? 25 : this.option1SliderPercent,
                   payment_amount: payNow,
@@ -1844,8 +1838,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       // Analytics: zero-amount wallet path (no money moved, booking confirmed).
       this.analytics.trackBookingConfirmed({
         booking_id: String(bkId),
-        payment_option: this.paymentOption,
-        payment_method: 'wallet',
         payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
         payment_percentage: this.paymentOption === 3 ? 100 : this.paymentOption === 2 ? 25 : this.option1SliderPercent,
         payment_amount: 0,

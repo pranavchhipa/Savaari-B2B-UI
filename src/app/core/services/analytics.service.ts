@@ -261,8 +261,9 @@ export class AnalyticsService {
     booking_id: string;
     trip_type: string;                // 'outstation' | 'local' | 'airport' (backend enum)
     trip_subtype?: string;            // 'oneWay' | 'roundTrip' | '880' | '440' | '12120' | 'pick_airport' | 'drop_airport'
-    payment_option: number;           // 1 | 2 | 3 (B2B-specific)
-    payment_method: 'wallet' | 'razorpay';
+    // payment_option / payment_method intentionally NOT in the signature —
+    // backend team confirmed they are "not required" and were causing the
+    // INSERT to reject the row even after every other field was aligned.
     payment_type: 'PARTPAID' | 'FULLPAID';
     payment_percentage: number;
     payment_amount: number;
