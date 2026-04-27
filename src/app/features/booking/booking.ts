@@ -1692,7 +1692,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       pickup_city: this.itinerary?.fromCity || '',
       drop_city: isLocalOrRound ? '' : (this.itinerary?.toCity || ''),
       pickup_city_id: this.itinerary?.fromCityId ? String(this.itinerary.fromCityId) : '',
-      drop_city_id: (isLocalOrRound || !this.itinerary?.toCityId) ? '' : String(this.itinerary.toCityId),
+      //drop_city_id: (isLocalOrRound || !this.itinerary?.toCityId) ? '' : String(this.itinerary.toCityId),
       car_type: this.selectedCar?.carTypeId || 0,
       itinerary: itineraryRoute,
       hours_to_trip: hoursToTrip,

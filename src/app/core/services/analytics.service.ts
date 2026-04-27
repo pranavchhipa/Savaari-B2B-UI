@@ -274,7 +274,7 @@ export class AnalyticsService {
     pickup_city?: string;
     drop_city?: string;
     pickup_city_id?: string;          // numeric city id as string, e.g. "377"
-    drop_city_id?: string;            // empty for Local & Airport
+    //drop_city_id?: string;            // empty for Local & Airport
     start_date?: string;              // DD-MM-YYYY
     start_time?: string;              // HH:MM (24-hour)
     car_type?: number;                // numeric carTypeId, e.g. 43
