@@ -1292,8 +1292,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 // Analytics: booking successfully confirmed via Razorpay.
                 this.analytics.trackBookingConfirmed({
                   booking_id: String(bkId),
-                  trip_type: this.itinerary?.tripType || '',
-                  trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
                   payment_option: this.paymentOption,
                   payment_method: 'razorpay',
                   payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
@@ -1609,35 +1607,102 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   /**
    * Build the trip-context fields shared by every booking-confirmed analytics
-   * payload. Backend INSERT requires these (NOT NULL columns) — without them
-   * the analytics endpoint replied "Error while data insert" and the funnel's
-   * terminal event was lost. Mirrors the consumer site's payload shape (April
-   * 2026 reference), trimmed to fields available in the B2B booking flow.
+   * payload. Backend INSERT (per consumer site reference payload, April 2026)
+   * requires the trip_type / pickup_city_id / car_type / customer_country_code
+   * fields below — sending UI labels or missing FKs caused "Error while data
+   * insert" responses. Mirrors the consumer site's shape, trimmed to fields
+   * available in the B2B booking flow (per backend team: don't send what we
+   * don't have — fuel_type, hatchback_rate, whatsapp_optin, etc).
    *
-   * drop_city / drop_address blank for Local & Round Trip (no separate
-   * destination). Date/time emitted in DD-MM-YYYY + 24-hour HH:MM to match
-   * the convention used by trackSelectTrip on the dashboard.
+   * Key value conventions:
+   *   - trip_type: backend enum 'outstation' / 'local' / 'airport'
+   *     (NOT the UI label like 'One Way' that lives on itinerary.tripType).
+   *   - trip_subtype: API value from itinerary.subTripType — already the right
+   *     string ('oneWay', 'roundTrip', '880', '440', '12120', 'pick_airport',
+   *     'drop_airport'). UI fallbacks (airportSubType, localPackage) are NOT
+   *     used here because they hold display strings, not the API enum.
+   *   - drop_city / drop_address / drop_city_id blank for Local & Round Trip.
+   *   - customer_country_code: '91|IND' style — same shape as booking create.
+   *   - hours_to_trip: integer hours from now to pickup (negative if past).
    */
   private buildBookingTripContext() {
-    const tt = this.itinerary?.tripType || '';
-    const isLocalOrRound = tt === 'Local' || tt === 'Round Trip';
+    const uiTripType = this.itinerary?.tripType || '';
+    const isLocalOrRound = uiTripType === 'Local' || uiTripType === 'Round Trip';
+
+    // Map UI trip type label → backend enum value.
+    let backendTripType = 'outstation';
+    if (uiTripType === 'Local') backendTripType = 'local';
+    else if (uiTripType === 'Airport') backendTripType = 'airport';
+    // 'One Way' and 'Round Trip' both map to 'outstation' (backend convention).
+
+    // Country code: mirror the booking-create convention ('91|IND').
+    const cc = this.selectedCountryCode;
+    let countryCode = '91|IND';
+    if (cc?.isdCode) {
+      const iso = cc.key?.split('|')[1] || 'IND';
+      countryCode = `${cc.isdCode}|${iso}`;
+    }
+
+    // Date/time in API format.
     let startDate = '';
     let startTime = '';
+    let hoursToTrip = 0;
     if (this.itinerary?.pickupDate) {
       const d = new Date(this.itinerary.pickupDate);
-      if (!isNaN(d.getTime())) startDate = toSavaariDate(d);
+      if (!isNaN(d.getTime())) {
+        startDate = toSavaariDate(d);
+        // Combine date + time to compute hours_to_trip from now.
+        const timeStr = this.itinerary.pickupTime || '12:00 PM';
+        const ampmMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        const h24Match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+        let hours = 12;
+        let minutes = 0;
+        if (ampmMatch) {
+          hours = parseInt(ampmMatch[1], 10);
+          minutes = parseInt(ampmMatch[2], 10);
+          const period = ampmMatch[3].toUpperCase();
+          if (period === 'PM' && hours < 12) hours += 12;
+          if (period === 'AM' && hours === 12) hours = 0;
+        } else if (h24Match) {
+          hours = parseInt(h24Match[1], 10);
+          minutes = parseInt(h24Match[2], 10);
+        }
+        const pickup = new Date(d);
+        pickup.setHours(hours, minutes, 0, 0);
+        hoursToTrip = Math.round((pickup.getTime() - Date.now()) / (1000 * 60 * 60));
+      }
     }
     if (this.itinerary?.pickupTime) {
       startTime = to24HourTime(this.itinerary.pickupTime);
     }
+
+    // Itinerary route string (only meaningful for outstation).
+    let itineraryRoute = '';
+    if (backendTripType === 'outstation' && this.itinerary?.fromCity) {
+      const stops = (this.itinerary.extraDestinations || [])
+        .map(s => (s as any)?.cityName || (s as any)?.name)
+        .filter((n): n is string => !!n);
+      const parts = [this.itinerary.fromCity];
+      if (stops.length) parts.push(...stops);
+      if (this.itinerary.toCity) parts.push(this.itinerary.toCity);
+      itineraryRoute = parts.join('-');
+    }
+
     return {
+      trip_type: backendTripType,
+      trip_subtype: this.itinerary?.subTripType || '',
       pickup_city: this.itinerary?.fromCity || '',
       drop_city: isLocalOrRound ? '' : (this.itinerary?.toCity || ''),
+      pickup_city_id: this.itinerary?.fromCityId ? String(this.itinerary.fromCityId) : '',
+      drop_city_id: (isLocalOrRound || !this.itinerary?.toCityId) ? '' : String(this.itinerary.toCityId),
+      car_type: this.selectedCar?.carTypeId || 0,
+      itinerary: itineraryRoute,
+      hours_to_trip: hoursToTrip,
       start_date: startDate,
       start_time: startTime,
       customer_name: this.guestName || '',
       customer_email: this.guestEmail || '',
-      customer_country_code: this.selectedCountryCode?.isdCode || '91',
+      customer_country_code: countryCode,
       customer_phone: this.phone || '',
       pickup_address: this.pickupAddress || '',
       drop_address: isLocalOrRound ? '' : (this.dropAddress || ''),
@@ -1715,8 +1780,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                   // Analytics: booking successfully confirmed via wallet.
                   this.analytics.trackBookingConfirmed({
                     booking_id: String(bkId),
-                    trip_type: this.itinerary?.tripType || '',
-                    trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
                     payment_option: this.paymentOption,
                     payment_method: 'wallet',
                     payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
@@ -1743,8 +1806,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
                 // Analytics: booking confirmed (wallet path, confirmation.php errored but payment taken).
                 this.analytics.trackBookingConfirmed({
                   booking_id: String(bkId),
-                  trip_type: this.itinerary?.tripType || '',
-                  trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
                   payment_option: this.paymentOption,
                   payment_method: 'wallet',
                   payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',
@@ -1783,8 +1844,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       // Analytics: zero-amount wallet path (no money moved, booking confirmed).
       this.analytics.trackBookingConfirmed({
         booking_id: String(bkId),
-        trip_type: this.itinerary?.tripType || '',
-        trip_subtype: this.itinerary?.subTripType || this.itinerary?.airportSubType || this.itinerary?.localPackage || '',
         payment_option: this.paymentOption,
         payment_method: 'wallet',
         payment_type: this.paymentOption === 3 ? 'FULLPAID' : 'PARTPAID',

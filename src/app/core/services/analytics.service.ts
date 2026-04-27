@@ -238,21 +238,29 @@ export class AnalyticsService {
   /**
    * Fired after the agent's payment succeeds and the booking is confirmed.
    *
-   * The trip-context fields (pickup_city, drop_city, start_date, start_time,
-   * customer_*, pickup_address, drop_address) are required by the backend
-   * INSERT — without them the analytics ingest replied "Error while data
-   * insert" and dropped the funnel's terminal event. Field shape mirrors the
-   * consumer site's booking-confirmed payload (April 2026 reference) so both
-   * funnels write the same columns.
+   * Field shape mirrors the consumer site's booking-confirmed payload (April
+   * 2026 reference shared by backend team) so both funnels write the same
+   * columns. The first iteration of this fix only sent the trip+customer
+   * fields — backend still rejected with "Error while data insert" because:
+   *   • trip_type was the UI label ("One Way") instead of the backend enum
+   *     value ("outstation");
+   *   • pickup_city_id and car_type were missing (required FKs);
+   *   • customer_country_code was bare "91" instead of "91|IND".
+   * This iteration fixes all three plus adds itinerary + hours_to_trip.
    *
-   * drop_address (and drop_city) are sent empty for Local & Round Trip flows
-   * because there's no separate destination — caller is responsible for
-   * blanking them when not applicable.
+   * Per backend team: fields the B2B flow doesn't have (utm_keyword,
+   * pickup_region, fuel_type, hatchback_rate/sedan_rate/etc, whatsapp_optin,
+   * rate_modified/old_rate/new_rate) are intentionally NOT sent — caller
+   * was told "data not available, don't send the parameter".
+   *
+   * drop_city / drop_address / drop_city_id are sent empty for Local &
+   * Round Trip flows because there's no separate destination — caller is
+   * responsible for blanking them when not applicable.
    */
   trackBookingConfirmed(payload: {
     booking_id: string;
-    trip_type: string;
-    trip_subtype?: string;
+    trip_type: string;                // 'outstation' | 'local' | 'airport' (backend enum)
+    trip_subtype?: string;            // 'oneWay' | 'roundTrip' | '880' | '440' | '12120' | 'pick_airport' | 'drop_airport'
     payment_option: number;           // 1 | 2 | 3 (B2B-specific)
     payment_method: 'wallet' | 'razorpay';
     payment_type: 'PARTPAID' | 'FULLPAID';
@@ -261,14 +269,19 @@ export class AnalyticsService {
     car_rate?: number;
     booking_amount?: number;
     booking_type?: string;
-    // Trip context — required by backend INSERT (see docblock above).
+    // Trip + customer context (required by backend INSERT).
     pickup_city?: string;
     drop_city?: string;
+    pickup_city_id?: string;          // numeric city id as string, e.g. "377"
+    drop_city_id?: string;            // empty for Local & Airport
     start_date?: string;              // DD-MM-YYYY
     start_time?: string;              // HH:MM (24-hour)
+    car_type?: number;                // numeric carTypeId, e.g. 43
+    itinerary?: string;               // route string e.g. "Bangalore-Mysore" (outstation only)
+    hours_to_trip?: number;           // integer hours from now until pickup
     customer_name?: string;
     customer_email?: string;
-    customer_country_code?: string;   // numeric only, e.g. "91"
+    customer_country_code?: string;   // "<isd>|<ISO>" e.g. "91|IND"
     customer_phone?: string;
     pickup_address?: string;
     drop_address?: string;
