@@ -864,7 +864,7 @@ export class BookingsComponent implements OnInit {
         let paymentOption = 0;
         const explicitOpt = b.payment_option || b.paymentOption || b.prePaymentType || '';
         if (explicitOpt === '1' || explicitOpt === 1) { paymentMethod = 'Pay Any Amount Now'; paymentOption = 1; }
-        else if (explicitOpt === '2' || explicitOpt === 2) { paymentMethod = 'Pay 25% Now, Rest Auto-Deducted'; paymentOption = 2; }
+        else if (explicitOpt === '2' || explicitOpt === 2) { paymentMethod = 'Pay 25% Now, Rest Auto-Debited'; paymentOption = 2; }
         else if (explicitOpt === '3' || explicitOpt === 3) { paymentMethod = 'Zero Cash'; paymentOption = 3; }
 
         // payment_method from backend: "razorpay" or "wallet"
@@ -1051,7 +1051,7 @@ export class BookingsComponent implements OnInit {
                 paymentOption = 3; paymentMethod = 'Zero Cash';
             } else if (agentOwes > 0) {
                 // Agent still owes money — auto-debit plan.
-                paymentOption = 2; paymentMethod = 'Pay 25% Now, Rest Auto-Deducted';
+                paymentOption = 2; paymentMethod = 'Pay 25% Now, Rest Auto-Debited';
             } else if (prePayment > 0 && cashToCollect > 0 && agentOwes === 0) {
                 // Agent paid advance, driver collects the rest from customer.
                 paymentOption = 1; paymentMethod = 'Pay Any Amount Now';
@@ -1218,7 +1218,7 @@ export class BookingsComponent implements OnInit {
     getPaymentMethodLabel(booking: BookingCard): string {
         if (booking.balancePaidStatus === 1) return 'Fully Paid';
         if (booking.paymentOption === 1) return 'Pay Any Amount Now — Customer pays driver';
-        if (booking.paymentOption === 2) return 'Pay 25% Now, Rest Auto-Deducted';
+        if (booking.paymentOption === 2) return 'Pay 25% Now, Rest Auto-Debited';
         if (booking.paymentOption === 3) return 'Zero Cash';
         if (booking.prePayment && booking.fare && booking.prePayment >= booking.fare) return 'Fully Paid';
         return booking.paymentMethod || '—';
