@@ -108,6 +108,21 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   // 0 is still reachable if the agent explicitly toggles the active card off.
   paymentOption = 1;
 
+  /**
+   * Feature flag — temporarily hide Payment Option 3 ("Zero Cash for your
+   * customer") from the UI. Per business team direction (April 2026) the
+   * agent should only see Option 1 (Pay Any Amount Now) and, for non-urgent
+   * trips, Option 2 (Pay 25% Now, Rest Auto-Debited).
+   *
+   * The Option 3 card is the only thing wrapped on this flag — every code
+   * path that handles paymentOption === 3 (analytics, settle, refund,
+   * buffer math, confirmation view) is left intact so re-enabling is a
+   * single one-line flip back to true. No new bookings will reach those
+   * branches while this flag is false because the agent can't pick the
+   * option from the UI.
+   */
+  readonly showPaymentOption3 = false;
+
   // Analytics dedup: tracks the last paymentOption we fired enter-payment for.
   // Prevents duplicate events when the agent re-clicks the same option, while
   // still firing fresh events when they switch options. Set on entry fire and

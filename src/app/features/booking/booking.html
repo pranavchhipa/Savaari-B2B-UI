@@ -507,7 +507,12 @@
                     <!-- ════════════════════════════════════════════ -->
                     <!-- OPTION 3: Zero Cash                          -->
                     <!-- ════════════════════════════════════════════ -->
-                    <div (click)="setPaymentOption(3)"
+                    <!-- Hidden behind a feature flag (showPaymentOption3) per
+                         business direction (April 2026). All Option-3 code
+                         paths stay intact so re-enabling is a one-line flip in
+                         the component. Agents currently only see Option 1
+                         (and Option 2 when the trip is more than 48h away). -->
+                    <div *ngIf="showPaymentOption3" (click)="setPaymentOption(3)"
                         class="relative rounded-xl border-2 cursor-pointer transition-all"
                         [ngClass]="paymentOption === 3
                             ? 'border-primary bg-white dark:bg-slate-900 shadow-lg shadow-primary/10'
