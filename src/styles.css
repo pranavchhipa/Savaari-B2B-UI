@@ -1,5 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* Plus Jakarta Sans — modern friendly geometric, used by the mobile search widget. */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 @import "primeicons/primeicons.css";
 @tailwind base;
 @tailwind components;
@@ -363,4 +365,75 @@
 .dark .p-autocomplete-overlay .p-autocomplete-item *,
 .dark .p-autocomplete-panel .p-autocomplete-item * {
   color: inherit;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Dashboard search widget — MOBILE-ONLY input sizing override.
+
+   PrimeNG's own input rules win over the inline Tailwind classes, so the
+   FROM / TO city values and the Date / Time values need to be bumped from
+   the parent stylesheet with high specificity. This block keeps the value
+   text strongly dominant over the small uppercase labels above it so the
+   form reads clearly on a phone.
+
+   Mobile only (< 640px). Desktop is untouched.
+   ════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 639px) {
+
+  /* === CITY VALUES (FROM / TO autocompletes) — full-width cell, 22px ===
+     Targeted via the marker class .dash-mob-city placed directly on the
+     <input> element via PrimeNG's inputStyleClass — guarantees the rule
+     applies to the actual rendered input, no inheritance hops. */
+  html body input.dash-mob-city,
+  html body .dash-mob-city {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+    font-weight: 800 !important;
+    color: rgb(15 23 42) !important;
+    letter-spacing: -0.015em !important;
+  }
+  html body .dark input.dash-mob-city,
+  html body .dark .dash-mob-city {
+    color: #ffffff !important;
+  }
+  html body input.dash-mob-city::placeholder {
+    color: rgb(100 116 139) !important;
+    font-weight: 600 !important;
+    opacity: 1;
+  }
+
+  /* === DATE / TIME VALUES — half-width cells, smaller (17px) so
+     "30 Apr 2026" / "06:00 PM" don't truncate in the 2-column grid === */
+  html body input.dash-mob-time,
+  html body .dash-mob-time {
+    font-size: 17px !important;
+    line-height: 1.2 !important;
+    font-weight: 800 !important;
+    color: rgb(15 23 42) !important;
+    letter-spacing: -0.01em !important;
+  }
+  html body .dark input.dash-mob-time,
+  html body .dark .dash-mob-time {
+    color: #ffffff !important;
+  }
+
+  /* === LABELS (FROM, TO, PICKUP DATE, PICKUP TIME) — 11px small uppercase
+     so the value above clearly dominates === */
+  html body .search-cell .text-\[9px\],
+  html body .search-cell .text-\[10px\],
+  html body .search-cell .text-\[11px\] {
+    font-size: 11px !important;
+    letter-spacing: 0.08em !important;
+    font-weight: 700 !important;
+  }
+
+  /* === Read-only "Drop Time" span (Round Trip) — match date/time size === */
+  html body .search-cell span.whitespace-nowrap {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: rgb(15 23 42) !important;
+  }
+  html body .dark .search-cell span.whitespace-nowrap {
+    color: #ffffff !important;
+  }
 }

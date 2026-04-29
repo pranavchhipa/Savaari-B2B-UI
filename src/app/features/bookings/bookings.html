@@ -477,27 +477,30 @@
                                     <span class="text-slate-400 font-semibold">Phone</span>
                                     <span class="font-semibold text-slate-800 dark:text-white">{{ booking.customerMobile }}</span>
                                 </div>
-                                <div class="flex justify-between">
+                                <!-- Long-text rows (Route, Via, Address): stack vertically on
+                                     mobile so the full value can wrap freely; side-by-side on
+                                     sm+ where there's room for the original layout. -->
+                                <div class="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-0">
                                     <span class="text-slate-400 font-semibold">Route</span>
-                                    <span class="font-semibold text-slate-800 dark:text-white text-right max-w-[60%] truncate"
+                                    <span class="font-semibold text-slate-800 dark:text-white sm:text-right sm:max-w-[60%] break-words"
                                         [title]="booking.viaLine ? (booking.routeLine + ' (' + booking.viaLine + ')') : booking.routeLine">{{ booking.routeLine || booking.itinerary || '—' }}</span>
                                 </div>
-                                <div *ngIf="booking.intermediateCities.length" class="flex justify-between">
+                                <div *ngIf="booking.intermediateCities.length" class="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-0">
                                     <span class="text-slate-400 font-semibold">Via</span>
-                                    <span class="font-semibold text-orange-600 dark:text-orange-400 text-right max-w-[60%] truncate"
+                                    <span class="font-semibold text-orange-600 dark:text-orange-400 sm:text-right sm:max-w-[60%] break-words"
                                         [title]="booking.intermediateCities.join(', ')">{{ booking.intermediateCities.join(', ') }}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Car</span>
-                                    <span class="font-semibold text-slate-800 dark:text-white">{{ booking.carName || '-' }}</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white text-right">{{ booking.carName || '-' }}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Pickup</span>
-                                    <span class="font-semibold text-slate-800 dark:text-white">{{ booking.pickupDate ? (booking.pickupDate | date:'dd MMM yyyy') : '-' }}, {{ booking.pickupTime }}</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white text-right">{{ booking.pickupDate ? (booking.pickupDate | date:'dd MMM yyyy') : '-' }}, {{ booking.pickupTime }}</span>
                                 </div>
-                                <div class="flex justify-between" *ngIf="booking.pickupAddress">
+                                <div class="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-0" *ngIf="booking.pickupAddress">
                                     <span class="text-slate-400 font-semibold">Address</span>
-                                    <span class="font-semibold text-slate-700 dark:text-slate-300 text-right max-w-[60%] truncate">{{ booking.pickupAddress }}</span>
+                                    <span class="font-semibold text-slate-700 dark:text-slate-300 sm:text-right sm:max-w-[60%] break-words">{{ booking.pickupAddress }}</span>
                                 </div>
                             </div>
                         </div>

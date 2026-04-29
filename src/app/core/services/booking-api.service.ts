@@ -10,6 +10,8 @@ import {
   UpdateInvoicePayerRequest,
   CancelBookingResponse,
   BookingDetails,
+  VasDetail,
+  VasUpdateResponse,
 } from '../models';
 
 /**
@@ -148,25 +150,61 @@ export class BookingApiService {
   }
 
   /**
-   * Update VAS (Value Added Services) after booking creation.
+   * Update VAS (Value Added Services) for an existing booking.
    *
-   * Per workflow documentation:
-   * POST /vas_booking_update?token=<partnerJWT>
-   * Body: booking_id, luggage_carrier (0/1), preferred_language_driver (0/1)
+   * POST /vas_booking_update?token=<partnerJWT>   (partner-api → api.betasavaari.com)
+   * Content-Type: application/x-www-form-urlencoded
    *
-   * Called after successful booking if any VAS options were selected.
+   * Body shape (April 2026 backend team confirmation):
+   *   booking_id                       — the just-created booking
+   *   pre_vas_booking_total_amount     — original total fare (before any VAS)
+   *   pre_vas_booking_package_km       — trip kilometre allowance (used for PerKM VAS calc)
+   *   pre_vas_booking_package_hr       — trip hour allowance (0 for outstation)
+   *   vas_data                         — JSON-stringified array of selected VAS items
+   *                                       (PLAIN JSON, NOT base64-encoded — confirmed
+   *                                       by backend team April 2026).
+   *
+   * Each entry in vas_data must include the original VAS detail fields
+   * (vas_config_id, vas_id, vas, customer_rate, vas_rate_type, etc.) plus
+   * the user's selection state:
+   *   isChecked: true
+   *   toggle_flag: true
+   *   customer_input_data: "<chosen sub-option>"   (when customer_input_flag === "YES")
+   *   radioIndex: <index of the chosen sub-option>
+   *
+   * Returns updated fare totals via response.data.vas_update — the B2B
+   * portal then feeds post_vas_total_amount into its OWN payment-option
+   * helpers (Pay Any Amount Now / Pay 25% Auto-Debit / Zero Cash). The
+   * payment_option block embedded in the VAS response is B2C-only and is
+   * intentionally ignored — see VasUpdateResponseData docstring.
    */
-  updateVasBooking(bookingId: string, options: { luggageCarrier?: boolean; languageDriver?: boolean }): Observable<unknown> {
+  updateVasBooking(payload: {
+    bookingId: string;
+    preVasTotalAmount: number;
+    preVasPackageKm: number;
+    preVasPackageHr: number;
+    selectedVas: VasDetail[];
+  }): Observable<VasUpdateResponse> {
     const token: string = this.auth.getPartnerToken() ?? '';
-    return this.api.partnerPostForm('vas_booking_update', {
-      booking_id: bookingId,
-      luggage_carrier: options.luggageCarrier ? 1 : 0,
-      preferred_language_driver: options.languageDriver ? 1 : 0,
+    // Each item we ship back marks its selection state explicitly so the
+    // backend doesn't have to infer it from key presence.
+    const vasData = payload.selectedVas.map(v => ({
+      ...v,
+      isChecked: true,
+      toggle_flag: true,
+    }));
+    return this.api.partnerPostForm<VasUpdateResponse>('vas_booking_update', {
+      booking_id: payload.bookingId,
+      pre_vas_booking_total_amount: payload.preVasTotalAmount,
+      pre_vas_booking_package_km: payload.preVasPackageKm,
+      pre_vas_booking_package_hr: payload.preVasPackageHr,
+      vas_data: JSON.stringify(vasData),
     }, { token }).pipe(
       catchError(err => {
-        // VAS update failure should not block the booking flow
-        console.warn('[VAS] Failed to update VAS for booking', bookingId, err);
-        return of({ status: 'error', message: 'VAS update failed' });
+        // VAS update failure must NEVER block the booking flow — fall back
+        // to the original totals; the agent can still complete payment.
+        console.warn('[VAS] Failed to update VAS for booking', payload.bookingId, err);
+        return of({ status: 'error', data: undefined } as VasUpdateResponse);
       })
     );
   }

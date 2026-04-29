@@ -19,7 +19,7 @@ import { AddressAutocompleteService, AddressSuggestion } from '../../core/servic
 import { CityService } from '../../core/services/city.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 // AvailabilityService removed — fare recalculation is now client-side (Haversine distance)
-import { CreateBookingRequest } from '../../core/models';
+import { CreateBookingRequest, VasDetail } from '../../core/models';
 import { toSavaariDateTime, calculateDuration, toSavaariDate, to24HourTime } from '../../core/utils/date-format.util';
 import { decodeGSTIN, GSTINDecodeResult } from '../../core/utils/gstin-decoder';
 import { Observable } from 'rxjs';
@@ -63,6 +63,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   guestName: string = '';
   guestEmail: string = '';
   agentEmail: string = '';
+  agentMobile: string = '';
   pickupAddress: string = '';
   dropAddress: string = '';
   phone: string = '';
@@ -96,11 +97,58 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   step1Complete = false;
   showRazorpayModal = false;
-  showVASModal = false;
 
-  // VAS Selections
-  vasLuggageCarrier = false;
-  vasLanguageDriver = false;
+  // ─── VAS (Value Added Services) — Step 2 "Personalize Your Journey" ────
+  // Populated from the booking-create response (vas_details[]) once the
+  // agent clicks "Proceed to Next Step" on Step 1. Mirrors what consumer
+  // savaari.com offers but rendered inline (not modal) above the B2B
+  // payment options.
+  //
+  // CRITICAL: this feature is fully decoupled from the B2B payment options
+  // (Pay Any Amount Now / Pay 25% Auto-Debit / Zero Cash). The VAS update
+  // API returns a B2C-style payment_option block which is INTENTIONALLY
+  // ignored — we only consume the new total fare and let the existing B2B
+  // payment helpers (getPayNowAmount / getDeferredAmount /
+  // getOption3BufferAmount) recompute on top of it.
+  availableVasServices: VasDetail[] = [];
+  /** vas_config_id → user's sub-option pick (only set when customer_input_flag === 'YES'). */
+  vasSelections = new Map<string, { customer_input_data?: string; radioIndex?: number }>();
+  /** Snapshot of the original car price BEFORE any VAS so we can revert when all are cleared. */
+  preVasFare = 0;
+  /** Total VAS amount (incl. GST) currently applied — drives the sidebar "Special Services" line. */
+  vasAmount = 0;
+  /** GST portion of the VAS amount — surfaced separately in the fare breakup. */
+  vasGstAmount = 0;
+  /** Human-readable list of selected VAS names from the API response. */
+  vasNamesList = '';
+  /** True while a vas_booking_update call is in flight. */
+  vasUpdateLoading = false;
+  /** Debounce timer so rapid toggles collapse into a single API call. */
+  private vasUpdateDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Captured from booking-create response — used for PerKM VAS calc + the
+   *  pre_vas_booking_package_km field on the update payload. */
+  vasPackageKm = 0;
+  /** Same — for the pre_vas_booking_package_hr field (0 for outstation). */
+  vasPackageHr = 0;
+  /**
+   * Toast-style error shown when the agent picks two mutually exclusive VAS
+   * services (currently only Diesel Car Guarantee + New Car Promise — matches
+   * the B2C "cannot be serviced together due to Govt. Policy" rule). When set,
+   * a black banner renders below the VAS list. Cleared by the timer below or
+   * by the user clicking the close button.
+   */
+  vasConflictError: string | null = null;
+  /** Auto-dismiss timer for vasConflictError (5s). Cancelled if user closes manually. */
+  private vasConflictTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * True after booking is created on Step 1 AND there are VAS options to
+   * present. While this flag is true the agent stays on Step 1 — the
+   * Proceed button hides, the VAS section appears below the form, and a
+   * "Continue to Payment" button advances to Step 2. If the trip has no
+   * VAS (vas_flag !== 1 / empty list), we skip this intermediate state
+   * entirely and auto-advance to Step 2 as before.
+   */
+  vasReady = false;
 
   // 1 = "Pay any amount now" (default), 2 = "Pay 25% now, rest auto-deducted",
   // 3 = "Zero cash". Defaulting to 1 per April 2026 QA direction so the
@@ -121,7 +169,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
    * branches while this flag is false because the agent can't pick the
    * option from the UI.
    */
-  readonly showPaymentOption3 = false;
+  readonly showPaymentOption3 = true;
 
   // Analytics dedup: tracks the last paymentOption we fired enter-payment for.
   // Prevents duplicate events when the agent re-clicks the same option, while
@@ -250,6 +298,10 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   ngOnInit() {
     this.walletBalance$ = this.walletService.balance$;
     this.agentEmail = this.auth.getUserEmail();
+    // Pre-fill agent's own mobile from the profile so the agent doesn't have
+    // to re-type it every booking. Editable — they may want to override on a
+    // per-booking basis (different point-of-contact for this trip, etc).
+    this.agentMobile = this.auth.getUserProfile()?.mobileno || this.auth.getUserProfile()?.phone || '';
 
     // Load country codes for phone number dropdown
     this.countryCodeService.getCountryCodes().subscribe(codes => {
@@ -349,6 +401,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     if (this.autoSaveInterval) {
       clearInterval(this.autoSaveInterval);
+    }
+    // Cancel any pending VAS timers so navigating away doesn't push a stale
+    // toast onto a destroyed view (or fire an API call we no longer care about).
+    if (this.vasUpdateDebounceTimer) {
+      clearTimeout(this.vasUpdateDebounceTimer);
+      this.vasUpdateDebounceTimer = null;
+    }
+    if (this.vasConflictTimer) {
+      clearTimeout(this.vasConflictTimer);
+      this.vasConflictTimer = null;
     }
     // Final save on leave
     this.savePassengerState();
@@ -471,6 +533,30 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.savaariPayId = this.paymentService.generateSavaariPaymentId(bkId);
         }
 
+        // ─── Capture VAS list for Step 2 "Personalize Your Journey" section ───
+        // The booking-create response carries vas_details[] when vas_flag === 1.
+        // We snapshot the pre-VAS fare so we can revert if the agent unchecks
+        // every option, and reset any prior selections from a previous booking
+        // attempt on this same component instance.
+        this.vasSelections.clear();
+        this.vasAmount = 0;
+        this.vasGstAmount = 0;
+        this.vasNamesList = '';
+        if (dataItem?.vas_flag === 1 && Array.isArray(dataItem.vas_details) && dataItem.vas_details.length) {
+          this.availableVasServices = dataItem.vas_details as VasDetail[];
+          // tripKilometer / tripHour come back from the booking response —
+          // capture them here so PerKM VAS can compute its own total and the
+          // update payload carries the right pre_vas_booking_package_* values.
+          this.vasPackageKm = Number(dataItem.tripKilometer) || 0;
+          this.vasPackageHr = Number(dataItem.tripHour) || 0;
+          this.preVasFare = this.selectedCar?.price || 0;
+        } else {
+          this.availableVasServices = [];
+          this.vasPackageKm = 0;
+          this.vasPackageHr = 0;
+          this.preVasFare = 0;
+        }
+
         // Handle oneway surge from booking API response (real data, not mockup)
         if (dataItem?.oneway_surge_flag === 1 && dataItem?.oneway_surge_details) {
           const surge = dataItem.oneway_surge_details;
@@ -522,9 +608,26 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         // Remember which option we just fired for so setPaymentOption() can
         // skip duplicate fires when the agent re-clicks the same option.
         this.lastFiredPaymentOption = this.paymentOption;
-        this.step1Complete = true;
-        history.pushState({ step: 'payment' }, '', this.router.url);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // ─── Step 1 → Step 2 transition logic ─────────────────────────
+        // If the trip carries any VAS the agent can pick from, stay on
+        // Step 1: hide the Proceed button, reveal the "Personalize Your
+        // Journey" section below the form, and let the agent select before
+        // continuing to payment via the new Continue button.
+        // If there's nothing to upsell, auto-advance to Step 2 immediately
+        // so the flow feels identical to the pre-VAS behaviour.
+        if (this.availableVasServices.length > 0) {
+          this.vasReady = true;
+          // Scroll to bring the new VAS section into view.
+          setTimeout(() => {
+            const el = document.getElementById('vas-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+        } else {
+          this.step1Complete = true;
+          history.pushState({ step: 'payment' }, '', this.router.url);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -1587,13 +1690,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       paymentMethod,
     });
 
-    // Update VAS if selected
-    if (bkId && (this.vasLuggageCarrier || this.vasLanguageDriver)) {
-      this.bookingApi.updateVasBooking(bkId, {
-        luggageCarrier: this.vasLuggageCarrier,
-        languageDriver: this.vasLanguageDriver,
-      }).subscribe();
-    }
+    // VAS update no longer fires here — the new flow drives it from the
+    // dynamic Step 2 "Personalize Your Journey" section via toggleVas() →
+    // pushVasUpdate(), which handles arbitrary selections from vas_details[].
   }
 
   /**
@@ -1948,6 +2047,20 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /** Navigate back: payment → passenger details → select-car → dashboard */
+  /**
+   * Advance from the Step 1 VAS phase to Step 2 (Payment Selection).
+   * Called by the "Continue to Payment" button that appears below the VAS
+   * section once the booking is created and VAS options are available.
+   * Distinct from proceedToPayment() above — that handles the initial form
+   * submit + booking creation; this just toggles the Step 1 → Step 2 view.
+   */
+  continueToPayment(): void {
+    this.step1Complete = true;
+    history.pushState({ step: 'payment' }, '', this.router.url);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.cdr.markForCheck();
+  }
+
   goBackFromBooking() {
     if (this.step1Complete) {
       // On payment step → go back to passenger details.
@@ -1961,6 +2074,18 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.showWalletConfirm = false;
       this.showTopUpConfirm = false;
       this.step1Complete = false;
+      // Going back from Step 2 → Step 1 also resets the VAS phase so the
+      // agent sees the form fresh with the Proceed button (not the VAS
+      // section + Continue button). If they re-click Proceed a fresh
+      // booking will be created and VAS will reappear.
+      this.vasReady = false;
+      this.vasSelections.clear();
+      this.vasAmount = 0;
+      this.vasGstAmount = 0;
+      this.vasNamesList = '';
+      // Also clear any lingering conflict toast so the next pass through
+      // Step 1 starts visually clean.
+      this.dismissVasConflict();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       this.cdr.markForCheck();
     } else {
@@ -1978,25 +2103,229 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.cdr.markForCheck();
   }
 
-  // VAS Functions
-  openVASModal() {
-    this.showVASModal = true;
+  // ─── VAS (Value Added Services) — Step 2 selection helpers ────────────
+  //
+  // The "Personalize Your Journey" card on Step 2 renders one tile per
+  // entry in this.availableVasServices (populated from booking-create).
+  // Selection state lives in this.vasSelections (vas_config_id → sub-option).
+  // Every toggle / sub-option change debounces 500ms then POSTs the full
+  // selection set to vas_booking_update. The response's
+  // post_vas_total_amount becomes the new selectedCar.price so the
+  // existing payment helpers (getPayNowAmount etc.) recompute on top.
+
+  /** True when the agent has checked this VAS card. */
+  isVasSelected(vas: VasDetail): boolean {
+    return this.vasSelections.has(vas.vas_config_id);
+  }
+
+  /** Currently picked sub-option value (e.g. "English") — empty if not selected. */
+  getVasInputValue(vas: VasDetail): string {
+    return this.vasSelections.get(vas.vas_config_id)?.customer_input_data ?? '';
+  }
+
+  /**
+   * Display string for the price column.
+   *   FlatRate → "₹149"
+   *   PerKM    → "₹1.1/km · ~₹1,585"   (rate × tripKilometer rounded)
+   * The "~" hints that the per-km charge could vary if the trip itself
+   * is re-quoted later.
+   *
+   * Safety net (April 2026): If the backend doesn't return tripKilometer
+   * (e.g. some Local / Airport trips return hour-packages without km), the
+   * "~₹0" total would mislead the agent into thinking it's free. In that
+   * case we drop the suffix and show only the per-km rate so the agent
+   * understands the charge is variable.
+   */
+  getVasDisplayPrice(vas: VasDetail): string {
+    if (vas.vas_rate_type === 'PerKM') {
+      const perKm = parseFloat(vas.customer_rate_perkm || '0');
+      const rateLabel = vas.customer_rate_perkm || '0';
+      if (this.vasPackageKm > 0 && perKm > 0) {
+        const total = Math.round(perKm * this.vasPackageKm);
+        const totalFmt = total.toLocaleString('en-IN');
+        return `₹${rateLabel}/km · ~₹${totalFmt}`;
+      }
+      // No tripKilometer available → show rate only, suppress misleading "~₹0".
+      return `₹${rateLabel}/km`;
+    }
+    return `₹${vas.customer_rate}`;
+  }
+
+  /** Description text from tnc_data — falls back to empty string. */
+  getVasDescription(vas: VasDetail): string {
+    return vas.tnc_data?.tnc?.[0] || '';
+  }
+
+  /**
+   * Toggle a VAS tile. Sub-option (when present) auto-defaults to the first value.
+   *
+   * Mutual-exclusion rule (matches the B2C live-site behaviour):
+   *   "Diesel Car Guarantee" + "New Car Promise" cannot be selected together
+   *   (Govt. Policy — diesel cars are typically older fleet, new-car guarantee
+   *   is petrol/CNG-only fleet). When the agent tries to enable the second
+   *   one while the first is already on, BOTH get cleared and a warning toast
+   *   appears. This is the only known VAS conflict per April 2026 QA pass.
+   */
+  toggleVas(vas: VasDetail): void {
+    const id = vas.vas_config_id;
+    const isSelecting = !this.vasSelections.has(id);
+
+    // Conflict check fires only on selection (deselect always allowed).
+    if (isSelecting) {
+      const conflictWith = this.findVasConflict(vas);
+      if (conflictWith) {
+        // Clear BOTH (the existing one + we never add the new one) and warn.
+        this.vasSelections.delete(conflictWith.vas_config_id);
+        this.showVasConflictError(vas.vas, conflictWith.vas);
+        this.scheduleVasUpdate();
+        this.cdr.markForCheck();
+        return;
+      }
+    }
+
+    if (!isSelecting) {
+      this.vasSelections.delete(id);
+    } else {
+      const init: { customer_input_data?: string; radioIndex?: number } = {};
+      if (vas.customer_input_flag === 'YES' && Array.isArray(vas.rate_input_value) && vas.rate_input_value.length) {
+        init.customer_input_data = vas.rate_input_value[0];
+        init.radioIndex = 0;
+      }
+      this.vasSelections.set(id, init);
+    }
+    this.scheduleVasUpdate();
     this.cdr.markForCheck();
   }
 
-  closeVASModal() {
-    this.showVASModal = false;
+  /**
+   * Detect a mutually-exclusive VAS already in the cart for the one being toggled on.
+   * Returns the conflicting VasDetail or null. Match is by case-insensitive name
+   * substring so the rule survives small backend label changes (e.g. "New Car Promise"
+   * vs "New Car Promise - Model that is 2023 or newer").
+   */
+  private findVasConflict(candidate: VasDetail): VasDetail | null {
+    const name = (candidate.vas || '').toLowerCase();
+    const isDiesel = name.includes('diesel');
+    const isNewCar = name.includes('new car promise') || name.includes('new car');
+
+    if (!isDiesel && !isNewCar) return null;
+
+    const lookFor = isDiesel ? 'new car' : 'diesel';
+    for (const v of this.availableVasServices) {
+      if (v.vas_config_id === candidate.vas_config_id) continue;
+      if (!this.vasSelections.has(v.vas_config_id)) continue;
+      if ((v.vas || '').toLowerCase().includes(lookFor)) {
+        return v;
+      }
+    }
+    return null;
+  }
+
+  /** Set the conflict error and start the 5s auto-dismiss timer. */
+  private showVasConflictError(a: string, b: string): void {
+    this.vasConflictError = `${a} & ${b} cannot be serviced together due to Govt. Policy. Please select one of the two special services.`;
+    if (this.vasConflictTimer) clearTimeout(this.vasConflictTimer);
+    this.vasConflictTimer = setTimeout(() => {
+      this.vasConflictError = null;
+      this.cdr.markForCheck();
+    }, 5000);
+  }
+
+  /** User clicked the × on the conflict banner. */
+  dismissVasConflict(): void {
+    if (this.vasConflictTimer) {
+      clearTimeout(this.vasConflictTimer);
+      this.vasConflictTimer = null;
+    }
+    this.vasConflictError = null;
     this.cdr.markForCheck();
   }
 
-  toggleVasLuggage() {
-    this.vasLuggageCarrier = !this.vasLuggageCarrier;
+  /** Sub-option pick (radio click for "English" / "Hindi" etc). */
+  setVasInput(vas: VasDetail, value: string, index: number): void {
+    if (!this.vasSelections.has(vas.vas_config_id)) return;
+    this.vasSelections.set(vas.vas_config_id, {
+      customer_input_data: value,
+      radioIndex: index,
+    });
+    this.scheduleVasUpdate();
     this.cdr.markForCheck();
   }
 
-  toggleVasLanguage() {
-    this.vasLanguageDriver = !this.vasLanguageDriver;
+  /** Debounce so rapid clicks collapse into one API call. */
+  private scheduleVasUpdate(): void {
+    if (this.vasUpdateDebounceTimer) {
+      clearTimeout(this.vasUpdateDebounceTimer);
+    }
+    this.vasUpdateDebounceTimer = setTimeout(() => this.pushVasUpdate(), 500);
+  }
+
+  /**
+   * Send the current selection to the backend and absorb the new total fare.
+   * If nothing is selected, restore the original (pre-VAS) fare and zero out
+   * the sidebar VAS line — no API call needed in that case.
+   */
+  private pushVasUpdate(): void {
+    if (!this.bookingId) return;
+
+    // Build the selected-VAS array. Each entry carries the original config
+    // PLUS the user's selection state so the backend has everything it needs
+    // in one shot (matches the consumer-site payload shape verified April 2026).
+    const selectedVas: VasDetail[] = this.availableVasServices
+      .filter(v => this.vasSelections.has(v.vas_config_id))
+      .map(v => {
+        const sel = this.vasSelections.get(v.vas_config_id)!;
+        const out: VasDetail = { ...v };
+        if (sel.customer_input_data !== undefined) {
+          out.customer_input_data = sel.customer_input_data;
+        }
+        if (sel.radioIndex !== undefined) {
+          out.radioIndex = sel.radioIndex;
+        }
+        return out;
+      });
+
+    // Nothing checked → revert to original fare locally, no API call.
+    if (selectedVas.length === 0) {
+      if (this.selectedCar && this.preVasFare > 0 && this.selectedCar.price !== this.preVasFare) {
+        this.selectedCar.price = this.preVasFare;
+        this.bookingState.setSelectedCar(this.selectedCar);
+      }
+      this.vasAmount = 0;
+      this.vasGstAmount = 0;
+      this.vasNamesList = '';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.vasUpdateLoading = true;
     this.cdr.markForCheck();
+
+    this.bookingApi.updateVasBooking({
+      bookingId: this.bookingId,
+      preVasTotalAmount: this.preVasFare,
+      preVasPackageKm: this.vasPackageKm,
+      preVasPackageHr: this.vasPackageHr,
+      selectedVas,
+    }).subscribe(response => {
+      this.vasUpdateLoading = false;
+      const update = response?.data?.vas_update;
+      if (update) {
+        // post_vas_total_amount is the canonical new total. Mutate
+        // selectedCar.price so the existing B2B payment helpers
+        // (getPayNowAmount / getDeferredAmount / getOption3BufferAmount)
+        // pick it up automatically on next change-detection pass.
+        const newTotal = parseFloat(String(update.post_vas_total_amount || '0'));
+        if (newTotal > 0 && this.selectedCar) {
+          this.selectedCar.price = Math.round(newTotal);
+          this.bookingState.setSelectedCar(this.selectedCar);
+        }
+        this.vasAmount = Number(update.fare_breakup?.total_vas_amount || update.vas_total_amount || 0);
+        this.vasGstAmount = Number(update.fare_breakup?.total_vas_gst_amount || 0);
+        this.vasNamesList = update.fare_breakup?.vas_list || update.vas || '';
+      }
+      this.cdr.markForCheck();
+    });
   }
 
   /** Sidebar button handler: scroll to top-up if balance is low, otherwise book */

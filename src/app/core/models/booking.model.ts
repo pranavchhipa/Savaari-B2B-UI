@@ -83,6 +83,49 @@ export interface CreateBookingRequest {
 }
 
 /**
+ * Value Added Service (VAS) item as returned by the partner_api booking
+ * response (April 2026 beta sample). One entry per service the agent can
+ * upsell (luggage carrier, language driver, diesel guarantee, new car
+ * promise, etc).
+ *
+ * Two pricing modes via vas_rate_type:
+ *   - "FlatRate" — customer_rate is the absolute INR amount (e.g. "149")
+ *   - "PerKM"    — customer_rate is per-km (e.g. "1.1/km") and
+ *                  customer_rate_perkm holds the numeric rate ("1.1");
+ *                  total = customer_rate_perkm * tripKilometer.
+ *
+ * customer_input_flag === "YES" means the service has a sub-option the
+ * agent must pick (e.g. preferred language). The choices live in
+ * rate_input_value, the input type in rate_input_type ("radio" so far).
+ */
+export interface VasDetail {
+  vas_config_id: string;
+  vas_congfig_id?: string;       // legacy typo'd field — kept for forward compat
+  vas: string;                   // display name e.g. "Cab with Luggage Carrier"
+  vas_id: string;
+  customer_rate: string;         // "149" or "1.1/km"
+  customer_rate_perkm?: string;  // numeric per-km rate when vas_rate_type === "PerKM"
+  vendor_rate: string;           // backend cost — DO NOT show to user
+  vas_rate_type: 'FlatRate' | 'PerKM' | string;
+  customer_input_flag: 'YES' | 'NO' | string;
+  rate_input_type: 'radio' | 'NA' | string;
+  rate_input_value: string[];    // ["English", "Hindi"] for radio
+  customer_input_label: string;  // shown above the sub-option control
+  customer_input_error: string;  // shown when sub-option missing
+  tnc_data?: { tnc?: string[] };
+  route_ids?: string;
+  start_city_id?: string | null;
+  route?: string | null;
+  pickup_city_id?: string;
+  route_flag?: string;
+  toggle_flag?: boolean;
+  isChecked?: boolean;           // populated on the way OUT (selection state)
+  customer_input_data?: string;  // populated on the way OUT (sub-option pick)
+  radioIndex?: number;           // populated on the way OUT (index in rate_input_value)
+  [key: string]: unknown;
+}
+
+/**
  * POST /booking → 201 Created response.
  *
  * Confirmed shape from live beta HAR (April 2026):
@@ -94,6 +137,10 @@ export interface CreateBookingRequest {
  *   - order_id → savaari_payment_id (e.g. "SW35004S0426-2361706")
  *   - paymentOptions[*].parameters.amount25per → advance amount
  *   - paymentOptions[*].parametersEncoded.amount25perEncoded → encoded amount for razor_createorder
+ *   - vas_flag (0/1)            → whether the booking has any VAS to offer
+ *   - vas_details[]             → list of available services for this trip
+ *   - fuel_vas_details[]        → fuel-specific add-ons (separate bucket)
+ *   - tripKilometer             → needed to compute total for PerKM VAS
  */
 export interface CreateBookingResponseData {
   booking_id?: string;
@@ -107,6 +154,13 @@ export interface CreateBookingResponseData {
   cashToCollect?: number;
   paymentOptions?: PaymentOption[];
   booking_key?: string;
+  // VAS (Value Added Services) bucket — drives the "Personalize Your Journey"
+  // section on Step 2. Empty / vas_flag=0 means hide the section entirely.
+  vas_flag?: number;
+  vas_details?: VasDetail[];
+  fuel_vas_details?: VasDetail[];
+  tripKilometer?: string | number;
+  tripHour?: string | number;
   // Error fields (present when booking fails despite 201)
   status_code?: number;
   status_description?: string;
@@ -147,6 +201,52 @@ export interface CreateBookingResponse {
   bookingId?: string;
   reservation_id?: string;
   message?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * POST /vas_booking_update response shape (April 2026 beta sample).
+ *
+ * IMPORTANT: this response also carries a `payment_option` block describing
+ * a B2C-only payment gateway (JusPay / CCAvenue / Paytm / PayU / etc). The
+ * B2B portal MUST IGNORE that field — our 3 B2B payment options (Pay Any
+ * Amount Now / Pay 25% Now Auto-Debit / Zero Cash) are computed locally
+ * from the total. Only the fare totals below are consumed.
+ */
+export interface VasUpdateResponseData {
+  status_code?: string;
+  status_description?: string;
+  vas_update?: {
+    vas?: string;                          // comma-joined names of selected VAS
+    pre_vas_total_amount?: string;         // total before VAS (e.g. "1838")
+    post_vas_total_amount?: string;        // total AFTER VAS (e.g. "1994") ← USE THIS
+    vas_total_amount?: string | number;    // VAS amount including GST
+    pre_vas_package_hr?: string | null;
+    post_vas_package_hr?: string | null;
+    pre_vas_package_km?: string | null;
+    post_vas_package_km?: string | null;
+    fare_breakup?: {
+      base_cost?: number;
+      service_tax?: string | number;       // base GST (pre-VAS portion)
+      final_total_amount?: number;         // new total fare
+      total_vas_amount?: number;           // VAS amount with GST
+      total_vas_base_amount?: number;      // VAS amount without GST
+      total_vas_gst_amount?: string | number;
+      vas_list?: string;                   // human-readable list
+      base_fare?: number;
+      final_total_gst_amount?: number;
+      recheck_final_amount?: number;
+      [key: string]: unknown;
+    };
+    // payment_option intentionally omitted from the typed shape — see header.
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+export interface VasUpdateResponse {
+  status?: string;
+  data?: VasUpdateResponseData;
   [key: string]: unknown;
 }
 

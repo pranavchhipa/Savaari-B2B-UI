@@ -222,6 +222,82 @@
                                     <lucide-icon name="snowflake" [size]="10" class="mr-0.5"></lucide-icon> {{car.ac}}
                                 </span>
                             </div>
+
+                            <!-- ╔═══ MOBILE TABS — Inclusions / Exclusions / Facilities / T&C ═══╗
+                                 Same activeTab[car.id] state as desktop. stopPropagation on the
+                                 whole tabs section so tapping a tab doesn't trigger the parent
+                                 div's onSelectCar(car) handler. -->
+                            <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60"
+                                 (click)="$event.stopPropagation()">
+                                <div class="flex gap-1 overflow-x-auto scrollbar-hide -mx-1 px-1">
+                                    <button *ngFor="let tab of ['Inclusions', 'Exclusions', 'Facilities', 'T&C']"
+                                        type="button"
+                                        (click)="toggleTab(car.id, tab === 'T&C' ? 'tc' : tab.toLowerCase()); $event.stopPropagation()"
+                                        [ngClass]="{
+                                            'border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 font-bold': activeTab[car.id] === (tab === 'T&C' ? 'tc' : tab.toLowerCase()),
+                                            'text-slate-400 dark:text-slate-500 font-medium': activeTab[car.id] !== (tab === 'T&C' ? 'tc' : tab.toLowerCase())
+                                        }"
+                                        class="px-2.5 py-1 text-[10px] transition-all whitespace-nowrap bg-transparent border-0 cursor-pointer">
+                                        {{tab}}
+                                    </button>
+                                </div>
+                                <div *ngIf="activeTab[car.id]" class="pt-2 pb-0.5">
+                                    <!-- Inclusions / Exclusions / Facilities — single horizontal row,
+                                         scrollable if it overflows (mobile-friendly, no wrapping). -->
+                                    <!-- Inclusions -->
+                                    <div [hidden]="activeTab[car.id] !== 'inclusions'" class="flex gap-x-3 overflow-x-auto scrollbar-hide pb-0.5">
+                                        <div *ngFor="let item of car.inclusions" class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="check" [size]="10" class="text-emerald-600 dark:text-emerald-400" [strokeWidth]="3"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight whitespace-nowrap">{{item}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- Exclusions -->
+                                    <div [hidden]="activeTab[car.id] !== 'exclusions'" class="flex gap-x-3 overflow-x-auto scrollbar-hide pb-0.5">
+                                        <div *ngFor="let item of car.exclusions" class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="x" [size]="10" class="text-rose-600 dark:text-rose-400" [strokeWidth]="3"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight whitespace-nowrap">{{item}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- Facilities -->
+                                    <div [hidden]="activeTab[car.id] !== 'facilities'" class="flex gap-x-3 overflow-x-auto scrollbar-hide pb-0.5">
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="snowflake" [size]="9" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">Air Conditioning</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="users" [size]="9" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">{{car.seats}}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="briefcase" [size]="9" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">{{car.bags}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- T&C -->
+                                    <div [hidden]="activeTab[car.id] !== 'tc'" class="space-y-1">
+                                        <div *ngFor="let line of car.tc" class="flex items-start gap-1.5">
+                                            <div class="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0"></div>
+                                            <p class="text-[10px] text-slate-600 dark:text-slate-400 leading-snug">{{line}}</p>
+                                        </div>
+                                        <div class="pt-1.5 border-t border-slate-200 dark:border-slate-600 mt-1.5">
+                                            <p class="text-[10px] text-slate-500 dark:text-slate-400">
+                                                Detailed terms,
+                                                <a [routerLink]="['/tnc', tncSlug]" target="_blank" class="text-primary hover:underline font-semibold" (click)="$event.stopPropagation()">click here</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

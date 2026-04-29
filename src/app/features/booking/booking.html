@@ -10,25 +10,23 @@
             <span class="text-xs sm:text-sm font-medium text-slate-500">{{ step1Complete ? 'Back to Pickup Details' : 'Back to Select Car' }}</span>
         </div>
 
-        <!-- Mobile Trust Badges — colored mini-cards (hidden on Step 2) -->
-        <div class="flex md:hidden items-center gap-2 mt-1 mb-0.5 overflow-x-auto" [hidden]="step1Complete">
-            <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200/60 rounded-lg px-2.5 py-1.5 shrink-0">
-                <div class="w-5 h-5 rounded-md bg-amber-400/20 flex items-center justify-center">
-                    <lucide-icon name="clock" [size]="11" class="text-amber-600"></lucide-icon>
-                </div>
-                <span class="text-[10px] font-bold text-amber-700">Since 2006</span>
+        <!-- Mobile Trust Badges — desktop-style inline icons with dividers
+             (hidden on Step 2). Same visual language as the md:flex block below
+             so the page feels cohesive across breakpoints. -->
+        <div class="flex md:hidden items-center justify-center gap-3 mt-2 mb-1 text-slate-600 dark:text-slate-300" [hidden]="step1Complete">
+            <div class="flex items-center gap-1.5">
+                <lucide-icon name="shield-check" [size]="13" class="text-primary"></lucide-icon>
+                <span class="text-[11px] font-bold whitespace-nowrap">Trusted Since 2006</span>
             </div>
-            <div class="flex items-center gap-1.5 bg-sky-50 border border-sky-200/60 rounded-lg px-2.5 py-1.5 shrink-0">
-                <div class="w-5 h-5 rounded-md bg-sky-400/20 flex items-center justify-center">
-                    <lucide-icon name="user-check" [size]="11" class="text-sky-600"></lucide-icon>
-                </div>
-                <span class="text-[10px] font-bold text-sky-700">Expert Staff</span>
+            <div class="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
+            <div class="flex items-center gap-1.5">
+                <lucide-icon name="users" [size]="13" class="text-primary"></lucide-icon>
+                <span class="text-[11px] font-bold whitespace-nowrap">Expert Staff</span>
             </div>
-            <div class="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200/60 rounded-lg px-2.5 py-1.5 shrink-0">
-                <div class="w-5 h-5 rounded-md bg-emerald-400/20 flex items-center justify-center">
-                    <lucide-icon name="star" [size]="11" class="text-emerald-600"></lucide-icon>
-                </div>
-                <span class="text-[10px] font-bold text-emerald-700">9.5/10 Rated</span>
+            <div class="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
+            <div class="flex items-center gap-1.5">
+                <lucide-icon name="star" [size]="13" class="text-primary"></lucide-icon>
+                <span class="text-[11px] font-bold whitespace-nowrap">9.5/10 Rated</span>
             </div>
         </div>
         <div class="hidden md:flex items-center gap-6 text-slate-600 dark:text-slate-300">
@@ -82,37 +80,43 @@
                     <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
                         <lucide-icon name="user" [size]="13" class="text-primary sm:!w-[15px] sm:!h-[15px]"></lucide-icon>
                     </div>
-                    <h2 class="text-[13px] sm:text-base font-bold text-slate-800 dark:text-white">Contact & Pickup Details</h2>
+                    <h2 class="text-[13px] sm:text-base font-bold text-slate-800 dark:text-white flex-1 min-w-0">Contact & Pickup Details</h2>
+                    <!-- Locked pill — shown after agent clicks "Proceed to Next Step" so they
+                         visually understand that the contact form is now read-only and their
+                         entered values have been saved. To edit, they must use the back button
+                         (returns to /select-car and clears vasReady on the way out). -->
+                    <span *ngIf="vasReady"
+                        class="shrink-0 inline-flex items-center gap-1 px-2 py-1 sm:py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10.5px] sm:text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 shadow-sm">
+                        <lucide-icon name="lock" [size]="11"></lucide-icon>
+                        <span>Locked</span>
+                    </span>
                 </div>
                 <div class="p-3 sm:p-4">
-                    <form class="space-y-2.5 sm:space-y-3">
-                        <div class="relative group">
-                            <input id="guestName" type="text" [(ngModel)]="guestName" name="guestName"
-                                class="peer block w-full px-3 sm:px-4 pt-4 sm:pt-5 pb-1 sm:pb-1.5 text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
-                                [class.!border-red-400]="formSubmitAttempted && !isGuestNameValid()"
-                                placeholder=" " />
-                            <label for="guestName"
-                                class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Customer
-                                Name <span class="text-red-500">*</span></label>
-                            <div *ngIf="formSubmitAttempted && !isGuestNameValid()" class="text-xs text-red-500 mt-1 ml-4">Customer name is required (min 2 characters)</div>
-                        </div>
+                    <!-- pointer-events-none + opacity-60 visually + functionally freeze the
+                         entire form once vasReady=true. This stops the agent silently editing
+                         pickup details that have already been baked into the booking record. -->
+                    <form class="space-y-2.5 sm:space-y-3 transition-opacity"
+                        [class.pointer-events-none]="vasReady"
+                        [class.opacity-60]="vasReady"
+                        [attr.aria-disabled]="vasReady ? 'true' : null">
 
+                        <!-- Row 1: Customer Name | Customer Phone Number (2-col on md+) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
                             <div class="relative group">
-                                <input id="email" type="email" [(ngModel)]="agentEmail" name="agentEmail" readonly
-                                    class="peer block w-full px-4 pt-5 pb-1.5 text-sm text-slate-500 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/50 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 cursor-not-allowed rounded-t-lg"
+                                <input id="guestName" type="text" [(ngModel)]="guestName" name="guestName"
+                                    class="peer block w-full px-3 sm:px-4 pt-4 sm:pt-5 pb-1 sm:pb-1.5 text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
+                                    [class.!border-red-400]="formSubmitAttempted && !isGuestNameValid()"
                                     placeholder=" " />
-                                <label for="email"
-                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 transition-all">Agent
-                                    Email (Fixed)</label>
-                                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
-                                    <lucide-icon name="lock" [size]="14"></lucide-icon>
-                                </div>
+                                <label for="guestName"
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Customer
+                                    Name <span class="text-red-500">*</span></label>
+                                <div *ngIf="formSubmitAttempted && !isGuestNameValid()" class="text-xs text-red-500 mt-1 ml-4">Customer name is required (min 2 characters)</div>
                             </div>
+
                             <div class="relative country-code-wrapper">
                                 <label for="phone"
                                     class="absolute text-xs text-slate-500 dark:text-slate-400 top-2 left-4 z-10 pointer-events-none">Phone Number <span class="text-red-500">*</span></label>
-                                <div class="flex items-center bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-600 rounded-lg focus-within:border-primary transition-all"
+                                <div class="flex items-center bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-600 rounded-t-lg focus-within:border-primary transition-all"
                                     [class.!border-red-400]="formSubmitAttempted && !isPhoneValid()">
                                     <div class="country-code-trigger shrink-0 pl-3 pr-1 py-1 cursor-pointer" (click)="countryDropdownOpen = !countryDropdownOpen">
                                         <div class="flex items-center gap-1.5 mt-4 mb-0.5">
@@ -153,8 +157,40 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div *ngIf="formSubmitAttempted && !isPhoneValid()" class="text-xs text-red-500 mt-1 ml-4">Valid phone number required (min 10 digits)</div>
                             </div>
-                            <div *ngIf="formSubmitAttempted && !isPhoneValid()" class="text-xs text-red-500 mt-1 ml-4">Valid phone number required (min 10 digits)</div>
+                        </div>
+
+                        <!-- Row 2: Agent Email (locked) | Agent Mobile (editable, pre-filled) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
+                            <div class="relative group">
+                                <input id="email" type="email" [(ngModel)]="agentEmail" name="agentEmail" readonly
+                                    class="peer block w-full px-4 pt-5 pb-1.5 text-sm text-slate-500 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/50 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 cursor-not-allowed rounded-t-lg"
+                                    placeholder=" " />
+                                <label for="email"
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 transition-all">Agent
+                                    Email (Fixed)</label>
+                                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                    <lucide-icon name="lock" [size]="14"></lucide-icon>
+                                </div>
+                            </div>
+
+                            <!-- Agent Mobile — pre-filled from the logged-in agent's profile,
+                                 editable so the agent can override per booking if their point
+                                 of contact for this trip is different. NOT locked (unlike
+                                 Agent Email above). -->
+                            <div class="relative group">
+                                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary z-10 pointer-events-none">
+                                    <lucide-icon name="phone" [size]="16"></lucide-icon>
+                                </div>
+                                <input id="agentMobile" type="tel" [(ngModel)]="agentMobile" name="agentMobile"
+                                    maxlength="10"
+                                    (keypress)="$event.charCode >= 48 && $event.charCode <= 57 || $event.preventDefault()"
+                                    class="peer block w-full pl-11 pr-4 pt-5 pb-1.5 text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
+                                    placeholder=" " />
+                                <label for="agentMobile"
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-11 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Agent Mobile</label>
+                            </div>
                         </div>
                         <!-- ── Airport bookings: locked FROM → TO route fields ── -->
                         <div *ngIf="itinerary?.tripType === 'Airport'" class="flex flex-col gap-1">
@@ -245,15 +281,23 @@
                         </div>
 
                         <div class="relative group">
+                            <!-- Home icon to match Pickup / Drop Address fields visual rhythm -->
+                            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10 pointer-events-none">
+                                <lucide-icon name="home" [size]="18"></lucide-icon>
+                            </div>
                             <textarea id="landmark" rows="1" placeholder=" " [(ngModel)]="landmark" name="landmark"
-                                class="peer block w-full px-3 sm:px-4 pt-4 sm:pt-5 pb-1 sm:pb-1.5 text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg resize-none"></textarea>
+                                class="peer block w-full pl-12 pr-3 sm:pr-4 pt-4 sm:pt-5 pb-1 sm:pb-1.5 text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg resize-none"></textarea>
                             <label for="landmark"
-                                class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Landmark
+                                class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-12 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Landmark
                                 / Door Number / Building</label>
                         </div>
 
-                        <div class="flex justify-center pt-2 sm:pt-1">
-                            <!-- Button stays disabled silently while the create-booking
+                        <div class="flex justify-center pt-2 sm:pt-1" *ngIf="!vasReady">
+                            <!-- Proceed button hides once vasReady is true (booking has been
+                                 created and there are VAS options to show below). After the
+                                 agent picks any add-ons (or skips), the "Continue to Payment"
+                                 button at the end of the VAS section advances to Step 2.
+                                 Button stays disabled silently while the create-booking
                                  API call is in flight (prevents double-click), but the
                                  label and arrow stay the same — no "Creating Booking..."
                                  indicator is shown. -->
@@ -268,6 +312,125 @@
                             }
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════════
+                 STEP 1 → VAS PHASE (Enhance Your Ride + Continue button)
+
+                 Renders BELOW the Step 1 form once the agent has clicked
+                 "Proceed to Next Step" and the booking is created with VAS
+                 options. The Proceed button hides (vasReady=true), the agent
+                 picks any add-ons, then clicks "Continue to Payment" which
+                 toggles step1Complete=true to advance to Step 2.
+
+                 If the trip carries no VAS (vas_flag !== 1 / empty list),
+                 this section never appears — the success handler instead
+                 sets step1Complete=true straight away and the agent lands
+                 on Step 2 with no extra click.
+                 ═══════════════════════════════════════════════════════════════ -->
+            <div *ngIf="vasReady && !step1Complete && availableVasServices.length > 0"
+                id="vas-section"
+                class="mt-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden wizard-card-anim">
+                <!-- Header -->
+                <div class="flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-sky-50 to-cyan-50 dark:from-sky-900/20 dark:to-cyan-900/20 border-b border-slate-100 dark:border-slate-800">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-primary to-cyan-500 grid place-items-center text-white shadow-md shadow-primary/30 shrink-0">
+                        <lucide-icon name="wand-2" [size]="14" class="sm:!w-4 sm:!h-4"></lucide-icon>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-[13px] sm:text-base font-bold text-slate-800 dark:text-white leading-tight">Enhance Your Ride</h3>
+                        <p class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Optional upgrades — pick what your customer might enjoy</p>
+                    </div>
+                    <div *ngIf="vasUpdateLoading" class="shrink-0 flex items-center gap-1 text-[10px] text-primary font-semibold">
+                        <span class="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin"></span>
+                        <span class="hidden sm:inline">Updating…</span>
+                    </div>
+                </div>
+
+                <!-- Service tiles
+                     Mobile tweaks (April 2026):
+                     - Slightly more vertical padding (py-3.5) for comfortable tap area
+                     - Active:bg state so the agent feels the row press on touch
+                     - Larger checkbox box (5.5×5.5) for finger-friendly hit target
+                     - Description line-clamped to 2 lines on mobile (full on sm+) so a
+                       long sales blurb doesn't bloat the section vertically. -->
+                <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <div *ngFor="let vas of availableVasServices"
+                        class="px-3 sm:px-4 py-3.5 sm:py-3 transition-colors"
+                        [ngClass]="isVasSelected(vas) ? 'bg-sky-50/60 dark:bg-sky-900/10' : 'active:bg-slate-100 dark:active:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/40'">
+
+                        <!-- Top row: checkbox + name + price -->
+                        <div class="flex items-start gap-3 sm:gap-2.5 cursor-pointer" (click)="toggleVas(vas)">
+                            <div class="shrink-0 w-[22px] h-[22px] sm:w-5 sm:h-5 mt-0.5 rounded-md border-2 grid place-items-center transition-colors"
+                                [ngClass]="isVasSelected(vas) ? 'bg-primary border-primary text-white' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600'">
+                                <lucide-icon *ngIf="isVasSelected(vas)" name="check" [size]="13" [strokeWidth]="3"></lucide-icon>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[13.5px] sm:text-sm font-bold text-slate-800 dark:text-white leading-snug">{{ vas.vas }}</p>
+                                <p *ngIf="getVasDescription(vas) as desc"
+                                    class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed line-clamp-2 sm:line-clamp-none">
+                                    {{ desc }}
+                                </p>
+                            </div>
+                            <div class="shrink-0 text-right">
+                                <p class="text-[15px] sm:text-sm font-extrabold text-slate-900 dark:text-white whitespace-nowrap">{{ getVasDisplayPrice(vas) }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Sub-options (radio) — only when selected AND customer_input_flag === 'YES'
+                             Mobile tweak: bumped padding to py-2 + slightly larger text so the
+                             chip meets the ~44px tap target guideline on touch devices. -->
+                        <div *ngIf="isVasSelected(vas) && vas.customer_input_flag === 'YES' && vas.rate_input_value && vas.rate_input_value.length"
+                            class="mt-3 ml-[34px] sm:ml-7 pl-3 border-l-2 border-primary/30">
+                            <p class="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-2">{{ vas.customer_input_label }}</p>
+                            <div class="flex flex-wrap gap-2">
+                                <label *ngFor="let opt of vas.rate_input_value; let i = index"
+                                    class="inline-flex items-center gap-1.5 px-3.5 sm:px-3 py-2 sm:py-1.5 rounded-lg border-2 cursor-pointer transition-colors active:scale-95"
+                                    [ngClass]="getVasInputValue(vas) === opt
+                                        ? 'border-primary bg-primary/10 text-primary'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300'">
+                                    <input type="radio"
+                                        [name]="'vas-input-' + vas.vas_config_id"
+                                        [value]="opt"
+                                        [checked]="getVasInputValue(vas) === opt"
+                                        (change)="setVasInput(vas, opt, i)"
+                                        class="sr-only" />
+                                    <span class="w-3.5 h-3.5 sm:w-3 sm:h-3 rounded-full border-2 grid place-items-center"
+                                        [ngClass]="getVasInputValue(vas) === opt ? 'border-primary' : 'border-slate-300 dark:border-slate-600'">
+                                        <span *ngIf="getVasInputValue(vas) === opt" class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                    </span>
+                                    <span class="text-[12.5px] sm:text-[12px] font-bold">{{ opt }}</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mutual-exclusion conflict banner — matches B2C live behaviour.
+                     Currently the only known rule is: Diesel Car Guarantee + New Car
+                     Promise cannot coexist (Govt. Policy). When the agent picks the
+                     second one, both get cleared and this banner shows for 5 seconds.
+                     User can dismiss early via the × button. -->
+                <div *ngIf="vasConflictError"
+                    class="mx-3 sm:mx-4 mb-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-slate-900 text-white shadow-lg flex items-center gap-3 wizard-card-anim">
+                    <lucide-icon name="alert-triangle" [size]="16" class="text-amber-300 shrink-0"></lucide-icon>
+                    <p class="flex-1 text-[12px] sm:text-[13px] leading-snug font-medium">{{ vasConflictError }}</p>
+                    <button type="button" (click)="dismissVasConflict()"
+                        class="shrink-0 w-6 h-6 grid place-items-center rounded-full hover:bg-white/10 transition-colors active:scale-90"
+                        aria-label="Dismiss">
+                        <lucide-icon name="x" [size]="14"></lucide-icon>
+                    </button>
+                </div>
+
+                <!-- Continue to Payment button
+                     Mobile: full-width, py-3 (≥48px tap target), active:scale-[0.98] for
+                     a tactile press feedback (scaled-down haptic substitute). -->
+                <div class="px-3 sm:px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 flex justify-center">
+                    <button type="button" (click)="continueToPayment()"
+                        class="w-full sm:w-auto bg-gradient-to-r from-primary to-sky-500 hover:from-sky-600 hover:to-sky-700 text-white font-bold py-3 sm:py-2.5 px-10 rounded-xl sm:rounded-full shadow-lg shadow-sky-200/50 dark:shadow-none transition-all transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] text-sm flex items-center justify-center gap-2">
+                        Continue to Payment
+                        <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+                    </button>
                 </div>
             </div>
 
@@ -377,6 +540,10 @@
                     </div>
                 </div>
 
+
+                <!-- VAS section moved to Step 1 (below the contact form) — see the
+                     "STEP 1 → VAS PHASE" block above. Step 2 now jumps straight
+                     to the payment plan options. -->
 
                 <!-- ═══════════════════════════════════════════════ -->
                 <!-- PAYMENT OPTIONS HEADING                        -->
@@ -697,6 +864,22 @@
                             </ng-container>
                             <ng-template #normalKms>{{ displayKms }}</ng-template>
                         </span>
+                    </div>
+
+                    <!-- Special Services breakdown — only when at least one VAS is checked.
+                         vasAmount comes from /vas_booking_update response (incl. GST). The
+                         "Estimated Total Fare" line below auto-reflects the post-VAS total
+                         because selectedCar.price is mutated to post_vas_total_amount. -->
+                    <div *ngIf="vasAmount > 0" class="flex flex-col gap-0.5 px-2 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-800/40">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-bold text-sky-700 dark:text-sky-300 uppercase tracking-wider flex items-center gap-1">
+                                <lucide-icon name="wand-2" [size]="10"></lucide-icon>
+                                Special Services
+                            </span>
+                            <span class="text-[12px] font-extrabold text-sky-700 dark:text-sky-300">+₹{{ vasAmount | number:'1.0-0' }}</span>
+                        </div>
+                        <p *ngIf="vasNamesList" class="text-[10px] text-slate-600 dark:text-slate-400 leading-tight">{{ vasNamesList }}</p>
+                        <p *ngIf="vasGstAmount > 0" class="text-[9px] text-slate-500 dark:text-slate-500">incl. ₹{{ vasGstAmount | number:'1.0-0' }} GST</p>
                     </div>
 
                     <!-- Fare — prominent -->
@@ -1502,73 +1685,8 @@
 
 
 
-<!-- VAS Modal -->
-<div *ngIf="showVASModal"
-    class="fixed inset-0 z-[100] flex animate-fade-in bg-black/60 items-center justify-center p-4">
-    <div
-        class="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-200">
-        <div
-            class="border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center">
-                <lucide-icon name="briefcase" [size]="20" class="mr-2 text-primary"></lucide-icon>
-                Value-Added Services
-            </h3>
-            <button (click)="closeVASModal()"
-                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-10 w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-sm">
-                <lucide-icon name="x" [size]="18"></lucide-icon>
-            </button>
-        </div>
-
-        <div class="p-6 space-y-4">
-
-            <div (click)="toggleVasLuggage()"
-                class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between cursor-pointer hover:border-primary transition-all shadow-sm">
-                <div class="flex items-center gap-4">
-                    <div
-                        class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center">
-                        <lucide-icon name="briefcase" [size]="20"></lucide-icon>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-slate-800 dark:text-white text-sm">Luggage Carrier</h4>
-                        <p class="text-xs text-slate-500 mt-0.5">Required for extra baggage.</p>
-                    </div>
-                </div>
-                <div class="w-6 h-6 rounded border-2 flex items-center justify-center transition-colors"
-                    [ngClass]="vasLuggageCarrier ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-slate-600'">
-                    <lucide-icon name="check" [size]="14" *ngIf="vasLuggageCarrier"></lucide-icon>
-                </div>
-            </div>
-
-            <div (click)="toggleVasLanguage()"
-                class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between cursor-pointer hover:border-primary transition-all shadow-sm">
-                <div class="flex items-center gap-4">
-                    <div
-                        class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center">
-                        <lucide-icon name="users" [size]="20"></lucide-icon>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-slate-800 dark:text-white text-sm">Preferred Driver</h4>
-                        <p class="text-xs text-slate-500 mt-0.5">English speaking or highly rated.</p>
-                    </div>
-                </div>
-                <div class="w-6 h-6 rounded border-2 flex items-center justify-center transition-colors"
-                    [ngClass]="vasLanguageDriver ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-slate-600'">
-                    <lucide-icon name="check" [size]="14" *ngIf="vasLanguageDriver"></lucide-icon>
-                </div>
-            </div>
-
-            <div
-                class="bg-sky-50 dark:bg-sky-900/20 text-sky-800 dark:text-sky-300 p-4 rounded-xl text-xs font-medium mt-4">
-                Selected services are subject to availability. Any applicable fees will be added to the final invoice
-                payable by the customer.
-            </div>
-
-            <button (click)="closeVASModal()"
-                class="w-full mt-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-3 rounded-lg hover:shadow-lg transition-all">
-                Confirm Selections
-            </button>
-        </div>
-    </div>
-</div>
+<!-- VAS Modal removed — replaced by inline "Enhance Your Ride" card
+     below the contact form on Step 1. See booking.ts: availableVasServices,
+     toggleVas(), pushVasUpdate() for the dynamic implementation. -->
 <app-footer></app-footer>
 </div>

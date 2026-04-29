@@ -4,25 +4,31 @@
 /* Search Bar — Stitch-inspired borderless inputs */
 /* ============================================ */
 
-/* Remove all PrimeNG borders/chrome from inputs inside search bar */
+/* Remove all PrimeNG borders/chrome from inputs inside search bar.
+   MOBILE values (default; the @media (min-width: 640px) block below
+   overrides for desktop). Mobile uses Plus Jakarta Sans for a softer
+   modern feel and slightly smaller readable sizes. */
 :host ::ng-deep .search-bar-autocomplete .p-autocomplete-input {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
   height: auto !important;
-  font-size: 0.5rem !important;
-  font-weight: 400 !important;
-  color: #0f172a !important;
-  line-height: 1.5 !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif !important;
+  font-size: 1rem !important;       /* 16px — comfortable, not yelling */
+  font-weight: 700 !important;      /* bold (not extrabold; PJS bold reads strong) */
+  color: #0f172a !important;        /* slate-900 */
+  line-height: 1.25 !important;
+  letter-spacing: -0.01em !important;
 }
 
 :host ::ng-deep .search-bar-autocomplete .p-autocomplete-input::placeholder {
-  color: #94a3b8 !important;
-  font-weight: 400 !important;
+  color: #64748b !important;        /* slate-500 — visible but soft */
+  font-weight: 500 !important;
   font-style: normal !important;
   opacity: 1 !important;
-  font-size: 0.5rem !important;
+  font-size: 0.9375rem !important;  /* 15px */
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif !important;
 }
 
 :host ::ng-deep .search-bar-datepicker input {
@@ -31,12 +37,14 @@
   box-shadow: none !important;
   padding: 0 !important;
   height: auto !important;
-  font-size: 0.5rem !important;
-  font-weight: 400 !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif !important;
+  font-size: 0.9375rem !important;  /* 15px — fits "30 Apr 2026" + "06:00 PM" easily */
+  font-weight: 700 !important;
   color: #0f172a !important;
-  line-height: 1.5 !important;
+  line-height: 1.25 !important;
   cursor: pointer !important;
   white-space: nowrap !important;
+  letter-spacing: -0.01em !important;
 }
 
 /* p-select inside search bar — make it borderless */
@@ -51,18 +59,22 @@
 
 :host ::ng-deep .search-bar-select .p-select-label {
   padding: 0 !important;
-  font-size: 0.5rem !important;
-  font-weight: 400 !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif !important;
+  font-size: 1rem !important;       /* 16px — matches autocomplete value */
+  font-weight: 700 !important;      /* bold */
+  font-style: normal !important;    /* override the global .p-select-label italic */
   color: #0f172a !important;
-  line-height: 1.5 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.01em !important;
 }
 
 :host ::ng-deep .search-bar-select .p-placeholder {
-  color: #94a3b8 !important;
-  font-weight: 400 !important;
+  color: #64748b !important;
+  font-weight: 500 !important;
   font-style: normal !important;
   opacity: 1 !important;
-  font-size: 0.5rem !important;
+  font-size: 0.9375rem !important;  /* 15px */
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif !important;
 }
 
 :host ::ng-deep .search-bar-select .p-select-dropdown {
@@ -86,29 +98,35 @@
   color: #94a3b8 !important;
 }
 
-/* Desktop overrides (sm: 640px+) */
+/* Desktop overrides (sm: 640px+) — revert font-family back to Inter so the
+   Plus Jakarta Sans applied above is mobile-only. */
 @media (min-width: 640px) {
   :host ::ng-deep .search-bar-autocomplete .p-autocomplete-input {
+    font-family: 'Inter', system-ui, sans-serif !important;
     font-size: 1rem !important;
     font-weight: 700 !important;
   }
 
   :host ::ng-deep .search-bar-autocomplete .p-autocomplete-input::placeholder {
+    font-family: 'Inter', system-ui, sans-serif !important;
     font-size: 0.95rem !important;
     font-weight: 500 !important;
   }
 
   :host ::ng-deep .search-bar-datepicker input {
+    font-family: 'Inter', system-ui, sans-serif !important;
     font-size: 1rem !important;
     font-weight: 700 !important;
   }
 
   :host ::ng-deep .search-bar-select .p-select-label {
+    font-family: 'Inter', system-ui, sans-serif !important;
     font-size: 1rem !important;
     font-weight: 700 !important;
   }
 
   :host ::ng-deep .search-bar-select .p-placeholder {
+    font-family: 'Inter', system-ui, sans-serif !important;
     font-size: 0.95rem !important;
     font-weight: 500 !important;
   }

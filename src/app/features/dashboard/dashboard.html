@@ -5,35 +5,48 @@
 <div class="relative min-h-[100svh] sm:min-h-[600px] pt-4 sm:pt-12 pb-10 sm:pb-16 px-3 sm:px-4 flex flex-col items-center justify-start sm:justify-center overflow-hidden">
   <!-- Interactive Background that reacts to tab selection -->
   <div class="absolute inset-0 overflow-hidden bg-slate-700">
-    <div class="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/60 to-slate-900/60 z-10 transition-colors duration-1000"></div>
+    <!-- Dimming overlay: DESKTOP ONLY. Mobile uses dedicated map images that
+         are already toned for the desired ambience, so we skip the dim layer. -->
+    <div class="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/60 to-slate-900/60 z-10 transition-colors duration-1000 hidden sm:block"></div>
+    <!-- Per-tab images: DESKTOP ONLY. On mobile we show a unified map pattern
+         (added below) for all 4 tabs so the look stays consistent. -->
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'ONE_WAY',
         'opacity-0 scale-105': selectedTab !== 'ONE_WAY'
-      }" class="absolute inset-0 transition-all duration-1000 ease-out">
+      }" class="absolute inset-0 transition-all duration-1000 ease-out hidden sm:block">
       <img [src]="dashboardImages.oneWay"
         class="w-full h-full object-cover" loading="eager" fetchpriority="high">
     </div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'ROUND_TRIP',
         'opacity-0 scale-105': selectedTab !== 'ROUND_TRIP'
-      }" class="absolute inset-0 transition-all duration-1000 ease-out">
+      }" class="absolute inset-0 transition-all duration-1000 ease-out hidden sm:block">
       <img [src]="dashboardImages.roundTrip"
         class="w-full h-full object-cover" loading="lazy">
     </div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'LOCAL',
         'opacity-0 scale-105': selectedTab !== 'LOCAL'
-      }" class="absolute inset-0 transition-all duration-1000 ease-out">
+      }" class="absolute inset-0 transition-all duration-1000 ease-out hidden sm:block">
       <img [src]="dashboardImages.local"
         class="w-full h-full object-cover" loading="lazy">
     </div>
     <div [ngClass]="{
         'opacity-100 scale-100': selectedTab === 'AIRPORT',
         'opacity-0 scale-105': selectedTab !== 'AIRPORT'
-      }" class="absolute inset-0 transition-all duration-1000 ease-out">
+      }" class="absolute inset-0 transition-all duration-1000 ease-out hidden sm:block">
       <img [src]="dashboardImages.airport"
         class="w-full h-full object-cover" loading="lazy">
     </div>
+
+    <!-- ╔═══ MOBILE-ONLY MAP BACKGROUND ═══╗
+         Same dark map across all 4 tabs (consistent look) regardless of theme.
+         The Gemini sparkle (bottom-right of source image) is cropped out by
+         anchoring the image at the top with bg-cover — the bottom slice (with
+         the sparkle) falls off-screen on phone-tall viewports. -->
+    <div class="absolute inset-0 sm:hidden
+                bg-[url('/dashboard-map-dark.png')]
+                bg-cover bg-top bg-no-repeat"></div>
   </div>
 
   <div class="w-full max-w-6xl relative z-20">
@@ -51,8 +64,27 @@
     <!-- Search Card -->
     <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-[0_12px_32px_rgba(0,172,230,0.08)] p-3 sm:p-4 md:p-5 lg:p-6 pb-10 sm:pb-8 border border-slate-100 dark:border-slate-600/50 overflow-visible">
 
-      <!-- Trip Type Toggles with Checkboxes -->
-      <div class="flex flex-nowrap gap-0 sm:gap-5 items-center justify-between sm:justify-center md:justify-start mb-4 sm:mb-6">
+      <!-- ╔═══ MOBILE TAB STRIP — segmented bar with icon-above-label ═══╗
+           Visible only on mobile (< sm). Desktop keeps the existing checkbox+
+           icon tab strip below this block. Same selectTab() handler /
+           selectedTab state — only the visual styling differs per breakpoint.
+           Stacked vertical layout (icon over label) so all 4 tabs comfortably
+           fit a 375px viewport without "One Way" / "Airport" truncation. -->
+      <div class="sm:hidden bg-cyan-50 dark:bg-slate-800 rounded-2xl p-1 grid grid-cols-4 gap-0.5 mb-3">
+        <button *ngFor="let tab of [{id: 'ONE_WAY', label: 'One Way', icon: 'arrow-right'}, {id: 'ROUND_TRIP', label: 'Round', icon: 'refresh-cw'}, {id: 'LOCAL', label: 'Local', icon: 'map-pin'}, {id: 'AIRPORT', label: 'Airport', icon: 'plane'}]"
+          (click)="selectTab(tab.id)" type="button"
+          class="flex flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-xl transition-all duration-200 outline-none border-0 cursor-pointer min-w-0"
+          [ngClass]="{
+            'bg-primary text-white shadow-md shadow-primary/30': selectedTab === tab.id,
+            'bg-transparent text-slate-500 dark:text-slate-400': selectedTab !== tab.id
+          }">
+          <lucide-icon [name]="tab.icon" [size]="14" class="shrink-0"></lucide-icon>
+          <span class="text-[11px] font-bold whitespace-nowrap">{{ tab.label }}</span>
+        </button>
+      </div>
+
+      <!-- Trip Type Toggles with Checkboxes — DESKTOP ONLY (hidden on mobile) -->
+      <div class="hidden sm:flex flex-nowrap gap-0 sm:gap-5 items-center justify-between sm:justify-center md:justify-start mb-4 sm:mb-6">
         <button *ngFor="let tab of [{id: 'ONE_WAY', label: 'One Way', icon: 'arrow-right'}, {id: 'ROUND_TRIP', label: 'Round Trip', icon: 'refresh-cw'}, {id: 'LOCAL', label: 'Local', icon: 'map-pin'}, {id: 'AIRPORT', label: 'Airport', icon: 'plane'}]"
           (click)="selectTab(tab.id)" type="button"
           class="flex items-center gap-1.5 sm:gap-2.5 px-2 sm:px-3 py-2 cursor-pointer border-0 outline-none bg-transparent transition-all duration-200 group">
@@ -83,22 +115,31 @@
         <!-- ONE WAY: Horizontal search bar              -->
         <!-- ============================================ -->
         <div [hidden]="selectedTab !== 'ONE_WAY'"
-          class="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 sm:p-3 lg:p-4 border border-slate-200 dark:border-slate-600/50">
+          class="bg-slate-100/70 sm:bg-slate-50/50 dark:bg-slate-800/40 dark:sm:bg-slate-800/50 rounded-2xl sm:rounded-xl p-2 sm:p-3 lg:p-4 border border-slate-200/70 dark:border-slate-700/50 sm:dark:border-slate-600/50">
 
-          <!-- Row 1: FROM | TO with SWAP on right — vertical on mobile, horizontal on sm+ -->
-          <div class="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-0 sm:gap-2 lg:gap-0 mb-2 sm:mb-2.5">
+          <!-- Row 1: FROM | TO with SWAP on right — vertical on mobile, horizontal on sm+
+               Mobile (Gemini-inspired):
+                 - Single white card grouping FROM + TO
+                 - Bigger map-pin icons (no container) — primary cyan + orange
+                 - Bold city names (text-base)
+                 - Horizontal divider between FROM and TO
+                 - Circular outlined swap button on right, sitting on the divider
+               Desktop: unchanged horizontal pill cells -->
+          <div class="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-0 sm:gap-2 lg:gap-0 mb-2 sm:mb-2.5
+                      bg-white dark:bg-slate-900 sm:bg-transparent sm:dark:bg-transparent
+                      rounded-2xl sm:rounded-none shadow-sm sm:shadow-none">
             <!-- FROM -->
-            <div class="search-cell flex-1 px-3 py-5 sm:px-5 sm:py-4 lg:px-6 lg:py-5 pr-14 sm:pr-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-t-lg sm:rounded-lg rounded-b-none sm:rounded-b-lg transition-colors border border-slate-200/80 dark:border-slate-500/50 border-b-0 sm:border-b"
+            <div class="search-cell flex-1 px-4 py-6 sm:px-5 sm:py-4 lg:px-6 lg:py-5 pr-16 sm:pr-5 flex items-center gap-3 sm:gap-3 group cursor-pointer bg-transparent sm:bg-white sm:dark:bg-slate-800 rounded-none sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50 sm:border-b border-b border-slate-100 dark:border-slate-700/60"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('fromCity')?.value?.id}"
               (click)="focusField($event, fromCityAc1)">
-              <lucide-icon name="map-pin" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
+              <lucide-icon name="map-pin" [size]="22" class="text-primary shrink-0 sm:!w-5 sm:!h-5" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">From</span>
+                <span class="text-[11px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">From</span>
                 <p-autoComplete #fromCityAc1 formControlName="fromCity" [suggestions]="filteredSourceCities"
                   (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
                   field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true" placeholder="Source city"
                   styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="dash-mob-city w-full bg-transparent border-none !text-xl sm:!text-sm lg:!text-base !font-extrabold sm:!font-bold !text-slate-900 dark:!text-white p-0 !shadow-none placeholder-slate-500 sm:placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -109,31 +150,33 @@
                 </p-autoComplete>
               </div>
               <button *ngIf="bookingForm.get('fromCity')?.value?.id" type="button" (click)="bookingForm.get('fromCity')?.reset()"
-                class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
-                <lucide-icon name="x" [size]="14"></lucide-icon>
+                class="hidden sm:flex shrink-0 w-8 h-8 sm:w-6 sm:h-6 rounded-full items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                <lucide-icon name="x" [size]="16" class="sm:!w-3.5 sm:!h-3.5"></lucide-icon>
               </button>
             </div>
 
-            <!-- SWAP — positioned right on mobile, between fields on desktop -->
-            <div class="absolute sm:relative right-2 sm:right-auto top-1/2 sm:top-auto -translate-y-1/2 sm:translate-y-0 z-20 sm:mx-2 lg:mx-3">
+            <!-- SWAP — positioned right on mobile (on divider, circular outlined), between fields on desktop -->
+            <div class="absolute sm:relative right-3 sm:right-auto top-1/2 sm:top-auto -translate-y-1/2 sm:translate-y-0 z-20 sm:mx-2 lg:mx-3">
               <button type="button" (click)="swapCities()"
-                class="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-white dark:bg-slate-700 shadow-md border border-slate-200 dark:border-slate-600 flex items-center justify-center text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
-                <lucide-icon name="arrow-up-down" [size]="14" class="sm:hidden"></lucide-icon>
+                class="w-11 h-11 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full sm:rounded-xl bg-white dark:bg-white sm:dark:bg-slate-700 shadow-lg sm:shadow-md border-2 sm:border border-slate-200 sm:border-slate-200 sm:dark:border-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-700 sm:dark:text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
+                <!-- Mobile: vertical arrows (FROM/TO are stacked top→bottom).
+                     Desktop: horizontal arrows (FROM/TO are side-by-side). -->
+                <lucide-icon name="arrow-up-down" [size]="16" class="sm:hidden" stroke-width="2.5"></lucide-icon>
                 <lucide-icon name="arrow-left-right" [size]="18" class="hidden sm:block"></lucide-icon>
               </button>
             </div>
 
             <!-- TO -->
-            <div class="search-cell flex-1 px-3 py-5 sm:px-5 sm:py-4 lg:px-6 lg:py-5 pr-14 sm:pr-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-b-lg sm:rounded-lg rounded-t-none sm:rounded-t-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-4 py-6 sm:px-5 sm:py-4 lg:px-6 lg:py-5 pr-16 sm:pr-5 flex items-center gap-3 sm:gap-3 group cursor-pointer bg-transparent sm:bg-white sm:dark:bg-slate-800 rounded-none sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('toCity')?.value?.id}"
               (click)="focusField($event, toCityAc1)">
-              <lucide-icon name="map-pin" [size]="16" class="text-orange-500 shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
+              <lucide-icon name="map-pin" [size]="22" class="text-orange-500 shrink-0 sm:!w-5 sm:!h-5" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
+                <span class="text-[11px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
                 <p-autoComplete #toCityAc1 formControlName="toCity" [suggestions]="filteredDestinationCities"
                   (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true"
                   placeholder="Destination" styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="dash-mob-city w-full bg-transparent border-none !text-xl sm:!text-sm lg:!text-base !font-extrabold sm:!font-bold !text-slate-900 dark:!text-white p-0 !shadow-none placeholder-slate-500 sm:placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -144,37 +187,38 @@
                 </p-autoComplete>
               </div>
               <button *ngIf="bookingForm.get('toCity')?.value?.id" type="button" (click)="bookingForm.get('toCity')?.reset()"
-                class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
-                <lucide-icon name="x" [size]="14"></lucide-icon>
+                class="hidden sm:flex shrink-0 w-8 h-8 sm:w-6 sm:h-6 rounded-full items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                <lucide-icon name="x" [size]="16" class="sm:!w-3.5 sm:!h-3.5"></lucide-icon>
               </button>
             </div>
           </div>
 
-          <!-- Row 2: DATE | TIME — vertical on mobile, horizontal on sm+ -->
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
+          <!-- Row 2: DATE | TIME — side-by-side cards on mobile, horizontal on sm+
+               Mobile: orange icons (matches CTA color), bigger labels, bigger value -->
+          <div class="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
             <!-- PICKUP DATE -->
-            <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-5 sm:px-5 sm:py-5 lg:px-6 lg:py-5 flex items-center gap-2.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-900 sm:dark:bg-slate-800 rounded-2xl sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50 shadow-sm sm:shadow-none"
               (click)="openPicker($event, pickupDate1)">
-              <lucide-icon name="calendar" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
+              <lucide-icon name="calendar" [size]="18" class="text-orange-500 sm:!text-primary shrink-0 sm:!w-5 sm:!h-5" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pickup Date</span>
                 <p-datepicker #pickupDate1 formControlName="pickupDate" [showIcon]="false" dateFormat="dd M yy"
                   [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="dash-mob-time w-full bg-transparent border-none !text-lg sm:!text-sm lg:!text-base !font-extrabold sm:!font-medium !text-slate-900 dark:!text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
 
             <!-- PICKUP TIME -->
-            <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 sm:flex-none sm:w-60 lg:w-72 px-3 py-5 sm:px-5 sm:py-5 lg:px-6 lg:py-5 flex items-center gap-2.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-900 sm:dark:bg-slate-800 rounded-2xl sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50 shadow-sm sm:shadow-none"
               (click)="openPicker($event, pickupTime1)">
-              <lucide-icon name="clock" [size]="16" class="text-primary shrink-0 sm:!w-5 sm:!h-5"></lucide-icon>
+              <lucide-icon name="clock" [size]="18" class="text-orange-500 sm:!text-primary shrink-0 sm:!w-5 sm:!h-5" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pickup Time</span>
                 <p-datepicker #pickupTime1 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12" [stepMinute]="15"
                   [minDate]="minPickupTime"
                   appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-sm lg:text-base font-medium text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="dash-mob-time w-full bg-transparent border-none !text-lg sm:!text-sm lg:!text-base !font-extrabold sm:!font-medium !text-slate-900 dark:!text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
@@ -192,22 +236,26 @@
         <!-- ============================================================ -->
         <!-- ROUND TRIP                                                   -->
         <!-- ============================================================ -->
-        <div [hidden]="selectedTab !== 'ROUND_TRIP'">
-          <!-- Row 1: FROM / SWAP / TO -->
-          <div class="relative flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 sm:p-3 border border-slate-200 dark:border-slate-600/50 mb-3">
+        <div [hidden]="selectedTab !== 'ROUND_TRIP'"
+          class="bg-slate-100/70 sm:bg-transparent dark:bg-slate-800/40 sm:dark:bg-transparent rounded-2xl sm:rounded-none p-2 sm:p-0 border border-slate-200/70 sm:border-0 dark:border-slate-700/50 sm:dark:border-0">
+          <!-- Row 1: FROM / SWAP / TO
+               Mobile: same Gemini-style grouped white card as One Way (no slate-50
+               wrapper, divider between FROM/TO, circular vertical-arrow swap on right).
+               Desktop: existing horizontal layout untouched. -->
+          <div class="relative flex flex-col lg:flex-row items-stretch lg:items-center gap-0 sm:gap-2.5 bg-white sm:bg-slate-50/50 dark:bg-slate-900 sm:dark:bg-slate-800/50 rounded-2xl sm:rounded-xl p-0 sm:p-3 border-0 sm:border sm:border-slate-200 sm:dark:border-slate-600/50 shadow-sm sm:shadow-none mb-2 sm:mb-3">
 
             <!-- FROM -->
-            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 pr-14 sm:pr-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-t-lg sm:rounded-lg rounded-b-none sm:rounded-b-lg transition-colors border border-slate-200/80 dark:border-slate-500/50 border-b-0 sm:border-b"
+            <div class="search-cell flex-1 px-4 py-6 sm:px-5 sm:py-5 pr-16 sm:pr-5 flex items-center gap-3 sm:gap-3 group cursor-pointer bg-transparent sm:bg-white sm:dark:bg-slate-800 rounded-none sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50 border-b border-slate-100 dark:border-slate-700/60 sm:border-b"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('fromCity')?.value?.id}"
               (click)="focusField($event, fromCityAc2)">
-              <lucide-icon name="map-pin" [size]="20" class="text-primary shrink-0"></lucide-icon>
+              <lucide-icon name="map-pin" [size]="22" class="text-primary shrink-0 sm:!w-5 sm:!h-5" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">From</span>
+                <span class="text-[11px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">From</span>
                 <p-autoComplete #fromCityAc2 formControlName="fromCity" [suggestions]="filteredSourceCities"
                   (completeMethod)="filterSourceCities($event)" (onSelect)="onSourceCitySelect($event)"
                   field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true" placeholder="Source city"
                   styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="dash-mob-city w-full bg-transparent border-none !text-xl sm:!text-base !font-extrabold sm:!font-bold !text-slate-900 dark:!text-white p-0 !shadow-none placeholder-slate-500 sm:placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -220,25 +268,25 @@
             </div>
 
             <!-- Divider + SWAP -->
-            <div class="absolute sm:relative right-4 sm:right-auto top-1/2 sm:top-auto -translate-y-1/2 sm:translate-y-0 flex items-center justify-center sm:mx-3 z-20">
+            <div class="absolute sm:relative right-3 sm:right-auto top-1/2 sm:top-auto -translate-y-1/2 sm:translate-y-0 flex items-center justify-center sm:mx-3 z-20">
               <button type="button" (click)="swapCities()"
-                class="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-white dark:bg-slate-700 shadow-md border border-slate-200 dark:border-slate-600 flex items-center justify-center text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
-                <lucide-icon name="arrow-up-down" [size]="14" class="sm:hidden"></lucide-icon>
+                class="w-11 h-11 sm:w-12 sm:h-12 rounded-full sm:rounded-xl bg-white dark:bg-white sm:dark:bg-slate-700 shadow-lg sm:shadow-md border-2 sm:border border-slate-200 sm:dark:border-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-700 sm:dark:text-primary hover:rotate-180 transition-transform duration-500 cursor-pointer">
+                <lucide-icon name="arrow-up-down" [size]="16" class="sm:hidden" stroke-width="2.5"></lucide-icon>
                 <lucide-icon name="arrow-left-right" [size]="18" class="hidden sm:block"></lucide-icon>
               </button>
             </div>
 
             <!-- TO -->
-            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 pr-14 sm:pr-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-b-lg sm:rounded-lg rounded-t-none sm:rounded-t-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-4 py-6 sm:px-5 sm:py-5 pr-16 sm:pr-5 flex items-center gap-3 sm:gap-3 group cursor-pointer bg-transparent sm:bg-white sm:dark:bg-slate-800 rounded-none sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50"
               [ngClass]="{'ring-2 ring-red-300': formSubmitted && !bookingForm.get('toCity')?.value?.id}"
               (click)="focusField($event, toCityAc2)">
-              <lucide-icon name="map-pin" [size]="20" class="text-orange-500 shrink-0"></lucide-icon>
+              <lucide-icon name="map-pin" [size]="22" class="text-orange-500 shrink-0 sm:!w-5 sm:!h-5" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
+                <span class="text-[11px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
                 <p-autoComplete #toCityAc2 formControlName="toCity" [suggestions]="filteredDestinationCities"
                   (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true"
                   placeholder="Destination city" styleClass="w-full search-bar-autocomplete"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none placeholder-slate-300"
+                  inputStyleClass="dash-mob-city w-full bg-transparent border-none !text-xl sm:!text-base !font-extrabold sm:!font-bold !text-slate-900 dark:!text-white p-0 !shadow-none placeholder-slate-500 sm:placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-city>
                     <div class="flex items-center gap-2 px-2 py-1.5">
@@ -294,57 +342,60 @@
             </button>
           </div>
 
-          <!-- Row 2: Dates bar -->
-          <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-2 sm:p-3 border border-slate-200 dark:border-slate-600/50">
+          <!-- Row 2: Dates bar
+               Mobile: 2x2 grid (Pickup Date | Pickup Time / Return Date | Drop Time)
+               so the four fields don't stack into a tall vertical column.
+               Desktop: existing horizontal 4-column layout — untouched. -->
+          <div class="grid grid-cols-2 lg:flex lg:flex-col lg:flex-row items-stretch lg:items-center gap-2 sm:gap-2.5 bg-transparent sm:bg-slate-50/50 sm:dark:bg-slate-800/50 rounded-2xl sm:rounded-xl p-0 sm:p-3 border-0 sm:border sm:border-slate-200 sm:dark:border-slate-600/50">
 
             <!-- PICKUP DATE -->
-            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-3 py-5 sm:px-5 sm:py-5 flex items-center gap-2.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-900 sm:dark:bg-slate-800 rounded-2xl sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50 shadow-sm sm:shadow-none"
               (click)="openPicker($event, pickupDate2)">
-              <lucide-icon name="calendar" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
+              <lucide-icon name="calendar" [size]="18" class="text-orange-500 sm:!text-primary shrink-0 sm:!w-5 sm:!h-5" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up</span>
                 <p-datepicker #pickupDate2 formControlName="pickupDate" [showIcon]="false" dateFormat="dd M yy"
                   [minDate]="minPickupDate" appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="dash-mob-time w-full bg-transparent border-none !text-lg sm:!text-base !font-extrabold sm:!font-bold !text-slate-900 dark:!text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
 
             <!-- PICKUP TIME -->
-            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-3 py-5 sm:px-5 sm:py-5 flex items-center gap-2.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-900 sm:dark:bg-slate-800 rounded-2xl sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50 shadow-sm sm:shadow-none"
               (click)="openPicker($event, pickupTime2)">
-              <lucide-icon name="clock" [size]="20" class="text-primary shrink-0 transition-colors"></lucide-icon>
+              <lucide-icon name="clock" [size]="18" class="text-orange-500 sm:!text-primary shrink-0 sm:!w-5 sm:!h-5" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Pick Up At</span>
                 <p-datepicker #pickupTime2 formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12" [stepMinute]="15"
                   [minDate]="minPickupTime"
                   appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="dash-mob-time w-full bg-transparent border-none !text-lg sm:!text-base !font-extrabold sm:!font-bold !text-slate-900 dark:!text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
 
             <!-- RETURN DATE -->
-            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-800 rounded-lg transition-colors border border-slate-200/80 dark:border-slate-500/50"
+            <div class="search-cell flex-1 px-3 py-5 sm:px-5 sm:py-5 flex items-center gap-2.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-900 sm:dark:bg-slate-800 rounded-2xl sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50 shadow-sm sm:shadow-none"
               (click)="openPicker($event, returnDate2)">
-              <lucide-icon name="calendar" [size]="20" class="text-orange-500 shrink-0 transition-colors"></lucide-icon>
+              <lucide-icon name="calendar" [size]="18" class="text-orange-500 shrink-0 sm:!w-5 sm:!h-5" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Return <span class="text-red-400">*</span></span>
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Return <span class="text-red-400">*</span></span>
                 <p-datepicker #returnDate2 formControlName="returnDate" [showIcon]="false" dateFormat="dd M yy"
                   [minDate]="minReturnDate" appendTo="body" styleClass="w-full border-none bg-transparent search-bar-datepicker"
-                  inputStyleClass="w-full bg-transparent border-none text-sm sm:text-base font-medium sm:font-bold text-slate-800 dark:text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
+                  inputStyleClass="dash-mob-time w-full bg-transparent border-none !text-lg sm:!text-base !font-extrabold sm:!font-bold !text-slate-900 dark:!text-white p-0 !shadow-none cursor-pointer whitespace-nowrap">
                 </p-datepicker>
               </div>
             </div>
 
             <!-- DROP TIME (read-only) -->
-            <div class="search-cell flex-1 px-3 py-4 sm:px-5 sm:py-5 flex items-center gap-2 sm:gap-3 group rounded-lg relative">
-              <lucide-icon name="clock" [size]="18" class="text-slate-300 shrink-0"></lucide-icon>
+            <div class="search-cell flex-1 px-3 py-5 sm:px-5 sm:py-5 flex items-center gap-2.5 sm:gap-3 group bg-white dark:bg-slate-900 sm:bg-transparent sm:dark:bg-transparent rounded-2xl sm:rounded-lg shadow-sm sm:shadow-none border-0 relative">
+              <lucide-icon name="clock" [size]="18" class="text-slate-400 shrink-0 sm:!w-[18px] sm:!h-[18px]" stroke-width="2.5"></lucide-icon>
               <div class="flex flex-col flex-1 min-w-0">
-                <span class="text-[9px] sm:text-[11px] font-semibold sm:font-bold text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Drop Time
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">Drop Time
                   <lucide-icon name="info" [size]="10" class="text-slate-300 inline-block ml-0.5"></lucide-icon>
                 </span>
-                <span class="text-[8px] sm:text-base font-normal sm:font-bold text-slate-500 dark:text-slate-200 whitespace-nowrap">{{ getDropTime() }}</span>
+                <span class="text-sm sm:text-base font-bold sm:font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">{{ getDropTime() }}</span>
               </div>
               <!-- Tooltip -->
               <div class="absolute -bottom-12 left-1/2 -translate-x-1/2 z-50 hidden group-hover:block bg-slate-800 text-white text-[10px] font-medium rounded-md px-3 py-1.5 shadow-lg w-[220px] text-center">
@@ -549,10 +600,12 @@
 
       </div>
 
-      <!-- Explore Cabs Button — straddles the bottom border of the card -->
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-30">
+      <!-- Explore Cabs Button — straddles the bottom border of the card.
+           Mobile: amber gradient rectangle (rounded-lg), narrower width.
+           Desktop: existing solid orange rectangle — untouched. -->
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-30 flex justify-center">
         <button (click)="onExploreCabs()" [disabled]="isSearching"
-          class="bg-orange-500 hover:bg-orange-600 text-white px-5 sm:px-16 py-2 sm:py-4 rounded-lg sm:rounded-xl font-extrabold shadow-xl shadow-orange-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-orange-500/50 tracking-wide text-xs sm:text-base active:scale-[0.98] flex items-center justify-center min-w-0 w-auto sm:min-w-[280px] border-0 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer">
+          class="w-auto sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 sm:bg-orange-500 sm:bg-none sm:from-transparent sm:to-transparent hover:bg-orange-600 text-white px-8 sm:px-16 py-3 sm:py-4 rounded-lg sm:rounded-xl font-extrabold shadow-xl shadow-orange-500/40 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-orange-500/50 tracking-wide text-sm sm:text-base active:scale-[0.98] flex items-center justify-center gap-2 whitespace-nowrap min-w-0 sm:min-w-[280px] border-0 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer">
           <ng-container *ngIf="!isSearching">
             EXPLORE CABS
             <lucide-icon name="arrow-right" [size]="20" class="ml-2"></lucide-icon>
@@ -566,7 +619,9 @@
     </div>
 
     <!-- ── Live Stats Bar (social proof) ── -->
-    <div class="mt-8 sm:mt-16 flex justify-center px-2">
+    <!-- Mobile gap bumped (mt-16) so the bar clears the Explore Cabs button
+         which straddles half-out of the search card's bottom edge. -->
+    <div class="mt-16 sm:mt-16 flex justify-center px-2">
       <div class="inline-flex flex-wrap items-center justify-center gap-2 sm:gap-5 md:gap-8 bg-white/10 backdrop-blur-md rounded-lg sm:rounded-xl px-3 sm:px-6 py-2 sm:py-3 border border-white/15 shadow-lg">
 
         <!-- Daily Volume (live) -->
