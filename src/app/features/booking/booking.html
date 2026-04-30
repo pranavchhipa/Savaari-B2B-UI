@@ -100,7 +100,16 @@
                         [class.opacity-60]="vasReady"
                         [attr.aria-disabled]="vasReady ? 'true' : null">
 
-                        <!-- Row 1: Customer Name | Customer Phone Number (2-col on md+) -->
+                        <!-- Row 1: Customer Name | Agent Phone Number (2-col on md+).
+                             ⚠ The "Phone Number" field on the right is bound to ngModel `phone`
+                             which gets sent to the backend as `customerMobile` — backend's SMS
+                             routing reads from that field. Per April 2026 ask, we want all
+                             trip-confirmation SMS to land on the AGENT's phone (not the
+                             customer's), so we relabel this top field as "Agent Phone Number"
+                             and the agent enters THEIR OWN number here. The actual customer's
+                             phone moves to the optional bottom-row field. (Backend still sees
+                             this value as `customerMobile` until the API gets a proper
+                             `agent_mobile` field — see Approach B note in commit msg.) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
                             <div class="relative group">
                                 <input id="guestName" type="text" [(ngModel)]="guestName" name="guestName"
@@ -115,15 +124,17 @@
 
                             <div class="relative country-code-wrapper">
                                 <label for="phone"
-                                    class="absolute text-xs text-slate-500 dark:text-slate-400 top-2 left-4 z-10 pointer-events-none">Phone Number <span class="text-red-500">*</span></label>
+                                    class="absolute text-xs text-slate-500 dark:text-slate-400 top-2 left-4 z-10 pointer-events-none">Agent Phone Number <span class="text-red-500">*</span></label>
                                 <div class="flex items-center bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-600 rounded-t-lg focus-within:border-primary transition-all"
                                     [class.!border-red-400]="formSubmitAttempted && !isPhoneValid()">
                                     <div class="country-code-trigger shrink-0 pl-3 pr-1 py-1 cursor-pointer" (click)="countryDropdownOpen = !countryDropdownOpen">
+                                        <!-- Flag deliberately small (w-5 h-3.5) so it doesn't dominate
+                                             the field — the +91 dial code is what most agents read. -->
                                         <div class="flex items-center gap-1.5 mt-4 mb-0.5">
                                             <img *ngIf="selectedCountryCode"
                                                 [src]="'https://flagcdn.com/w40/' + selectedCountryCode.iso2 + '.png'"
                                                 [alt]="selectedCountryCode.countryName"
-                                                class="w-7 h-5 object-cover rounded-[3px] shadow-sm border border-slate-200 dark:border-slate-600" />
+                                                class="w-5 h-3.5 object-cover rounded-[2px] shadow-sm border border-slate-200 dark:border-slate-600" />
                                             <span class="font-semibold text-sm text-slate-800 dark:text-slate-200">+{{selectedCountryCode?.isdCode || '91'}}</span>
                                             <lucide-icon name="chevron-down" [size]="14" class="text-slate-400"></lucide-icon>
                                         </div>
@@ -135,6 +146,20 @@
                                         (paste)="$event.preventDefault()"
                                         class="flex-1 bg-transparent border-0 outline-none pt-6 pb-2 px-3 text-slate-900 dark:text-white text-sm focus:ring-0"
                                         placeholder="Enter phone number" />
+                                    <!-- Inline info icon — tap/hover reveals the SMS routing
+                                         note. Replaces the always-visible helper paragraph that
+                                         used to sit below this row (cleaner on mobile especially).
+                                         Uses the same `group` pattern other tooltips in the file
+                                         use so behaviour is consistent. -->
+                                    <div class="relative group/agentinfo shrink-0 pr-3 pl-1 self-center mt-2">
+                                        <lucide-icon name="info" [size]="14"
+                                            class="text-slate-400 hover:text-primary transition-colors cursor-help"
+                                            tabindex="0"></lucide-icon>
+                                        <div class="absolute right-0 top-full mt-1.5 z-50 hidden group-hover/agentinfo:block w-60 sm:w-64 px-3 py-2 bg-slate-900 text-white text-[11px] leading-snug font-medium rounded-md shadow-lg">
+                                            All trip SMS &amp; driver-allocation alerts will be sent to this Agent Phone Number.
+                                            <span class="absolute -top-1.5 right-3 w-3 h-3 bg-slate-900 rotate-45"></span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <!-- Country code dropdown -->
                                 <div *ngIf="countryDropdownOpen"
@@ -157,11 +182,14 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div *ngIf="formSubmitAttempted && !isPhoneValid()" class="text-xs text-red-500 mt-1 ml-4">Valid phone number required (min 10 digits)</div>
+                                <div *ngIf="formSubmitAttempted && !isPhoneValid()" class="text-xs text-red-500 mt-1 ml-4">Valid agent phone number required (min 10 digits)</div>
                             </div>
                         </div>
 
-                        <!-- Row 2: Agent Email (locked) | Agent Mobile (editable, pre-filled) -->
+                        <!-- Note: SMS-routing helper note moved INSIDE the Agent Phone field
+                             as a hover tooltip on a small ⓘ icon — see Row 1 above. -->
+
+                        <!-- Row 2: Agent Email (locked) | Customer Phone Number (optional). -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
                             <div class="relative group">
                                 <input id="email" type="email" [(ngModel)]="agentEmail" name="agentEmail" readonly
@@ -175,10 +203,12 @@
                                 </div>
                             </div>
 
-                            <!-- Agent Mobile — pre-filled from the logged-in agent's profile,
-                                 editable so the agent can override per booking if their point
-                                 of contact for this trip is different. NOT locked (unlike
-                                 Agent Email above). -->
+                            <!-- Customer Phone Number — OPTIONAL field per April 2026 ask.
+                                 Held in the same `agentMobile` ngModel for now (template
+                                 binding rename is a bigger refactor). The actual customer's
+                                 contact number; backend doesn't currently route SMS to this
+                                 — it's stored for the agent's own record + future Approach B
+                                 once the backend exposes a proper customer-vs-agent split. -->
                             <div class="relative group">
                                 <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary z-10 pointer-events-none">
                                     <lucide-icon name="phone" [size]="16"></lucide-icon>
@@ -189,7 +219,7 @@
                                     class="peer block w-full pl-11 pr-4 pt-5 pb-1.5 text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
                                     placeholder=" " />
                                 <label for="agentMobile"
-                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-11 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Agent Mobile</label>
+                                    class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-11 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Customer Phone Number</label>
                             </div>
                         </div>
                         <!-- ── Airport bookings: locked FROM → TO route fields ── -->

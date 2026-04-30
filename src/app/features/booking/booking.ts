@@ -298,10 +298,18 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   ngOnInit() {
     this.walletBalance$ = this.walletService.balance$;
     this.agentEmail = this.auth.getUserEmail();
-    // Pre-fill agent's own mobile from the profile so the agent doesn't have
-    // to re-type it every booking. Editable — they may want to override on a
-    // per-booking basis (different point-of-contact for this trip, etc).
-    this.agentMobile = this.auth.getUserProfile()?.mobileno || this.auth.getUserProfile()?.phone || '';
+    // Pre-fill the AGENT PHONE NUMBER field (top, mandatory, ngModel `phone`)
+    // from the logged-in agent's profile so they don't re-type it every booking.
+    // This is the field that gets sent to backend as `customerMobile` and
+    // therefore receives all trip SMS / driver-allocation alerts. Per April
+    // 2026 ask the agent's own number lands here by default. Editable on a
+    // per-booking basis if they need a different point-of-contact for the trip.
+    // The bottom-row `agentMobile` ngModel is now the optional Customer Phone
+    // Number field — it stays empty by default, agent fills it explicitly.
+    const profileMobile = this.auth.getUserProfile()?.mobileno || this.auth.getUserProfile()?.phone || '';
+    if (profileMobile) {
+      this.phone = profileMobile;
+    }
 
     // Load country codes for phone number dropdown
     this.countryCodeService.getCountryCodes().subscribe(codes => {
@@ -1051,9 +1059,15 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!pickupDt) return false;
 
     const now = new Date();
-    // Compare at minute-level to avoid seconds/ms precision issues
+    // Compare at minute-level to avoid seconds/ms precision issues.
+    // Threshold dropped 48hr → 24hr (April 2026 ask): only the very last-minute
+    // trips (< 24hr away) are flagged urgent now. Trips in the 24-48hr window
+    // get to show VAS again, which gives the agent more upsell opportunities.
+    // Backend's own urgent_booking_flag may still be on a 48hr cutoff — when
+    // it fires we still forward Urgent_booking, the OR in buildBookingRequest()
+    // means the looser FE threshold doesn't override the BE signal.
     const diffInMinutes = Math.floor((pickupDt.getTime() - now.getTime()) / (1000 * 60));
-    return diffInMinutes < 48 * 60;  // < 2880 minutes
+    return diffInMinutes < 24 * 60;  // < 1440 minutes
   }
 
   isBookingWindowValid(): boolean {
