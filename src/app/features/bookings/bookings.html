@@ -602,6 +602,37 @@
                         </div>
                     </div>
 
+                    <!-- ═══ ENHANCE YOUR RIDE — selected VAS line items ═══════════════
+                         Renders only when the booking actually carries any VAS entries.
+                         Each row shows: name + (sub-option in parens, e.g. "Hindi") and
+                         the total amount including GST.
+                         vasFlag === 0 entries are displayed with a strikethrough so the
+                         agent can see they were removed/refunded but knows they're not
+                         part of the live charge. Active (flag=1) entries are sorted to
+                         the top by mapVasDetails(). -->
+                    <div *ngIf="booking.vasDetails && booking.vasDetails.length"
+                         class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 mb-2 sm:mb-3">
+                        <div class="flex items-center gap-1.5 mb-2">
+                            <lucide-icon name="wand-2" [size]="11" class="text-primary"></lucide-icon>
+                            <p class="text-[9px] font-bold text-primary uppercase tracking-widest">Enhance Your Ride</p>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div *ngFor="let vas of booking.vasDetails"
+                                 class="flex justify-between items-start gap-2 text-xs"
+                                 [class.opacity-50]="vas.vasFlag === 0"
+                                 [class.line-through]="vas.vasFlag === 0">
+                                <div class="flex-1 min-w-0">
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ vas.vasName }}</span>
+                                    <span *ngIf="vas.customerInputValue"
+                                          class="text-slate-500 dark:text-slate-400 font-medium ml-1">({{ vas.customerInputValue }})</span>
+                                </div>
+                                <span class="shrink-0 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                                    ₹{{ vas.totalAmount | number:'1.0-0' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Settle Panel -->
                     <div *ngIf="settleBookingId === booking.bookingId && getBalanceDue(booking) > 0"
                         class="bg-white dark:bg-slate-800 rounded-lg border border-amber-200 dark:border-amber-800 p-3 mb-3">

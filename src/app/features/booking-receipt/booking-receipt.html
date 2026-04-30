@@ -116,6 +116,36 @@
         </div>
       </div>
 
+      <!-- ═══ ENHANCE YOUR RIDE — selected VAS items ═══
+           Renders only when the booking actually carries any VAS line items
+           (booking.vasDetails populated from /booking-details vas_details[]).
+           Strikethrough'd entries (vasFlag=0) keep the receipt as a faithful
+           record of what was added vs later removed/refunded. -->
+      <div *ngIf="booking.vasDetails && booking.vasDetails.length">
+        <div class="receipt-section-title text-[10px] font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <lucide-icon name="wand-2" [size]="12"></lucide-icon>
+          Enhance Your Ride
+        </div>
+        <div class="border border-slate-200 dark:border-slate-600/40 rounded-xl overflow-hidden">
+          <table class="receipt-table w-full text-sm">
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-600">
+              <tr *ngFor="let v of booking.vasDetails"
+                  [class.opacity-50]="v.vasFlag === 0">
+                <td class="px-3 sm:px-5 py-2.5 sm:py-3 text-[12px] sm:text-sm text-slate-700 dark:text-slate-200"
+                    [class.line-through]="v.vasFlag === 0">
+                  <span class="font-semibold">{{ v.vasName }}</span>
+                  <span *ngIf="v.customerInputValue" class="text-slate-500 dark:text-slate-400 font-medium ml-1">({{ v.customerInputValue }})</span>
+                </td>
+                <td class="px-3 sm:px-5 py-2.5 sm:py-3 text-[12px] sm:text-sm font-bold text-slate-800 dark:text-slate-100 text-right whitespace-nowrap"
+                    [class.line-through]="v.vasFlag === 0">
+                  ₹{{ v.totalAmount | number:'1.0-0' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ═══ PAYMENT BREAKDOWN ═══ -->
       <div>
         <div class="receipt-section-title text-[10px] font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">

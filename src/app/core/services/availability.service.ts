@@ -129,7 +129,14 @@ export class AvailabilityService {
       carImageLarge: raw.carImageLarge,
       tncData: raw.tnc_data,
       packageId: raw.package ? String(raw.package) : undefined,
-      urgentBookingFlag: (raw as any).urgent_booking_flag ?? 0,
+      // Normalize to number — backend returns urgent_booking_flag as STRING "1"
+      // (verified from live betasavaari.com HAR April 2026) but our model + the
+      // downstream `=== 1` strict-equality check expects a number. Without this
+      // Number() coercion the booking-create payload silently dropped Urgent_booking
+      // and trips that needed urgent flow were treated as regular trips (which
+      // also caused VAS to incorrectly appear since backend skips VAS only when
+      // Urgent_booking=1 was actually sent).
+      urgentBookingFlag: Number((raw as any).urgent_booking_flag) || 0,
     };
   }
 }

@@ -175,7 +175,7 @@
                 <span class="text-[11px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-primary uppercase tracking-wider mb-0.5 sm:mb-1">To</span>
                 <p-autoComplete #toCityAc1 formControlName="toCity" [suggestions]="filteredDestinationCities"
                   (completeMethod)="filterDestinationCities($event)" field="name" optionLabel="name" [minLength]="0" [completeOnFocus]="true"
-                  placeholder="Destination" styleClass="w-full search-bar-autocomplete"
+                  placeholder="Destination city" styleClass="w-full search-bar-autocomplete"
                   inputStyleClass="dash-mob-city w-full bg-transparent border-none !text-xl sm:!text-sm lg:!text-base !font-extrabold sm:!font-bold !text-slate-900 dark:!text-white p-0 !shadow-none placeholder-slate-500 sm:placeholder-slate-300"
                   panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
                   <ng-template pTemplate="item" let-city>
@@ -346,7 +346,7 @@
                Mobile: 2x2 grid (Pickup Date | Pickup Time / Return Date | Drop Time)
                so the four fields don't stack into a tall vertical column.
                Desktop: existing horizontal 4-column layout — untouched. -->
-          <div class="grid grid-cols-2 lg:flex lg:flex-col lg:flex-row items-stretch lg:items-center gap-2 sm:gap-2.5 bg-transparent sm:bg-slate-50/50 sm:dark:bg-slate-800/50 rounded-2xl sm:rounded-xl p-0 sm:p-3 border-0 sm:border sm:border-slate-200 sm:dark:border-slate-600/50">
+          <div class="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 bg-transparent sm:bg-slate-50/50 sm:dark:bg-slate-800/50 rounded-2xl sm:rounded-xl p-0 sm:p-3 border-0 sm:border sm:border-slate-200 sm:dark:border-slate-600/50">
 
             <!-- PICKUP DATE -->
             <div class="search-cell flex-1 px-3 py-5 sm:px-5 sm:py-5 flex items-center gap-2.5 sm:gap-3 group cursor-pointer bg-white dark:bg-slate-900 sm:dark:bg-slate-800 rounded-2xl sm:rounded-lg transition-colors border-0 sm:border sm:border-slate-200/80 sm:dark:border-slate-500/50 shadow-sm sm:shadow-none"

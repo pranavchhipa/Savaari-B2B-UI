@@ -14,6 +14,24 @@ import { environment } from '../../../environments/environment';
 
 export type BookingTab = 'upcoming' | 'cancelled' | 'completed';
 
+/**
+ * Per-booking VAS line as returned by /booking-details (April 2026 sample
+ * verified). Lives in vas_details[] on each booking row. Only the bookings
+ * that actually had add-ons picked at booking time will carry this array
+ * — for the rest, the field is absent / empty.
+ *
+ * vasFlag === 1  → currently active, render normally
+ * vasFlag === 0  → was selected then removed/refunded, render WITH STRIKETHROUGH
+ *                  so the agent can still see it in history but understands it
+ *                  isn't part of the live total.
+ */
+export interface BookingVasDetail {
+    vasName: string;            // e.g. "Cab with Luggage Carrier"
+    customerInputValue: string; // e.g. "Hindi" — empty when no sub-option was needed
+    totalAmount: number;        // ₹ inclusive of GST
+    vasFlag: number;            // 1 active / 0 inactive
+}
+
 /** View-model for a booking card (confirmed from live API March 2026) */
 export interface BookingCard {
     bookingId: string;
@@ -95,6 +113,13 @@ export interface BookingCard {
      * every tab — _bucket prevents that.
      */
     _bucket?: 'upcoming' | 'completed' | 'cancelled';
+    /**
+     * Selected Value-Added Services for this booking (from booking-details
+     * `vas_details[]`). Optional — only bookings that had VAS picked at booking
+     * time will carry it. Sorted active-first so the UI surfaces what's
+     * actually charged before the strikethrough'd inactive entries.
+     */
+    vasDetails?: BookingVasDetail[];
 }
 
 /** Calendar day model for the week strip */
@@ -1116,7 +1141,27 @@ export class BookingsComponent implements OnInit {
             // categorization filter can group rows by what the backend
             // already decided, instead of re-deriving from `status`.
             _bucket: b._bucket,
+            // VAS line items — optional. Map snake → camel and sort active
+            // entries first so the strikethrough'd (vasFlag=0) ones land at
+            // the bottom of the list, where they read as historical context
+            // rather than the live charge breakdown.
+            vasDetails: this.mapVasDetails(b.vas_details ?? b.vasDetails),
         };
+    }
+
+    /** Map raw vas_details[] from the API into the camelCase view-model + sort. */
+    private mapVasDetails(raw: any): BookingVasDetail[] | undefined {
+        if (!Array.isArray(raw) || raw.length === 0) return undefined;
+        const mapped: BookingVasDetail[] = raw
+            .filter(v => v && (v.vas_name || v.vasName))
+            .map(v => ({
+                vasName: String(v.vas_name ?? v.vasName ?? ''),
+                customerInputValue: String(v.vas_customer_input_value ?? v.customerInputValue ?? ''),
+                totalAmount: Number(v.vas_total_amount ?? v.totalAmount ?? 0) || 0,
+                vasFlag: Number(v.vas_flag ?? v.vasFlag ?? 0) || 0,
+            }));
+        // Active (flag=1) rendered first, then inactive (flag=0) at the bottom.
+        return mapped.sort((a, b) => (b.vasFlag - a.vasFlag));
     }
 
     /**

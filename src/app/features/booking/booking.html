@@ -1369,6 +1369,31 @@
                     </div>
                 </div>
 
+                <!-- ══ ENHANCE YOUR RIDE — selected VAS items ══════════════════════
+                     Renders only when the agent picked at least one add-on. Same
+                     branding (wand-2 + cyan) as Step 1's selection card, but here
+                     it's read-only — just a confirmation of what was bought. -->
+                <div *ngIf="selectedVasList.length"
+                    class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                    <div class="px-5 py-3.5 bg-sky-50 dark:bg-sky-900/20 border-b border-sky-200 dark:border-sky-800/50">
+                        <h2 class="text-sm font-bold text-sky-900 dark:text-sky-300 flex items-center gap-2">
+                            <lucide-icon name="wand-2" [size]="16" class="text-sky-600 dark:text-sky-400"></lucide-icon>
+                            Enhance Your Ride
+                        </h2>
+                    </div>
+                    <div class="p-5 space-y-2.5">
+                        <div *ngFor="let v of selectedVasList"
+                             class="flex justify-between items-start gap-3 text-[13px]">
+                            <div class="flex-1 min-w-0">
+                                <span class="font-semibold text-slate-800 dark:text-white">{{ v.name }}</span>
+                                <span *ngIf="v.subOption"
+                                      class="text-slate-500 dark:text-slate-400 font-medium ml-1">({{ v.subOption }})</span>
+                            </div>
+                            <span class="shrink-0 font-bold text-slate-900 dark:text-white whitespace-nowrap">{{ v.priceLabel }}</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ══ IMPORTANT T&C CARD ══ -->
                 <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
                     <div class="px-5 py-3.5 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/50">

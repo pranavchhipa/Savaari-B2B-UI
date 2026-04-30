@@ -1594,7 +1594,16 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         selectPlaceId: this.itinerary!.selectPlaceId || '',
         custShortAddress: locality || this.itinerary!.pickupAddress || '',
       }),
-      ...(this.selectedCar!.urgentBookingFlag === 1 && { Urgent_booking: '1' }),
+      // Urgent booking: forward the flag whenever EITHER signal fires —
+      //   1. /availabilities returned urgent_booking_flag = 1 for the chosen car, OR
+      //   2. pickup is < 48hrs away (computed client-side via isBookingUrgent()).
+      // The 2nd check rescues Local + One Way trips where the backend was
+      // observed not setting urgent_booking_flag even when pickup was clearly
+      // < 48hrs away (April 2026 QA), which then caused VAS to incorrectly
+      // appear in the booking-create response. Using the OR keeps backend as
+      // the source of truth when it does flag the trip, and falls back to our
+      // own clock when it doesn't.
+      ...((this.selectedCar!.urgentBookingFlag === 1 || this.isBookingUrgent()) && { Urgent_booking: '1' }),
       ...(this.needsGstInvoice && this.agentGstNumber && { gst_invoice_required: '1', gst_number: this.agentGstNumber }),
     };
   }
@@ -2063,7 +2072,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   goBackFromBooking() {
     if (this.step1Complete) {
-      // On payment step → go back to passenger details.
+      // ─── Step 2 (Payment) → Step 1 (VAS-edit mode) ─────────────────────
       // Reset the payment option to 1 (Pay any amount now) so when the
       // agent moves forward again, Step 2 lands on the new April 2026
       // default instead of a stale selection from a prior pass. We
@@ -2074,22 +2083,38 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.showWalletConfirm = false;
       this.showTopUpConfirm = false;
       this.step1Complete = false;
-      // Going back from Step 2 → Step 1 also resets the VAS phase so the
-      // agent sees the form fresh with the Proceed button (not the VAS
-      // section + Continue button). If they re-click Proceed a fresh
-      // booking will be created and VAS will reappear.
+      // ⚠ PRESERVE the existing booking + VAS selections. Earlier this
+      // method nuked vasReady / vasSelections / vasAmount, which forced
+      // the agent to click Proceed again — that created a brand-new
+      // booking and orphaned the previous one in backend. Per QA April
+      // 2026 ("VAS me kuch change karna he to back jake firse edit kar
+      // sake"), we now keep the booking intact and re-show the VAS
+      // section so the agent can simply tweak add-ons. The form stays
+      // locked (vasReady is still true). To actually re-enter pickup
+      // details, the agent must press back ONE MORE TIME — see the
+      // `else if (this.vasReady)` branch below which routes to /select-car.
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.markForCheck();
+    } else if (this.vasReady) {
+      // ─── Step 1 (VAS phase, form locked) → /select-car ─────────────────
+      // Agent wants to actually change pickup details — abandon the
+      // current booking shell. Wipe VAS state + bookingId so the next
+      // Proceed creates a fresh booking instead of resuming this one.
       this.vasReady = false;
       this.vasSelections.clear();
       this.vasAmount = 0;
       this.vasGstAmount = 0;
       this.vasNamesList = '';
-      // Also clear any lingering conflict toast so the next pass through
-      // Step 1 starts visually clean.
       this.dismissVasConflict();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      this.cdr.markForCheck();
+      this.bookingId = '';
+      const itinerary = this.bookingState.getItinerary();
+      if (itinerary?.fromCityId) {
+        this.router.navigate(['/select-car']);
+      } else {
+        this.router.navigate(['/dashboard']);
+      }
     } else {
-      // On passenger details step → go back to select-car or dashboard
+      // ─── Step 1 (form, no booking yet) → /select-car ────────────────────
       const itinerary = this.bookingState.getItinerary();
       if (itinerary?.fromCityId) {
         this.router.navigate(['/select-car']);
@@ -2116,6 +2141,25 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
   /** True when the agent has checked this VAS card. */
   isVasSelected(vas: VasDetail): boolean {
     return this.vasSelections.has(vas.vas_config_id);
+  }
+
+  /**
+   * Flat list of VAS items the agent has actually picked, in the same order
+   * they appear in availableVasServices, with the chosen sub-option attached.
+   * Used by the Booking Confirmed page + Receipt page (and any future view)
+   * to render an "Enhance Your Ride — selected" summary without each template
+   * having to re-do the filter+map dance. Returns an empty array when nothing
+   * is picked so *ngIf="selectedVasList.length" reads cleanly.
+   */
+  get selectedVasList(): Array<{ name: string; subOption: string; priceLabel: string }> {
+    if (!this.vasSelections.size) return [];
+    return this.availableVasServices
+      .filter(v => this.vasSelections.has(v.vas_config_id))
+      .map(v => ({
+        name: v.vas,
+        subOption: this.getVasInputValue(v),
+        priceLabel: this.getVasDisplayPrice(v),
+      }));
   }
 
   /** Currently picked sub-option value (e.g. "English") — empty if not selected. */
@@ -2285,18 +2329,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         return out;
       });
 
-    // Nothing checked → revert to original fare locally, no API call.
-    if (selectedVas.length === 0) {
-      if (this.selectedCar && this.preVasFare > 0 && this.selectedCar.price !== this.preVasFare) {
-        this.selectedCar.price = this.preVasFare;
-        this.bookingState.setSelectedCar(this.selectedCar);
-      }
-      this.vasAmount = 0;
-      this.vasGstAmount = 0;
-      this.vasNamesList = '';
-      this.cdr.markForCheck();
-      return;
-    }
+    // ⚠ IMPORTANT — we MUST call the API even when selectedVas is empty.
+    // Earlier this method short-circuited on an empty selection and only
+    // reverted the local price, which left stale VAS attached to the booking
+    // on the backend (reported via QA April 2026: "VAS is not working in case
+    // of remove/edit after adding VAS"). Sending an empty vas_data array tells
+    // the backend to clear all VAS for this booking, keeping FE + BE in sync.
+    const isClearAll = selectedVas.length === 0;
 
     this.vasUpdateLoading = true;
     this.cdr.markForCheck();
@@ -2310,6 +2349,24 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     }).subscribe(response => {
       this.vasUpdateLoading = false;
       const update = response?.data?.vas_update;
+
+      if (isClearAll) {
+        // Clear-all path: trust backend's reset OR fall back to preVasFare
+        // locally if backend didn't echo a usable total. Either way, the
+        // VAS sidebar line resets to zero so the agent sees a clean state.
+        const echoed = parseFloat(String(update?.pre_vas_total_amount || update?.post_vas_total_amount || '0'));
+        const restoreTo = echoed > 0 ? Math.round(echoed) : this.preVasFare;
+        if (this.selectedCar && restoreTo > 0 && this.selectedCar.price !== restoreTo) {
+          this.selectedCar.price = restoreTo;
+          this.bookingState.setSelectedCar(this.selectedCar);
+        }
+        this.vasAmount = 0;
+        this.vasGstAmount = 0;
+        this.vasNamesList = '';
+        this.cdr.markForCheck();
+        return;
+      }
+
       if (update) {
         // post_vas_total_amount is the canonical new total. Mutate
         // selectedCar.price so the existing B2B payment helpers

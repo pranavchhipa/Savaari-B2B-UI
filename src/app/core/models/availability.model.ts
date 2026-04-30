@@ -48,7 +48,15 @@ export interface AvailableCar {
   carImageLarge?: string;      // URL from API
   tncData?: string[];          // Terms and conditions
   packageId?: string;          // Package ID from API (sent to advance_payment_check)
-  urgentBookingFlag?: number;  // 1 if urgent booking, from API's urgent_booking_flag
+  /**
+   * 1 = trip qualifies as "urgent booking" (short pickup window). When set, the
+   * caller MUST forward `Urgent_booking: '1'` in the booking-create payload AND
+   * the booking response will not include VAS options (backend skips VAS for
+   * urgent trips per April 2026 backend convention).
+   * Normalized to a number in availability.service.ts — the raw API field
+   * `urgent_booking_flag` arrives as a STRING ("1" / "0").
+   */
+  urgentBookingFlag?: number;
   [key: string]: unknown;
 }
 
