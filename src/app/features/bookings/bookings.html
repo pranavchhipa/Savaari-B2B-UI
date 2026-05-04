@@ -515,10 +515,9 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Paid Now</span>
-                                    <!-- Option 3 (Zero Cash) actually deducts fare + 20% buffer
-                                         upfront — getDisplayedPaidNow() folds the buffer into the
-                                         number so it matches the wallet ledger. Options 1/2 are
-                                         unaffected (no buffer involved). -->
+                                    <!-- getDisplayedPaidNow() returns the API's pay_now_amt as-is.
+                                         For Option 3, the buffer deposit is shown on its own
+                                         dedicated line below (Buffer Deposit / refundable). -->
                                     <span class="font-bold text-emerald-600">₹{{ getDisplayedPaidNow(booking) | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between">

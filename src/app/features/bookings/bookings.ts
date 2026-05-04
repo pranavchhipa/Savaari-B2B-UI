@@ -1250,23 +1250,22 @@ export class BookingsComponent implements OnInit {
     /**
      * Amount to display next to "Paid Now" on the bookings card / receipt.
      *
-     * For Option 3 (Zero Cash) the agent has actually paid `fare + 20% buffer`
-     * upfront from their wallet — backend's `prePayment` field holds the fare
-     * portion only and the buffer is returned separately on `bufferAmount`,
-     * so a naïve `prePayment` display under-counts what actually left the
-     * wallet (reported May 2026: a ₹2,256 fare + ₹451 buffer trip showed
-     * "Paid Now ₹2,256" while the wallet ledger said ₹-2,707).
+     * Returns the API's `prePayment` (sourced from `pay_now_amt`) as-is.
+     * This is the authoritative amount the agent has paid — the backend
+     * sets it after each successful payment.
      *
-     * Options 1 / 2 keep the simple `prePayment` read (no buffer involved).
-     * The "Buffer Deposit (refundable)" line below stays visible for Option 3
-     * so the agent can see the breakdown of fare + buffer at a glance.
+     * For Option 3 (Zero Cash), the buffer deposit is shown on its own
+     * dedicated "Buffer Deposit (refundable)" line in the payment info
+     * panel. We intentionally do NOT add it to Paid Now because:
+     *   - Before settlement: pay_now_amt reflects only what was deducted
+     *     so far. Adding buffer would over-report (reported May 2026:
+     *     ₹469 paid but UI showed ₹844 because ₹375 buffer was added).
+     *   - After full settlement: pay_now_amt already includes everything
+     *     the backend recorded. Adding buffer would double-count.
+     * In both cases, returning prePayment directly is correct.
      */
     getDisplayedPaidNow(booking: BookingCard): number {
-        const paid = booking.prePayment || 0;
-        if (booking.paymentOption === 3 && booking.bufferAmount) {
-            return paid + booking.bufferAmount;
-        }
-        return paid;
+        return booking.prePayment || 0;
     }
 
     /** Short label for payment method — matches payment page option names exactly. */
@@ -1580,15 +1579,13 @@ export class BookingsComponent implements OnInit {
                     // the canonical settled signal is balancePaidStatus,
                     // but the amount fields are still shown elsewhere.
                     booking.balancePaidStatus = 1;
-                    // For Option 3 (Zero Cash) the settle `amount` = getBalanceDue() which
-                    // is `fare - prePayment + buffer`. Adding it naively to prePayment would
-                    // make prePayment = fare + buffer, and then getDisplayedPaidNow() would
-                    // add bufferAmount AGAIN → fare + 2×buffer (double-counting).
-                    // Fix: for Option 3 keep prePayment at fare level; bufferAmount is tracked
-                    // separately and getDisplayedPaidNow() adds it exactly once.
-                    booking.prePayment = booking.paymentOption === 3
-                        ? (booking.fare || 0)
-                        : (booking.prePayment || 0) + amount;
+                    // After settlement, update prePayment to reflect the full
+                    // amount now paid. getDisplayedPaidNow() returns this as-is
+                    // (no buffer addition), so we need the total here.
+                    // For Option 3: agent commitment = fare + buffer, so after
+                    // settling the full balance, prePayment = fare + buffer.
+                    // For Options 2: prePayment += settled amount.
+                    booking.prePayment = (booking.prePayment || 0) + amount;
                     booking.cashToCollect = 0;
                     this.settleProcessing = false;
                     this.settleBookingId = null;
