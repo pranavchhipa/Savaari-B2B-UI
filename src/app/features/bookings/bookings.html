@@ -515,9 +515,9 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Paid Now</span>
-                                    <!-- getDisplayedPaidNow() returns the API's pay_now_amt as-is.
-                                         For Option 3, the buffer deposit is shown on its own
-                                         dedicated line below (Buffer Deposit / refundable). -->
+                                    <!-- getDisplayedPaidNow(): for Option 3, adds buffer to
+                                         paid amount only when prePayment >= fare (full fare paid
+                                         = buffer was also collected). Partial pays show as-is. -->
                                     <span class="font-bold text-emerald-600">₹{{ getDisplayedPaidNow(booking) | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between">
