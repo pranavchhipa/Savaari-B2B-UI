@@ -231,11 +231,14 @@ export class SelectCarComponent implements OnInit {
     const base = 'assets/cars/';
     const n = (carName || '').toLowerCase();
 
-    // Exact car model matching (studio photos)
+    // Exact car model matching (studio photos). Order matters — most specific
+    // wins. e.g. Crysta MUST be checked before Innova because the Crysta name
+    // also contains the word "innova".
     if (n.includes('dzire'))                             return base + 'dzire.png';
     if (n.includes('etios'))                             return base + 'etios.png';
     if (n.includes('wagon'))                             return base + 'wagon-r.png';
     if (n.includes('swift'))                             return base + 'swift.png';
+    if (n.includes('hycross'))                           return base + 'hycross.png';
     if (n.includes('crysta'))                            return base + 'innova-crysta.png';
     if (n.includes('innova'))                            return base + 'innova.png';
     if (n.includes('ertiga'))                            return base + 'ertiga.png';
@@ -250,9 +253,15 @@ export class SelectCarComponent implements OnInit {
     if (n.includes('bmw'))                               return base + 'bmw-5.png';
     if (n.includes('xuv'))                               return base + 'xuv500.png';
     if (n.includes('urbania'))                            return base + 'urbania.png';
+    if (n.includes('minibus'))                           return base + 'minibus.png';
+    // Tempo / Traveller variants — explicit seater first, then 12-seater default.
     if ((n.includes('tempo') || n.includes('traveller')) && n.includes('26')) return base + 'tempo-26.png';
     if ((n.includes('tempo') || n.includes('traveller')) && n.includes('17')) return base + 'tempo-17.png';
+    if ((n.includes('tempo') || n.includes('traveller')) && n.includes('13')) return base + 'tempo-13.png';
     if (n.includes('tempo') || n.includes('traveller'))  return base + 'tempo-12.png';
+    // Generic "SUV" catch-all — matches API names like "SUV (6+1 seater)".
+    // Sits AFTER specific SUV models (xuv, marazzo, etc) so those win first.
+    if (n.includes('suv'))                               return base + 'suv.png';
 
     // Fallback by car type ID
     const byId: Record<number, string> = {

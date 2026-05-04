@@ -1042,14 +1042,57 @@ export class DashboardComponent implements OnInit, OnDestroy {
    *  `[suggestions]` input reference changes. Returning the same `sourceCities`
    *  array on empty-query clicks leaves the spinner stuck forever. */
   filterSourceCities(event: AutoCompleteCompleteEvent) {
-    this.filteredSourceCities = this.filterCitiesRanked(this.sourceCities, event.query);
+    // Mirror the destination filter: hide whatever city the agent already
+    // picked as TO so they can't end up with source === destination from the
+    // other direction either. Excludes by id AND name (defensive against
+    // duplicate city rows from the API).
+    const toCity = this.bookingForm.get('toCity')?.value;
+    let pool = this.sourceCities;
+    if (toCity && typeof toCity === 'object') {
+      const toId = toCity.id;
+      const toName = (toCity.name || '').toLowerCase().trim();
+      pool = this.sourceCities.filter(c => {
+        if (c.id === toId) return false;
+        if (toName && (c.name || '').toLowerCase().trim() === toName) return false;
+        return true;
+      });
+    }
+    this.filteredSourceCities = this.filterCitiesRanked(pool, event.query);
     this.cdr.markForCheck();
   }
 
-  /** PrimeNG AutoComplete: filter destination cities (prefix matches first) */
+  /** PrimeNG AutoComplete: filter destination cities (prefix matches first).
+   *  Excludes the currently-selected source city from the suggestions so the
+   *  agent cannot pick Bangalore -> Bangalore (which would have created a
+   *  zero-distance trip and confused both /availabilities and the driver).
+   *
+   *  We exclude by BOTH id AND lowercase-name because the destination-cities
+   *  API has been observed to return duplicate "Bangalore, Karnataka" rows
+   *  with slightly different cityIds (e.g. 377 vs 1234) — id-only filter let
+   *  one of the dupes leak through. Suburb entries like "Attibele, Bangalore"
+   *  have a different `name` so they're unaffected. */
   filterDestinationCities(event: AutoCompleteCompleteEvent) {
-    this.filteredDestinationCities = this.filterCitiesRanked(this.destinationCities, event.query);
+    this.filteredDestinationCities = this.filterCitiesRanked(
+      this.destinationsExcludingSource(),
+      event.query,
+    );
     this.cdr.markForCheck();
+  }
+
+  /** Returns destinationCities with the currently selected FROM city removed.
+   *  Shared by filterDestinationCities + onSourceCitySelect so a fresh source
+   *  pick immediately re-syncs the bound suggestions array (keeps PrimeNG
+   *  from showing a stale dropdown that still contains the new source). */
+  private destinationsExcludingSource(): City[] {
+    const fromCity = this.bookingForm.get('fromCity')?.value;
+    if (!fromCity || typeof fromCity !== 'object') return this.destinationCities;
+    const fromId = fromCity.id;
+    const fromName = (fromCity.name || '').toLowerCase().trim();
+    return this.destinationCities.filter(c => {
+      if (c.id === fromId) return false;
+      if (fromName && (c.name || '').toLowerCase().trim() === fromName) return false;
+      return true;
+    });
   }
 
   /** Filter cities: prefix matches on cityOnly first, then substring matches.
@@ -1132,6 +1175,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const city: City = event.value || event;
     if (city?.id) {
       this.loadDestinationCities();
+      // If the user previously picked a TO city that now matches the new
+      // FROM, clear it so they don't end up with same source-and-destination.
+      const toCity = this.bookingForm.get('toCity')?.value;
+      if (toCity && typeof toCity === 'object'
+          && (toCity.id === city.id
+              || ((toCity.name || '').toLowerCase().trim()
+                  === (city.name || '').toLowerCase().trim()))) {
+        this.bookingForm.get('toCity')?.reset();
+      }
+      // Pre-warm the suggestions with the freshly excluded list so the next
+      // dropdown open shows the right thing even on the empty-query path.
+      this.filteredDestinationCities = this.destinationsExcludingSource()
+        .slice(0, this.MAX_SUGGESTIONS);
+      this.cdr.markForCheck();
     }
   }
 
@@ -1325,6 +1382,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.errorMessage = 'Please select the destination city from the dropdown suggestions.';
       this.analytics.trackToCityError(typeof toCityObj === 'string' ? toCityObj : '', this.getAnalyticsSubtype(this.selectedTab), 'empty_or_invalid');
       this.analytics.trackExploreButtonError('to_city_empty', tripType, this.getAnalyticsSubtype(this.selectedTab));
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // Same-city safety net: One Way / Round Trip require source ≠ destination.
+    // The dropdown filter (filterDestinationCities) already excludes the
+    // selected source city, but a stale value can survive a tab swap or a
+    // browser back-restore — this catches it before the search hits the API.
+    if (!isLocal && !isAirport
+        && isValidCity(fromCityObj) && isValidCity(toCityObj)
+        && (fromCityObj as City).id === (toCityObj as City).id) {
+      this.formSubmitted = false;
+      this.showError = true;
+      this.errorMessage = 'Source and destination cannot be the same city. Please pick a different destination.';
       this.cdr.markForCheck();
       return;
     }

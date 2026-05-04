@@ -742,8 +742,12 @@
                             <lucide-icon name="check" [size]="28" class="text-white"></lucide-icon>
                         </div>
                         <h4 class="text-lg font-black text-emerald-700 mb-1">Payment Successful!</h4>
-                        <p class="text-sm text-emerald-600">₹{{ booking.prePayment | number:'1.0-0' }} debited from wallet. Booking is fully settled.</p>
-                        <p class="text-xs text-slate-400 mt-2">Updated wallet balance: ₹{{ walletBalance | number:'1.0-0' }}</p>
+                        <!-- Source-agnostic message — earlier we hard-coded "from wallet"
+                             which read wrong on Razorpay settlements (April 2026 ask).
+                             Wallet-balance line dropped for the same reason: it was misleading
+                             when the agent had paid via Razorpay. The amount alone tells the
+                             agent everything they need. -->
+                        <p class="text-sm text-emerald-600">₹{{ booking.prePayment | number:'1.0-0' }} debited and booking is fully settled.</p>
                     </div>
 
                     <!-- Action buttons row -->
