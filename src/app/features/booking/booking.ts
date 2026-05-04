@@ -304,11 +304,20 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     // therefore receives all trip SMS / driver-allocation alerts. Per April
     // 2026 ask the agent's own number lands here by default. Editable on a
     // per-booking basis if they need a different point-of-contact for the trip.
+    //
+    // Profile mobile may arrive with the country code already glued on
+    // (e.g. "917030343566") — the input has maxlength=10 but ngModel sets
+    // bypass that limit, leaving the value invalid. Strip leading "91"/"0"
+    // and keep only the last 10 digits to land on a clean 10-digit number.
+    //
     // The bottom-row `agentMobile` ngModel is now the optional Customer Phone
     // Number field — it stays empty by default, agent fills it explicitly.
-    const profileMobile = this.auth.getUserProfile()?.mobileno || this.auth.getUserProfile()?.phone || '';
-    if (profileMobile) {
-      this.phone = profileMobile;
+    const profileMobileRaw = this.auth.getUserProfile()?.mobileno
+                          || this.auth.getUserProfile()?.phone
+                          || '';
+    const cleaned = String(profileMobileRaw).replace(/\D+/g, ''); // digits only
+    if (cleaned) {
+      this.phone = cleaned.length > 10 ? cleaned.slice(-10) : cleaned;
     }
 
     // Load country codes for phone number dropdown
@@ -1054,20 +1063,26 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     return dt;
   }
 
+  /**
+   * Returns true when pickup is < 48 hours away.
+   *
+   * Used SOLELY for hiding Payment Option 2 ("Pay 25% Now, Rest Auto-Debited")
+   * — that option's auto-debit cron runs 48 hours before the trip, so it's
+   * pointless / impossible for trips closer than that.
+   *
+   * NOTE (May 2026): This is no longer wired into Urgent_booking or VAS
+   * suppression. Per stakeholder direction, VAS visibility is 100% backend-
+   * driven now (we just check `vas_flag === 1` in the booking-create response)
+   * and Urgent_booking is forwarded only when backend's own
+   * `urgent_booking_flag` is 1 — we don't second-guess that signal client-side.
+   */
   isBookingUrgent(): boolean {
     const pickupDt = this.getPickupDateTime();
     if (!pickupDt) return false;
 
     const now = new Date();
-    // Compare at minute-level to avoid seconds/ms precision issues.
-    // Threshold dropped 48hr → 24hr (April 2026 ask): only the very last-minute
-    // trips (< 24hr away) are flagged urgent now. Trips in the 24-48hr window
-    // get to show VAS again, which gives the agent more upsell opportunities.
-    // Backend's own urgent_booking_flag may still be on a 48hr cutoff — when
-    // it fires we still forward Urgent_booking, the OR in buildBookingRequest()
-    // means the looser FE threshold doesn't override the BE signal.
     const diffInMinutes = Math.floor((pickupDt.getTime() - now.getTime()) / (1000 * 60));
-    return diffInMinutes < 24 * 60;  // < 1440 minutes
+    return diffInMinutes < 48 * 60;  // < 2880 minutes
   }
 
   isBookingWindowValid(): boolean {
@@ -1608,16 +1623,14 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
         selectPlaceId: this.itinerary!.selectPlaceId || '',
         custShortAddress: locality || this.itinerary!.pickupAddress || '',
       }),
-      // Urgent booking: forward the flag whenever EITHER signal fires —
-      //   1. /availabilities returned urgent_booking_flag = 1 for the chosen car, OR
-      //   2. pickup is < 48hrs away (computed client-side via isBookingUrgent()).
-      // The 2nd check rescues Local + One Way trips where the backend was
-      // observed not setting urgent_booking_flag even when pickup was clearly
-      // < 48hrs away (April 2026 QA), which then caused VAS to incorrectly
-      // appear in the booking-create response. Using the OR keeps backend as
-      // the source of truth when it does flag the trip, and falls back to our
-      // own clock when it doesn't.
-      ...((this.selectedCar!.urgentBookingFlag === 1 || this.isBookingUrgent()) && { Urgent_booking: '1' }),
+      // Urgent booking: forward the flag ONLY when backend's availability
+      // response set urgent_booking_flag = 1 for the chosen car. Per May 2026
+      // stakeholder direction, the frontend no longer second-guesses the
+      // backend's urgency call (the earlier `|| this.isBookingUrgent()` OR
+      // was removed). VAS visibility is also 100% backend-driven now — if
+      // the backend wants to suppress VAS for an urgent trip, it does so via
+      // its own logic + we just render whatever vas_details[] comes back.
+      ...(this.selectedCar!.urgentBookingFlag === 1 && { Urgent_booking: '1' }),
       ...(this.needsGstInvoice && this.agentGstNumber && { gst_invoice_required: '1', gst_number: this.agentGstNumber }),
     };
   }
@@ -2014,7 +2027,13 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       const state = JSON.parse(raw);
       if (state.guestName) this.guestName = state.guestName;
       if (state.guestEmail) this.guestEmail = state.guestEmail;
-      if (state.phone) this.phone = state.phone;
+      // Restored state may carry a stale 12-digit number with country code
+      // glued on (cached from before the May 2026 strip fix). Re-clean here so
+      // a returning agent sees a 10-digit value that passes isPhoneValid().
+      if (state.phone) {
+        const cleanedPhone = String(state.phone).replace(/\D+/g, '');
+        this.phone = cleanedPhone.length > 10 ? cleanedPhone.slice(-10) : cleanedPhone;
+      }
       // Pickup and drop address are intentionally NOT restored — they should always
       // start cleared for each new "Explore Cabs" flow so the agent enters them fresh.
       this.pickupAddress = '';

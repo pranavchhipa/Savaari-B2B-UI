@@ -515,7 +515,11 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Paid Now</span>
-                                    <span class="font-bold text-emerald-600">₹{{ booking.prePayment || 0 | number:'1.0-0' }}</span>
+                                    <!-- Option 3 (Zero Cash) actually deducts fare + 20% buffer
+                                         upfront — getDisplayedPaidNow() folds the buffer into the
+                                         number so it matches the wallet ledger. Options 1/2 are
+                                         unaffected (no buffer involved). -->
+                                    <span class="font-bold text-emerald-600">₹{{ getDisplayedPaidNow(booking) | number:'1.0-0' }}</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400 font-semibold">Payment Plan</span>

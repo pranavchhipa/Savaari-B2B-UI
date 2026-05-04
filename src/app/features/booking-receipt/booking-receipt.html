@@ -183,7 +183,9 @@
           <!-- Total Bar -->
           <div class="receipt-total-bar bg-slate-900 dark:bg-slate-950 px-3 sm:px-5 py-3 sm:py-3.5 flex items-center justify-between gap-2">
             <span class="text-white font-bold text-[12px] sm:text-sm">Total Charged to Agent</span>
-            <span class="text-white font-black text-base sm:text-lg whitespace-nowrap">₹{{ (booking.prePayment || 0) | number:'1.0-0' }}</span>
+            <!-- Includes Option 3 buffer (fare + 20%) so the bottom line matches
+                 the actual wallet ledger; getter is in booking-receipt.ts. -->
+            <span class="text-white font-black text-base sm:text-lg whitespace-nowrap">₹{{ totalChargedToAgent | number:'1.0-0' }}</span>
           </div>
         </div>
       </div>

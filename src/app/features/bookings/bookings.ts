@@ -1247,6 +1247,28 @@ export class BookingsComponent implements OnInit {
         return Math.max(0, buffer - this.getBufferUsed(booking));
     }
 
+    /**
+     * Amount to display next to "Paid Now" on the bookings card / receipt.
+     *
+     * For Option 3 (Zero Cash) the agent has actually paid `fare + 20% buffer`
+     * upfront from their wallet — backend's `prePayment` field holds the fare
+     * portion only and the buffer is returned separately on `bufferAmount`,
+     * so a naïve `prePayment` display under-counts what actually left the
+     * wallet (reported May 2026: a ₹2,256 fare + ₹451 buffer trip showed
+     * "Paid Now ₹2,256" while the wallet ledger said ₹-2,707).
+     *
+     * Options 1 / 2 keep the simple `prePayment` read (no buffer involved).
+     * The "Buffer Deposit (refundable)" line below stays visible for Option 3
+     * so the agent can see the breakdown of fare + buffer at a glance.
+     */
+    getDisplayedPaidNow(booking: BookingCard): number {
+        const paid = booking.prePayment || 0;
+        if (booking.paymentOption === 3 && booking.bufferAmount) {
+            return paid + booking.bufferAmount;
+        }
+        return paid;
+    }
+
     /** Short label for payment method — matches payment page option names exactly. */
     getPaymentMethodShort(booking: BookingCard): string {
         // Settled bookings always show "Fully Paid" — overrides the per-option

@@ -41,15 +41,31 @@ export class BookingReceiptComponent implements OnInit {
     this.agentCompany = profile?.companyname || '';
   }
 
+  /**
+   * What actually left the agent's account at booking time.
+   * Option 3 = fare + 20% buffer (paid upfront from wallet);
+   * Options 1 / 2 = just `prePayment` (no buffer).
+   * Mirrors getDisplayedPaidNow() in bookings.ts so the receipt total agrees
+   * with the bookings list "Paid Now" line.
+   */
+  get totalChargedToAgent(): number {
+    if (!this.booking) return 0;
+    const paid = this.booking.prePayment || 0;
+    if (this.booking.paymentOption === 3 && this.booking.bufferAmount) {
+      return paid + this.booking.bufferAmount;
+    }
+    return paid;
+  }
+
   get walletPaid(): number {
     if (!this.booking) return 0;
-    if (this.booking.paidVia === 'wallet') return this.booking.prePayment || 0;
+    if (this.booking.paidVia === 'wallet') return this.totalChargedToAgent;
     return 0;
   }
 
   get razorpayPaid(): number {
     if (!this.booking) return 0;
-    if (this.booking.paidVia === 'razorpay') return this.booking.prePayment || 0;
+    if (this.booking.paidVia === 'razorpay') return this.totalChargedToAgent;
     return 0;
   }
 
