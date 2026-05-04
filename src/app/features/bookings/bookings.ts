@@ -166,7 +166,6 @@ export class BookingsComponent implements OnInit {
     // Settle panel
     settleBookingId: string | null = null;
     settledBookingId: string | null = null;
-    settledAmount: number | null = null;
     settleConfirmStep = false;
     settleProcessing = false;
     settlePaymentMethod: 'wallet' | 'razorpay' = 'wallet';
@@ -1466,7 +1465,6 @@ export class BookingsComponent implements OnInit {
             }
         }
         this.settledBookingId = null;
-        this.settledAmount = null;
         this.cdr.markForCheck();
     }
 
@@ -1598,11 +1596,10 @@ export class BookingsComponent implements OnInit {
                     this.settleProcessing = false;
                     this.settleBookingId = null;
                     this.settledBookingId = booking.bookingId;
-                    this.settledAmount = amount;
                     this.settlePaymentMethod = 'wallet';
                     this.updateCalendarWithBookings();
                     this.cdr.markForCheck();
-                    setTimeout(() => { this.settledBookingId = null; this.settledAmount = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
+                    setTimeout(() => { this.settledBookingId = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
                 },
                 error: (err) => {
                     if (!environment.production) console.warn('[BOOKINGS] settlement-payment API error:', err);
@@ -1639,11 +1636,10 @@ export class BookingsComponent implements OnInit {
                 this.settleProcessing = false;
                 this.settleBookingId = null;
                 this.settledBookingId = booking.bookingId;
-                this.settledAmount = amount;
                 this.settlePaymentMethod = 'wallet';
                 this.updateCalendarWithBookings();
                 this.cdr.markForCheck();
-                setTimeout(() => { this.settledBookingId = null; this.settledAmount = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
+                setTimeout(() => { this.settledBookingId = null; this.expandedBookingId = null; this.cdr.markForCheck(); }, 30000);
             }, 1500);
             return;
         }

@@ -750,7 +750,7 @@
                              Wallet-balance line dropped for the same reason: it was misleading
                              when the agent had paid via Razorpay. The amount alone tells the
                              agent everything they need. -->
-                        <p class="text-sm text-emerald-600">₹{{ settledAmount | number:'1.0-0' }} debited and booking is fully settled.</p>
+                        <p class="text-sm text-emerald-600">₹{{ booking.prePayment | number:'1.0-0' }} debited and booking is fully settled.</p>
                     </div>
 
                     <!-- Action buttons row -->
