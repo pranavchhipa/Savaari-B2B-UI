@@ -1,0 +1,5 @@
+{
+    "jules-extension.autoRefresh.enabled": true,
+    "jules-extension.hideClosedPRSessions": true,
+    "jules.defaultBranch": "current"
+}

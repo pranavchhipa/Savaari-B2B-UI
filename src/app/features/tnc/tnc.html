@@ -1,0 +1,85 @@
+<div class="min-h-screen bg-slate-50 dark:bg-slate-900 print:bg-white" *ngIf="pageData">
+
+  <!-- Breadcrumb -->
+  <div class="bg-gradient-to-r from-sky-600 to-cyan-600 dark:from-sky-800 dark:to-cyan-800">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <nav class="flex items-center text-sm text-white/70">
+        <a routerLink="/" class="hover:text-white transition-colors flex items-center gap-1">
+          <lucide-icon name="home" [size]="15"></lucide-icon>
+          Home
+        </a>
+        <lucide-icon name="chevron-right" [size]="14" class="mx-1.5 text-white/40"></lucide-icon>
+        <span>Terms &amp; Conditions</span>
+        <lucide-icon name="chevron-right" [size]="14" class="mx-1.5 text-white/40"></lucide-icon>
+        <span class="text-white font-semibold truncate">{{ pageData.title }}</span>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 print:py-4 print:px-0">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-10 print:shadow-none print:border-0 print:p-0">
+
+      <ng-container *ngFor="let section of pageData.sections; let first = first">
+
+        <!-- Section Header -->
+        <div [class.mt-10]="!first" class="mb-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 print:hidden"
+              [ngClass]="{
+                'bg-amber-50 dark:bg-amber-900/20': section.icon === 'banknote',
+                'bg-red-50 dark:bg-red-900/20': section.icon === 'x-circle',
+                'bg-blue-50 dark:bg-blue-900/20': section.icon === 'wrench',
+                'bg-green-50 dark:bg-green-900/20': section.icon === 'check-circle',
+                'bg-purple-50 dark:bg-purple-900/20': section.icon === 'shield'
+              }">
+              <lucide-icon [name]="section.icon" [size]="18"
+                [ngClass]="{
+                  'text-amber-600 dark:text-amber-400': section.icon === 'banknote',
+                  'text-red-600 dark:text-red-400': section.icon === 'x-circle',
+                  'text-blue-600 dark:text-blue-400': section.icon === 'wrench',
+                  'text-green-600 dark:text-green-400': section.icon === 'check-circle',
+                  'text-purple-600 dark:text-purple-400': section.icon === 'shield'
+                }">
+              </lucide-icon>
+            </div>
+            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200 print:text-slate-900 border-l-4 border-primary pl-3">
+              {{ section.heading }}
+            </h2>
+          </div>
+
+          <!-- Items list -->
+          <ul class="space-y-3 ml-1">
+            <li *ngFor="let item of section.items"
+              class="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed print:text-slate-800">
+              <span class="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0"></span>
+              <span>{{ item }}</span>
+            </li>
+          </ul>
+        </div>
+
+      </ng-container>
+
+      <!-- Print footer -->
+      <div class="hidden print:block mt-10 pt-6 border-t border-slate-300 text-xs text-slate-500 text-center">
+        B2B Cab &mdash; Terms and Conditions &mdash; Printed on {{ today }}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Not Found -->
+<div class="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center" *ngIf="!pageData">
+  <div class="text-center">
+    <lucide-icon name="alert-triangle" [size]="48" class="text-slate-400 mx-auto mb-4"></lucide-icon>
+    <h2 class="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">Page Not Found</h2>
+    <p class="text-sm text-slate-500 mb-6">The terms and conditions page you are looking for does not exist.</p>
+    <a routerLink="/" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+      <lucide-icon name="home" [size]="16"></lucide-icon>
+      Go Home
+    </a>
+  </div>
+</div>
+
+<app-footer></app-footer>

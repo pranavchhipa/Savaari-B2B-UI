@@ -1,0 +1,1 @@
+Get-ChildItem -Path 'C:\Users\Pranav\Downloads' | Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-2) } | Sort-Object LastWriteTime -Descending | ForEach-Object { $time = $_.LastWriteTime.ToString('yyyy-MM-dd HH:mm'); $name = $_.Name; "$time  $name" }

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 50">
+  <defs>
+    <linearGradient id="rp" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2B84EA"/>
+      <stop offset="100%" stop-color="#1565C0"/>
+    </linearGradient>
+  </defs>
+  <path d="M5 12 L22 12 L15 38 L28 38" stroke="url(#rp)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="35" y="34" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#2B84EA" letter-spacing="-0.3">Razorpay</text>
+</svg>

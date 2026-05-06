@@ -1,0 +1,580 @@
+<div class="min-h-screen flex flex-col">
+<div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-border-dark py-2 sm:py-3">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <nav aria-label="Breadcrumb" class="flex text-[9px] sm:text-[11px] text-slate-400 dark:text-slate-500 mb-1.5 sm:mb-3">
+            <ol class="flex items-center space-x-1">
+                <li><a class="hover:text-primary" href="/dashboard">Home</a></li>
+                <li><lucide-icon name="chevron-right" [size]="10" class="text-slate-300 mt-0.5"></lucide-icon></li>
+                <li><span class="text-slate-600 dark:text-slate-200 font-medium">Select Car</span></li>
+            </ol>
+        </nav>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-1 sm:gap-2" *ngIf="itinerary">
+            <div>
+                <!-- Route heading -->
+                <div class="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-1.5">
+                    <button (click)="goBack()"
+                        class="flex items-center justify-center w-6 h-6 sm:w-9 sm:h-9 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm group cursor-pointer shrink-0">
+                        <lucide-icon name="arrow-left" [size]="12" class="sm:!w-4 sm:!h-4 group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
+                    </button>
+                    <h1 class="text-xs sm:text-lg md:text-xl font-bold text-slate-800 dark:text-slate-200 leading-tight">
+                        <!-- Local -->
+                        <ng-container *ngIf="isLocal">
+                            <span>{{ getCityOnly(itinerary.fromCity) }}</span>
+                            <span class="text-slate-300 mx-1 sm:mx-2">&rsaquo;</span>
+                            <span>Local</span>
+                            <span
+                                class="ml-1 sm:ml-2 text-[9px] sm:text-xs px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-sky-100 dark:bg-sky-900/40 rounded-md text-sky-600 dark:text-sky-400 font-bold">
+                                {{selectedLocalPackage === '8hr' ? '8 hrs / 80 km' : '12 hrs / 120 km'}}
+                            </span>
+                        </ng-container>
+                        <!-- Airport -->
+                        <ng-container *ngIf="isAirport">
+                            <span>Cab to {{itinerary.dropAirport || itinerary.fromCity}} Airport</span>
+                            <span
+                                class="ml-1 sm:ml-2 text-[9px] sm:text-xs px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-amber-100 dark:bg-amber-900/40 rounded-md text-amber-700 dark:text-amber-300 font-bold">
+                                {{airportSubTypeLabel}}
+                            </span>
+                        </ng-container>
+                        <!-- One Way / Round Trip -->
+                        <ng-container *ngIf="!isLocal && !isAirport">
+                            <!-- Airport-converted: show plane icon before source city -->
+                            <lucide-icon *ngIf="isAirportConverted" name="plane" [size]="14"
+                                class="text-primary mr-0.5 sm:mr-1 sm:!w-4 sm:!h-4 align-middle inline-block"></lucide-icon>
+                            <span>{{ getCityOnly(itinerary.fromCity) }}</span>
+                            <!-- One Way uses → arrow, Round Trip uses / -->
+                            <span *ngIf="itinerary.tripType === 'One Way'" class="text-slate-400 mx-1 sm:mx-2">&rarr;</span>
+                            <span *ngIf="itinerary.tripType !== 'One Way'" class="text-slate-300 mx-1 sm:mx-2">/</span>
+                            <span>{{ getCityOnly(itinerary.toCity) }}</span>
+                            <ng-container *ngIf="itinerary.extraDestinations?.length">
+                                <ng-container *ngFor="let stop of itinerary.extraDestinations">
+                                    <span class="text-slate-300 mx-1 sm:mx-2">/</span>
+                                    <span>{{ stop.cityOnly || getCityOnly(stop.cityName) }}</span>
+                                </ng-container>
+                            </ng-container>
+                            <ng-container *ngIf="itinerary.tripType === 'Round Trip'">
+                                <span class="text-slate-300 mx-1 sm:mx-2">/</span>
+                                <span>{{ getCityOnly(itinerary.fromCity) }}</span>
+                            </ng-container>
+                            <span
+                                class="ml-1.5 sm:ml-3 text-[8px] sm:text-[11px] px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-slate-100 dark:bg-slate-700 rounded-md text-slate-500 dark:text-slate-400 uppercase font-bold tracking-tight align-middle">
+                                {{itinerary.tripType}}
+                            </span>
+                            <!-- Airport transfer badge for converted bookings -->
+                            <span *ngIf="isAirportConverted"
+                                class="ml-1 sm:ml-2 text-[8px] sm:text-[11px] px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-amber-50 dark:bg-amber-900/30 rounded-md text-amber-600 dark:text-amber-400 uppercase font-bold tracking-tight align-middle">
+                                Airport Transfer
+                            </span>
+                        </ng-container>
+                    </h1>
+                </div>
+
+                <!-- Trip details row — single line on mobile -->
+                <div class="flex items-center gap-2 sm:gap-6 md:gap-10 flex-nowrap ml-8 sm:ml-12 overflow-x-auto">
+                    <div class="flex items-center gap-1 sm:gap-2.5 shrink-0">
+                        <div class="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            <lucide-icon name="calendar" [size]="12" class="text-primary sm:!w-4 sm:!h-4"></lucide-icon>
+                            {{itinerary.pickupDate | date:'dd-MM-yyyy'}}
+                        </div>
+                        <span class="text-[7px] sm:text-[9px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1 sm:px-1.5 py-0.5 rounded">Pick up</span>
+                    </div>
+
+                    <div class="flex items-center gap-1 sm:gap-2.5 shrink-0" *ngIf="itinerary.tripType === 'Round Trip'">
+                        <div class="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            <lucide-icon name="calendar" [size]="12" class="text-orange-500 sm:!w-4 sm:!h-4"></lucide-icon>
+                            {{itinerary.returnDate ? (itinerary.returnDate | date:'dd-MM-yyyy') : (itinerary.pickupDate | date:'dd-MM-yyyy')}}
+                        </div>
+                        <span class="text-[7px] sm:text-[9px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1 sm:px-1.5 py-0.5 rounded">Return</span>
+                    </div>
+
+                    <div class="flex items-center gap-1 sm:gap-2.5 shrink-0">
+                        <div class="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            <lucide-icon name="clock" [size]="12" class="text-primary sm:!w-4 sm:!h-4"></lucide-icon>
+                            {{itinerary.pickupTime || '09:30 PM'}}
+                        </div>
+                        <span class="text-[7px] sm:text-[9px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-1 sm:px-1.5 py-0.5 rounded">Time</span>
+                    </div>
+
+                    <button
+                        class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-primary dark:text-sky-400 hover:bg-primary hover:text-white font-bold text-[9px] sm:text-[11px] px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg shadow-sm transition-all uppercase tracking-wider cursor-pointer shrink-0"
+                        (click)="openModifyModal()">
+                        Modify
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="flex-grow py-1 sm:py-2 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div class="space-y-2 sm:space-y-3">
+
+            <!-- Price Info Popup -->
+            <div *ngIf="showPriceAlert"
+                class="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-[2px] p-4 animate-fade-in">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-100 dark:border-slate-800 text-center">
+                    <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                        <lucide-icon name="route" [size]="24" class="text-emerald-500"></lucide-icon>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 mb-2">Fare Estimate</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-5">
+                        These fares are estimated for your route. Final billing is based on actual distance traveled.
+                    </p>
+                    <button (click)="closeAlert()"
+                        class="w-full py-2.5 bg-primary hover:bg-sky-600 text-white font-bold text-sm rounded-xl transition-all cursor-pointer">
+                        Okay, Got It
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cab Search Results -->
+            <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-2 sm:gap-4 mb-1 sm:mb-2">
+                <div class="text-[10px] sm:text-sm text-center md:text-left md:col-start-1">
+                    <span class="text-slate-500 dark:text-slate-400">Showing</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-200 ml-1">{{carsToDisplay.length}} Cabs</span>
+                    <span class="text-slate-500 dark:text-slate-400"> matching your search</span>
+                </div>
+
+                <!-- Local Package Toggles -->
+                <div *ngIf="isLocal && !isLoading" class="flex justify-center md:col-start-2">
+                    <div class="inline-flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl gap-1">
+                        <button (click)="selectLocalPackage('8hr')"
+                            [ngClass]="{'bg-white dark:bg-slate-700 shadow-md text-primary font-bold border border-primary/20': selectedLocalPackage === '8hr', 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300': selectedLocalPackage !== '8hr'}"
+                            class="px-6 py-2.5 rounded-lg text-sm transition-all focus:outline-none whitespace-nowrap cursor-pointer">
+                            8 hrs | 80 km
+                        </button>
+                        <button (click)="selectLocalPackage('12hr')"
+                            [ngClass]="{'bg-white dark:bg-slate-700 shadow-md text-primary font-bold border border-primary/20': selectedLocalPackage === '12hr', 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300': selectedLocalPackage !== '12hr'}"
+                            class="px-6 py-2.5 rounded-lg text-sm transition-all focus:outline-none whitespace-nowrap cursor-pointer">
+                            12 hrs | 120 km
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div *ngIf="isLoading" class="space-y-2 sm:space-y-3">
+                <div *ngFor="let i of [1,2,3,4]"
+                    class="bg-white dark:bg-slate-800 rounded-xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex flex-row gap-3 sm:gap-4 items-center">
+                        <div class="w-[100px] sm:w-[260px] h-[70px] sm:h-[150px] skeleton rounded-lg sm:rounded-xl shrink-0"></div>
+                        <div class="flex-grow space-y-2">
+                            <div class="h-5 w-1/3 skeleton"></div>
+                            <div class="h-3 w-1/5 skeleton"></div>
+                            <div class="flex gap-2 pt-1">
+                                <div class="h-4 w-14 skeleton rounded-full"></div>
+                                <div class="h-4 w-14 skeleton rounded-full"></div>
+                                <div class="h-4 w-14 skeleton rounded-full"></div>
+                            </div>
+                        </div>
+                        <div class="w-full sm:w-[200px] flex flex-col items-end space-y-2">
+                            <div class="h-6 w-20 skeleton"></div>
+                            <div class="h-8 w-full skeleton rounded-lg"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cab List -->
+            <div *ngIf="!isLoading" class="space-y-2 sm:space-y-3">
+                <div *ngFor="let car of carsToDisplay"
+                    class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden group hover:border-primary/40 hover:shadow-md transition-all">
+
+                    <!-- Mobile: full card tappable -->
+                    <div class="md:hidden cursor-pointer active:bg-slate-50 transition-colors" (click)="onSelectCar(car)">
+                        <!-- Top: Image full width -->
+                        <div class="w-full h-[170px] bg-slate-50 dark:bg-slate-800 overflow-hidden relative">
+                            <img [src]="car.image" [alt]="car.name"
+                                class="w-full h-full object-cover scale-90" />
+                            <!-- Price badge overlay -->
+                            <div class="absolute bottom-2 right-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-lg px-2.5 py-1.5 shadow-lg border border-slate-200/50">
+                                <span class="text-base font-extrabold text-slate-900 dark:text-white">₹ {{ getCarPrice(car.price) | number:'1.0-0' }}</span>
+                                <span class="text-[8px] text-slate-400 block leading-none">Incl. GST</span>
+                            </div>
+                        </div>
+                        <!-- Bottom: Info -->
+                        <div class="px-3 py-2.5">
+                            <div class="flex items-start justify-between mb-1.5">
+                                <div class="min-w-0">
+                                    <h2 class="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-normal truncate">{{car.name.replace(' or Equivalent', '')}}</h2>
+                                    <p class="text-[11px] text-amber-600 dark:text-amber-400 font-medium italic">{{car.subtitle}}</p>
+                                </div>
+                                <div class="shrink-0 ml-2 flex items-center gap-1 text-[9px] text-primary font-bold">
+                                    <span>Tap to select</span>
+                                    <lucide-icon name="chevron-right" [size]="12" class="text-primary"></lucide-icon>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                    <lucide-icon name="gauge" [size]="10" class="mr-0.5"></lucide-icon>
+                                    {{ getCarKms(car.kmsIncluded) }}
+                                </span>
+                                <span *ngIf="car.hoursIncluded" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+                                    <lucide-icon name="clock" [size]="10" class="mr-0.5"></lucide-icon>
+                                    {{car.hoursIncluded}}
+                                </span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                    <lucide-icon name="users" [size]="10" class="mr-0.5"></lucide-icon> {{car.seats}}
+                                </span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                    <lucide-icon name="briefcase" [size]="10" class="mr-0.5"></lucide-icon> {{car.bags}}
+                                </span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                    <lucide-icon name="snowflake" [size]="10" class="mr-0.5"></lucide-icon> {{car.ac}}
+                                </span>
+                            </div>
+
+                            <!-- ╔═══ MOBILE TABS — Inclusions / Exclusions / Facilities / T&C ═══╗
+                                 Same activeTab[car.id] state as desktop. stopPropagation on the
+                                 whole tabs section so tapping a tab doesn't trigger the parent
+                                 div's onSelectCar(car) handler. -->
+                            <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60"
+                                 (click)="$event.stopPropagation()">
+                                <div class="flex gap-1 overflow-x-auto scrollbar-hide -mx-1 px-1">
+                                    <button *ngFor="let tab of ['Inclusions', 'Exclusions', 'Facilities', 'T&C']"
+                                        type="button"
+                                        (click)="toggleTab(car.id, tab === 'T&C' ? 'tc' : tab.toLowerCase()); $event.stopPropagation()"
+                                        [ngClass]="{
+                                            'border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 font-bold': activeTab[car.id] === (tab === 'T&C' ? 'tc' : tab.toLowerCase()),
+                                            'text-slate-400 dark:text-slate-500 font-medium': activeTab[car.id] !== (tab === 'T&C' ? 'tc' : tab.toLowerCase())
+                                        }"
+                                        class="px-2.5 py-1 text-[10px] transition-all whitespace-nowrap bg-transparent border-0 cursor-pointer">
+                                        {{tab}}
+                                    </button>
+                                </div>
+                                <div *ngIf="activeTab[car.id]" class="pt-2 pb-0.5">
+                                    <!-- Inclusions / Exclusions / Facilities — single horizontal row,
+                                         scrollable if it overflows (mobile-friendly, no wrapping). -->
+                                    <!-- Inclusions -->
+                                    <div [hidden]="activeTab[car.id] !== 'inclusions'" class="flex gap-x-3 overflow-x-auto scrollbar-hide pb-0.5">
+                                        <div *ngFor="let item of car.inclusions" class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="check" [size]="10" class="text-emerald-600 dark:text-emerald-400" [strokeWidth]="3"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight whitespace-nowrap">{{item}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- Exclusions -->
+                                    <div [hidden]="activeTab[car.id] !== 'exclusions'" class="flex gap-x-3 overflow-x-auto scrollbar-hide pb-0.5">
+                                        <div *ngFor="let item of car.exclusions" class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="x" [size]="10" class="text-rose-600 dark:text-rose-400" [strokeWidth]="3"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight whitespace-nowrap">{{item}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- Facilities -->
+                                    <div [hidden]="activeTab[car.id] !== 'facilities'" class="flex gap-x-3 overflow-x-auto scrollbar-hide pb-0.5">
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="snowflake" [size]="9" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">Air Conditioning</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="users" [size]="9" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">{{car.seats}}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <div class="w-4 h-4 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                                <lucide-icon name="briefcase" [size]="9" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">{{car.bags}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- T&C -->
+                                    <div [hidden]="activeTab[car.id] !== 'tc'" class="space-y-1">
+                                        <div *ngFor="let line of car.tc" class="flex items-start gap-1.5">
+                                            <div class="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0"></div>
+                                            <p class="text-[10px] text-slate-600 dark:text-slate-400 leading-snug">{{line}}</p>
+                                        </div>
+                                        <div class="pt-1.5 border-t border-slate-200 dark:border-slate-600 mt-1.5">
+                                            <p class="text-[10px] text-slate-500 dark:text-slate-400">
+                                                Detailed terms,
+                                                <a [routerLink]="['/tnc', tncSlug]" target="_blank" class="text-primary hover:underline font-semibold" (click)="$event.stopPropagation()">click here</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Desktop layout: Image left | Info+Tabs center | Price right -->
+                    <div class="hidden md:flex px-4 py-3 gap-4">
+                        <!-- Car Image -->
+                        <div class="w-[300px] h-[160px] flex-shrink-0 bg-slate-50 dark:bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center">
+                            <img [src]="car.image" [alt]="car.name" class="w-full h-full object-cover" />
+                        </div>
+
+                        <!-- Car Info + Tabs -->
+                        <div class="flex flex-col justify-between min-w-0">
+                            <!-- Name + subtitle + pills -->
+                            <div class="pt-3">
+                                <div class="flex items-baseline gap-2.5 mb-2.5">
+                                    <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight truncate">{{car.name.replace(' or Equivalent', '')}}</h2>
+                                    <span class="text-xs text-amber-600 dark:text-amber-400 font-medium italic shrink-0">{{car.subtitle}}</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2.5">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                        <lucide-icon name="gauge" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{ getCarKms(car.kmsIncluded) }}
+                                    </span>
+                                    <span *ngIf="car.hoursIncluded" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                        <lucide-icon name="clock" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{car.hoursIncluded}}
+                                    </span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                        <lucide-icon name="users" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{car.seats}}
+                                    </span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                        <lucide-icon name="briefcase" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{car.bags}}
+                                    </span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                        <lucide-icon name="snowflake" [size]="13" class="mr-1 text-sky-500"></lucide-icon> {{car.ac}}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Tabs below name+pills -->
+                            <div class="mt-1 border-t border-slate-100 dark:border-slate-800 pt-0.5">
+                                <div class="flex overflow-x-auto scrollbar-hide">
+                                    <button *ngFor="let tab of ['Inclusions', 'Exclusions', 'Facilities', 'T&C']"
+                                        (click)="toggleTab(car.id, tab === 'T&C' ? 'tc' : tab.toLowerCase())" [ngClass]="{
+                                            'border-b-2 border-sky-500 text-sky-500 dark:text-sky-400 font-semibold': activeTab[car.id] === (tab === 'T&C' ? 'tc' : tab.toLowerCase()),
+                                            'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium': activeTab[car.id] !== (tab === 'T&C' ? 'tc' : tab.toLowerCase())
+                                        }" class="px-3.5 py-1 text-[11px] transition-all whitespace-nowrap bg-transparent cursor-pointer">
+                                        {{tab}}
+                                    </button>
+                                </div>
+                                <div *ngIf="activeTab[car.id]" class="pt-1 pb-0.5">
+                                    <!-- Inclusions -->
+                                    <div [hidden]="activeTab[car.id] !== 'inclusions'" class="flex flex-wrap gap-x-8 gap-y-1">
+                                        <div *ngFor="let item of car.inclusions" class="flex items-center gap-1.5">
+                                            <div class="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                                                <lucide-icon name="check" [size]="12" class="text-emerald-600 dark:text-emerald-400" [strokeWidth]="3"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">{{item}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- Exclusions -->
+                                    <div [hidden]="activeTab[car.id] !== 'exclusions'" class="flex flex-wrap gap-x-8 gap-y-1">
+                                        <div *ngFor="let item of car.exclusions" class="flex items-center gap-1.5">
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300 leading-tight">{{item}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- Facilities -->
+                                    <div [hidden]="activeTab[car.id] !== 'facilities'" class="flex flex-wrap gap-x-8 gap-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <div class="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                                <lucide-icon name="snowflake" [size]="10" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">Air Conditioning</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <div class="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                                <lucide-icon name="users" [size]="10" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{{car.seats}}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <div class="w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                                <lucide-icon name="briefcase" [size]="10" class="text-blue-500"></lucide-icon>
+                                            </div>
+                                            <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{{car.bags}}</span>
+                                        </div>
+                                    </div>
+                                    <!-- T&C -->
+                                    <div [hidden]="activeTab[car.id] !== 'tc'" class="space-y-1">
+                                        <div *ngFor="let line of car.tc" class="flex items-start gap-1.5">
+                                            <div class="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0"></div>
+                                            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">{{line}}</p>
+                                        </div>
+                                        <div class="pt-2 border-t border-slate-200 dark:border-slate-600 mt-2">
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                                For detailed terms and conditions,
+                                                <a [routerLink]="['/tnc', tncSlug]" target="_blank" class="text-primary hover:underline font-semibold">Click Here</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Spacer -->
+                        <div class="flex-1"></div>
+                        <!-- Price & CTA -->
+                        <div class="w-[180px] flex-shrink-0 flex flex-col items-center justify-center border-l border-slate-100 dark:border-slate-700 pl-5">
+                            <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹ {{ getCarPrice(car.price) | number:'1.0-0' }}</span>
+                            <p class="text-[10px] text-slate-400 mb-3">Inclusive of GST</p>
+                            <button (click)="onSelectCar(car)"
+                                class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-7 rounded-lg shadow-sm transition-all active:scale-95 text-[12px] uppercase tracking-wider cursor-pointer whitespace-nowrap">
+                                SELECT CAR
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+
+    <!-- NEW Minimalist Modify Search Modal (Exact Match to 2nd SS) -->
+    <div *ngIf="isModifyModalOpen"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 transition-all animate-fade-in">
+        <div
+            class="bg-white dark:bg-slate-900 rounded-[16px] sm:rounded-[20px] shadow-2xl w-full max-w-5xl p-3 sm:p-6 md:p-10 pb-12 sm:pb-14 relative border border-slate-100 dark:border-slate-800">
+
+            <!-- Close Button (Top Right corner) -->
+            <button (click)="closeModifyModal()"
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors z-50 p-1">
+                <lucide-icon name="x" [size]="18"></lucide-icon>
+            </button>
+
+            <!-- Form Elements (dynamic columns based on trip type) -->
+            <div [ngClass]="isRoundTrip ? 'md:grid-cols-5' : isLocal ? 'md:grid-cols-3' : isAirport ? 'md:grid-cols-5' : 'md:grid-cols-4'"
+                class="grid grid-cols-1 gap-x-6 gap-y-6" [formGroup]="modifyForm">
+
+                <!-- AIRPORT FIELDS: TRIP sub-type, PICKUP ADDRESS, DROP AIRPORT -->
+                <ng-container *ngIf="isAirport">
+                    <!-- TRIP Type Dropdown -->
+                    <div class="flex flex-col">
+                        <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Trip</label>
+                        <p-select formControlName="airportSubType" [options]="airportSubTypes" optionLabel="label" optionValue="value"
+                            styleClass="w-full" appendTo="body"></p-select>
+                    </div>
+                    <!-- PICKUP ADDRESS -->
+                    <div class="flex flex-col">
+                        <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Pickup Address</label>
+                        <p-autoComplete formControlName="pickupAddress" [suggestions]="filteredLocalities"
+                            (completeMethod)="filterLocalities($event)" field="description" optionLabel="description" [minLength]="3"
+                            placeholder="Start typing address" styleClass="w-full"
+                            inputStyleClass="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                            panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                        </p-autoComplete>
+                    </div>
+                    <!-- DROP AIRPORT -->
+                    <div class="flex flex-col">
+                        <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Drop Airport</label>
+                        <p-autoComplete formControlName="airportLocality" [suggestions]="filteredAirports"
+                            (completeMethod)="filterAirports($event)" field="name" optionLabel="name" [minLength]="0"
+                            placeholder="Search airport" styleClass="w-full"
+                            inputStyleClass="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                            panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                        </p-autoComplete>
+                    </div>
+                </ng-container>
+
+                <!-- FROM / CITY (Hidden for Airport) -->
+                <div class="flex flex-col" *ngIf="!isAirport">
+                    <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">{{isLocal ? 'City' : 'From'}}</label>
+                    <p-autoComplete formControlName="fromCity" [suggestions]="filteredSourceCities"
+                        (completeMethod)="filterSourceCities($event)" (onSelect)="onFromCitySelect($event)"
+                        field="name" optionLabel="name" [minLength]="1"
+                        placeholder="Start typing city" styleClass="w-full"
+                        inputStyleClass="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                        panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                    </p-autoComplete>
+                </div>
+
+                <!-- TO (Hidden for Local and Airport) -->
+                <div class="flex flex-col" *ngIf="!isLocal && !isAirport">
+                    <label class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">To</label>
+                    <p-autoComplete formControlName="toCity" [suggestions]="filteredDestinationCities"
+                        (completeMethod)="filterDestinationCities($event)" (onSelect)="onToCitySelect($event)"
+                        field="name" optionLabel="name" [minLength]="1"
+                        placeholder="Start typing city" styleClass="w-full"
+                        inputStyleClass="w-full border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                        panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                    </p-autoComplete>
+                </div>
+
+                <!-- EXTRA STOPS (Round Trip only) -->
+                <ng-container *ngIf="isRoundTrip">
+                    <div *ngFor="let stop of modifyExtraDestinations; let i = index" class="flex items-end gap-2">
+                        <div class="flex flex-col flex-1">
+                            <label class="text-[11px] font-bold text-orange-500 uppercase tracking-wider mb-2">Stop {{ i + 1 }}</label>
+                            <p-autoComplete [ngModel]="modifyExtraDestinations[i]" [ngModelOptions]="{standalone: true}"
+                                [suggestions]="filteredDestinationCities" (completeMethod)="filterModifyStopCities($event)"
+                                (onSelect)="onModifyStopSelect($event, i)" field="name" optionLabel="name" [minLength]="1"
+                                placeholder="Enter city" styleClass="w-full"
+                                inputStyleClass="w-full border border-orange-200 dark:border-orange-700/40 rounded-md py-2.5 px-4 text-[14px] font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-gray-100 !shadow-none"
+                                panelStyleClass="!bg-white dark:!bg-slate-900" appendTo="body">
+                            </p-autoComplete>
+                        </div>
+                        <button type="button" (click)="removeModifyStop(i)"
+                            class="w-8 h-8 mb-0.5 rounded-full bg-orange-50 hover:bg-red-50 text-orange-400 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer border-0 shrink-0">
+                            <lucide-icon name="x" [size]="14"></lucide-icon>
+                        </button>
+                    </div>
+                    <div *ngIf="modifyExtraDestinations.length < MAX_DESTINATIONS - 1">
+                        <button type="button" (click)="addModifyStop()"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-3 py-1.5 transition-all cursor-pointer border-0 shadow-sm">
+                            <lucide-icon name="plus" [size]="13"></lucide-icon>
+                            Add Stop {{ modifyExtraDestinations.length > 0 ? modifyExtraDestinations.length + 1 : 1 }}
+                        </button>
+                    </div>
+                </ng-container>
+
+                <!-- PICK UP -->
+                <div class="flex flex-col">
+                    <label
+                        class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Pick
+                        Up</label>
+                    <div class="modify-modal-datepicker relative flex items-center border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 bg-white dark:bg-slate-800">
+                        <p-datepicker #modifyPickupDate formControlName="pickupDate" [showIcon]="false" dateFormat="dd-mm-yy" [minDate]="minPickupDate"
+                            appendTo="body" styleClass="w-full border-none bg-transparent"
+                            inputStyleClass="w-full bg-transparent border-none text-[14px] focus:ring-0 p-0 text-slate-800 dark:text-gray-100 font-medium !shadow-none outline-none">
+                        </p-datepicker>
+                        <lucide-icon name="calendar" [size]="16"
+                            class="absolute right-3 text-slate-400 cursor-pointer hover:text-primary transition-colors z-10"
+                            (click)="modifyPickupDate.toggle()"></lucide-icon>
+                    </div>
+                </div>
+
+                <!-- RETURN (Round Trip Only) -->
+                <div class="flex flex-col" *ngIf="isRoundTrip">
+                    <label
+                        class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Return</label>
+                    <div class="modify-modal-datepicker relative flex items-center border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 bg-white dark:bg-slate-800">
+                        <p-datepicker #modifyReturnDate formControlName="returnDate" [showIcon]="false" dateFormat="dd-mm-yy" [minDate]="minReturnDate"
+                            appendTo="body" styleClass="w-full border-none bg-transparent"
+                            inputStyleClass="w-full bg-transparent border-none text-[14px] focus:ring-0 p-0 text-slate-800 dark:text-gray-100 font-medium !shadow-none outline-none">
+                        </p-datepicker>
+                        <lucide-icon name="calendar" [size]="16"
+                            class="absolute right-3 text-slate-400 cursor-pointer hover:text-primary transition-colors z-10"
+                            (click)="modifyReturnDate.toggle()"></lucide-icon>
+                    </div>
+                </div>
+
+                <!-- PICK UP AT -->
+                <div class="flex flex-col">
+                    <label
+                        class="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Pick
+                        Up At</label>
+                    <div class="modify-modal-datepicker relative flex items-center border border-slate-200 dark:border-slate-700 rounded-md py-2.5 px-4 bg-white dark:bg-slate-800">
+                        <p-datepicker #modifyPickupTime formControlName="pickupTime" [timeOnly]="true" [showTime]="true" hourFormat="12" [stepMinute]="15"
+                            [minDate]="minPickupTime"
+                            appendTo="body" styleClass="w-full border-none bg-transparent"
+                            inputStyleClass="w-full bg-transparent border-none text-[14px] focus:ring-0 p-0 text-slate-800 dark:text-gray-100 font-medium !shadow-none outline-none">
+                        </p-datepicker>
+                        <lucide-icon name="clock" [size]="16"
+                            class="absolute right-3 text-slate-400 cursor-pointer hover:text-primary transition-colors z-10"
+                            (click)="modifyPickupTime.toggle()"></lucide-icon>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- EXPLORE CABS button (Centered at bottom, overlapping) -->
+            <div class="absolute -bottom-5 left-1/2 -translate-x-1/2">
+                <button (click)="submitModifyModal()"
+                    class="bg-primary hover:bg-sky-600 text-white font-bold py-3 px-6 sm:px-12 rounded shadow shadow-sky-200 dark:shadow-none transition-all text-[12px] uppercase tracking-[1.5px] whitespace-nowrap">
+                    Explore Cabs
+                </button>
+            </div>
+
+        </div>
+    </div>
+    <app-footer></app-footer>
+</div>

@@ -1,0 +1,440 @@
+/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* Plus Jakarta Sans — modern friendly geometric, used by the mobile search widget. */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+@import "primeicons/primeicons.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure [hidden] always hides elements (overrides any Tailwind utility classes) */
+[hidden] {
+    display: none !important;
+}
+
+/* Global PrimeNG Overrides for Dark Mode */
+.dark .p-select,
+.dark .p-select-label,
+.dark .p-datepicker,
+.dark .p-datepicker-input,
+.dark .p-datepicker-header,
+.dark .p-datepicker-calendar-container,
+.dark .p-inputtext,
+.dark .p-select-dropdown,
+.dark .p-datepicker-trigger {
+    background-color: transparent !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    color: rgba(226, 232, 240, 1) !important;
+    /* text-slate-200 */
+    box-shadow: none !important;
+}
+
+.dark .p-inputtext::placeholder {
+    color: rgba(148, 163, 184, 1) !important;
+    /* text-slate-400 */
+    opacity: 0.7;
+}
+
+/* Ensure overlay panels match the dark theme */
+.dark .p-select-panel,
+.dark .p-datepicker-panel,
+.dark .p-datepicker-calendar-container {
+    background: #1e293b !important;
+    /* slate-800 */
+    border: 1px solid #334155 !important;
+    /* slate-700 */
+    color: #f1f5f9 !important;
+    /* slate-100 */
+}
+
+.dark .p-select-option,
+.dark .p-datepicker-calendar td>span {
+    color: #cbd5e1 !important;
+    /* slate-300 */
+}
+
+.dark .p-select-option.p-highlight,
+.dark .p-datepicker-calendar td>span.p-highlight {
+    background: #334155 !important;
+    /* slate-700 */
+    color: #38bdf8 !important;
+    /* sky-400 */
+}
+
+/* Skeleton Loading Animation */
+@keyframes skeleton-pulse {
+    0% {
+        background-color: rgba(226, 232, 240, 0.4);
+    }
+
+    50% {
+        background-color: rgba(226, 232, 240, 0.8);
+    }
+
+    100% {
+        background-color: rgba(226, 232, 240, 0.4);
+    }
+}
+
+@keyframes dark-skeleton-pulse {
+    0% {
+        background-color: rgba(30, 41, 59, 0.4);
+    }
+
+    50% {
+        background-color: rgba(51, 65, 85, 0.6);
+    }
+
+    100% {
+        background-color: rgba(30, 41, 59, 0.4);
+    }
+}
+
+.skeleton-pulse {
+    animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.dark .skeleton-pulse {
+    animation: dark-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton {
+    @apply skeleton-pulse rounded-md;
+    display: block;
+}
+
+
+/* Specific overrides to remove boxes around controls */
+.p-select,
+.p-datepicker-input,
+.p-datepicker {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding-left: 0 !important;
+}
+
+.p-select-label {
+    padding-left: 0 !important;
+    font-size: 13px !important;
+    font-style: italic !important;
+    font-weight: 500 !important;
+    color: rgb(100 116 139) !important; /* slate-500 */
+}
+
+.p-select-label.p-placeholder {
+    color: rgb(148 163 184) !important; /* slate-400 */
+}
+
+/* Country code selector on booking page */
+.country-code-panel .p-select-filter {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    margin: 8px !important;
+    width: calc(100% - 16px) !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+    animation: marquee 12s linear infinite;
+}
+.animate-marquee:hover {
+    animation-play-state: paused;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmerSweep {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 200 25% 15%;
+
+        --card: 0 0% 100%;
+        --card-foreground: 200 25% 15%;
+
+        --popover: 0 0% 100%;
+        --popover-foreground: 200 25% 15%;
+
+        /* Savaari Cyan Blue */
+        --primary: 195 100% 45%;
+        --primary-dark: hsl(195, 100%, 35%);
+        --primary-light: hsl(195, 100%, 55%);
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 195 20% 96%;
+        --secondary-foreground: 200 25% 15%;
+
+        --muted: 200 15% 95%;
+        --muted-foreground: 200 10% 46%;
+
+        /* Warm Amber accent */
+        --accent: 30 95% 55%;
+        --accent-foreground: 0 0% 100%;
+
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 200 15% 90%;
+        --input: 200 15% 90%;
+        --ring: 195 100% 45%;
+
+        --radius: 0.625rem;
+
+        /* Custom tokens */
+        --cyan: 195 100% 45%;
+        --cyan-dark: 195 80% 30%;
+        --cyan-light: 195 60% 92%;
+        --amber: 30 95% 55%;
+        --amber-hover: 30 95% 48%;
+        --success: 152 60% 42%;
+        --success-foreground: 0 0% 100%;
+        --slate-blue: 200 20% 60%;
+
+        --sidebar-background: 195 80% 30%;
+        --sidebar-foreground: 0 0% 95%;
+        --sidebar-primary: 195 100% 45%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 195 60% 35%;
+        --sidebar-accent-foreground: 0 0% 95%;
+        --sidebar-border: 195 60% 35%;
+        --sidebar-ring: 195 100% 45%;
+    }
+
+    .dark {
+        --background: 200 30% 7%;
+        --foreground: 0 0% 95%;
+        --card: 200 30% 10%;
+        --card-foreground: 0 0% 95%;
+        --popover: 200 30% 10%;
+        --popover-foreground: 0 0% 95%;
+        --primary: 195 100% 45%;
+        --primary-dark: hsl(195, 100%, 35%);
+        --primary-light: hsl(195, 100%, 55%);
+        --primary-foreground: 0 0% 100%;
+        --secondary: 200 25% 15%;
+        --secondary-foreground: 0 0% 95%;
+        --muted: 200 25% 15%;
+        --muted-foreground: 200 10% 60%;
+        --accent: 30 95% 55%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 62% 30%;
+        --destructive-foreground: 0 0% 95%;
+        --border: 200 25% 18%;
+        --input: 200 25% 18%;
+        --ring: 195 100% 45%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+        letter-spacing: -0.01em;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        letter-spacing: -0.02em;
+    }
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .gradient-cyan {
+        background: linear-gradient(135deg, hsl(195 100% 45%), hsl(195 80% 35%));
+    }
+
+    .gradient-cyan-dark {
+        background: linear-gradient(180deg, hsl(195 80% 28%), hsl(195 80% 22%));
+    }
+
+    .gradient-amber {
+        background: linear-gradient(135deg, hsl(30 95% 55%), hsl(25 95% 50%));
+    }
+
+    .text-gradient-cyan {
+        background: linear-gradient(135deg, hsl(195 100% 45%), hsl(195 80% 55%));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .shadow-cyan {
+        box-shadow: 0 4px 24px -4px hsl(195 100% 45% / 0.35);
+    }
+
+    .shadow-amber {
+        box-shadow: 0 4px 24px -4px hsl(30 95% 55% / 0.4);
+    }
+
+    .shadow-card {
+        box-shadow: 0 1px 3px hsl(200 25% 15% / 0.06), 0 8px 24px hsl(200 25% 15% / 0.06);
+    }
+
+    .shadow-card-hover {
+        box-shadow: 0 4px 12px hsl(200 25% 15% / 0.08), 0 16px 40px hsl(200 25% 15% / 0.1);
+    }
+}
+
+/* PrimeNG dropdown/select panel dark mode (appended to body) */
+.dark .p-select-overlay .p-select-option {
+  color: #e2e8f0 !important;
+}
+.dark .p-select-overlay .p-select-option:hover {
+  background: #334155 !important;
+}
+.dark .p-autocomplete-overlay,
+.dark .p-autocomplete-panel {
+  background: #1e293b !important;
+  border: 1px solid #475569 !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+}
+.dark .p-autocomplete-overlay .p-autocomplete-option,
+.dark .p-autocomplete-overlay .p-autocomplete-item,
+.dark .p-autocomplete-panel .p-autocomplete-item {
+  color: #e2e8f0 !important;
+  background: transparent !important;
+}
+.dark .p-autocomplete-overlay .p-autocomplete-option:hover,
+.dark .p-autocomplete-overlay .p-autocomplete-item:hover,
+.dark .p-autocomplete-panel .p-autocomplete-item:hover,
+.dark .p-autocomplete-overlay .p-autocomplete-option.p-focus,
+.dark .p-autocomplete-overlay .p-autocomplete-item.p-highlight,
+.dark .p-autocomplete-panel .p-autocomplete-item.p-highlight {
+  background: #334155 !important;
+  color: #f1f5f9 !important;
+}
+/* Ensure nested text in custom item templates is readable in dark mode */
+.dark .p-autocomplete-overlay .p-autocomplete-option *,
+.dark .p-autocomplete-overlay .p-autocomplete-item *,
+.dark .p-autocomplete-panel .p-autocomplete-item * {
+  color: inherit;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Dashboard search widget — MOBILE-ONLY input sizing override.
+
+   PrimeNG's own input rules win over the inline Tailwind classes, so the
+   FROM / TO city values and the Date / Time values need to be bumped from
+   the parent stylesheet with high specificity. This block keeps the value
+   text strongly dominant over the small uppercase labels above it so the
+   form reads clearly on a phone.
+
+   Mobile only (< 640px). Desktop is untouched.
+   ════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 639px) {
+
+  /* === CITY VALUES (FROM / TO autocompletes) — full-width cell, 22px ===
+     Targeted via the marker class .dash-mob-city placed directly on the
+     <input> element via PrimeNG's inputStyleClass — guarantees the rule
+     applies to the actual rendered input, no inheritance hops. */
+  html body input.dash-mob-city,
+  html body .dash-mob-city {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+    font-weight: 800 !important;
+    color: rgb(15 23 42) !important;
+    letter-spacing: -0.015em !important;
+  }
+  html body .dark input.dash-mob-city,
+  html body .dark .dash-mob-city {
+    color: #ffffff !important;
+  }
+  html body input.dash-mob-city::placeholder {
+    color: rgb(100 116 139) !important;
+    font-weight: 600 !important;
+    opacity: 1;
+  }
+
+  /* === DATE / TIME VALUES — half-width cells, smaller (17px) so
+     "30 Apr 2026" / "06:00 PM" don't truncate in the 2-column grid === */
+  html body input.dash-mob-time,
+  html body .dash-mob-time {
+    font-size: 17px !important;
+    line-height: 1.2 !important;
+    font-weight: 800 !important;
+    color: rgb(15 23 42) !important;
+    letter-spacing: -0.01em !important;
+  }
+  html body .dark input.dash-mob-time,
+  html body .dark .dash-mob-time {
+    color: #ffffff !important;
+  }
+
+  /* === LABELS (FROM, TO, PICKUP DATE, PICKUP TIME) — 11px small uppercase
+     so the value above clearly dominates === */
+  html body .search-cell .text-\[9px\],
+  html body .search-cell .text-\[10px\],
+  html body .search-cell .text-\[11px\] {
+    font-size: 11px !important;
+    letter-spacing: 0.08em !important;
+    font-weight: 700 !important;
+  }
+
+  /* === Read-only "Drop Time" span (Round Trip) — match date/time size === */
+  html body .search-cell span.whitespace-nowrap {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: rgb(15 23 42) !important;
+  }
+  html body .dark .search-cell span.whitespace-nowrap {
+    color: #ffffff !important;
+  }
+}
+

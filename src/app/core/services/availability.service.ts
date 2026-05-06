@@ -1,0 +1,147 @@
+import { Injectable } from '@angular/core';
+import { Observable, map, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { ApiService } from './api.service';
+import { AuthService } from './auth.service';
+import { ErrorHandlerService } from './error-handler.service';
+import { AvailabilityRequest, AvailabilityResponse, RawAvailabilityResponse, RawAvailableCar, AvailableCar } from '../models';
+import { environment } from '../../../environments/environment';
+import { DEMO_AVAILABLE_CARS } from '../demo/demo-data';
+
+/**
+ * Checks cab availability for a given itinerary.
+ *
+ * GET /availabilities → api.savaari.com/partner_api/public/availabilities
+ *
+ * Raw API response: { status, data: { R1: { availableCars: [...] } } }
+ * Normalized to:    { status, cars: [...] }
+ */
+@Injectable({ providedIn: 'root' })
+export class AvailabilityService {
+
+  constructor(
+    private api: ApiService,
+    private auth: AuthService,
+    private errorHandler: ErrorHandlerService
+  ) {}
+
+  checkAvailability(request: AvailabilityRequest): Observable<AvailabilityResponse> {
+    if (environment.demoMode) {
+      return of(this.normalizeResponse(DEMO_AVAILABLE_CARS as any));
+    }
+    const isOutstation = request.tripType === 'outstation';
+    const isLocal = request.tripType === 'local';
+    const isAirport = request.tripType === 'airport';
+
+    // Build params per trip type to match live site HAR:
+    // - rate_source: 'web' for outstation + local only (NOT airport)
+    // - rate_type: 'premium' for outstation only
+    // - customerLatLong: actual lat/lng for airport; empty string for local/outstation
+    // - destinationCity: sent for outstation + local (empty for local); NOT sent for airport
+    const params: Record<string, string | number | boolean | null | undefined> = {};
+
+    // rate_source sent for outstation & local, NOT airport
+    if (!isAirport) {
+      params['rate_source'] = 'web';
+    }
+
+    // rate_type=premium only for outstation (confirmed by backend team + live site)
+    if (isOutstation) {
+      params['rate_type'] = 'premium';
+    }
+
+    // customerLatLong: actual coords for airport, empty for others
+    if (isAirport) {
+      params['customerLatLong'] = request.customerLatLong || '';
+    } else {
+      params['customerLatLong'] = '';
+    }
+
+    params['sourceCity'] = request.sourceCity;
+    params['tripType'] = request.tripType;
+    params['subTripType'] = request.subTripType;
+    params['pickupDateTime'] = request.pickupDateTime;
+    params['duration'] = request.duration;
+
+    // destinationCity: sent for all trip types (beta HAR shows airport also sends destinationCity= empty)
+    params['destinationCity'] = isAirport ? '' : (request.destinationCity ?? '');
+
+
+    // Airport-specific params (confirmed by backend team — required for airport pricing)
+    if (isAirport) {
+      params['terminalId'] = request.terminalId || '';
+      params['selectPlaceId'] = request.selectPlaceId || '';
+      params['custShortAddress'] = request.custShortAddress || '';
+      params['airport_id'] = request.airport_id || '';
+      params['airport_name'] = request.airport_name || '';
+    }
+
+    params['token'] = this.auth.getPartnerToken();
+    params['agentId'] = btoa(this.auth.getAgentId());
+    params['api_source'] = 'b2b';
+
+    return this.api.partnerGet<RawAvailabilityResponse>('availabilities', params).pipe(
+      map(raw => this.normalizeResponse(raw)),
+      catchError(err => this.errorHandler.handleApiError(err, 'AvailabilityService'))
+    );
+  }
+
+  private normalizeResponse(raw: RawAvailabilityResponse): AvailabilityResponse {
+    const cars: AvailableCar[] = [];
+    if (raw.data) {
+      // Airport response: data.availableCars (flat array, no R1/R2/R3 grouping)
+      // Local/Outstation response: data.R1.availableCars, data.R2.availableCars, etc.
+      if (Array.isArray((raw.data as any).availableCars)) {
+        for (const rawCar of (raw.data as any).availableCars) {
+          if (!rawCar.soldoutFlag) {
+            cars.push(this.normalizeCar(rawCar));
+          }
+        }
+      } else {
+        for (const key of Object.keys(raw.data)) {
+          const group = raw.data[key];
+          if (group?.availableCars?.length) {
+            for (const rawCar of group.availableCars) {
+              if (!rawCar.soldoutFlag) {
+                cars.push(this.normalizeCar(rawCar));
+              }
+            }
+          }
+        }
+      }
+    }
+    console.log(`[AvailabilityService] ${cars.length} cars available`);
+    return { status: raw.status, cars };
+  }
+
+  private normalizeCar(raw: RawAvailableCar): AvailableCar {
+    return {
+      carId: String(raw.carId),
+      carTypeId: raw.carId,
+      carType: raw.carType,
+      carName: raw.carName,
+      fare: raw.rates?.discounted?.totalAmount ?? 0,
+      originalFare: raw.rates?.regular?.totalAmount,
+      kmsIncluded: raw.rates?.discounted?.packageKilometer,
+      hoursIncluded: raw.rates?.discounted?.packageHour,
+      extraKmRate: raw.rates?.discounted?.extraKilometer,
+      nightAllowance: raw.rates?.discounted?.nightCharge,
+      seatCapacity: raw.seatCapacity,
+      luggageCapacity: raw.lugguageCapacity,
+      inclusions: raw.inclusions?.map(i => i.text) ?? [],
+      exclusions: raw.exclusions?.map(e => e.text) ?? [],
+      carImage: raw.carImage,
+      carImageLarge: raw.carImageLarge,
+      tncData: raw.tnc_data,
+      packageId: raw.package ? String(raw.package) : undefined,
+      // Normalize to number — backend returns urgent_booking_flag as STRING "1"
+      // (verified from live betasavaari.com HAR April 2026) but our model + the
+      // downstream `=== 1` strict-equality check expects a number. Without this
+      // Number() coercion the booking-create payload silently dropped Urgent_booking
+      // and trips that needed urgent flow were treated as regular trips (which
+      // also caused VAS to incorrectly appear since backend skips VAS only when
+      // Urgent_booking=1 was actually sent).
+      urgentBookingFlag: Number((raw as any).urgent_booking_flag) || 0,
+    };
+  }
+}

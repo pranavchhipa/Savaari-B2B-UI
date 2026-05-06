@@ -1,0 +1,250 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+/**
+ * Base API service for all Savaari API calls.
+ *
+ * ARCHITECTURE: All Savaari endpoints use GET with query params.
+ * Two separate API domains:
+ *   - Partner API (partnerApiBaseUrl): cities, availability
+ *   - B2B API (b2bApiBaseUrl): bookings, reports, commission
+ */
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+
+  constructor(private http: HttpClient) {}
+
+  /**
+   * GET from the Partner API (api.savaari.com/partner_api/public/).
+   * Used for: source-cities, destination-cities, availabilities
+   */
+  partnerGet<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const httpParams = new HttpParams({ fromObject: this.cleanParams(params) });
+    return this.http.get<T>(`${environment.partnerApiBaseUrl}/${endpoint}`, { params: httpParams });
+  }
+
+  /**
+   * GET from the B2B API (api23.savaari.com/).
+   * Used for: booking-details, booking-details-report, user/get-commission
+   */
+  b2bGet<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const httpParams = new HttpParams({ fromObject: this.cleanParams(params) });
+    return this.http.get<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, { params: httpParams });
+  }
+
+  /**
+   * POST to the B2B API with JSON body.
+   * Used for: user/login
+   */
+  b2bPost<T>(endpoint: string, body: unknown): Observable<T> {
+    return this.http.post<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, body);
+  }
+
+  /**
+   * POST to the B2B API with raw string body and custom Content-Type.
+   * Used for: user/autologin (Content-Type: text/plain per Postman)
+   */
+  b2bPostRaw<T>(endpoint: string, body: string, contentType: string): Observable<T> {
+    return this.http.post<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, body, {
+      headers: { 'Content-Type': contentType }
+    });
+  }
+
+  /**
+   * GET from the Partner API with no params.
+   * Used for: auth/webtoken (no auth required)
+   */
+  partnerGetNoParams<T>(endpoint: string): Observable<T> {
+    return this.http.get<T>(`${environment.partnerApiBaseUrl}/${endpoint}`);
+  }
+
+  /**
+   * POST to the Partner API with form-encoded body and token as query param.
+   * Used for: booking (create), booking/update_invoice_payer_info
+   *
+   * Confirmed from live site (March 2026):
+   *   POST /booking?token=<partnerJWT> → 201 Created
+   *   Body: application/x-www-form-urlencoded
+   */
+  partnerPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>, queryParams?: Record<string, string>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    let url = `${environment.partnerApiBaseUrl}/${endpoint}`;
+    if (queryParams) {
+      const qp = new HttpParams({ fromObject: queryParams });
+      url += `?${qp.toString()}`;
+    }
+    return this.http.post<T>(url, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+  }
+
+  /**
+   * POST to the B2B API with multipart/form-data (FormData).
+   * Used for: user (registration) — confirmed from beta site HAR
+   */
+  b2bPostFormData<T>(endpoint: string, formData: FormData): Observable<T> {
+    return this.http.post<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, formData);
+  }
+
+  /**
+   * POST to the B2B API with form-encoded body.
+   * Used for: user/update-profile (confirmed from beta site — sends form data, not JSON)
+   */
+  b2bPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`${environment.b2bApiBaseUrl}/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+  }
+
+  /**
+   * POST to the Payment PHP API.
+   * Used for: payment_confirmation/advance_payment_check.php,
+   *           payment_confirmation/confirmation.php,
+   *           razor_createorder.php, razor_checkhash.php
+   *
+   * CRITICAL: MUST use paymentApiBaseUrl (`/payment-api`) prefix so .htaccess
+   * (alpha prod) and proxy.conf.json (dev) route to b2bcab.betasavaari.com.
+   * Without the prefix, the request hits the current host directly — on alpha
+   * this means hitting alpha's own (misconfigured) razor_createorder.php which
+   * returns `order_id: null`. HAR-confirmed root cause (April 2026).
+   */
+  paymentPost<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`${environment.paymentApiBaseUrl}/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }
+    });
+  }
+
+  /**
+   * POST to the Payment PHP API with FormData (multipart/form-data).
+   * Used for: razor_checkhash.php (confirmed from Postman)
+   * Same /payment-api prefix rule as paymentPost — see above.
+   */
+  paymentPostFormData<T>(endpoint: string, formData: FormData): Observable<T> {
+    return this.http.post<T>(`${environment.paymentApiBaseUrl}/${endpoint}`, formData);
+  }
+
+  /**
+   * POST to a same-origin relative URL with form-encoded body, NO base URL prefix.
+   * Used for: payment_confirmation/confirmation.php
+   *
+   * Per backend team (April 2026): the confirmation page must be called WITHOUT the
+   * `/payment-api` prefix, otherwise wallet payment callback functionality breaks.
+   * On alpha (b2bcab.alphasavaari.com) this hits the PHP file at the same origin
+   * directly. In dev, proxy.conf.json has `/payment_confirmation` rule that
+   * forwards to b2bcab.betasavaari.com.
+   */
+  paymentPostDirect<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }
+    });
+  }
+
+  /**
+   * POST to the Wallet API (apiext.betasavaari.com/wallet/public/).
+   * Token goes in Authorization: Bearer header per wallet TRD.
+   * Used for: wallet/balance, wallet/create, wallet/history, wallet/topup/*, wallet/pay-booking, wallet/refund
+   */
+  walletPost<T>(endpoint: string, body: unknown, token: string): Observable<T> {
+    return this.http.post<T>(`${environment.walletApiBaseUrl}/${endpoint}`, body, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
+
+  /**
+   * GET from the Address API (apiext.betasavaari.com/).
+   * Used for: autocomplete/info.php, place_id/info.php
+   * These Savaari APIs replace Google Maps Places API.
+   */
+  addressGet<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const httpParams = new HttpParams({ fromObject: this.cleanParams(params) });
+    return this.http.get<T>(`${environment.addressApiBaseUrl}/${endpoint}`, { params: httpParams });
+  }
+
+  /**
+   * GET from the Registration API (query params).
+   * Used for: general/gst_verification.php (alpha-hosted endpoints)
+   */
+  regGet<T>(endpoint: string, params: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const httpParams = new HttpParams({ fromObject: this.cleanParams(params) });
+    return this.http.get<T>(`${environment.registrationApiBaseUrl}/${endpoint}`, { params: httpParams });
+  }
+
+  /**
+   * POST to the Registration API with form-encoded body.
+   * Used for: user/send-otp, user/verify-otp (alpha-hosted endpoints)
+   */
+  regPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`${environment.registrationApiBaseUrl}/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+  }
+
+  /**
+   * POST to the Registration API with JSON body.
+   */
+  regPostJson<T>(endpoint: string, body: unknown): Observable<T> {
+    return this.http.post<T>(`${environment.registrationApiBaseUrl}/${endpoint}`, body, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  /**
+   * POST to the Settlement API (api.alphasavaari.com/partner_api/public/).
+   * Used for: booking/settlement-payment (alpha-only — beta returns 404).
+   *
+   * Same wire shape as partnerPostForm (form-encoded body, token in ?token=
+   * query param) but routes through `/settlement-api` → alpha per the April
+   * 2026 settlement doc. The auto-pay cron (`cron_wallet_auto_pay_balance.php`)
+   * is also alpha-hosted, so settlement flow lives entirely on alpha even when
+   * the rest of the app runs against beta.
+   */
+  settlementPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>, queryParams?: Record<string, string>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    let url = `${environment.settlementApiBaseUrl}/${endpoint}`;
+    if (queryParams) {
+      const qp = new HttpParams({ fromObject: queryParams });
+      url += `?${qp.toString()}`;
+    }
+    return this.http.post<T>(url, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+  }
+
+  /**
+   * POST to the System Bookings API (api.betasavaari.com/system_bookings/).
+   * Used for: cancellation.php (booking cancellation).
+   *
+   * Confirmed from live b2bcab.in HAR (April 2026):
+   *   POST /system_bookings/cancellation.php
+   *   Body: application/x-www-form-urlencoded
+   *   Fields: booking_id, reservation_id, reason, comments, booking_key, booking_type=1
+   *   Response: { status_code: 101, status_description: "SUCCESS", reservation_id, booking_data: {...} }
+   */
+  systemBookingsPostForm<T>(endpoint: string, body: Record<string, string | number | boolean | undefined | null>): Observable<T> {
+    const formBody = new HttpParams({ fromObject: this.cleanParams(body) });
+    return this.http.post<T>(`${environment.systemBookingsApiBaseUrl}/${endpoint}`, formBody.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+  }
+
+  /**
+   * Strip undefined/null values and convert everything to strings.
+   * HttpParams requires all values to be strings.
+   * Empty strings are KEPT — live site sends empty params like subTripType=&customerLatLong=
+   */
+  private cleanParams(params: Record<string, string | number | boolean | undefined | null>): Record<string, string> {
+    const cleaned: Record<string, string> = {};
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null) {
+        cleaned[key] = String(value);
+      }
+    }
+    return cleaned;
+  }
+}

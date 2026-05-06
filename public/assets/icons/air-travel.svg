@@ -1,0 +1,6 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Plane body -->
+  <path d="M48 24C48 24 50 18 44 14C38 10 32 10 26 14C20 18 18 24 18 24V34L8 42V46L18 42V50L14 54V58L22 56L34 56L42 58V54L38 50V42L48 46V42L38 34V24Z" fill="white" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Windows -->
+  <path d="M28 20C28 20 30 18 34 18C38 18 40 20 40 20" stroke="#00A8E1" stroke-width="1.5"/>
+</svg>

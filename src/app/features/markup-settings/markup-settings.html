@@ -1,0 +1,379 @@
+<!-- Breadcrumb -->
+<div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-1.5 sm:py-3">
+    <nav class="flex items-center space-x-2 text-xs sm:text-sm">
+      <a routerLink="/dashboard" class="flex items-center text-slate-500 hover:text-primary transition-colors">
+        <lucide-icon name="home" [size]="14" class="mr-1"></lucide-icon>
+        Home
+      </a>
+      <lucide-icon name="chevron-right" [size]="14" class="text-slate-400"></lucide-icon>
+      <span class="text-slate-800 dark:text-slate-200 font-medium">Mark-up Settings</span>
+    </nav>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="bg-gray-50 dark:bg-slate-900 min-h-screen flex flex-col">
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-8 flex-1">
+    <div class="flex flex-col lg:flex-row gap-3 sm:gap-8">
+
+      <!-- Sidebar — hidden on mobile -->
+      <aside class="hidden lg:block w-full lg:w-64 flex-shrink-0">
+        <div
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+            <h2 class="font-semibold text-slate-800 dark:text-slate-200">Configuration</h2>
+          </div>
+          <ul class="flex flex-col">
+            <li>
+              <button (click)="activeSection = 'markup'"
+                [ngClass]="activeSection === 'markup' ? 'text-primary bg-blue-50/80 dark:bg-blue-900/20 border-l-4 border-primary font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-l-4 border-transparent'"
+                class="w-full flex items-center px-4 py-3 text-sm transition-all">
+                <lucide-icon name="percent-circle" [size]="18" class="mr-3 flex-shrink-0"></lucide-icon>
+                Mark-up Settings
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Tip card -->
+        <div class="mt-6 bg-gradient-to-br from-primary to-blue-600 rounded-xl p-6 text-white shadow-lg">
+          <lucide-icon name="lightbulb" [size]="32" class="text-white/80 mb-4"></lucide-icon>
+          <h3 class="font-bold text-lg mb-2">Did you know?</h3>
+          <p class="text-blue-100 text-sm leading-relaxed">
+            Setting a percentage markup automatically adjusts pricing based on fluctuating base fares.
+          </p>
+        </div>
+      </aside>
+
+      <!-- Main panel -->
+      <div class="flex-1">
+
+        <!-- MARKUP SETTINGS PANEL -->
+        <div *ngIf="activeSection === 'markup'"
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-6 lg:p-8">
+          <div class="mb-4 sm:mb-8">
+            <div class="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+              <a routerLink="/dashboard"
+                class="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm group shrink-0">
+                <lucide-icon name="arrow-left" [size]="14"
+                  class="sm:!w-[18px] sm:!h-[18px] group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
+              </a>
+              <h1 class="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">Mark-up Configuration</h1>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Select the mark-up method and enter the value you want to
+              charge your customers for each service type.</p>
+          </div>
+
+          <!-- Loading state -->
+          <div *ngIf="commissionLoading" class="flex flex-col items-center gap-4 py-12">
+            <lucide-icon name="loader-2" [size]="32" class="text-primary animate-spin"></lucide-icon>
+            <p class="text-slate-500 text-sm">Loading markup settings from server...</p>
+          </div>
+
+          <!-- Locked banner -->
+          <div *ngIf="isLocked && !commissionLoading"
+            class="mb-4 flex items-start gap-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg p-3 sm:p-4">
+            <lucide-icon name="lock" [size]="18" class="text-amber-500 flex-shrink-0 mt-0.5"></lucide-icon>
+            <p class="text-xs sm:text-sm text-amber-700 dark:text-amber-400">Markup settings are managed by B2B CAB admin and cannot be modified from this portal. Contact your account manager for changes.</p>
+          </div>
+
+          <!-- Column Headers -->
+          <div *ngIf="!commissionLoading"
+            class="hidden md:grid grid-cols-12 gap-4 pb-4 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            <div class="col-span-4">Service Type</div>
+            <div class="col-span-8 grid grid-cols-2">
+              <div class="text-center">Percentage Markup</div>
+              <div class="text-center">Fixed Amount Markup</div>
+            </div>
+          </div>
+
+          <!-- Service Rows -->
+          <div *ngIf="!commissionLoading" class="space-y-1 sm:space-y-2 mt-3 sm:mt-4" [ngClass]="{'opacity-60 pointer-events-none': isLocked}">
+            <div *ngFor="let service of services"
+              class="group rounded-lg sm:rounded-xl p-3 sm:p-4 md:grid md:grid-cols-12 md:gap-4 md:items-center transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/30 border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+
+              <!-- Service Label -->
+              <div class="col-span-4 flex items-center mb-2.5 md:mb-0">
+                <div [ngClass]="service.iconBg" class="p-2 sm:p-2.5 rounded-lg mr-2.5 sm:mr-3 flex-shrink-0">
+                  <lucide-icon [name]="service.icon" [size]="16" [ngClass]="service.iconColor" class="sm:!w-[20px] sm:!h-[20px]"></lucide-icon>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-slate-800 dark:text-slate-200 text-[13px] sm:text-sm">{{ service.label }}</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ service.description }}</p>
+                </div>
+              </div>
+
+              <!-- Markup Options -->
+              <div class="col-span-8 grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
+
+                <!-- Percentage Option -->
+                <div
+                  class="flex items-center justify-between md:justify-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-0 rounded-lg border md:border-0 border-slate-200 dark:border-slate-700"
+                  [ngClass]="service.markup.type === 'percent' ? 'bg-blue-50/50 dark:bg-blue-900/10 md:bg-transparent md:dark:bg-transparent border-primary/30 md:border-0' : 'bg-white dark:bg-slate-800/50 md:bg-transparent'">
+                  <label class="flex items-center cursor-pointer gap-1.5 sm:gap-2 select-none">
+                    <input type="radio" [name]="service.key + '_type'" value="percent"
+                      [checked]="service.markup.type === 'percent'" (change)="setType(service, 'percent')"
+                      class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary focus:ring-primary border-slate-300 dark:border-slate-600 cursor-pointer" />
+                    <span class="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 md:hidden">Percentage</span>
+                  </label>
+                  <div class="relative w-24 sm:w-32">
+                    <input type="number" [(ngModel)]="service.markup.percentValue"
+                      [disabled]="service.markup.type !== 'percent'" placeholder="0" min="0" max="100"
+                      class="block w-full pl-2.5 sm:pl-3 pr-7 sm:pr-8 py-1.5 sm:py-2 text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary shadow-sm disabled:opacity-40 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed transition" />
+                    <span class="absolute right-2.5 sm:right-3 top-1.5 sm:top-2 text-slate-400 text-xs sm:text-sm pointer-events-none">%</span>
+                  </div>
+                </div>
+
+                <!-- Fixed Amount Option -->
+                <div
+                  class="flex items-center justify-between md:justify-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-0 rounded-lg border md:border-0 border-slate-200 dark:border-slate-700"
+                  [ngClass]="service.markup.type === 'fixed' ? 'bg-blue-50/50 dark:bg-blue-900/10 md:bg-transparent md:dark:bg-transparent border-primary/30 md:border-0' : 'bg-white dark:bg-slate-800/50 md:bg-transparent'">
+                  <label class="flex items-center cursor-pointer gap-1.5 sm:gap-2 select-none">
+                    <input type="radio" [name]="service.key + '_type'" value="fixed"
+                      [checked]="service.markup.type === 'fixed'" (change)="setType(service, 'fixed')"
+                      class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary focus:ring-primary border-slate-300 dark:border-slate-600 cursor-pointer" />
+                    <span class="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 md:hidden">Fixed Amount</span>
+                  </label>
+                  <div class="relative w-24 sm:w-32">
+                    <span class="absolute left-2.5 sm:left-3 top-1.5 sm:top-2 text-slate-400 text-xs sm:text-sm pointer-events-none">₹</span>
+                    <input type="number" [(ngModel)]="service.markup.fixedValue"
+                      [disabled]="service.markup.type !== 'fixed'" placeholder="0.00" min="0"
+                      class="block w-full pl-5 sm:pl-6 pr-2.5 sm:pr-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary shadow-sm disabled:opacity-40 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed transition" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div *ngIf="!commissionLoading" class="mt-6 sm:mt-10 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-4">
+            <!-- Success message -->
+            <div *ngIf="savedSuccess"
+              class="flex items-center gap-2 text-xs sm:text-sm font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 sm:px-4 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              <lucide-icon name="check-circle" [size]="14"></lucide-icon>
+              Settings saved to server
+            </div>
+            <!-- Error message -->
+            <div *ngIf="saveError"
+              class="flex items-center gap-2 text-xs sm:text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 sm:px-4 py-2 rounded-lg border border-red-200 dark:border-red-800">
+              <lucide-icon name="alert-circle" [size]="14"></lucide-icon>
+              {{ saveError }}
+            </div>
+            <button (click)="resetToDefault()" [disabled]="isLocked || saving"
+              class="px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors order-2 sm:order-none disabled:opacity-40 disabled:cursor-not-allowed">
+              Reset to Default
+            </button>
+            <button (click)="saveSettings()" [disabled]="isLocked || saving"
+              class="px-6 sm:px-8 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-primary hover:bg-sky-600 shadow-lg shadow-primary/30 rounded-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 order-1 sm:order-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+              <lucide-icon [name]="saving ? 'loader-2' : 'save'" [size]="14" class="sm:!w-[16px] sm:!h-[16px]" [ngClass]="{'animate-spin': saving}"></lucide-icon>
+              {{ saving ? 'Saving...' : isLocked ? 'Locked by Admin' : 'Save Settings' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- COMMISSION PANEL (hidden - not on real website) -->
+        <div *ngIf="false"
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+
+          <!-- Loading state -->
+          <div *ngIf="commissionLoading" class="flex flex-col items-center gap-4 min-h-[300px] justify-center">
+            <lucide-icon name="loader-2" [size]="32" class="text-primary animate-spin"></lucide-icon>
+            <p class="text-slate-500 text-sm">Loading commission data...</p>
+          </div>
+
+          <!-- Error state -->
+          <div *ngIf="!commissionLoading && commissionError" class="flex flex-col items-center gap-4 min-h-[300px] justify-center text-center">
+            <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-full">
+              <lucide-icon name="alert-circle" [size]="48" class="text-red-400"></lucide-icon>
+            </div>
+            <p class="text-red-600 dark:text-red-400">{{ commissionError }}</p>
+            <button (click)="loadCommission()" class="px-4 py-2 text-sm text-primary hover:bg-blue-50 rounded-lg transition-colors">
+              Try Again
+            </button>
+          </div>
+
+          <!-- Commission Data -->
+          <div *ngIf="!commissionLoading && !commissionError && commissionData">
+            <div class="mb-8">
+              <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Commission Details</h1>
+              <p class="text-slate-500 dark:text-slate-400">Your commission rates and fare adjustments as configured by B2B CAB.</p>
+            </div>
+
+            <!-- Commission Rates Table -->
+            <div class="mb-8">
+              <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">Commission Rates</h3>
+              <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-700/50">
+                      <th class="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Trip Type</th>
+                      <th class="text-center px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Commission %</th>
+                      <th class="text-center px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Fixed Amount</th>
+                      <th class="text-center px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Rate Adjustment</th>
+                      <th class="text-center px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    <!-- Airport -->
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
+                      <td class="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
+                        <div class="flex items-center gap-2">
+                          <div class="p-1.5 rounded-md bg-blue-100 dark:bg-blue-900/50">
+                            <lucide-icon name="plane" [size]="14" class="text-primary"></lucide-icon>
+                          </div>
+                          Airport Transfers
+                        </div>
+                      </td>
+                      <td class="px-4 py-3 text-center text-slate-700 dark:text-slate-300">{{ getCommPercent('airport') }}%</td>
+                      <td class="px-4 py-3 text-center text-slate-700 dark:text-slate-300">&#8377;{{ getCommAmount('airport') }}</td>
+                      <td class="px-4 py-3 text-center">
+                        <span [ngClass]="getRateBumpUp('airport').startsWith('-') ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-slate-600 bg-slate-100 dark:bg-slate-700'"
+                          class="inline-block px-2 py-0.5 rounded-full text-xs font-medium">
+                          {{ getRateBumpUp('airport') }}%
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <span *ngIf="isTripTypeEnabled('transfer')" class="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
+                          <lucide-icon name="check-circle" [size]="14"></lucide-icon> Enabled
+                        </span>
+                        <span *ngIf="!isTripTypeEnabled('transfer')" class="inline-flex items-center gap-1 text-slate-400 text-xs font-medium">
+                          <lucide-icon name="x-circle" [size]="14"></lucide-icon> Disabled
+                        </span>
+                      </td>
+                    </tr>
+                    <!-- Local -->
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
+                      <td class="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
+                        <div class="flex items-center gap-2">
+                          <div class="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-900/50">
+                            <lucide-icon name="car" [size]="14" class="text-emerald-600"></lucide-icon>
+                          </div>
+                          Local Rentals
+                        </div>
+                      </td>
+                      <td class="px-4 py-3 text-center text-slate-700 dark:text-slate-300">{{ getCommPercent('local') }}%</td>
+                      <td class="px-4 py-3 text-center text-slate-700 dark:text-slate-300">&#8377;{{ getCommAmount('local') }}</td>
+                      <td class="px-4 py-3 text-center">
+                        <span [ngClass]="getRateBumpUp('local').startsWith('-') ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-slate-600 bg-slate-100 dark:bg-slate-700'"
+                          class="inline-block px-2 py-0.5 rounded-full text-xs font-medium">
+                          {{ getRateBumpUp('local') }}%
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <span *ngIf="isTripTypeEnabled('local')" class="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
+                          <lucide-icon name="check-circle" [size]="14"></lucide-icon> Enabled
+                        </span>
+                        <span *ngIf="!isTripTypeEnabled('local')" class="inline-flex items-center gap-1 text-slate-400 text-xs font-medium">
+                          <lucide-icon name="x-circle" [size]="14"></lucide-icon> Disabled
+                        </span>
+                      </td>
+                    </tr>
+                    <!-- Outstation -->
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
+                      <td class="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
+                        <div class="flex items-center gap-2">
+                          <div class="p-1.5 rounded-md bg-purple-100 dark:bg-purple-900/50">
+                            <lucide-icon name="route" [size]="14" class="text-purple-600"></lucide-icon>
+                          </div>
+                          Outstation
+                        </div>
+                      </td>
+                      <td class="px-4 py-3 text-center text-slate-700 dark:text-slate-300">{{ getCommPercent('outstation') }}%</td>
+                      <td class="px-4 py-3 text-center text-slate-700 dark:text-slate-300">&#8377;{{ getCommAmount('outstation') }}</td>
+                      <td class="px-4 py-3 text-center">
+                        <span [ngClass]="getRateBumpUp('outstation').startsWith('-') ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-slate-600 bg-slate-100 dark:bg-slate-700'"
+                          class="inline-block px-2 py-0.5 rounded-full text-xs font-medium">
+                          {{ getRateBumpUp('outstation') }}%
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <span *ngIf="isTripTypeEnabled('roundtrip')" class="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
+                          <lucide-icon name="check-circle" [size]="14"></lucide-icon> Enabled
+                        </span>
+                        <span *ngIf="!isTripTypeEnabled('roundtrip')" class="inline-flex items-center gap-1 text-slate-400 text-xs font-medium">
+                          <lucide-icon name="x-circle" [size]="14"></lucide-icon> Disabled
+                        </span>
+                      </td>
+                    </tr>
+                    <!-- One Way -->
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
+                      <td class="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
+                        <div class="flex items-center gap-2">
+                          <div class="p-1.5 rounded-md bg-orange-100 dark:bg-orange-900/50">
+                            <lucide-icon name="arrow-right" [size]="14" class="text-orange-500"></lucide-icon>
+                          </div>
+                          One Way
+                        </div>
+                      </td>
+                      <td class="px-4 py-3 text-center text-slate-700 dark:text-slate-300">{{ getCommPercent('outstation') }}%</td>
+                      <td class="px-4 py-3 text-center text-slate-700 dark:text-slate-300">&#8377;{{ getCommAmount('outstation') }}</td>
+                      <td class="px-4 py-3 text-center">
+                        <span [ngClass]="getRateBumpUp('outstation').startsWith('-') ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-slate-600 bg-slate-100 dark:bg-slate-700'"
+                          class="inline-block px-2 py-0.5 rounded-full text-xs font-medium">
+                          {{ getRateBumpUp('outstation') }}%
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <span *ngIf="isTripTypeEnabled('oneway')" class="inline-flex items-center gap-1 text-green-600 text-xs font-medium">
+                          <lucide-icon name="check-circle" [size]="14"></lucide-icon> Enabled
+                        </span>
+                        <span *ngIf="!isTripTypeEnabled('oneway')" class="inline-flex items-center gap-1 text-slate-400 text-xs font-medium">
+                          <lucide-icon name="x-circle" [size]="14"></lucide-icon> Disabled
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Agent Settings Summary -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Invoice Payer</div>
+                <div class="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                  {{ commissionData?.invoice_payer === 'pay_by_agent' ? 'Agent Pays' : 'Customer Pays' }}
+                </div>
+              </div>
+              <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Wallet Status</div>
+                <div class="font-semibold text-sm" [ngClass]="commissionData?.wallet_user === '1' ? 'text-green-600' : 'text-slate-800 dark:text-slate-200'">
+                  {{ commissionData?.wallet_user === '1' ? 'Wallet Enabled' : 'Not a Wallet User' }}
+                </div>
+              </div>
+              <div class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Agent GST</div>
+                <div class="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                  {{ commissionData?.agent_gst || 'Not Set' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Note about commission changes -->
+            <div *ngIf="commissionData?.disable_commission_update === '1'"
+              class="mt-6 flex items-start gap-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg p-4">
+              <lucide-icon name="info" [size]="18" class="text-amber-500 flex-shrink-0 mt-0.5"></lucide-icon>
+              <p class="text-sm text-amber-700 dark:text-amber-400">Commission rates are managed by B2B CAB and cannot be modified from this portal. Contact your account manager for changes.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- GENERAL PREFERENCES (hidden - not on real website) -->
+        <div *ngIf="false"
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 text-center flex flex-col items-center gap-4 min-h-[400px] justify-center">
+          <div class="bg-purple-50 dark:bg-slate-700 p-4 rounded-full">
+            <lucide-icon name="settings-2" [size]="48" class="text-purple-500 opacity-70"></lucide-icon>
+          </div>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200">General Preferences</h2>
+          <p class="text-slate-500 dark:text-slate-400 max-w-sm">Platform-wide preferences and notifications settings
+            will be configured here.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

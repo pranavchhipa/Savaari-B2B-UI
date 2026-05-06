@@ -1,0 +1,146 @@
+<div *ngIf="visible && context"
+     class="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4"
+     (click)="onBackdropClick()">
+
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/55 backdrop-blur-sm animate-in fade-in"></div>
+
+    <!-- Modal Card -->
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col"
+         (click)="$event.stopPropagation()">
+
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-primary to-primary/80 px-5 py-3.5 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <lucide-icon name="indian-rupee" [size]="16" class="text-white"></lucide-icon>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-sm sm:text-base leading-tight">Apna fare propose karein</h3>
+                    <p class="text-white/80 text-[11px] sm:text-xs leading-tight mt-0.5">Name your price — we'll find a driver who accepts it</p>
+                </div>
+            </div>
+            <button (click)="continuePayment.emit()"
+                    class="text-white/80 hover:text-white transition cursor-pointer p-1 rounded hover:bg-white/10"
+                    aria-label="Close">
+                <lucide-icon name="x" [size]="18"></lucide-icon>
+            </button>
+        </div>
+
+        <!-- Body (scrollable) -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+
+            <!-- Trip Summary -->
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-3.5">
+                <div class="flex items-center gap-1.5 mb-2">
+                    <lucide-icon name="map-pin" [size]="12" class="text-primary"></lucide-icon>
+                    <span class="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Trip Summary</span>
+                </div>
+                <div class="space-y-1.5">
+                    <!-- Route -->
+                    <div class="flex items-start gap-2">
+                        <div class="flex flex-col items-center pt-1.5">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            <div class="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
+                            <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                        </div>
+                        <div class="flex-1 min-w-0 text-xs sm:text-sm">
+                            <div class="font-semibold text-slate-700 dark:text-slate-200 truncate">{{ context.fromCity }}</div>
+                            <div class="font-semibold text-slate-700 dark:text-slate-200 truncate mt-1">{{ context.toCity }}</div>
+                        </div>
+                    </div>
+                    <!-- Meta chips -->
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                            <lucide-icon name="calendar" [size]="10"></lucide-icon>
+                            {{ context.pickupDateTime | date:'dd MMM, h:mm a' }}
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                            <lucide-icon name="route" [size]="10"></lucide-icon>
+                            {{ context.tripType }}
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                            <lucide-icon name="car" [size]="10"></lucide-icon>
+                            {{ context.carType }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fare input -->
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+                        Your Proposed Fare <span class="text-rose-500">*</span>
+                    </label>
+                    <span class="text-[10px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        Original: ₹{{ context.originalFare | number }}
+                    </span>
+                </div>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 font-bold">₹</span>
+                    <input type="number"
+                           [(ngModel)]="proposedFare"
+                           [min]="minFare"
+                           [max]="maxFare"
+                           class="w-full pl-8 pr-3 py-2.5 text-base sm:text-lg font-bold border-2 rounded-lg bg-white dark:bg-slate-800 outline-none transition-all"
+                           [class.border-slate-200]="!showError"
+                           [class.dark:border-slate-700]="!showError"
+                           [class.focus:border-primary]="!showError"
+                           [class.border-rose-400]="showError"
+                           [class.focus:border-rose-500]="showError"
+                           placeholder="Enter your price" />
+                </div>
+                <div class="mt-1.5 flex items-center justify-between text-[10px] sm:text-[11px]">
+                    <span class="text-slate-500 dark:text-slate-400">
+                        Suggested range: <span class="font-bold text-slate-700 dark:text-slate-300">₹{{ minFare | number }} – ₹{{ maxFare | number }}</span>
+                    </span>
+                    <span *ngIf="showError" class="font-bold text-rose-500">Enter a value within range</span>
+                </div>
+            </div>
+
+            <!-- Passenger note (optional) -->
+            <div>
+                <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
+                    Note for Driver <span class="font-normal text-slate-400">(optional)</span>
+                </label>
+                <textarea [(ngModel)]="note"
+                          rows="2"
+                          maxlength="200"
+                          class="w-full px-3 py-2 text-xs sm:text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:border-primary outline-none resize-none"
+                          placeholder="Any special instructions, e.g. clean cab, AC, language..."></textarea>
+            </div>
+
+            <!-- Tick box -->
+            <label class="flex items-start gap-2.5 p-3 rounded-lg border border-primary/30 bg-primary/5 cursor-pointer hover:bg-primary/10 transition">
+                <input type="checkbox"
+                       [(ngModel)]="autoConfirm"
+                       class="mt-0.5 w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" />
+                <span class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-snug">
+                    <span class="font-semibold">Confirm the booking automatically</span>
+                    if we find a driver at
+                    <span class="font-bold text-primary">₹{{ (proposedFare || 0) | number }}</span>.
+                </span>
+            </label>
+
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="border-t border-slate-200 dark:border-slate-700 p-3 sm:p-4 flex flex-col-reverse sm:flex-row sm:items-center gap-2 sm:gap-2.5 bg-slate-50 dark:bg-slate-800/30 shrink-0">
+            <button (click)="dismissed.emit()"
+                    class="px-3 py-2 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer rounded-lg">
+                Cancel & Leave
+            </button>
+            <button (click)="continuePayment.emit()"
+                    class="sm:ml-auto px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 transition cursor-pointer">
+                Continue to Pay
+            </button>
+            <button (click)="onSubmit()"
+                    class="px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold bg-primary hover:bg-primary/90 text-white rounded-lg shadow-sm transition cursor-pointer flex items-center justify-center gap-1.5">
+                <lucide-icon name="send" [size]="13"></lucide-icon>
+                Submit Request
+            </button>
+        </div>
+
+    </div>
+</div>

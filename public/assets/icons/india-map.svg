@@ -1,0 +1,14 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simplify India Map Outline -->
+  <path d="M28 10L30 8L34 10L36 14L40 16L44 20L48 24L50 30L48 36L44 42L40 50L36 56L32 60L28 56L24 50L20 42L16 36L14 30L16 24L20 20L24 16L28 10Z" fill="white" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Pins -->
+  <g fill="#00A8E1">
+    <circle cx="32" cy="20" r="1.5"/>
+    <circle cx="28" cy="30" r="1.5"/>
+    <circle cx="36" cy="35" r="1.5"/>
+    <circle cx="32" cy="45" r="1.5"/>
+    <circle cx="25" cy="40" r="1"/>
+    <circle cx="40" cy="25" r="1"/>
+    <circle cx="30" cy="50" r="0.8"/>
+  </g>
+</svg>

@@ -1,0 +1,783 @@
+<div class="flex flex-col lg:flex-row min-h-screen">
+
+  <!-- ========== LEFT PANEL — branding (desktop only, sticky so it stays in view while right side scrolls) ========== -->
+  <div class="hidden lg:flex lg:w-[45%] relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden lg:sticky lg:top-0 lg:h-screen lg:self-start">
+    <!-- Glow orbs -->
+    <div class="absolute top-10 right-16 w-56 h-56 bg-primary/8 rounded-full blur-[80px]"></div>
+    <div class="absolute bottom-16 left-8 w-40 h-40 bg-cyan-500/8 rounded-full blur-[60px]"></div>
+
+    <div class="relative z-10 flex flex-col justify-start h-full w-full px-8 xl:px-12 pt-10">
+      <div class="space-y-6">
+
+        <!-- Heading -->
+        <div>
+          <h1 class="text-2xl xl:text-[28px] font-extrabold text-white leading-snug">
+            Grow Your Travel<br>Business with
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-primary">B2B CAB</span>.
+          </h1>
+          <p class="text-slate-400 text-[13px] mt-3 leading-relaxed max-w-sm">
+            Join India's largest inter-city cab network. Book across 2,000+ cities with zero cancellations.
+          </p>
+        </div>
+
+        <!-- Stat pills -->
+        <div class="flex gap-3">
+          <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+            <lucide-icon name="map-pin" [size]="14" class="text-primary"></lucide-icon>
+            <span class="text-sm font-bold text-white">2,000+</span>
+            <span class="text-[10px] text-slate-400">Cities</span>
+          </div>
+          <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+            <lucide-icon name="users" [size]="14" class="text-emerald-400"></lucide-icon>
+            <span class="text-sm font-bold text-white">5,000+</span>
+            <span class="text-[10px] text-slate-400">Agents</span>
+          </div>
+          <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+            <lucide-icon name="award" [size]="14" class="text-amber-400"></lucide-icon>
+            <span class="text-sm font-bold text-white">20+</span>
+            <span class="text-[10px] text-slate-400">Years</span>
+          </div>
+        </div>
+
+        <div class="w-12 h-px bg-white/10"></div>
+
+        <!-- Value props -->
+        <div class="space-y-3">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <lucide-icon name="indian-rupee" [size]="16" class="text-cyan-400"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-[13px] font-bold text-white">Better rides. Better prices. Always.</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Book a cab, earn commission. Every trip pays you.</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <lucide-icon name="zap" [size]="16" class="text-emerald-400"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-[13px] font-bold text-white">Free to Join. Always Free.</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">No fees. No targets. Start booking whenever you want.</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <lucide-icon name="shield-check" [size]="16" class="text-amber-400"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-[13px] font-bold text-white">Zero Cancellations</h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">Guaranteed rides. GST invoices.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-12 h-px bg-white/10"></div>
+
+        <!-- Testimonial carousel -->
+        @for (t of testimonials; track t.name; let i = $index) {
+          @if (i === activeTestimonial) {
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500/30 to-primary/30 ring-2 ring-cyan-500/40 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                {{ t.name.charAt(0) }}
+              </div>
+              <div>
+                <div class="flex gap-0.5 mb-1">
+                  @for (s of [1,2,3,4,5]; track s) {
+                    <span class="text-amber-400 text-[10px]">{{ s <= t.rating ? '★' : '☆' }}</span>
+                  }
+                </div>
+                <p class="text-[12px] text-slate-300 italic leading-relaxed">"{{ t.text }}"</p>
+                <p class="text-[11px] font-semibold text-white mt-1.5">{{ t.name }} <span class="text-slate-500 font-normal">— {{ t.city }}</span></p>
+              </div>
+            </div>
+          }
+        }
+        <div class="flex gap-1.5">
+          @for (t of testimonials; track t.name; let i = $index) {
+            <span (click)="activeTestimonial = i"
+              class="h-1 rounded-full transition-all duration-300 cursor-pointer"
+              [class]="i === activeTestimonial ? 'bg-cyan-400 w-5' : 'bg-slate-600 w-1.5'"></span>
+          }
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== RIGHT PANEL — wizard form ========== -->
+  <div class="flex-1 lg:w-[55%] bg-gradient-to-br from-slate-50 via-white to-cyan-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-4 sm:px-6 lg:px-10 xl:px-14 py-8 sm:py-12 relative overflow-y-auto">
+
+  <!-- Decorative background blobs -->
+  <div class="absolute top-20 -right-20 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+  <div class="absolute -bottom-20 -left-20 w-72 h-72 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+  <div class="w-full max-w-lg mx-auto relative z-10">
+
+    <!-- Header -->
+    <div class="text-center mb-6">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Create your B2B account</h1>
+      <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm">Takes about 2 minutes — and you're booking cabs the same day.</p>
+    </div>
+
+    <!-- Friendly stage indicator — no percentages, no "step X of Y" -->
+    <div class="mb-6">
+      <div class="flex items-center justify-center mb-2.5">
+        <span class="text-[12px] font-semibold text-primary tracking-wide">{{ progressLabel }}</span>
+      </div>
+      <!-- 6 segmented dots that fill in as you progress -->
+      <div class="flex items-center justify-center gap-1.5">
+        @for (s of STEP_ORDER; track s; let i = $index) {
+          <span class="h-1.5 rounded-full transition-all duration-500 ease-out"
+            [class]="completedSteps.has(s)
+              ? 'w-8 bg-gradient-to-r from-primary to-cyan-500'
+              : (currentStep === s ? 'w-8 bg-primary/40' : 'w-4 bg-slate-200 dark:bg-slate-700')"></span>
+        }
+      </div>
+    </div>
+
+    <!-- ═════════════════ STEP 1 — NAME ═════════════════ -->
+    @if (isVisible('name')) {
+      @let nameCollapsed = isCompleted('name') && !isCurrent('name');
+      <div id="step-name"
+        [class]="nameCollapsed
+          ? 'p-3 bg-slate-50/70 dark:bg-slate-800/30 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl mb-4 wizard-collapse-anim'
+          : 'bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-6 sm:p-7 shadow-sm mb-4 wizard-card-anim'">
+
+        @if (nameCollapsed) {
+          <button type="button" (click)="editStep('name')" class="w-full flex items-center justify-between gap-3 cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
+                <lucide-icon name="check" [size]="14"></lucide-icon>
+              </div>
+              <div class="text-left">
+                <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Your name</div>
+                <div class="text-sm font-semibold text-slate-800 dark:text-white">{{ fullName }}</div>
+              </div>
+            </div>
+            <span class="text-[11px] font-semibold text-primary hover:underline uppercase tracking-wider">Edit</span>
+          </button>
+        } @else {
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
+              <lucide-icon name="user" [size]="18" class="text-primary"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight">What should we call you?</h3>
+              <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">Enter your full name as it appears on official documents.</p>
+            </div>
+          </div>
+
+          <form [formGroup]="nameForm" (ngSubmit)="submitName()" class="space-y-4 mt-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">First name</label>
+                <input formControlName="firstName" type="text" placeholder="John" autocomplete="given-name"
+                  class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                  [class.!border-red-400]="nameForm.get('firstName')?.invalid && nameForm.get('firstName')?.touched" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Last name</label>
+                <input formControlName="lastName" type="text" placeholder="Doe" autocomplete="family-name"
+                  class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                  [class.!border-red-400]="nameForm.get('lastName')?.invalid && nameForm.get('lastName')?.touched" />
+              </div>
+            </div>
+            <button type="submit"
+              class="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:shadow-lg hover:shadow-primary/30 text-white font-semibold text-sm py-3.5 px-5 rounded-xl shadow-md shadow-primary/20 transition-all cursor-pointer">
+              Continue <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+            </button>
+          </form>
+        }
+      </div>
+    }
+
+    <!-- ═════════════════ STEP 2 — CONTACT + OTP ═════════════════ -->
+    @if (isVisible('contact')) {
+      @let contactCollapsed = isCompleted('contact') && !isCurrent('contact');
+      <div id="step-contact"
+        [class]="contactCollapsed
+          ? 'p-3 bg-slate-50/70 dark:bg-slate-800/30 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl mb-4 wizard-collapse-anim'
+          : 'bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-6 sm:p-7 shadow-sm mb-4 wizard-card-anim'">
+
+        @if (contactCollapsed) {
+          <!-- Contact is locked after OTP verification — no edit allowed -->
+          <div class="w-full flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
+                <lucide-icon name="check" [size]="14"></lucide-icon>
+              </div>
+              <div class="text-left">
+                <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Contact verified</div>
+                <div class="text-sm font-semibold text-slate-800 dark:text-white">{{ contactForm.value.mobile }} · {{ contactForm.value.email }}</div>
+              </div>
+            </div>
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <lucide-icon name="lock" [size]="10"></lucide-icon> Verified
+            </span>
+          </div>
+        } @else {
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
+              <lucide-icon name="phone" [size]="18" class="text-primary"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight">Verify your contact details</h3>
+            </div>
+          </div>
+
+          <form [formGroup]="contactForm" (ngSubmit)="sendContactOtps()" class="space-y-4 mt-5">
+
+            @if (contactPhase === 'entry') {
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Mobile number</label>
+                <div class="flex items-stretch">
+                  <span class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 text-sm font-semibold">+91</span>
+                  <input formControlName="mobile" type="tel" maxlength="10" placeholder="9876543210" autocomplete="tel"
+                    class="flex-1 rounded-r-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                    [class.!border-red-400]="contactForm.get('mobile')?.invalid && contactForm.get('mobile')?.touched" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Email address</label>
+                <input formControlName="email" type="email" placeholder="you@company.com" autocomplete="email"
+                  class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                  [class.!border-red-400]="contactForm.get('email')?.invalid && contactForm.get('email')?.touched" />
+              </div>
+
+              <button type="submit" [disabled]="sendingOtp"
+                class="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:shadow-lg hover:shadow-primary/30 text-white font-semibold text-sm py-3.5 px-5 rounded-xl shadow-md shadow-primary/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                @if (sendingOtp) {
+                  <lucide-icon name="loader-2" [size]="16" class="animate-spin"></lucide-icon> Sending OTPs...
+                } @else {
+                  Send verification codes <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+                }
+              </button>
+
+              @if (contactError) {
+                <p class="text-sm text-red-500">{{ contactError }}</p>
+              }
+            }
+
+            @if (contactPhase === 'otp') {
+              <!-- Mobile OTP row -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                    <lucide-icon name="smartphone" [size]="14"></lucide-icon>
+                    {{ contactForm.value.mobile }}
+                  </label>
+                  @if (mobileOtpVerified) {
+                    <span class="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                      <lucide-icon name="check-circle" [size]="12"></lucide-icon> Verified
+                    </span>
+                  } @else if (mobileVerifying) {
+                    <span class="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                      <lucide-icon name="loader-2" [size]="12" class="animate-spin"></lucide-icon> Verifying...
+                    </span>
+                  }
+                </div>
+                <div class="flex gap-2">
+                  @for (digit of mobileOtp; track $index) {
+                    <input type="text" inputmode="numeric" maxlength="1"
+                      [attr.data-otp]="'mobile-' + $index"
+                      [value]="digit"
+                      [disabled]="mobileOtpVerified || mobileVerifying"
+                      (input)="onOtpInput($event, 'mobile', $index)"
+                      (keydown)="onOtpKeydown($event, 'mobile', $index)"
+                      [class]="'flex-1 max-w-[44px] aspect-square text-center text-base font-bold rounded-xl border outline-none transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary ' + (mobileOtpVerified ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : (mobileOtpError ? 'border-red-400 bg-red-50 dark:bg-red-500/10 otp-error-anim' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white'))" />
+                  }
+                </div>
+                <div class="flex items-center justify-between mt-1.5">
+                  <p class="text-[11px] text-red-500 min-h-[14px]">{{ mobileOtpError || '' }}</p>
+                  @if (!mobileOtpVerified) {
+                    <button type="button"
+                      [disabled]="mobileResendCooldown > 0 || mobileResending"
+                      (click)="resendChannel('mobile')"
+                      class="text-[11px] font-semibold text-primary hover:underline disabled:text-slate-400 disabled:hover:no-underline disabled:cursor-not-allowed transition-colors">
+                      @if (mobileResending) {
+                        Sending...
+                      } @else if (mobileResendCooldown > 0) {
+                        Resend in {{ mobileResendCooldown }}s
+                      } @else {
+                        Resend mobile OTP
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Email OTP row (hidden when email OTP was not sent by backend) -->
+              @if (emailVerificationToken !== 'skipped') {
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                    <lucide-icon name="mail" [size]="14"></lucide-icon>
+                    {{ contactForm.value.email }}
+                  </label>
+                  @if (emailOtpVerified) {
+                    <span class="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                      <lucide-icon name="check-circle" [size]="12"></lucide-icon> Verified
+                    </span>
+                  } @else if (emailVerifying) {
+                    <span class="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+                      <lucide-icon name="loader-2" [size]="12" class="animate-spin"></lucide-icon> Verifying...
+                    </span>
+                  }
+                </div>
+                <div class="flex gap-2">
+                  @for (digit of emailOtp; track $index) {
+                    <input type="text" inputmode="numeric" maxlength="1"
+                      [attr.data-otp]="'email-' + $index"
+                      [value]="digit"
+                      [disabled]="emailOtpVerified || emailVerifying"
+                      (input)="onOtpInput($event, 'email', $index)"
+                      (keydown)="onOtpKeydown($event, 'email', $index)"
+                      [class]="'flex-1 max-w-[44px] aspect-square text-center text-base font-bold rounded-xl border outline-none transition-all focus:ring-2 focus:ring-primary/20 focus:border-primary ' + (emailOtpVerified ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : (emailOtpError ? 'border-red-400 bg-red-50 dark:bg-red-500/10 otp-error-anim' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white'))" />
+                  }
+                </div>
+                <div class="flex items-center justify-between mt-1.5">
+                  <p class="text-[11px] text-red-500 min-h-[14px]">{{ emailOtpError || '' }}</p>
+                  @if (!emailOtpVerified) {
+                    <button type="button"
+                      [disabled]="emailResendCooldown > 0 || emailResending"
+                      (click)="resendChannel('email')"
+                      class="text-[11px] font-semibold text-primary hover:underline disabled:text-slate-400 disabled:hover:no-underline disabled:cursor-not-allowed transition-colors">
+                      @if (emailResending) {
+                        Sending...
+                      } @else if (emailResendCooldown > 0) {
+                        Resend in {{ emailResendCooldown }}s
+                      } @else {
+                        Resend email OTP
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+              }
+
+              <div class="flex items-center justify-start text-xs pt-1">
+                <button type="button" (click)="contactPhase = 'entry'"
+                  class="text-slate-500 hover:text-primary transition-colors">
+                  <lucide-icon name="arrow-left" [size]="12" class="inline"></lucide-icon> Change number/email
+                </button>
+              </div>
+            }
+          </form>
+        }
+      </div>
+    }
+
+    <!-- ═════════════════ STEP 3 — GST ═════════════════ -->
+    @if (isVisible('gst')) {
+      @let gstCollapsed = isCompleted('gst') && !isCurrent('gst');
+      <div id="step-gst"
+        [class]="gstCollapsed
+          ? 'p-3 bg-slate-50/70 dark:bg-slate-800/30 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl mb-4 wizard-collapse-anim'
+          : 'bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-6 sm:p-7 shadow-sm mb-4 wizard-card-anim'">
+
+        @if (gstCollapsed) {
+          <button type="button" (click)="editStep('gst')" class="w-full flex items-center justify-between gap-3 cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
+                <lucide-icon name="check" [size]="14"></lucide-icon>
+              </div>
+              <div class="text-left">
+                <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">GST</div>
+                <div class="text-sm font-semibold text-slate-800 dark:text-white">
+                  {{ gstSkipped ? 'Skipped — no GST invoices' : gstForm.value.gstNumber }}
+                </div>
+              </div>
+            </div>
+            <span class="text-[11px] font-semibold text-primary hover:underline uppercase tracking-wider">Edit</span>
+          </button>
+        } @else {
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
+              <lucide-icon name="receipt-text" [size]="18" class="text-primary"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight">GST number</h3>
+              <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">Required if you need GST invoices for your bookings.</p>
+            </div>
+          </div>
+
+          <form [formGroup]="gstForm" (ngSubmit)="submitGst()" class="space-y-4 mt-5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">GSTIN <span class="text-slate-400 font-normal">(optional)</span></label>
+              <input formControlName="gstNumber" (input)="onGstInput($event)" type="text" maxlength="15"
+                placeholder="29ABCDE1234F1Z5"
+                class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none font-mono tracking-wider"
+                [class.!border-red-400]="gstForm.get('gstNumber')?.invalid && gstForm.get('gstNumber')?.touched && gstForm.value.gstNumber" />
+              @if (gstForm.get('gstNumber')?.errors?.['pattern'] && gstForm.get('gstNumber')?.touched) {
+                <p class="text-[11px] text-red-500 mt-1.5">Invalid GSTIN format</p>
+              }
+            </div>
+
+            @if (gstError) {
+              <div class="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
+                <lucide-icon name="alert-triangle" [size]="16" class="text-red-500 mt-0.5 shrink-0"></lucide-icon>
+                <p class="text-[12px] text-red-700 dark:text-red-300 leading-relaxed">{{ gstError }}</p>
+              </div>
+            }
+
+            <button type="submit" [disabled]="gstLookupLoading"
+              class="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:shadow-lg hover:shadow-primary/30 text-white font-semibold text-sm py-3.5 px-5 rounded-xl shadow-md shadow-primary/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+              @if (gstLookupLoading) {
+                <lucide-icon name="loader-2" [size]="16" class="animate-spin"></lucide-icon> Fetching details...
+              } @else if (gstForm.value.gstNumber) {
+                Proceed <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+              } @else {
+                Proceed — I don't have a GST number <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+              }
+            </button>
+          </form>
+        }
+      </div>
+    }
+
+    <!-- ═════════════════ STEP 4 — PAN (only if GST skipped) ═════════════════ -->
+    @if (isVisible('pan') && gstSkipped) {
+      @let panCollapsed = isCompleted('pan') && !isCurrent('pan');
+      <div id="step-pan"
+        [class]="panCollapsed
+          ? 'p-3 bg-slate-50/70 dark:bg-slate-800/30 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl mb-4 wizard-collapse-anim'
+          : 'bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-6 sm:p-7 shadow-sm mb-4 wizard-card-anim'">
+
+        @if (panCollapsed) {
+          @if (panAutoFilled) {
+            <!-- PAN auto-filled from GST — locked -->
+            <div class="w-full flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
+                  <lucide-icon name="check" [size]="14"></lucide-icon>
+                </div>
+                <div class="text-left">
+                  <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">PAN</div>
+                  <div class="text-sm font-semibold text-slate-800 dark:text-white font-mono">{{ panForm.value.panNumber }}</div>
+                </div>
+              </div>
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <lucide-icon name="lock" [size]="10"></lucide-icon> From GST
+              </span>
+            </div>
+          } @else {
+            <!-- PAN manually entered — editable -->
+            <button type="button" (click)="editStep('pan')" class="w-full flex items-center justify-between gap-3 cursor-pointer">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
+                  <lucide-icon name="check" [size]="14"></lucide-icon>
+                </div>
+                <div class="text-left">
+                  <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">PAN</div>
+                  <div class="text-sm font-semibold text-slate-800 dark:text-white font-mono">{{ panForm.value.panNumber }}</div>
+                </div>
+              </div>
+              <span class="text-[11px] font-semibold text-primary hover:underline uppercase tracking-wider">Edit</span>
+            </button>
+          }
+        } @else {
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
+              <lucide-icon name="file-text" [size]="18" class="text-primary"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight">PAN number</h3>
+              <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">We use this to verify your business identity.</p>
+            </div>
+          </div>
+
+          <form [formGroup]="panForm" (ngSubmit)="submitPan()" class="space-y-4 mt-5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">PAN</label>
+              <input formControlName="panNumber" (input)="onPanInput($event)" type="text" maxlength="10"
+                placeholder="ABCDE1234F"
+                class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none font-mono tracking-wider uppercase"
+                [class.!border-red-400]="panForm.get('panNumber')?.invalid && panForm.get('panNumber')?.touched" />
+              @if (panForm.get('panNumber')?.errors?.['pattern'] && panForm.get('panNumber')?.touched) {
+                <p class="text-[11px] text-red-500 mt-1.5">Format: 5 letters, 4 digits, 1 letter</p>
+              }
+            </div>
+
+            <button type="submit"
+              class="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:shadow-lg hover:shadow-primary/30 text-white font-semibold text-sm py-3.5 px-5 rounded-xl shadow-md shadow-primary/20 transition-all cursor-pointer">
+              Continue <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+            </button>
+          </form>
+        }
+      </div>
+    }
+
+    <!-- ═════════════════ STEP 5 — COMPANY ═════════════════ -->
+    @if (isVisible('company')) {
+      @let companyCollapsed = isCompleted('company') && !isCurrent('company');
+      <div id="step-company"
+        [class]="companyCollapsed
+          ? 'p-3 bg-slate-50/70 dark:bg-slate-800/30 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl mb-4 wizard-collapse-anim'
+          : 'bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-6 sm:p-7 shadow-sm mb-4 wizard-card-anim'">
+
+        @if (companyCollapsed) {
+          <button type="button" (click)="editStep('company')" class="w-full flex items-center justify-between gap-3 cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 check-bubble-anim">
+                <lucide-icon name="check" [size]="14"></lucide-icon>
+              </div>
+              <div class="text-left">
+                <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Company</div>
+                <div class="text-sm font-semibold text-slate-800 dark:text-white">{{ companyForm.value.companyName }}</div>
+              </div>
+            </div>
+            <span class="text-[11px] font-semibold text-primary hover:underline uppercase tracking-wider">Edit</span>
+          </button>
+        } @else {
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
+              <lucide-icon name="building-2" [size]="18" class="text-primary"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight">Company details</h3>
+              <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
+                @if (companyAutoFilled) {
+                  Verified from your GSTIN — these details are locked.
+                } @else {
+                  Tell us about your business.
+                }
+              </p>
+            </div>
+          </div>
+
+          <form [formGroup]="companyForm" (ngSubmit)="submitCompany()" class="space-y-4 mt-5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Company name</label>
+              <div class="relative">
+                <input formControlName="companyName" (input)="onCompanyNameInput($event)" type="text"
+                  [readonly]="companyAutoFilled"
+                  placeholder="ACME TRAVELS PRIVATE LIMITED"
+                  style="text-transform: uppercase;"
+                  class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                  [class.!bg-slate-50]="companyAutoFilled"
+                  [class.dark:!bg-slate-800/30]="companyAutoFilled"
+                  [class.!pr-10]="companyAutoFilled"
+                  [class.cursor-not-allowed]="companyAutoFilled"
+                  [class.!border-red-400]="companyForm.get('companyName')?.invalid && companyForm.get('companyName')?.touched" />
+                @if (companyAutoFilled) {
+                  <lucide-icon name="lock" [size]="14" class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500"></lucide-icon>
+                }
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                @if (companyAutoFilled) {
+                  <lucide-icon name="shield-check" [size]="11" class="inline text-emerald-500"></lucide-icon>
+                  Locked — verified from GSTIN database.
+                } @else {
+                  <lucide-icon name="info" [size]="11" class="inline"></lucide-icon>
+                  Shown on your dashboard and invoices — always saved in capitals.
+                }
+              </p>
+            </div>
+
+            @if (companyAutoFilled && panForm.value.panNumber) {
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">PAN number</label>
+                <div class="relative">
+                  <input type="text" readonly
+                    [value]="panForm.value.panNumber"
+                    class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 !bg-slate-50 dark:!bg-slate-800/30 text-slate-800 dark:text-white text-sm py-3 px-4 pr-10 font-mono tracking-wider cursor-not-allowed outline-none" />
+                  <lucide-icon name="lock" [size]="14" class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500"></lucide-icon>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                  <lucide-icon name="shield-check" [size]="11" class="inline text-emerald-500"></lucide-icon>
+                  Auto-derived from your GSTIN — used for tax filings.
+                </p>
+              </div>
+            }
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Company address</label>
+
+              @if (companyAutoFilled) {
+                <!-- GST-filled path: locked textarea, address from GST portal -->
+                <textarea formControlName="companyAddress" rows="3" readonly
+                  placeholder="Building, street, area, city, state, PIN"
+                  class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 !bg-slate-50 dark:!bg-slate-800/30 text-slate-800 dark:text-white text-sm py-3 px-4 pr-10 cursor-not-allowed resize-none leading-relaxed outline-none"></textarea>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-start gap-1.5">
+                  <lucide-icon name="shield-check" [size]="11" class="text-emerald-500 mt-0.5"></lucide-icon>
+                  Locked — verified from GSTIN database.
+                </p>
+              } @else {
+                <!-- Skip-GST path: Savaari autocomplete (Google Places under the hood) -->
+                <div class="relative">
+                  <p-autoComplete
+                    [(ngModel)]="companyAddressInput"
+                    [ngModelOptions]="{standalone: true}"
+                    [suggestions]="filteredCompanyAddresses"
+                    (completeMethod)="filterCompanyAddresses($event)"
+                    (onSelect)="onCompanyAddressSelect($event)"
+                    field="description"
+                    optionLabel="description"
+                    [minLength]="3"
+                    [delay]="250"
+                    placeholder="Start typing — e.g. MG Road, Bangalore"
+                    styleClass="w-full register-address-autocomplete"
+                    inputStyleClass="w-full rounded-xl border border-slate-200 dark:!border-slate-700 bg-white dark:!bg-slate-800/50 text-slate-800 dark:!text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 pr-10 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                    panelStyleClass="!bg-white dark:!bg-slate-900 !border !border-slate-200 dark:!border-slate-700 !rounded-xl !shadow-lg !mt-1 !max-h-[280px]"
+                    appendTo="body">
+                    <ng-template pTemplate="item" let-addr>
+                      <div class="flex items-start gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                        <lucide-icon
+                          [name]="addr.isFallback ? 'building-2' : 'map-pin'"
+                          [size]="15"
+                          [class]="addr.isFallback ? 'text-amber-500 shrink-0 mt-0.5' : 'text-primary shrink-0 mt-0.5'"></lucide-icon>
+                        <div class="min-w-0 flex-1">
+                          <div class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{{ addr.main_text || addr.description }}</div>
+                          @if (addr.secondary_text) {
+                            <div class="text-[11px] text-slate-400 dark:text-slate-500 truncate">{{ addr.secondary_text }}</div>
+                          }
+                        </div>
+                      </div>
+                    </ng-template>
+                    <ng-template pTemplate="empty">
+                      <div class="px-4 py-3 text-[11px] text-slate-500 dark:text-slate-400">
+                        No matches — you can keep typing your full address anyway.
+                      </div>
+                    </ng-template>
+                  </p-autoComplete>
+                  @if (companyAddressInput) {
+                    <button type="button" (click)="clearCompanyAddress()"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer z-10"
+                      aria-label="Clear address">
+                      <lucide-icon name="x" [size]="13"></lucide-icon>
+                    </button>
+                  }
+                </div>
+
+                @if (companyAddressError) {
+                  <p class="text-[11px] text-red-500 mt-1.5 flex items-start gap-1.5">
+                    <lucide-icon name="alert-circle" [size]="11" class="mt-0.5"></lucide-icon>
+                    {{ companyAddressError }}
+                  </p>
+                } @else if (selectedCompanyPlaceDetails) {
+                  <p class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1.5 flex items-start gap-1.5">
+                    <lucide-icon name="check-circle" [size]="11" class="mt-0.5"></lucide-icon>
+                    Pinpointed on the map — coordinates captured for accurate pickup routing.
+                  </p>
+                } @else if (companyAddressFallbackMode) {
+                  <p class="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5 flex items-start gap-1.5">
+                    <lucide-icon name="alert-triangle" [size]="11" class="mt-0.5"></lucide-icon>
+                    Exact street not found — you can keep typing to refine or pick a city-level match.
+                  </p>
+                } @else {
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-start gap-1.5">
+                    <lucide-icon name="map-pin" [size]="11" class="text-primary mt-0.5"></lucide-icon>
+                    Start typing to see suggestions — pick one for the most accurate address.
+                  </p>
+                }
+              }
+            </div>
+
+            <button type="submit"
+              class="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:shadow-lg hover:shadow-primary/30 text-white font-semibold text-sm py-3.5 px-5 rounded-xl shadow-md shadow-primary/20 transition-all cursor-pointer">
+              Continue <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+            </button>
+          </form>
+        }
+      </div>
+    }
+
+    <!-- ═════════════════ STEP 6 — PASSWORD ═════════════════ -->
+    @if (isVisible('password')) {
+      <div id="step-password"
+        class="bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-6 sm:p-7 shadow-sm mb-4 wizard-card-anim">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
+            <lucide-icon name="lock" [size]="18" class="text-primary"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white tracking-tight">Set your password</h3>
+            <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">Almost done — choose a secure password to protect your account.</p>
+          </div>
+        </div>
+
+        <form [formGroup]="passwordForm" (ngSubmit)="submitPassword()" class="space-y-4 mt-5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Password</label>
+            <div class="relative">
+              <input formControlName="password" [type]="showPassword ? 'text' : 'password'"
+                placeholder="At least 8 characters"
+                class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 pr-11 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                [class.!border-red-400]="passwordForm.get('password')?.invalid && passwordForm.get('password')?.touched" />
+              <button type="button" (click)="showPassword = !showPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary">
+                <lucide-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
+              </button>
+            </div>
+            <!-- Live validation checklist — turns green as each rule is satisfied -->
+            <ul class="mt-2.5 space-y-1">
+              <li class="flex items-center gap-1.5 text-[11px]" [class.text-emerald-600]="pwHasMinLength" [class.text-slate-400]="!pwHasMinLength">
+                <lucide-icon [name]="pwHasMinLength ? 'check-circle-2' : 'circle'" [size]="12"></lucide-icon>
+                At least 8 characters
+              </li>
+              <li class="flex items-center gap-1.5 text-[11px]" [class.text-emerald-600]="pwHasUpper" [class.text-slate-400]="!pwHasUpper">
+                <lucide-icon [name]="pwHasUpper ? 'check-circle-2' : 'circle'" [size]="12"></lucide-icon>
+                One uppercase letter (A-Z)
+              </li>
+              <li class="flex items-center gap-1.5 text-[11px]" [class.text-emerald-600]="pwHasLower" [class.text-slate-400]="!pwHasLower">
+                <lucide-icon [name]="pwHasLower ? 'check-circle-2' : 'circle'" [size]="12"></lucide-icon>
+                One lowercase letter (a-z)
+              </li>
+              <li class="flex items-center gap-1.5 text-[11px]" [class.text-emerald-600]="pwHasNumber" [class.text-slate-400]="!pwHasNumber">
+                <lucide-icon [name]="pwHasNumber ? 'check-circle-2' : 'circle'" [size]="12"></lucide-icon>
+                One number (0-9)
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Confirm password</label>
+            <div class="relative">
+              <input formControlName="confirmPassword" [type]="showConfirmPassword ? 'text' : 'password'"
+                placeholder="Re-enter password"
+                class="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm py-3 px-4 pr-11 transition-all placeholder:text-slate-400 shadow-sm outline-none"
+                [class.!border-red-400]="passwordForm.errors?.['mismatch'] && passwordForm.get('confirmPassword')?.touched" />
+              <button type="button" (click)="showConfirmPassword = !showConfirmPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary">
+                <lucide-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'" [size]="16"></lucide-icon>
+              </button>
+            </div>
+            @if (passwordForm.errors?.['mismatch'] && passwordForm.get('confirmPassword')?.touched) {
+              <p class="text-[11px] text-red-500 mt-1.5">Passwords don't match</p>
+            }
+          </div>
+
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <input formControlName="rememberMe" type="checkbox"
+              class="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/20 cursor-pointer" />
+            <span class="text-sm text-slate-600 dark:text-slate-300">Remember me on this device</span>
+          </label>
+
+          <button type="submit" [disabled]="isSubmitting"
+            class="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-cyan-500 hover:shadow-lg hover:shadow-primary/30 text-white font-semibold text-sm py-3.5 px-5 rounded-xl shadow-md shadow-primary/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            @if (isSubmitting) {
+              <lucide-icon name="loader-2" [size]="16" class="animate-spin"></lucide-icon> Creating your account...
+            } @else {
+              Create account <lucide-icon name="arrow-right" [size]="16"></lucide-icon>
+            }
+          </button>
+
+          <p class="text-[11px] text-center text-slate-400 dark:text-slate-500">
+            By creating an account you agree to our
+            <a routerLink="/terms-conditions" class="text-primary hover:underline">Terms</a> and
+            <a routerLink="/privacy-policy" class="text-primary hover:underline">Privacy Policy</a>.
+          </p>
+        </form>
+      </div>
+    }
+
+    <!-- Footer link -->
+    <p class="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+      Already have an account?
+      <a routerLink="/login" class="text-primary font-semibold hover:underline">Sign in</a>
+    </p>
+  </div>
+  </div>
+</div>

@@ -1,0 +1,268 @@
+import { Injectable, inject } from '@angular/core';
+import { Observable, of, map, catchError, tap } from 'rxjs';
+import { ApiService } from './api.service';
+import { environment } from '../../../environments/environment';
+import { DEMO_ADDRESS_SUGGESTIONS, DEMO_PLACE_DETAILS } from '../demo/demo-data';
+
+/**
+ * Savaari Address Autocomplete Service.
+ *
+ * Replaces Google Maps Places API with Savaari's own endpoints:
+ *   1. GET /autocomplete/info.php — search addresses by query
+ *   2. GET /place_id/info.php — get place details by place_id
+ *
+ * Confirmed by backend team (March 2026):
+ *   - rsource = b2b
+ *   - token = 32-char random session token; expires after 20 min or when place_id is called
+ *     (if place_id response includes `token`, that value is used until the next expiry/place_id)
+ *   - request = 'from' | 'to'
+ *   - query aligned with city and state if city is set
+ *   - lat/lng/city filled on booking page (3rd step)
+ */
+
+export interface AddressSuggestion {
+  description: string;     // Full address text
+  place_id: string;        // Savaari place ID (use in place_id API), or 'city_{id}' for fallback
+  main_text?: string;      // Primary text (e.g. street name)
+  secondary_text?: string; // Secondary text (e.g. city, state)
+  latlng?: string;         // Direct lat,lng from fallback results (e.g. "12.966,77.606")
+  isFallback?: boolean;    // true if from fallback (city-level, no place_id API needed)
+}
+
+export interface PlaceDetails {
+  place_id: string;
+  name: string;            // place_name from API (e.g. "Koramangala") — used as locality
+  formatted_address: string;
+  lat: number;
+  lng: number;
+  aliasSourceCityId: number;  // source_city_map_info.city_id — for booking create
+  aliasDestCityId: number;    // destination_city_map_info.city_id — for booking create
+  sublocality: string;        // sublocality_level_1 from address_components — used as dropLocality
+  city: string;              // locality from address_components — used for registration
+  state: string;             // administrative_area_level_1 from address_components
+}
+
+@Injectable({ providedIn: 'root' })
+export class AddressAutocompleteService {
+
+  private static readonly TOKEN_TTL_MS = 20 * 60 * 1000;
+  private static readonly TOKEN_LENGTH = 32;
+
+  private api = inject(ApiService);
+
+  /** Current autocomplete/place_id session token; null forces a new one on next use. */
+  private sessionToken: string | null = null;
+  private sessionTokenIssuedAt: number | null = null;
+
+  /**
+   * 32-character hex string from secure random bytes.
+   */
+  private generateToken32(): string {
+    const bytes = new Uint8Array(AddressAutocompleteService.TOKEN_LENGTH / 2);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  private isSessionExpired(): boolean {
+    if (!this.sessionToken || this.sessionTokenIssuedAt == null) return true;
+    return Date.now() - this.sessionTokenIssuedAt > AddressAutocompleteService.TOKEN_TTL_MS;
+  }
+
+  /**
+   * Token for autocomplete and place_id: reused until 20 min elapse or place_id response rotates it.
+   */
+  private getSessionToken(): string {
+    if (this.isSessionExpired()) {
+      this.sessionToken = this.generateToken32();
+      this.sessionTokenIssuedAt = Date.now();
+    }
+    return this.sessionToken!;
+  }
+
+  private clearSessionToken(): void {
+    this.sessionToken = null;
+    this.sessionTokenIssuedAt = null;
+  }
+
+  /**
+   * After place_id: server may return a new `token`; otherwise invalidate so the next call gets a fresh 32-char token.
+   */
+  private applyTokenFromPlaceResponse(response: any): void {
+    const t = response?.token;
+    if (typeof t === 'string' && t.length > 0) {
+      this.sessionToken = t;
+      this.sessionTokenIssuedAt = Date.now();
+    } else {
+      this.clearSessionToken();
+    }
+  }
+
+  /**
+   * Search addresses using Savaari autocomplete API.
+   *
+   * @param query User-typed text
+   * @param request 'from' or 'to'
+   * @param city Optional city name (user-selected city on booking page)
+   * @param lat Optional latitude
+   * @param lng Optional longitude
+   */
+  searchAddress(query: string, request: 'from' | 'to' = 'from', city?: string, lat?: string, lng?: string): Observable<AddressSuggestion[]> {
+    if (!query || query.length < 2) return of([]);
+    if (environment.demoMode) {
+      const q = query.toLowerCase();
+      const filtered = DEMO_ADDRESS_SUGGESTIONS.filter(s => s.address.toLowerCase().includes(q) || s.main_text.toLowerCase().includes(q));
+      return of((filtered.length ? filtered : DEMO_ADDRESS_SUGGESTIONS).map(s => ({
+        description: s.address,
+        place_id: s.place_id,
+        main_text: s.main_text,
+        secondary_text: s.secondary_text,
+        latlng: s.latlng,
+        isFallback: false,
+      })));
+    }
+
+    const token = this.getSessionToken();
+    query = city ? `${city} ${query.trim()}` : query.trim();
+    query = query.trim();
+    if (!query) return of([]);
+
+    return this.api.addressGet<any>('autocomplete/info.php', {
+      query,
+      lat: lat || '',
+      lng: lng || '',
+      city: city || '',
+      request,
+      token,
+      rsource: 'b2b',
+    }).pipe(
+      tap(response => {
+        if (!environment.production) {
+          console.log('[Autocomplete] raw response:', response?.source, response);
+        }
+      }),
+      map(response => this.parseAutocompleteResponse(response)),
+      catchError(err => {
+        console.error('[Autocomplete] API error:', err?.status, err?.message);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get place details using Savaari place_id API.
+   *
+   * @param placeId Place ID from autocomplete response
+   * @param request 'from' or 'to'
+   */
+  getPlaceDetails(placeId: string, request: 'from' | 'to' = 'from'): Observable<PlaceDetails | null> {
+    if (!placeId) return of(null);
+    if (environment.demoMode) {
+      const d = DEMO_PLACE_DETAILS;
+      return of({
+        place_id: placeId,
+        name: d.place_name,
+        formatted_address: d.formattedAddress,
+        lat: d.location.lat,
+        lng: d.location.long,
+        aliasSourceCityId: d.source_city_map_info.city_id,
+        aliasDestCityId: d.destination_city_map_info.city_id,
+        sublocality: d.place_name,
+        city: 'Bangalore',
+        state: 'Karnataka',
+      });
+    }
+
+    const token = this.getSessionToken();
+
+    return this.api.addressGet<any>('place_id/info.php', {
+      place_id: placeId,
+      request,
+      token,
+      rsource: 'b2b',
+    }).pipe(
+      tap((response) => this.applyTokenFromPlaceResponse(response)),
+      map((response) => this.parsePlaceResponse(response))
+    );
+  }
+
+  /**
+   * Parse autocomplete API response.
+   *
+   * API has 3 response modes (tested April 2026):
+   *   1. source:"Redis"      → {response: [{place_id, address, main_text, secondary_text}]}
+   *   2. source:"Google_api" → {response: [{place_id, address, main_text, secondary_text}]}
+   *      (or empty: {query, token, cacheKey, source} with NO response array = cache miss)
+   *   3. source:"fallback"   → {response: [{city_id, address, main_text, secondary_text, latlng}]}
+   *      (city-level results — no place_id, but has latlng like "12.966,77.606")
+   */
+  private parseAutocompleteResponse(response: any): AddressSuggestion[] {
+    if (!response) return [];
+
+    const predictions = response.response || response.predictions || response.data || response.results;
+    if (!Array.isArray(predictions)) return [];
+
+    const source = response.source || '';
+
+    return predictions.map((p: any) => {
+      const placeId = p.place_id || p.placeId || '';
+      const cityId = p.city_id;
+      const isFallback = !placeId && !!cityId;
+
+      return {
+        description: p.address || p.description || p.formatted_address || '',
+        place_id: placeId || (cityId ? `city_${cityId}` : ''),
+        main_text: p.main_text || p.name || '',
+        secondary_text: p.secondary_text || '',
+        latlng: p.latlng || '',
+        isFallback,
+      };
+    }).filter((s: AddressSuggestion) => s.description && s.place_id);
+  }
+
+  /**
+   * Parse place_id API response.
+   *
+   * Confirmed response format (tested April 2026):
+   * { "status": "OK", "placeId": "...", "place_name": "...", "formattedAddress": "...",
+   *   "location": { "lat": 12.96, "long": 77.57 },
+   *   "source_city_map_info": { "city_id": 377, ... },
+   *   "destination_city_map_info": { "city_id": 1076, ... },
+   *   "token": "..." }
+   */
+  private parsePlaceResponse(response: any): PlaceDetails | null {
+    if (!response) return null;
+
+    const location = response.location || response.geometry?.location || {};
+
+    // Extract sublocality from address_components (used as dropLocality in booking create)
+    let sublocality = '';
+    let city = '';
+    let state = '';
+    const components = response.address_components || [];
+    for (const comp of components) {
+      const types: string[] = comp.types || [];
+      if (!sublocality && (types.includes('sublocality_level_1') || types.includes('sublocality'))) {
+        sublocality = comp.longText || comp.long_name || '';
+      }
+      if (!city && (types.includes('locality') || types.includes('administrative_area_level_2'))) {
+        city = comp.longText || comp.long_name || '';
+      }
+      if (!state && types.includes('administrative_area_level_1')) {
+        state = comp.longText || comp.long_name || '';
+      }
+    }
+
+    return {
+      place_id: response.placeId || response.place_id || '',
+      name: response.place_name || response.name || response.addressLocality || '',
+      formatted_address: response.formattedAddress || response.formatted_address || '',
+      lat: Number(location.lat) || 0,
+      lng: Number(location.long || location.lng) || 0,
+      aliasSourceCityId: Number(response.source_city_map_info?.city_id) || 0,
+      aliasDestCityId: Number(response.destination_city_map_info?.city_id) || 0,
+      sublocality: sublocality || response.addressLocality || '',
+      city,
+      state,
+    };
+  }
+}

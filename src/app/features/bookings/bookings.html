@@ -1,0 +1,1098 @@
+<!-- Main Wrapper -->
+<div class="bg-gray-50 dark:bg-slate-900 min-h-screen flex flex-col text-slate-800 dark:text-slate-100 font-sans antialiased">
+
+    <!-- Breadcrumb -->
+    <div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
+            <ol class="flex items-center space-x-2 text-xs">
+                <li><a class="text-slate-400 hover:text-primary cursor-pointer" routerLink="/dashboard">Home</a></li>
+                <li class="text-slate-300">/</li>
+                <li><span class="text-primary font-medium">Bookings</span></li>
+            </ol>
+        </div>
+    </div>
+
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full">
+
+        <!-- Top Section: Title + Wallet -->
+        <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                <button (click)="goBack()"
+                    class="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all shadow-sm group cursor-pointer shrink-0">
+                    <lucide-icon name="arrow-left" [size]="14" class="sm:!w-4 sm:!h-4 group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
+                </button>
+                <h1 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Manage Bookings</h1>
+            </div>
+            <!-- Wallet Balance Card -->
+            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md sm:rounded-lg px-2 sm:px-3 py-1 sm:py-2 flex items-center gap-2 sm:gap-3 shadow-sm shrink-0">
+                <div>
+                    <p class="text-[7px] sm:text-[9px] text-slate-400 font-medium uppercase tracking-wider leading-tight">Balance</p>
+                    <p class="text-xs sm:text-base font-black text-slate-900 dark:text-white leading-tight">₹{{ walletBalance | number:'1.0-0' }}</p>
+                </div>
+                <button routerLink="/wallet"
+                    class="px-2.5 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-xs font-bold rounded-md text-white border-0 transition cursor-pointer shadow-sm"
+                    style="background-color: #0096c7;">
+                    + Top up
+                </button>
+            </div>
+        </div>
+
+        <!-- Calendar Strip with Month/Year + Navigation -->
+        <div class="mb-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 pt-1.5 sm:pt-2.5 px-2 sm:px-3 pb-2 sm:pb-3 bg-white dark:bg-slate-800">
+            <!-- Month/Year header + arrows -->
+            <div class="flex items-center justify-between mb-1.5 sm:mb-2 relative">
+                <div class="relative month-picker-area">
+                    <button (click)="$event.stopPropagation(); toggleMonthPicker()"
+                        class="flex items-center gap-1 sm:gap-1.5 text-sm sm:text-base font-bold text-slate-800 dark:text-white hover:text-primary transition cursor-pointer bg-transparent border-0 p-0">
+                        {{ calendarMonthLabel }}
+                        <lucide-icon name="chevron-down" [size]="12" class="text-primary/50 sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
+                    </button>
+                    <!-- Month Picker Dropdown (small, positioned under label) -->
+                    <div *ngIf="showMonthPicker" (click)="$event.stopPropagation()"
+                        class="month-picker-area absolute top-full left-0 mt-2 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-3 z-30">
+                        <div class="flex items-center justify-between mb-3">
+                            <button (click)="pickerYear = pickerYear - 1"
+                                class="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary cursor-pointer bg-white">
+                                <lucide-icon name="chevron-left" [size]="14"></lucide-icon>
+                            </button>
+                            <span class="text-sm font-bold text-slate-800 dark:text-white">{{ pickerYear }}</span>
+                            <button (click)="pickerYear = pickerYear + 1"
+                                class="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary cursor-pointer bg-white">
+                                <lucide-icon name="chevron-right" [size]="14"></lucide-icon>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button *ngFor="let m of monthNames; let i = index"
+                                (click)="jumpToMonth(i)"
+                                class="py-2 text-xs font-semibold rounded-lg transition cursor-pointer border-0"
+                                [ngClass]="isCurrentMonth(i) ? 'bg-primary text-white shadow-sm' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-primary/10'">
+                                {{ m }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button (click)="shiftCalendar(-7)"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg border border-primary/20 bg-primary/5 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition cursor-pointer">
+                        <lucide-icon name="chevron-left" [size]="14" class="sm:!w-4 sm:!h-4"></lucide-icon>
+                    </button>
+                    <button (click)="shiftCalendar(7)"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg border border-primary/20 bg-primary/5 flex items-center justify-center text-primary hover:bg-primary hover:text-white transition cursor-pointer">
+                        <lucide-icon name="chevron-right" [size]="14" class="sm:!w-4 sm:!h-4"></lucide-icon>
+                    </button>
+                </div>
+            </div>
+            <!-- Day cells -->
+            <div class="grid grid-cols-7 gap-1 sm:gap-1.5">
+                <div *ngFor="let day of calendarDays"
+                    class="bg-white dark:bg-slate-700 border rounded-lg sm:rounded-xl py-1.5 sm:py-2.5 px-0.5 sm:px-1.5 text-center cursor-pointer transition-all hover:shadow-sm"
+                    [ngClass]="{
+                        'border-primary/50 shadow-sm': day.isToday && !dateFilter,
+                        'border-primary border-2 shadow-md': dateFilter && dateFilter.getTime() === day.date.getTime(),
+                        'border-amber-300': !day.isToday && day.hasPendingPayment && !(dateFilter && dateFilter.getTime() === day.date.getTime()),
+                        'border-slate-200 dark:border-slate-600': !day.isToday && !day.hasPendingPayment && !(dateFilter && dateFilter.getTime() === day.date.getTime())
+                    }"
+                    (click)="filterByDate(day.date)">
+                    <p class="text-[8px] sm:text-[10px] font-bold uppercase tracking-wider mb-0.5 sm:mb-1"
+                        [ngClass]="{
+                            'text-primary': (day.isToday && !dateFilter) || (dateFilter && dateFilter.getTime() === day.date.getTime()),
+                            'text-amber-600': !day.isToday && day.hasPendingPayment && !(dateFilter && dateFilter.getTime() === day.date.getTime()),
+                            'text-slate-400': !day.isToday && !day.hasPendingPayment && !(dateFilter && dateFilter.getTime() === day.date.getTime())
+                        }">
+                        {{ day.isToday ? 'TODAY' : day.dayLabel }}
+                    </p>
+                    <p class="text-base sm:text-xl font-black leading-none text-slate-800 dark:text-white">
+                        {{ day.dateNum }}
+                    </p>
+                    <p *ngIf="day.pendingAmount > 0" class="mt-1 sm:mt-2 text-[7px] sm:text-xs font-extrabold text-amber-700 leading-none">
+                        -₹{{ day.pendingAmount | number:'1.0-0' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Charges Banner -->
+        <div *ngIf="weeklyCharges > 0"
+            class="flex items-center gap-2 sm:gap-4 px-2.5 sm:px-4 py-1.5 sm:py-2 mb-2 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <lucide-icon name="calendar-clock" [size]="12" class="text-primary sm:!w-4 sm:!h-4"></lucide-icon>
+                </div>
+                <div>
+                    <p class="text-[7px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-tight">This week</p>
+                    <p class="text-xs sm:text-base font-black text-slate-900 dark:text-white leading-tight">₹{{ weeklyCharges | number:'1.0-0' }}</p>
+                </div>
+            </div>
+            <div *ngIf="weeklyShortfall > 0" class="h-5 sm:h-6 w-px bg-slate-200 dark:bg-slate-600"></div>
+            <div *ngIf="weeklyShortfall > 0" class="flex items-center gap-1 sm:gap-2">
+                <lucide-icon name="alert-triangle" [size]="11" class="text-amber-500 shrink-0 sm:!w-[14px] sm:!h-[14px]"></lucide-icon>
+                <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">Add <strong class="text-amber-600 dark:text-amber-400">₹{{ weeklyShortfall | number:'1.0-0' }}</strong> to avoid cancellations</p>
+            </div>
+        </div>
+
+        <!-- Tabs: Upcoming / Completed / Cancelled + Search -->
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-1 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2 sm:pb-0">
+            <div class="flex items-center gap-1 overflow-x-auto">
+                <button (click)="setActiveTab('upcoming')"
+                    class="px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium transition-all border-b-2 cursor-pointer whitespace-nowrap"
+                    [ngClass]="activeTab === 'upcoming' ? 'border-primary text-primary font-bold' : 'border-transparent text-slate-400 hover:text-slate-600'">
+                    Upcoming
+                    <span *ngIf="upcomingBookings.length > 0" class="ml-1 text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded-full font-bold">{{ upcomingBookings.length }}</span>
+                </button>
+                <button (click)="setActiveTab('completed')"
+                    class="px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium transition-all border-b-2 cursor-pointer whitespace-nowrap"
+                    [ngClass]="activeTab === 'completed' ? 'border-primary text-primary font-bold' : 'border-transparent text-slate-400 hover:text-slate-600'">
+                    Completed
+                </button>
+                <button (click)="setActiveTab('cancelled')"
+                    class="px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium transition-all border-b-2 cursor-pointer whitespace-nowrap"
+                    [ngClass]="activeTab === 'cancelled' ? 'border-primary text-primary font-bold' : 'border-transparent text-slate-400 hover:text-slate-600'">
+                    Cancelled
+                </button>
+                <!-- DEMO: Price Requests tab -->
+                <button (click)="setActiveTab('priceRequests')"
+                    class="px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium transition-all border-b-2 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
+                    [ngClass]="activeTab === 'priceRequests' ? 'border-primary text-primary font-bold' : 'border-transparent text-slate-400 hover:text-slate-600'">
+                    <lucide-icon name="indian-rupee" [size]="13"></lucide-icon>
+                    Price Requests
+                    <span *ngIf="pendingPriceRequestsCount > 0" class="ml-0.5 text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded-full font-bold">
+                        {{ pendingPriceRequestsCount }}
+                    </span>
+                </button>
+                <!-- Active date filter chip -->
+                <div *ngIf="dateFilter" class="ml-1 flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold whitespace-nowrap">
+                    {{ dateFilter | date:'dd MMM' }}
+                    <button (click)="dateFilter = null; cdr.markForCheck()" class="hover:text-red-500 cursor-pointer bg-transparent border-0 p-0">
+                        <lucide-icon name="x" [size]="12"></lucide-icon>
+                    </button>
+                </div>
+            </div>
+            <!-- Search (right-aligned on desktop, full width on mobile) -->
+            <div class="sm:ml-auto flex items-center gap-1.5">
+                <div class="relative group flex-1 sm:flex-none">
+                    <lucide-icon name="search" [size]="13" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></lucide-icon>
+                    <input [(ngModel)]="searchQuery" type="text" placeholder="Search by Trip ID, name, city..."
+                        class="pl-8 pr-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 w-full sm:w-52 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-slate-400 placeholder:text-xs" />
+                </div>
+                <button (click)="refreshBookings()"
+                    class="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 hover:border-primary/30 transition cursor-pointer shrink-0"
+                    title="Refresh bookings">
+                    <lucide-icon name="refresh-cw" [size]="13" class="text-slate-400"></lucide-icon>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="isLoading && activeTab !== 'priceRequests'" class="space-y-2">
+            <div *ngFor="let i of [1,2,3]"
+                class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 animate-pulse flex items-center gap-4">
+                <div class="w-12 space-y-1.5">
+                    <div class="h-6 bg-slate-200 dark:bg-slate-600 rounded"></div>
+                    <div class="h-3 bg-slate-100 dark:bg-slate-700 rounded"></div>
+                </div>
+                <div class="flex-1 space-y-1.5">
+                    <div class="h-4 w-40 bg-slate-200 dark:bg-slate-600 rounded"></div>
+                    <div class="h-3 w-56 bg-slate-100 dark:bg-slate-700 rounded"></div>
+                </div>
+                <div class="w-20 space-y-1.5">
+                    <div class="h-5 bg-slate-200 dark:bg-slate-600 rounded"></div>
+                    <div class="h-3 bg-slate-100 dark:bg-slate-700 rounded"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading && filteredBookings.length === 0 && activeTab !== 'priceRequests'" class="text-center py-8 sm:py-16">
+            <lucide-icon name="inbox" [size]="36" class="mx-auto text-slate-300 dark:text-slate-600 mb-3"></lucide-icon>
+            <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400">No {{ activeTab }} bookings</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Bookings you make will appear here.</p>
+        </div>
+
+        <!-- DEMO: Price Requests tab content -->
+        <div *ngIf="activeTab === 'priceRequests'" class="space-y-3">
+
+            <!-- Just-submitted banner -->
+            <div *ngIf="highlightedRequestId" class="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-3 sm:p-4 flex items-start gap-3">
+                <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                    <lucide-icon name="check" [size]="16" class="text-white"></lucide-icon>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-bold text-emerald-900 dark:text-emerald-200">Aapki request submit ho gayi hai!</h4>
+                    <p class="text-xs text-emerald-700 dark:text-emerald-300/80 mt-0.5">
+                        We'll update you within 20 minutes. Reference: <span class="font-bold">{{ highlightedRequestId }}</span>
+                    </p>
+                </div>
+                <button (click)="highlightedRequestId = null; cdr.markForCheck()"
+                        class="text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 transition cursor-pointer p-0.5">
+                    <lucide-icon name="x" [size]="14"></lucide-icon>
+                </button>
+            </div>
+
+            <!-- Empty state -->
+            <div *ngIf="priceRequests.length === 0" class="text-center py-8 sm:py-16">
+                <lucide-icon name="indian-rupee" [size]="36" class="mx-auto text-slate-300 dark:text-slate-600 mb-3"></lucide-icon>
+                <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400">No price requests yet</h3>
+                <p class="text-xs text-slate-400 mt-0.5 max-w-xs mx-auto">Propose a fare from the payment screen and your requests will show up here.</p>
+            </div>
+
+            <!-- Request cards -->
+            <div *ngFor="let req of priceRequests; trackBy: trackPriceRequest"
+                 class="bg-white dark:bg-slate-800 rounded-xl border transition-all hover:shadow-md p-3 sm:p-4"
+                 [class.border-slate-200]="req.id !== highlightedRequestId"
+                 [class.dark:border-slate-700]="req.id !== highlightedRequestId"
+                 [class.border-primary]="req.id === highlightedRequestId"
+                 [class.ring-2]="req.id === highlightedRequestId"
+                 [class.ring-primary/20]="req.id === highlightedRequestId"
+                 [style.border-left]="
+                    req.status === 'accepted' ? '6px solid #10b981' :
+                    req.isExpired ? '6px solid #94a3b8' :
+                    '6px solid #f59e0b'">
+
+                <div class="flex flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-4">
+
+                    <!-- LEFT: Trip details -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span class="text-[10px] font-bold uppercase tracking-wide text-slate-400">{{ req.id }}</span>
+                            <!-- Status badge -->
+                            <span *ngIf="req.status === 'accepted'"
+                                  class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                                <lucide-icon name="check-circle" [size]="10"></lucide-icon>
+                                Accepted
+                            </span>
+                            <span *ngIf="req.status === 'pending' && !req.isExpired"
+                                  class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                                <lucide-icon name="clock" [size]="10"></lucide-icon>
+                                Pending
+                            </span>
+                            <span *ngIf="req.isExpired"
+                                  class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
+                                Expired
+                            </span>
+                            <span *ngIf="req.autoConfirm"
+                                  class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                Auto-confirm
+                            </span>
+                        </div>
+
+                        <!-- Route -->
+                        <div class="flex items-start gap-2">
+                            <div class="flex flex-col items-center pt-1.5 shrink-0">
+                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                <div class="w-px h-3 bg-slate-300 dark:bg-slate-600"></div>
+                                <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                            </div>
+                            <div class="min-w-0 text-sm">
+                                <div class="font-bold text-slate-800 dark:text-slate-100 truncate">{{ req.route.from }}</div>
+                                <div class="font-bold text-slate-800 dark:text-slate-100 truncate mt-0.5">{{ req.route.to }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Meta -->
+                        <div class="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                            <span class="inline-flex items-center gap-1">
+                                <lucide-icon name="calendar" [size]="11"></lucide-icon>
+                                {{ req.pickupDateTime | date:'dd MMM, h:mm a' }}
+                            </span>
+                            <span class="inline-flex items-center gap-1">
+                                <lucide-icon name="car" [size]="11"></lucide-icon>
+                                {{ req.carType }}
+                            </span>
+                            <span class="inline-flex items-center gap-1">
+                                <lucide-icon name="route" [size]="11"></lucide-icon>
+                                {{ req.tripType }}
+                            </span>
+                            <span class="inline-flex items-center gap-1">
+                                <lucide-icon name="clock" [size]="11"></lucide-icon>
+                                Submitted {{ req.submittedLabel }}
+                            </span>
+                        </div>
+
+                        <!-- Note -->
+                        <div *ngIf="req.note" class="mt-2 text-xs text-slate-600 dark:text-slate-300 italic bg-slate-50 dark:bg-slate-700/40 px-2 py-1.5 rounded border-l-2 border-slate-300 dark:border-slate-600">
+                            "{{ req.note }}"
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Fare + countdown -->
+                    <div class="sm:w-44 sm:border-l sm:pl-4 sm:border-slate-200 sm:dark:border-slate-700 flex sm:flex-col items-end sm:items-stretch justify-between gap-2 sm:gap-1.5">
+                        <div class="text-right sm:text-left">
+                            <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Proposed Fare</div>
+                            <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight mt-0.5">₹{{ req.proposedFare | number }}</div>
+                            <div class="text-[10px] text-slate-400 line-through mt-0.5">Original ₹{{ req.originalFare | number }}</div>
+                        </div>
+
+                        <!-- Accepted: vendor's response fare -->
+                        <div *ngIf="req.status === 'accepted'" class="rounded-md bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1.5 text-right sm:text-left">
+                            <div class="text-[9px] font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Driver matched at</div>
+                            <div class="text-sm font-bold text-emerald-700 dark:text-emerald-300">₹{{ req.vendorResponseFare | number }}</div>
+                        </div>
+
+                        <!-- Pending: countdown -->
+                        <div *ngIf="req.status === 'pending' && !req.isExpired" class="text-right sm:text-left w-full">
+                            <div class="flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 justify-end sm:justify-start">
+                                <lucide-icon name="hourglass" [size]="11"></lucide-icon>
+                                {{ req.countdownLabel }}
+                            </div>
+                            <div class="mt-1 h-1 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all"
+                                     [style.width.%]="req.countdownPercent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Expired -->
+                        <div *ngIf="req.isExpired && req.status !== 'accepted'" class="text-right sm:text-left text-[11px] font-semibold text-slate-500">
+                            No driver matched
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Cards -->
+        <div *ngIf="!isLoading && activeTab !== 'priceRequests'" class="space-y-3">
+            <div *ngFor="let booking of filteredBookings"
+                class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 transition-all hover:shadow-md"
+                [style.border-left]="
+                    activeTab === 'upcoming' && booking.paymentOption === 1 ? '6px solid #0ea5e9' :
+                    activeTab === 'upcoming' && getBalanceDue(booking) > 0 ? '6px solid #f59e0b' :
+                    activeTab === 'upcoming' && getBalanceDue(booking) <= 0 && booking.prePayment ? '6px solid #10b981' :
+                    activeTab === 'completed' ? '6px solid #10b981' :
+                    activeTab === 'cancelled' ? '6px solid #ef4444' :
+                    '6px solid #94a3b8'
+                ">
+
+                <!-- Main Row — Desktop: single horizontal row | Mobile: compact 2-row -->
+                <div class="cursor-pointer" (click)="toggleDetails(booking.bookingId)">
+
+                    <!-- DESKTOP layout (hidden on mobile) -->
+                    <div class="hidden sm:flex items-center px-6 py-5 gap-6">
+                        <!-- Date Block -->
+                        <div class="w-16 shrink-0 text-center">
+                            <p class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white leading-none">
+                                {{ booking.pickupDate ? (booking.pickupDate | date:'dd') : '--' }}
+                            </p>
+                            <p class="text-[11px] font-bold uppercase tracking-wider mt-1"
+                                [ngClass]="activeTab === 'upcoming' ? 'text-primary' : 'text-slate-400'">
+                                {{ booking.pickupDate ? (booking.pickupDate | date:'MMM') : '' }}
+                            </p>
+                            <p class="text-xs text-slate-400 font-mono mt-0.5">{{ booking.pickupTime || '' }}</p>
+                        </div>
+                        <!-- Route + Details -->
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white truncate leading-tight"
+                                [title]="booking.viaLine ? (booking.routeLine + ' (' + booking.viaLine + ')') : booking.routeLine">
+                                {{ booking.routeLine || booking.itinerary || booking.sourceCity || '—' }}
+                            </h3>
+                            <p *ngIf="booking.viaLine" class="text-[11px] italic text-slate-500 dark:text-slate-400 truncate mt-0.5"
+                                [title]="booking.viaLine">
+                                {{ booking.viaLine }}
+                            </p>
+                            <!-- Meta row: Trip Type · Package KM · Trip ID -->
+                            <p class="text-[11px] mt-1 truncate">
+                                <span *ngIf="getTripTypeLabel(booking.tripType) as ttl"
+                                    class="font-semibold text-slate-700 dark:text-slate-200">{{ ttl }}</span>
+                                <span *ngIf="getPackageKmLabel(booking) as km"
+                                    class="text-slate-500 dark:text-slate-400"> · {{ km }}</span>
+                                <span *ngIf="booking.reservationId"
+                                    class="text-slate-500 dark:text-slate-400"> · Trip ID
+                                    <span class="font-mono text-slate-600 dark:text-slate-300">{{ booking.reservationId }}</span>
+                                </span>
+                            </p>
+                            <p class="text-sm text-slate-400 mt-1.5 truncate">
+                                {{ booking.customerName }}
+                                <span *ngIf="booking.carName"> · {{ booking.carName }}</span>
+                                <span *ngIf="booking.pickupDate"> · {{ booking.pickupDate | date:'dd MMM' }}, {{ booking.pickupTime }}</span>
+                            </p>
+                            <p *ngIf="booking.bookedAt" class="text-[11px] text-slate-400/70 mt-0.5">Booked on {{ booking.bookedAt | date:'dd MMM yyyy, hh:mm a' }}</p>
+                        </div>
+                        <!-- Payment Info (center — lg only) -->
+                        <div class="hidden lg:flex flex-col items-center w-52 shrink-0">
+                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payment method</p>
+                            <p class="text-xs font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">{{ getPaymentMethodLabel(booking) }}</p>
+                            <!-- Payment status badges — only relevant while booking is still upcoming.
+                                 Hidden in Completed / Cancelled tabs because the warnings (auto-debit due,
+                                 "rest paid to driver", etc.) describe an active payment state that no longer
+                                 applies once the trip has wrapped up or been cancelled. -->
+                            <ng-container *ngIf="activeTab === 'upcoming'">
+                                <div *ngIf="getAutoDebitCountdown(booking) as countdown"
+                                    class="mt-2 flex items-center group/debit relative">
+                                    <span class="text-sm font-extrabold leading-tight"
+                                        [ngClass]="{'text-red-700': countdown === 'Due now', 'text-amber-800': countdown !== 'Due now'}">
+                                        -₹{{ getBalanceDue(booking) | number:'1.0-0' }} {{ countdown }}
+                                    </span>
+                                    <div class="relative ml-1.5">
+                                        <lucide-icon name="alert-triangle" [size]="14" class="cursor-help"
+                                            [ngClass]="{'text-red-400': countdown === 'Due now', 'text-amber-500': countdown !== 'Due now'}">
+                                        </lucide-icon>
+                                        <div class="absolute bottom-full right-0 mb-2 w-64 bg-slate-800 text-white text-[11px] leading-normal rounded-lg px-4 py-3 shadow-xl opacity-0 invisible group-hover/debit:opacity-100 group-hover/debit:visible transition-all z-50 pointer-events-none">
+                                            <p class="font-bold mb-1.5 text-xs">Auto-debit from wallet</p>
+                                            <p class="text-white/80">Insufficient wallet balance will auto-cancel this booking.</p>
+                                            <div class="absolute top-full right-4 border-4 border-transparent border-t-slate-800"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1"
+                                    class="mt-2 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
+                                    <lucide-icon name="check-circle" [size]="13" class="text-emerald-500"></lucide-icon>
+                                    <span class="text-[10px] font-bold text-emerald-600 leading-tight">No dues</span>
+                                </div>
+                                <div *ngIf="booking.paymentOption === 1 && booking.prePayment"
+                                    class="mt-2 flex items-center gap-1.5 bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1.5 max-w-[200px]">
+                                    <lucide-icon name="info" [size]="13" class="text-sky-500 shrink-0"></lucide-icon>
+                                    <span class="text-[10px] font-bold text-sky-600 leading-tight truncate">Rest paid to driver</span>
+                                </div>
+                            </ng-container>
+                        </div>
+                        <!-- Amount -->
+                        <div class="w-28 shrink-0 text-right">
+                            <p class="text-xl font-black text-slate-800 dark:text-white leading-tight">₹{{ booking.fare | number:'1.0-0' }}</p>
+                            <!-- Payment-state breakdown (Balance due / Fully paid / amount paid) only
+                                 makes sense while the booking is still live. After completion the trip
+                                 is wrapped up and these labels become noise next to the gross fare. -->
+                            <ng-container *ngIf="activeTab === 'upcoming'">
+                                <p *ngIf="getBalanceDue(booking) > 0" class="text-[11px] text-slate-400 mt-1">
+                                    Balance due:<br/>
+                                    <span class="font-semibold">₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
+                                    <!-- Option 3 (Zero Cash): the balance is fare-paid PLUS the 20%
+                                         refundable buffer. Show the breakdown so the agent understands
+                                         why this number is higher than (fare - paid). -->
+                                    <span *ngIf="booking.paymentOption === 3 && booking.bufferAmount" class="block text-[10px] text-violet-500 font-medium mt-0.5">
+                                        ₹{{ (booking.fare - (booking.prePayment || 0)) | number:'1.0-0' }} + ₹{{ booking.bufferAmount | number:'1.0-0' }} buffer
+                                    </span>
+                                </p>
+                                <p *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1" class="text-[11px] text-emerald-500 font-semibold mt-1">
+                                    Fully paid
+                                </p>
+                                <p *ngIf="booking.paymentOption === 1 && booking.prePayment" class="text-[11px] text-sky-500 font-semibold mt-1">
+                                    ₹{{ booking.prePayment | number:'1.0-0' }} paid
+                                </p>
+                            </ng-container>
+                        </div>
+                        <!-- Status + Action -->
+                        <div class="w-32 shrink-0 flex flex-col items-end gap-1.5">
+                            <ng-container *ngIf="activeTab === 'upcoming'">
+                                <span *ngIf="getBalanceDue(booking) > 0"
+                                    class="px-2 py-0.5 text-[9px] font-bold rounded-full border border-amber-300 text-amber-700 bg-amber-50 whitespace-nowrap">
+                                    Payment pending
+                                </span>
+                                <button *ngIf="getBalanceDue(booking) > 0"
+                                    (click)="$event.stopPropagation(); openSettlePanel(booking)"
+                                    class="px-5 py-2 text-xs font-bold rounded bg-primary hover:bg-sky-600 text-white border-0 cursor-pointer transition whitespace-nowrap shadow-sm">
+                                    Settle now
+                                </button>
+                                <button *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1"
+                                    class="px-5 py-2 text-xs font-bold rounded bg-emerald-500 text-white whitespace-nowrap cursor-default border-0">
+                                    Settled
+                                </button>
+                                <span *ngIf="booking.paymentOption === 1 && booking.prePayment"
+                                    class="px-3 py-1 text-[10px] font-bold rounded-full border border-sky-300 text-sky-600 bg-sky-50 whitespace-nowrap">
+                                    Confirmed
+                                </span>
+                            </ng-container>
+                            <ng-container *ngIf="activeTab === 'completed'">
+                                <span class="px-2 py-0.5 text-[9px] font-bold rounded-full border border-slate-200 text-slate-400 bg-slate-50">
+                                    Completed
+                                </span>
+                                <button (click)="$event.stopPropagation(); openReceipt(booking)"
+                                    class="px-2.5 py-0.5 text-[9px] font-bold rounded-full border border-emerald-300 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                                    <lucide-icon name="file-text" [size]="10"></lucide-icon>
+                                    Receipt
+                                </button>
+                            </ng-container>
+                            <span *ngIf="activeTab === 'cancelled'"
+                                class="px-2 py-0.5 text-[9px] font-bold rounded-full border border-red-200 text-red-400 bg-red-50">
+                                Cancelled
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- MOBILE layout (hidden on sm+) -->
+                    <div class="sm:hidden px-3 py-2.5">
+                        <!-- Row 1: Date + Route + Status badge -->
+                        <div class="flex items-start gap-2.5">
+                            <div class="shrink-0 text-center w-10">
+                                <p class="text-lg font-black text-slate-800 dark:text-white leading-none">
+                                    {{ booking.pickupDate ? (booking.pickupDate | date:'dd') : '--' }}
+                                </p>
+                                <p class="text-[9px] font-bold uppercase tracking-wider"
+                                    [ngClass]="activeTab === 'upcoming' ? 'text-primary' : 'text-slate-400'">
+                                    {{ booking.pickupDate ? (booking.pickupDate | date:'MMM') : '' }}
+                                </p>
+                                <p class="text-[10px] text-slate-400 font-mono">{{ booking.pickupTime || '' }}</p>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-[13px] font-bold text-slate-800 dark:text-white truncate leading-tight"
+                                    [title]="booking.viaLine ? (booking.routeLine + ' (' + booking.viaLine + ')') : booking.routeLine">
+                                    {{ booking.routeLine || booking.itinerary || booking.sourceCity || '—' }}
+                                </h3>
+                                <p *ngIf="booking.viaLine" class="text-[10px] italic text-slate-500 dark:text-slate-400 truncate mt-0.5"
+                                    [title]="booking.viaLine">
+                                    {{ booking.viaLine }}
+                                </p>
+                                <!-- Meta row (mobile): Trip Type · Package KM · Trip ID -->
+                                <p class="text-[10px] mt-0.5 truncate">
+                                    <span *ngIf="getTripTypeLabel(booking.tripType) as ttl"
+                                        class="font-semibold text-slate-700 dark:text-slate-200">{{ ttl }}</span>
+                                    <span *ngIf="getPackageKmLabel(booking) as km"
+                                        class="text-slate-500 dark:text-slate-400"> · {{ km }}</span>
+                                    <span *ngIf="booking.reservationId"
+                                        class="text-slate-500 dark:text-slate-400"> ·
+                                        <span class="font-mono text-slate-600 dark:text-slate-300">{{ booking.reservationId }}</span>
+                                    </span>
+                                </p>
+                                <p class="text-[11px] text-slate-400 mt-0.5 truncate">
+                                    {{ booking.customerName }}
+                                    <span *ngIf="booking.carName"> · {{ booking.carName }}</span>
+                                </p>
+                                <p *ngIf="booking.bookedAt" class="text-[9px] text-slate-400/60 mt-0.5">Booked {{ booking.bookedAt | date:'dd MMM, hh:mm a' }}</p>
+                            </div>
+                            <div class="shrink-0 text-right">
+                                <p class="text-base font-black text-slate-800 dark:text-white leading-tight">₹{{ booking.fare | number:'1.0-0' }}</p>
+                                <!-- Mobile mirror of the desktop amount-column payment lines: only
+                                     surface them while the booking is still upcoming. Suppressed in
+                                     Completed / Cancelled so the trip wrap-up view stays clean. -->
+                                <ng-container *ngIf="activeTab === 'upcoming'">
+                                    <p *ngIf="getBalanceDue(booking) > 0" class="text-[10px] text-amber-600 font-semibold">
+                                        Due: ₹{{ getBalanceDue(booking) | number:'1.0-0' }}
+                                    </p>
+                                    <!-- Option 3 buffer breakdown (mobile mirror of desktop card) -->
+                                    <p *ngIf="getBalanceDue(booking) > 0 && booking.paymentOption === 3 && booking.bufferAmount"
+                                       class="text-[9px] text-violet-500 font-medium leading-tight">
+                                        ₹{{ (booking.fare - (booking.prePayment || 0)) | number:'1.0-0' }} + ₹{{ booking.bufferAmount | number:'1.0-0' }} buffer
+                                    </p>
+                                    <p *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1" class="text-[10px] text-emerald-500 font-semibold">
+                                        Paid
+                                    </p>
+                                    <p *ngIf="booking.paymentOption === 1 && booking.prePayment" class="text-[10px] text-sky-500 font-semibold">
+                                        ₹{{ booking.prePayment | number:'1.0-0' }} paid
+                                    </p>
+                                </ng-container>
+                            </div>
+                        </div>
+                        <!-- Row 2: Status badge + Action button -->
+                        <div class="flex items-center justify-end gap-2 mt-2">
+                            <ng-container *ngIf="activeTab === 'upcoming'">
+                                <span *ngIf="getBalanceDue(booking) > 0"
+                                    class="px-2 py-0.5 text-[8px] font-bold rounded-full border border-amber-300 text-amber-700 bg-amber-50">
+                                    Payment pending
+                                </span>
+                                <button *ngIf="getBalanceDue(booking) > 0"
+                                    (click)="$event.stopPropagation(); openSettlePanel(booking)"
+                                    class="px-4 py-1.5 text-[11px] font-bold rounded bg-primary hover:bg-sky-600 text-white border-0 cursor-pointer transition shadow-sm">
+                                    Settle now
+                                </button>
+                                <button *ngIf="getBalanceDue(booking) <= 0 && booking.prePayment && booking.paymentOption !== 1"
+                                    class="px-4 py-1.5 text-[11px] font-bold rounded bg-emerald-500 text-white cursor-default border-0">
+                                    Settled
+                                </button>
+                                <span *ngIf="booking.paymentOption === 1 && booking.prePayment"
+                                    class="px-2.5 py-0.5 text-[9px] font-bold rounded-full border border-sky-300 text-sky-600 bg-sky-50">
+                                    Confirmed
+                                </span>
+                            </ng-container>
+                            <ng-container *ngIf="activeTab === 'completed'">
+                                <span class="px-2 py-0.5 text-[8px] font-bold rounded-full border border-slate-200 text-slate-400 bg-slate-50">
+                                    Completed
+                                </span>
+                                <button (click)="$event.stopPropagation(); openReceipt(booking)"
+                                    class="px-2.5 py-0.5 text-[8px] font-bold rounded-full border border-emerald-300 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                                    <lucide-icon name="file-text" [size]="9"></lucide-icon>
+                                    Receipt
+                                </button>
+                            </ng-container>
+                            <span *ngIf="activeTab === 'cancelled'"
+                                class="px-2 py-0.5 text-[8px] font-bold rounded-full border border-red-200 text-red-400 bg-red-50">
+                                Cancelled
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expanded Details Panel -->
+                <div *ngIf="expandedBookingId === booking.bookingId"
+                    class="border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/50 px-3 sm:px-4 py-2.5 sm:py-3">
+
+                    <!-- Two-column: Trip Details + Payment Info -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
+
+                        <!-- Left: Trip Details -->
+                        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3">
+                            <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-2">Trip Details</p>
+                            <div class="space-y-1.5 text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Guest</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ booking.customerName || '-' }}</span>
+                                </div>
+                                <div class="flex justify-between" *ngIf="booking.customerMobile">
+                                    <span class="text-slate-400 font-semibold">Phone</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ booking.customerMobile }}</span>
+                                </div>
+                                <!-- Long-text rows (Route, Via, Address): stack vertically on
+                                     mobile so the full value can wrap freely; side-by-side on
+                                     sm+ where there's room for the original layout. -->
+                                <div class="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-0">
+                                    <span class="text-slate-400 font-semibold">Route</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white sm:text-right sm:max-w-[60%] break-words"
+                                        [title]="booking.viaLine ? (booking.routeLine + ' (' + booking.viaLine + ')') : booking.routeLine">{{ booking.routeLine || booking.itinerary || '—' }}</span>
+                                </div>
+                                <div *ngIf="booking.intermediateCities.length" class="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-0">
+                                    <span class="text-slate-400 font-semibold">Via</span>
+                                    <span class="font-semibold text-orange-600 dark:text-orange-400 sm:text-right sm:max-w-[60%] break-words"
+                                        [title]="booking.intermediateCities.join(', ')">{{ booking.intermediateCities.join(', ') }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Car</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white text-right">{{ booking.carName || '-' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Pickup</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white text-right">{{ booking.pickupDate ? (booking.pickupDate | date:'dd MMM yyyy') : '-' }}, {{ booking.pickupTime }}</span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-0" *ngIf="booking.pickupAddress">
+                                    <span class="text-slate-400 font-semibold">Address</span>
+                                    <span class="font-semibold text-slate-700 dark:text-slate-300 sm:text-right sm:max-w-[60%] break-words">{{ booking.pickupAddress }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Payment Info -->
+                        <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3">
+                            <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-2">Payment Info</p>
+                            <div class="space-y-1.5 text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Total Fare</span>
+                                    <span class="font-bold text-slate-900 dark:text-white">₹{{ booking.fare | number:'1.0-0' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Paid Now</span>
+                                    <!-- getDisplayedPaidNow(): for Option 3, adds buffer to
+                                         paid amount only when prePayment >= fare (full fare paid
+                                         = buffer was also collected). Partial pays show as-is. -->
+                                    <span class="font-bold text-emerald-600">₹{{ getDisplayedPaidNow(booking) | number:'1.0-0' }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Payment Plan</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ getPaymentMethodLabel(booking) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Paid Via</span>
+                                    <span class="font-semibold text-slate-800 dark:text-white flex items-center gap-1">
+                                        <ng-container *ngIf="booking.paidVia === 'razorpay'">
+                                            <lucide-icon name="credit-card" [size]="11" class="text-primary"></lucide-icon> Razorpay
+                                        </ng-container>
+                                        <ng-container *ngIf="booking.paidVia !== 'razorpay'">
+                                            <lucide-icon name="wallet" [size]="11" class="text-primary"></lucide-icon> Wallet
+                                        </ng-container>
+                                    </span>
+                                </div>
+                                <div *ngIf="booking.paymentOption === 3 && booking.bufferAmount" class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Buffer Deposit</span>
+                                    <span class="font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1">
+                                        ₹{{ booking.bufferAmount | number:'1.0-0' }}
+                                        <span class="text-[9px] text-slate-400 font-normal">(refundable)</span>
+                                    </span>
+                                </div>
+                                <!-- Balance Due: hidden for completed Option 3 bookings — those
+                                     get the dedicated Trip Settlement block below which reframes
+                                     the same number as "Buffer Used" (post-trip accounting), so
+                                     showing both would be confusing. -->
+                                <div *ngIf="getBalanceDue(booking) > 0 && !(activeTab === 'completed' && booking.paymentOption === 3)" class="flex justify-between">
+                                    <span class="text-amber-500 font-semibold">Balance Due</span>
+                                    <span class="font-bold text-amber-600 text-right">
+                                        ₹{{ getBalanceDue(booking) | number:'1.0-0' }}
+                                        <!-- Option 3 breakdown: make it obvious the balance already
+                                             includes the refundable buffer so the agent doesn't think
+                                             the number is wrong vs. (fare - paid). -->
+                                        <span *ngIf="booking.paymentOption === 3 && booking.bufferAmount" class="block text-[10px] text-violet-500 font-medium mt-0.5">
+                                            ₹{{ (booking.fare - (booking.prePayment || 0)) | number:'1.0-0' }} + ₹{{ booking.bufferAmount | number:'1.0-0' }} buffer
+                                        </span>
+                                    </span>
+                                </div>
+
+                                <!-- ═══ TRIP SETTLEMENT (completed Option 3 only) ═══
+                                     Replaces the cryptic "Balance Due ₹X" line with a
+                                     post-trip breakdown:
+                                       • Buffer Used — how much of the refundable buffer
+                                         was consumed by trip extras (extra km / wait /
+                                         tolls). Hidden when 0 (clean trip).
+                                       • Refund Due — leftover buffer being refunded.
+                                         Hidden when 0 (extras ate the entire buffer). -->
+                                <div *ngIf="activeTab === 'completed' && booking.paymentOption === 3 && booking.bufferAmount && (getBufferUsed(booking) > 0 || getRefundDue(booking) > 0)"
+                                     class="mt-3 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200 dark:border-slate-700">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                        Trip Settlement
+                                    </div>
+
+                                    <div *ngIf="getBufferUsed(booking) > 0" class="flex justify-between text-xs">
+                                        <span class="text-orange-600 font-semibold">Buffer Used</span>
+                                        <span class="text-orange-600 font-bold">₹{{ getBufferUsed(booking) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <p *ngIf="getBufferUsed(booking) > 0" class="text-[10px] text-slate-400 mb-2">
+                                        Trip extras covered by buffer
+                                    </p>
+
+                                    <div *ngIf="getRefundDue(booking) > 0" class="flex justify-between text-xs">
+                                        <span class="text-emerald-600 font-semibold">Refund Due</span>
+                                        <span class="text-emerald-600 font-bold">₹{{ getRefundDue(booking) | number:'1.0-0' }}</span>
+                                    </div>
+                                    <p *ngIf="getRefundDue(booking) > 0" class="text-[10px] text-slate-400">
+                                        Refund in 5-7 working days
+                                    </p>
+                                </div>
+                                <div *ngIf="getAutoDebitCountdown(booking)" class="flex justify-between">
+                                    <span class="text-amber-500 font-semibold">Auto-Debit</span>
+                                    <span class="font-semibold text-amber-600">{{ getAutoDebitCountdown(booking) }}</span>
+                                </div>
+                                <div *ngIf="booking.reservationId" class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Reservation</span>
+                                    <span class="font-mono font-semibold text-slate-600 dark:text-slate-300 text-[11px]">{{ booking.reservationId }}</span>
+                                </div>
+                                <div *ngIf="booking.bookingId" class="flex justify-between">
+                                    <span class="text-slate-400 font-semibold">Booking ID</span>
+                                    <span class="font-mono font-semibold text-slate-600 dark:text-slate-300 text-[11px]">{{ booking.bookingId }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══ ENHANCE YOUR RIDE — selected VAS line items ═══════════════
+                         Renders only when the booking actually carries any VAS entries.
+                         Each row shows: name + (sub-option in parens, e.g. "Hindi") and
+                         the total amount including GST.
+                         vasFlag === 0 entries are displayed with a strikethrough so the
+                         agent can see they were removed/refunded but knows they're not
+                         part of the live charge. Active (flag=1) entries are sorted to
+                         the top by mapVasDetails(). -->
+                    <div *ngIf="booking.vasDetails && booking.vasDetails.length"
+                         class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 mb-2 sm:mb-3">
+                        <div class="flex items-center gap-1.5 mb-2">
+                            <lucide-icon name="wand-2" [size]="11" class="text-primary"></lucide-icon>
+                            <p class="text-[9px] font-bold text-primary uppercase tracking-widest">Enhance Your Ride</p>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div *ngFor="let vas of booking.vasDetails"
+                                 class="flex justify-between items-start gap-2 text-xs"
+                                 [class.opacity-50]="vas.vasFlag === 0"
+                                 [class.line-through]="vas.vasFlag === 0">
+                                <div class="flex-1 min-w-0">
+                                    <span class="font-semibold text-slate-800 dark:text-white">{{ vas.vasName }}</span>
+                                    <span *ngIf="vas.customerInputValue"
+                                          class="text-slate-500 dark:text-slate-400 font-medium ml-1">({{ vas.customerInputValue }})</span>
+                                </div>
+                                <span class="shrink-0 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                                    ₹{{ vas.totalAmount | number:'1.0-0' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settle Panel -->
+                    <div *ngIf="settleBookingId === booking.bookingId && getBalanceDue(booking) > 0"
+                        class="bg-white dark:bg-slate-800 rounded-lg border border-amber-200 dark:border-amber-800 p-3 mb-3">
+
+                        <!-- Header + Pay Via — stacks on mobile -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                            <span class="text-sm font-bold text-slate-900 dark:text-white">Settle ₹{{ getBalanceDue(booking) | number:'1.0-0' }}</span>
+                            <div class="flex items-center gap-1.5">
+                                <button (click)="settlePaymentMethod = 'wallet'" type="button"
+                                    class="px-2 sm:px-3 py-1.5 text-[9px] sm:text-[10px] font-bold rounded-md border transition cursor-pointer flex items-center gap-1"
+                                    [ngClass]="settlePaymentMethod === 'wallet' ? 'border-primary bg-primary/10 text-primary' : 'border-slate-200 text-slate-500'">
+                                    <lucide-icon name="wallet" [size]="11"></lucide-icon> Wallet (₹{{ walletBalance | number:'1.0-0' }})
+                                </button>
+                                <button (click)="settlePaymentMethod = 'razorpay'" type="button"
+                                    class="px-2 sm:px-3 py-1.5 text-[9px] sm:text-[10px] font-bold rounded-md border transition cursor-pointer flex items-center gap-1"
+                                    [ngClass]="settlePaymentMethod === 'razorpay' ? 'border-primary bg-primary/10 text-primary' : 'border-slate-200 text-slate-500'">
+                                    <lucide-icon name="credit-card" [size]="11"></lucide-icon> Razorpay
+                                </button>
+                                <button (click)="settleBookingId = null; settleConfirmStep = false; settleProcessing = false"
+                                    class="text-slate-400 hover:text-slate-600 cursor-pointer bg-transparent border-0 ml-1">
+                                    <lucide-icon name="x" [size]="14"></lucide-icon>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Wallet insufficient — top-up section -->
+                        <div *ngIf="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)" class="bg-red-50 dark:bg-red-900/10 rounded-lg p-2.5 sm:p-3 mb-2 sm:mb-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+                                <span class="text-[11px] sm:text-xs font-semibold text-red-600">Insufficient — need ₹{{ (getBalanceDue(booking) - walletBalance) | number:'1.0-0' }} more</span>
+                                <span class="text-[10px] text-slate-400">Wallet: ₹{{ walletBalance | number:'1.0-0' }}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+                                <button *ngFor="let amt of [1000, 5000, 10000, 25000]"
+                                    (click)="topUpAmount = amt; cdr.markForCheck()"
+                                    class="px-2 sm:px-3 py-1.5 text-[9px] sm:text-[10px] font-bold rounded-md border transition cursor-pointer"
+                                    [ngClass]="topUpAmount === amt ? 'bg-primary text-white border-primary' : 'border-slate-200 bg-white text-slate-600'">
+                                    ₹{{ amt | number:'1.0-0' }}
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="relative flex-1">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">₹</span>
+                                    <input type="number" [(ngModel)]="topUpAmount" name="settleTopUp"
+                                        placeholder="Custom amount" min="100"
+                                        class="w-full pl-7 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                                </div>
+                                <button (click)="processTopUp()" [disabled]="topUpAmount < 100 || isTopUpProcessing"
+                                    class="px-4 py-2 bg-primary hover:bg-sky-600 disabled:bg-slate-300 text-white font-bold text-xs rounded-lg transition cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5">
+                                    <lucide-icon *ngIf="isTopUpProcessing" name="loader-2" [size]="12" class="animate-spin"></lucide-icon>
+                                    {{ isTopUpProcessing ? 'Adding...' : 'Add Funds' }}
+                                </button>
+                            </div>
+                            <p *ngIf="topUpError" class="text-[10px] text-red-500 mt-1.5">{{ topUpError }}</p>
+                        </div>
+
+                        <!-- Wallet sufficient info -->
+                        <div *ngIf="settlePaymentMethod === 'wallet' && walletBalance >= getBalanceDue(booking)"
+                            class="flex items-center justify-between text-xs mb-3 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                            <span class="text-emerald-700 font-semibold flex items-center gap-1.5">
+                                <lucide-icon name="check-circle" [size]="13" class="text-emerald-500"></lucide-icon>
+                                Wallet: ₹{{ walletBalance | number:'1.0-0' }}
+                            </span>
+                            <span class="text-slate-400 text-[10px]">After payment: ₹{{ (walletBalance - getBalanceDue(booking)) | number:'1.0-0' }}</span>
+                        </div>
+
+                        <!-- Settlement error -->
+                        <div *ngIf="settleError" class="flex items-center gap-2 py-2 px-3 bg-red-50 dark:bg-red-900/20 rounded-lg mb-2">
+                            <lucide-icon name="alert-triangle" [size]="14" class="text-red-500 flex-shrink-0"></lucide-icon>
+                            <span class="text-xs font-medium text-red-600 dark:text-red-400">{{ settleError }}</span>
+                        </div>
+
+                        <!-- Processing spinner -->
+                        <div *ngIf="settleProcessing" class="flex items-center justify-center gap-2 py-2">
+                            <lucide-icon name="loader-2" [size]="14" class="text-primary animate-spin"></lucide-icon>
+                            <span class="text-xs font-semibold text-slate-600">Processing payment...</span>
+                        </div>
+
+                        <!-- Action button -->
+                        <div *ngIf="!settleProcessing && !settleConfirmStep">
+                            <button (click)="settleBooking(booking)"
+                                [disabled]="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)"
+                                class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 text-white disabled:text-slate-400 font-bold text-xs rounded-lg transition cursor-pointer disabled:cursor-not-allowed">
+                                <span *ngIf="settlePaymentMethod === 'razorpay'">Pay ₹{{ getBalanceDue(booking) | number:'1.0-0' }} via Razorpay</span>
+                                <span *ngIf="settlePaymentMethod === 'wallet' && walletBalance >= getBalanceDue(booking)">Debit ₹{{ getBalanceDue(booking) | number:'1.0-0' }} from Wallet</span>
+                                <span *ngIf="settlePaymentMethod === 'wallet' && walletBalance < getBalanceDue(booking)">Top up wallet first or use Razorpay</span>
+                            </button>
+                        </div>
+
+                        <!-- Confirm step -->
+                        <div *ngIf="settleConfirmStep && !settleProcessing" class="flex items-center gap-2">
+                            <button (click)="confirmSettle(booking)"
+                                class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-lg transition cursor-pointer flex items-center justify-center gap-1">
+                                <lucide-icon name="check" [size]="13"></lucide-icon>
+                                Confirm ₹{{ getBalanceDue(booking) | number:'1.0-0' }}
+                            </button>
+                            <button (click)="cancelSettleConfirm()"
+                                class="px-5 py-2.5 border border-slate-200 text-xs font-medium rounded-lg hover:bg-slate-50 transition cursor-pointer text-slate-500">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Payment Success Banner -->
+                    <div *ngIf="settledBookingId === booking.bookingId"
+                        class="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-5 mb-4 text-center">
+                        <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                            <lucide-icon name="check" [size]="28" class="text-white"></lucide-icon>
+                        </div>
+                        <h4 class="text-lg font-black text-emerald-700 mb-1">Payment Successful!</h4>
+                        <!-- Source-agnostic message — earlier we hard-coded "from wallet"
+                             which read wrong on Razorpay settlements (April 2026 ask).
+                             Wallet-balance line dropped for the same reason: it was misleading
+                             when the agent had paid via Razorpay. The amount alone tells the
+                             agent everything they need. -->
+                        <p class="text-sm text-emerald-600">₹{{ booking.prePayment | number:'1.0-0' }} debited and booking is fully settled.</p>
+                    </div>
+
+                    <!-- Action buttons row -->
+                    <div class="flex items-center gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
+                        <button (click)="shareOnWhatsApp(booking)"
+                            class="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium text-[#25D366] hover:bg-green-50/50 rounded-md transition cursor-pointer">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            Share
+                        </button>
+                        <button *ngIf="booking.customerMobile" (click)="callCustomer(booking.customerMobile)"
+                            class="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium text-blue-500 hover:bg-blue-50/50 rounded-md transition cursor-pointer">
+                            <lucide-icon name="phone" [size]="11"></lucide-icon>
+                            Call
+                        </button>
+                        <button (click)="copyBookingDetails(booking)"
+                            class="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium text-slate-400 hover:bg-slate-100 rounded-md transition cursor-pointer">
+                            <lucide-icon name="copy" [size]="11"></lucide-icon>
+                            Copy
+                        </button>
+                        <!-- Cancel button: only when pickup is >= 1 hour away (per product rule). -->
+                        <button *ngIf="activeTab === 'upcoming' && canCancelBooking(booking)"
+                            (click)="$event.stopPropagation(); openCancelModal(booking)"
+                            class="ml-auto flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-semibold text-red-500 hover:text-white hover:bg-red-500 border border-red-200 hover:border-red-500 rounded-md transition cursor-pointer">
+                            <lucide-icon name="x-circle" [size]="11"></lucide-icon>
+                            Cancel Booking
+                        </button>
+                        <!-- Window closed: show a disabled hint so the agent knows why the Cancel button is missing. -->
+                        <span *ngIf="activeTab === 'upcoming' && !canCancelBooking(booking)"
+                            class="ml-auto flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-md cursor-not-allowed"
+                            title="Cancellation window closed — trip is less than 1 hour away.">
+                            <lucide-icon name="alert-circle" [size]="11"></lucide-icon>
+                            Cancellation closed
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div *ngIf="totalPages > 1 && activeTab !== 'priceRequests'" class="mt-5 flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-4">
+            <p class="text-xs text-slate-400">
+                Showing {{ (currentPage - 1) * pageSize + 1 }}–{{ currentPage * pageSize < totalInCurrentTab ? currentPage * pageSize : totalInCurrentTab }}
+                of {{ totalInCurrentTab }}
+            </p>
+            <div class="flex items-center gap-1">
+                <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+                    class="px-2 py-1 rounded-md border border-slate-200 text-xs text-slate-400 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
+                    ‹
+                </button>
+                <ng-container *ngFor="let page of pageNumbers">
+                    <span *ngIf="page === -1" class="px-1 text-slate-400 text-xs">…</span>
+                    <button *ngIf="page !== -1" (click)="goToPage(page)"
+                        [ngClass]="page === currentPage ? 'bg-primary text-white border-primary' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'"
+                        class="min-w-[28px] px-1.5 py-1 rounded-md border text-xs font-medium transition cursor-pointer">
+                        {{ page }}
+                    </button>
+                </ng-container>
+                <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+                    class="px-2 py-1 rounded-md border border-slate-200 text-xs text-slate-400 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
+                    ›
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <app-footer></app-footer>
+</div>
+
+<!-- Cancel Booking Modal — matches live b2bcab.in portal (April 2026) -->
+<div *ngIf="cancelModalBooking" class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="closeCancelModal()">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+    <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" (click)="$event.stopPropagation()">
+        <!-- Header -->
+        <div class="bg-red-50 dark:bg-red-900/20 px-5 py-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0">
+                <lucide-icon name="alert-triangle" [size]="18" class="text-red-500"></lucide-icon>
+            </div>
+            <div class="min-w-0">
+                <h3 class="font-bold text-slate-800 dark:text-white text-sm">Booking Cancellation</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 truncate" [title]="cancelModalBooking.routeLine">{{ cancelModalBooking.routeLine || cancelModalBooking.itinerary || cancelModalBooking.sourceCity || '—' }}</p>
+            </div>
+            <button (click)="closeCancelModal()" class="ml-auto p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition cursor-pointer shrink-0">
+                <lucide-icon name="x" [size]="16" class="text-slate-400"></lucide-icon>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="px-5 py-4 space-y-3">
+            <!-- Booking ID line -->
+            <div class="text-xs text-slate-600 dark:text-slate-300">
+                <span class="font-semibold">Booking Id </span>
+                <span class="font-mono text-slate-700 dark:text-slate-200">{{ cancelModalBooking.bookingId }}</span>
+            </div>
+
+            <!-- Prompt -->
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                Please let us know the reason for your cancellation request:
+            </p>
+
+            <!-- Reason dropdown -->
+            <div>
+                <label class="sr-only" for="cancelReasonSelect">Reason for cancellation</label>
+                <select id="cancelReasonSelect" [(ngModel)]="cancelReason" name="cancelReasonSelect"
+                    class="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-red-200 focus:border-red-400 outline-none transition cursor-pointer">
+                    <option value="" disabled>-- Select reason --</option>
+                    <option *ngFor="let reason of cancelReasons" [value]="reason">{{ reason }}</option>
+                </select>
+            </div>
+
+            <!-- Comments textarea -->
+            <div>
+                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1 block" for="cancelCommentsInput">Comments</label>
+                <textarea id="cancelCommentsInput" [(ngModel)]="cancelComments" name="cancelCommentsInput" rows="3"
+                    placeholder="Add any additional comments (optional)"
+                    class="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-red-200 focus:border-red-400 outline-none transition resize-none"></textarea>
+            </div>
+
+            <!-- Free cancellation valid till -->
+            <div *ngIf="getFreeCancellationText(cancelModalBooking) as validTill"
+                class="flex items-center gap-2 text-[11px] text-emerald-700 dark:text-emerald-400">
+                <lucide-icon name="check-circle" [size]="13" class="text-emerald-500 shrink-0"></lucide-icon>
+                <span>Free cancellation valid till: <strong class="font-mono">{{ validTill }}</strong></span>
+            </div>
+
+            <!-- Error -->
+            <p *ngIf="cancelError" class="text-xs text-red-500">{{ cancelError }}</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-4 border-t border-slate-100 dark:border-slate-700 flex items-center gap-3">
+            <button (click)="closeCancelModal()" [disabled]="cancelProcessing"
+                class="flex-1 px-4 py-2.5 text-xs font-semibold text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                Go Back
+            </button>
+            <button (click)="confirmCancel()" [disabled]="!cancelReason || cancelProcessing"
+                class="flex-1 px-4 py-2.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
+                <lucide-icon *ngIf="cancelProcessing" name="loader-2" [size]="13" class="animate-spin"></lucide-icon>
+                {{ cancelProcessing ? 'Cancelling, please wait…' : 'Submit' }}
+            </button>
+        </div>
+        <!-- Reassurance line while the backend is sending the cancellation email. -->
+        <p *ngIf="cancelProcessing" class="px-5 pb-3 -mt-1 text-[10px] text-slate-400 dark:text-slate-500 text-center">
+            Please don't close this window. Cancellation can take up to 30 seconds while we notify the driver and customer.
+        </p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     Booking Cancelled — success popup (shows after confirmCancel succeeds)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div *ngIf="cancelSuccessBooking" class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="dismissCancelSuccess()">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+    <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" (click)="$event.stopPropagation()">
+        <!-- Header -->
+        <div class="bg-emerald-50 dark:bg-emerald-900/20 px-5 py-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                <lucide-icon name="check-circle" [size]="18" class="text-emerald-500"></lucide-icon>
+            </div>
+            <div class="min-w-0">
+                <h3 class="font-bold text-slate-800 dark:text-white text-sm">Booking Cancelled</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    <span [title]="cancelSuccessBooking.routeLine">{{ cancelSuccessBooking.routeLine || cancelSuccessBooking.itinerary || cancelSuccessBooking.sourceCity || '—' }}</span>
+                </p>
+            </div>
+            <button (click)="dismissCancelSuccess()" class="ml-auto p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg transition cursor-pointer shrink-0">
+                <lucide-icon name="x" [size]="16" class="text-slate-400"></lucide-icon>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="px-5 py-4 space-y-3">
+            <div class="text-xs text-slate-600 dark:text-slate-300">
+                <span class="font-semibold">Booking Id </span>
+                <span class="font-mono text-slate-700 dark:text-slate-200">{{ cancelSuccessBooking.bookingId }}</span>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Your booking has been cancelled successfully. A confirmation email has been sent, and the card has moved to the
+                <strong class="text-slate-800 dark:text-slate-200">Cancelled</strong> tab.
+            </p>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500">
+                If a refund is applicable, it will be processed to the original payment method per Savaari's cancellation policy.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-4 border-t border-slate-100 dark:border-slate-700">
+            <button (click)="dismissCancelSuccess()"
+                class="w-full px-4 py-2.5 text-xs font-semibold text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition cursor-pointer">
+                Done
+            </button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,262 @@
+<!-- Breadcrumb -->
+<div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-1.5 sm:py-3">
+    <nav class="flex items-center space-x-2 text-xs sm:text-sm">
+      <a routerLink="/dashboard" class="flex items-center text-slate-500 hover:text-primary transition-colors">
+        <lucide-icon name="home" [size]="14" class="mr-1"></lucide-icon>
+        Home
+      </a>
+      <lucide-icon name="chevron-right" [size]="14" class="text-slate-400"></lucide-icon>
+      <span class="text-slate-800 dark:text-slate-200 font-medium">Account Settings</span>
+    </nav>
+  </div>
+</div>
+
+<div class="bg-gray-50 dark:bg-slate-900 min-h-screen flex flex-col">
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-8 flex-1">
+
+    <!-- Page Title -->
+    <div class="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-6">
+      <button (click)="goBack()"
+        class="flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm group cursor-pointer shrink-0">
+        <lucide-icon name="arrow-left" [size]="14"
+          class="sm:!w-[18px] sm:!h-[18px] group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
+      </button>
+      <h1 class="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">Account Settings</h1>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-3 sm:gap-8">
+
+      <!-- Sidebar — horizontal tabs on mobile, vertical on desktop -->
+      <aside class="w-full lg:w-60 flex-shrink-0">
+        <div
+          class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <ul class="flex flex-row lg:flex-col divide-x lg:divide-x-0 divide-y-0 lg:divide-y divide-slate-100 dark:divide-slate-700">
+
+            <!-- Personal Info -->
+            <li class="flex-1 lg:flex-none">
+              <button (click)="activeSection = 'personal'"
+                [ngClass]="activeSection === 'personal' ? 'text-primary border-b-2 lg:border-b-0 lg:border-l-4 border-primary bg-blue-50/60 dark:bg-blue-900/20 font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b-2 lg:border-b-0 lg:border-l-4 border-transparent'"
+                class="w-full flex items-center justify-center lg:justify-start gap-1.5 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3.5 text-xs sm:text-sm transition-all text-center lg:text-left">
+                <lucide-icon name="user" [size]="16" class="flex-shrink-0 sm:!w-[18px] sm:!h-[18px]"></lucide-icon>
+                Personal Info
+              </button>
+            </li>
+
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Main Panel -->
+      <div class="flex-1">
+
+        <!-- ===== PERSONAL INFO ===== -->
+        <div *ngIf="activeSection === 'personal'" class="space-y-3 sm:space-y-6">
+
+          <!-- Profile Information -->
+          <div
+            class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-6 lg:p-8">
+            <div class="mb-4 sm:mb-6">
+              <h2 class="text-base sm:text-xl font-bold text-slate-900 dark:text-white">Profile Information</h2>
+              <p class="text-[11px] sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
+                Please update your latest details here. For updating email ID or GST number please contact B2b Cab
+                customer care.
+              </p>
+            </div>
+
+            <!-- Success banner -->
+            <p *ngIf="profileSuccess" class="mb-4 text-sm text-emerald-600 dark:text-emerald-400">Profile updated successfully!</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
+
+              <!-- Full Name -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Full Name <span
+                    class="text-red-500">*</span></label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <lucide-icon name="user" [size]="16" class="text-slate-400"></lucide-icon>
+                  </div>
+                  <input type="text" [(ngModel)]="profile.fullName"
+                    class="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
+                </div>
+              </div>
+
+              <!-- Company Name -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Company Name <span
+                    class="text-red-500">*</span></label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <lucide-icon name="building-2" [size]="16" class="text-slate-400"></lucide-icon>
+                  </div>
+                  <input type="text" [(ngModel)]="profile.companyName"
+                    class="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
+                </div>
+              </div>
+
+              <!-- Email Address -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Email Address <span class="text-red-500">*</span>
+                  <span class="ml-1 text-xs text-slate-400 font-normal">(Contact support to change)</span>
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <lucide-icon name="mail" [size]="16" class="text-slate-400"></lucide-icon>
+                  </div>
+                  <input type="email" [(ngModel)]="profile.email" disabled
+                    class="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-500 cursor-not-allowed opacity-70" />
+                </div>
+              </div>
+
+              <!-- Company Address -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Company
+                  Address <span class="text-red-500">*</span></label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <lucide-icon name="map-pin" [size]="16" class="text-slate-400"></lucide-icon>
+                  </div>
+                  <input type="text" [(ngModel)]="profile.companyAddress"
+                    class="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
+                </div>
+              </div>
+
+              <!-- GST Number with auto-decode -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  GST Number
+                  <span *ngIf="gstLocked" class="text-xs text-slate-400 font-normal ml-1">(Contact support to change)</span>
+                </label>
+
+                <!-- Locked: GST already saved — read-only display -->
+                <div *ngIf="gstLocked" class="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono flex items-center justify-between">
+                  <span>{{ profile.gstNumber }}</span>
+                  <lucide-icon name="lock" [size]="14" class="text-slate-400"></lucide-icon>
+                </div>
+
+                <!-- Unlocked: GST not yet saved — editable -->
+                <input *ngIf="!gstLocked" type="text" [(ngModel)]="profile.gstNumber" (input)="onGstNumberInput()" maxlength="15"
+                  placeholder="Enter 15-digit GSTIN"
+                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition uppercase tracking-wider font-mono" />
+
+                <!-- Decoded info (hidden — used internally for validation only) -->
+                <p *ngIf="!gstLocked && profile.gstNumber?.length === 15 && gstDecodedInfo && !gstDecodedInfo.isValidFormat"
+                  class="mt-1 text-xs text-red-500">Invalid GSTIN format</p>
+
+                <!-- PAN-GSTIN mismatch error -->
+                <p *ngIf="gstPanMismatch && gstDecodedInfo?.isValidFormat"
+                  class="mt-2 text-xs text-red-500">PAN mismatch — the PAN in this GSTIN (<span class="font-mono">{{ gstDecodedInfo!.pan }}</span>) does not match your profile PAN (<span class="font-mono">{{ profile.panNumber }}</span>).</p>
+              </div>
+
+              <!-- City -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">City <span
+                    class="text-red-500">*</span></label>
+                <input type="text" [(ngModel)]="profile.city"
+                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition" />
+              </div>
+
+              <!-- Mobile Phone — read-only, set at registration -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Mobile Phone
+                  <span class="ml-1 text-xs text-slate-400 font-normal">(Contact support to change)</span>
+                </label>
+                <div class="flex opacity-70 cursor-not-allowed">
+                  <span class="inline-flex items-center px-3 text-sm text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 border border-r-0 border-slate-300 dark:border-slate-600 rounded-l-lg font-medium">+91</span>
+                  <input type="tel" [ngModel]="profile.mobile" disabled
+                    class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-r-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-500 cursor-not-allowed" />
+                </div>
+              </div>
+
+              <!-- PAN Number — editable one-time, then locks -->
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  PAN Number
+                  <span *ngIf="panLocked" class="ml-1 text-xs text-slate-400 font-normal">(Contact support to change)</span>
+                </label>
+
+                <!-- Locked: PAN already saved — read-only -->
+                <div *ngIf="panLocked" class="block w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono flex items-center justify-between">
+                  <span>{{ profile.panNumber }}</span>
+                  <lucide-icon name="lock" [size]="14" class="text-slate-400"></lucide-icon>
+                </div>
+
+                <!-- Unlocked: PAN not yet saved — editable -->
+                <input *ngIf="!panLocked" type="text" [(ngModel)]="profile.panNumber" (input)="onPanNumberInput()" maxlength="10"
+                  placeholder="Enter 10-character PAN (e.g. ABCDE1234F)"
+                  class="block w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary focus:border-primary transition uppercase tracking-wider font-mono" />
+
+                <p *ngIf="!panLocked && profile.panNumber?.length === 10 && !isPanValid"
+                  class="mt-1 text-xs text-red-500">Invalid PAN format (expected: ABCDE1234F)</p>
+              </div>
+
+            </div>
+
+            <!-- Corporate Identity -->
+            <div class="mt-5 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700">
+              <h3 class="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-200 mb-3 sm:mb-4">Corporate Identity</h3>
+              <div
+                class="border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-xl p-3 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 bg-slate-50 dark:bg-slate-800/40 hover:border-primary/40 transition-colors">
+                <div
+                  class="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
+                  <img *ngIf="logoPreview" [src]="logoPreview" class="w-full h-full object-cover" alt="Logo preview" />
+                  <lucide-icon *ngIf="!logoPreview" name="plus-circle" [size]="22"
+                    class="text-slate-300 dark:text-slate-500 sm:!w-[28px] sm:!h-[28px]"></lucide-icon>
+                </div>
+                <div>
+                  <p class="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">Company Logo <span class="text-slate-400 font-normal">(Optional)</span></p>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5">Replaces "B2B CAB" in navbar. Max 1MB. (JPG, PNG)</p>
+                  <div class="mt-2 sm:mt-3 flex items-center gap-2">
+                    <label class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 cursor-pointer transition">
+                      <lucide-icon name="upload-cloud" [size]="13"></lucide-icon>
+                      {{ logoPreview ? 'Change' : 'Select File' }}
+                      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" (change)="onLogoSelect($event)" />
+                    </label>
+                    <button *ngIf="logoPreview" type="button" (click)="removeLogo()"
+                      class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-medium text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                      <lucide-icon name="trash-2" [size]="12"></lucide-icon>
+                      Remove
+                    </button>
+                  </div>
+                  <p *ngIf="logoError" class="text-[11px] sm:text-xs text-red-500 mt-1">{{ logoError }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Save Button + Inline Feedback -->
+            <div class="mt-4 sm:mt-6 flex flex-col sm:flex-row items-end sm:items-center justify-end gap-3">
+              <!-- Inline success message -->
+              <div *ngIf="profileSuccess"
+                class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium animate-fade-in">
+                <lucide-icon name="check-circle" [size]="16"></lucide-icon>
+                Profile updated successfully!
+              </div>
+              <!-- Inline error message -->
+              <div *ngIf="profileError"
+                class="flex items-center gap-2 text-red-500 text-sm font-medium">
+                <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+                {{ profileError }}
+              </div>
+              <button (click)="updateProfile()" [disabled]="isSaving"
+                class="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-white bg-primary hover:bg-sky-600 shadow-lg shadow-primary/30 rounded-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+                <lucide-icon *ngIf="!isSaving" name="check" [size]="14" class="sm:!w-[16px] sm:!h-[16px]"></lucide-icon>
+                <svg *ngIf="isSaving" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                  <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="opacity-75"></path>
+                </svg>
+                {{ isSaving ? 'Saving...' : 'Update Profile' }}
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

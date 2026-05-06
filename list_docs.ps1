@@ -1,0 +1,1 @@
+Get-ChildItem -Path 'C:\Users\Pranav\Downloads' -Filter '*.docx' | Sort-Object LastWriteTime -Descending | Select-Object -First 30 | ForEach-Object { $time = $_.LastWriteTime.ToString('yyyy-MM-dd HH:mm'); $name = $_.Name; "$time  $name" }
