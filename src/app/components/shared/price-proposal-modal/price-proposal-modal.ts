@@ -22,12 +22,19 @@ export interface PriceProposalContext {
     tripType: string;             // 'One Way' | 'Round Trip' | 'Local' | 'Airport'
     carType: string;              // 'Sedan' | 'SUV' | ...
     originalFare: number;
-    note?: string;
+}
+
+interface VasOption {
+    id: string;
+    label: string;
+    description: string;
+    excludes?: string;   // id of a mutually exclusive VAS
 }
 
 /**
  * Counter-offer (price proposal) modal. Captures pickup/drop locations,
- * trip type, ride category, pickup date/time, and a proposed fare.
+ * trip type, ride category, pickup date/time, VAS add-ons, and a proposed
+ * fare. Fare range auto-adjusts when the agent switches ride category.
  * Booking window must be at least 4 hours out. Pure demo — no backend.
  */
 @Component({
@@ -70,9 +77,38 @@ export class PriceProposalModalComponent implements OnChanges {
     ];
     setTripType(id: 'OW' | 'RT'): void { this.selectedTripType = id; }
 
-    // ── Ride category ───────────────────────────────────────────────────────
+    // ── Ride category & fare multipliers ────────────────────────────────────
     selectedRideCategory = '';
     readonly rideCategories = ['Hatchback', 'Sedan', 'SUV', 'Innova', 'Crysta'];
+
+    // Relative price multiplier for each category (Sedan = 1.0 base)
+    private readonly fareMultipliers: Record<string, number> = {
+        Hatchback: 0.75,
+        Sedan:     1.00,
+        SUV:       1.25,
+        Innova:    1.45,
+        Crysta:    1.70,
+    };
+
+    // Base fare unit — originalFare normalised to Sedan so switching category
+    // produces a proportional fare instead of keeping the original range.
+    private baseFareUnit = 0;
+
+    selectCategory(cat: string): void {
+        this.selectedRideCategory = cat;
+        this.showCategoryError = false;
+        this.recalcFare();
+    }
+
+    private recalcFare(): void {
+        const mul = this.fareMultipliers[this.selectedRideCategory] ?? 1.0;
+        const newOriginal = Math.round(this.baseFareUnit * mul);
+        this.minFare = Math.round(newOriginal * 0.7);
+        this.maxFare = newOriginal;
+        // Clamp proposed fare within new range
+        const current = this.proposedFare ?? Math.round(newOriginal * 0.85);
+        this.proposedFare = Math.min(this.maxFare, Math.max(this.minFare, current));
+    }
 
     // ── Pickup date & time (must be ≥ 4 hours from now) ────────────────────
     pickupDate = '';   // YYYY-MM-DD
@@ -83,8 +119,51 @@ export class PriceProposalModalComponent implements OnChanges {
     minFare = 0;
     maxFare = 0;
 
-    // ── Passenger note ──────────────────────────────────────────────────────
-    note = '';
+    // ── VAS ─────────────────────────────────────────────────────────────────
+    readonly vasOptions: VasOption[] = [
+        {
+            id: 'new_car',
+            label: 'New Car Promise',
+            description: 'Vehicle not older than 3 years',
+            excludes: 'diesel',
+        },
+        {
+            id: 'diesel',
+            label: 'Diesel Car Guarantee',
+            description: 'Fuel-efficient diesel vehicle',
+            excludes: 'new_car',
+        },
+        {
+            id: 'luggage',
+            label: 'Luggage Carrier',
+            description: 'Roof-mounted carrier for extra baggage',
+        },
+    ];
+    selectedVas: string[] = [];
+    vasConflictMsg = '';
+
+    toggleVas(id: string): void {
+        const idx = this.selectedVas.indexOf(id);
+        if (idx > -1) {
+            // Deselect
+            this.selectedVas = this.selectedVas.filter(v => v !== id);
+            this.vasConflictMsg = '';
+            return;
+        }
+        // Check mutual exclusion
+        const opt = this.vasOptions.find(o => o.id === id);
+        if (opt?.excludes && this.selectedVas.includes(opt.excludes)) {
+            const conflicting = this.vasOptions.find(o => o.id === opt.excludes)?.label ?? opt.excludes;
+            this.vasConflictMsg = `"${opt.label}" and "${conflicting}" cannot be selected together (Govt. Policy). Please choose one.`;
+            return;
+        }
+        this.vasConflictMsg = '';
+        this.selectedVas = [...this.selectedVas, id];
+    }
+
+    isVasSelected(id: string): boolean {
+        return this.selectedVas.includes(id);
+    }
 
     // ── Auto-confirm ────────────────────────────────────────────────────────
     autoConfirm = true;
@@ -110,10 +189,19 @@ export class PriceProposalModalComponent implements OnChanges {
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['context'] && this.context) {
             const original = this.context.originalFare || 0;
-            this.minFare = Math.round(original * 0.7);
-            this.maxFare = original;
-            this.proposedFare = Math.round(original * 0.85);
-            this.note = this.context.note || '';
+
+            // Detect context car's category so we can normalise to a base unit
+            const car = this.context.carType?.toLowerCase() || '';
+            let contextCategory = 'Sedan';
+            if (car.includes('crysta'))      contextCategory = 'Crysta';
+            else if (car.includes('innova')) contextCategory = 'Innova';
+            else if (car.includes('suv'))    contextCategory = 'SUV';
+            else if (car.includes('hatch'))  contextCategory = 'Hatchback';
+
+            this.baseFareUnit = original / (this.fareMultipliers[contextCategory] ?? 1.0);
+            this.selectedRideCategory = contextCategory;
+            this.selectedVas = [];
+            this.vasConflictMsg = '';
             this.autoConfirm = true;
             this.clearErrors();
 
@@ -124,13 +212,6 @@ export class PriceProposalModalComponent implements OnChanges {
             const ct = this.context.tripType?.toLowerCase() || '';
             this.selectedTripType = ct.includes('round') ? 'RT' : 'OW';
 
-            const car = this.context.carType?.toLowerCase() || '';
-            if (car.includes('crysta'))          this.selectedRideCategory = 'Crysta';
-            else if (car.includes('innova'))     this.selectedRideCategory = 'Innova';
-            else if (car.includes('suv'))        this.selectedRideCategory = 'SUV';
-            else if (car.includes('hatch'))      this.selectedRideCategory = 'Hatchback';
-            else                                 this.selectedRideCategory = 'Sedan';
-
             if (this.context.pickupDateTime) {
                 const d = new Date(this.context.pickupDateTime);
                 if (!isNaN(d.getTime())) {
@@ -138,6 +219,8 @@ export class PriceProposalModalComponent implements OnChanges {
                     this.pickupTime = d.toTimeString().slice(0, 5);
                 }
             }
+
+            this.recalcFare();
         }
         if (changes['visible'] && this.visible) {
             this.clearErrors();
@@ -166,7 +249,7 @@ export class PriceProposalModalComponent implements OnChanges {
                 this.cdr.markForCheck();
             },
             () => {
-                // Permission denied or unavailable — demo fallback
+                // Permission denied — demo fallback
                 this.pickupLat = 12.9716;
                 this.pickupLng = 77.5946;
                 this.pickupAddress = 'Bangalore, Karnataka';
@@ -190,7 +273,6 @@ export class PriceProposalModalComponent implements OnChanges {
     }
 
     onBackdropClick(): void {
-        // Backdrop click = "return to payment" (safer — never accidentally navigate away)
         this.continuePayment.emit();
     }
 
@@ -198,18 +280,10 @@ export class PriceProposalModalComponent implements OnChanges {
         this.clearErrors();
         let hasError = false;
 
-        if (!this.pickupAddress.trim()) {
-            this.showPickupError = true;
-            hasError = true;
-        }
-        if (!this.dropAddress.trim()) {
-            this.showDropError = true;
-            hasError = true;
-        }
-        if (!this.selectedRideCategory) {
-            this.showCategoryError = true;
-            hasError = true;
-        }
+        if (!this.pickupAddress.trim()) { this.showPickupError = true; hasError = true; }
+        if (!this.dropAddress.trim())   { this.showDropError   = true; hasError = true; }
+        if (!this.selectedRideCategory) { this.showCategoryError = true; hasError = true; }
+
         if (!this.pickupDate || !this.pickupTime) {
             this.showDateTimeError = true;
             this.dateTimeErrorMsg = 'Please select a pickup date and time.';
@@ -235,10 +309,10 @@ export class PriceProposalModalComponent implements OnChanges {
             pickupDateTime,
             tripType: this.selectedTripType === 'RT' ? 'Round Trip' : 'One Way',
             carType: this.selectedRideCategory,
-            originalFare: this.context?.originalFare ?? fare,
+            originalFare: this.maxFare,
             proposedFare: fare,
-            note: (this.note || '').trim(),
-            autoConfirm: this.autoConfirm
+            vasServices: [...this.selectedVas],
+            autoConfirm: this.autoConfirm,
         });
         this.submitted.emit(created);
     }

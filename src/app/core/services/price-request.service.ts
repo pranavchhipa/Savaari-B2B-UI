@@ -25,9 +25,10 @@ export class PriceRequestService {
         return this.requestsSubject.value;
     }
 
-    create(input: Omit<PriceRequest, 'id' | 'status' | 'submittedAt'>): PriceRequest {
+    create(input: Omit<PriceRequest, 'id' | 'status' | 'submittedAt' | 'vasServices'> & { vasServices?: string[] }): PriceRequest {
         const req: PriceRequest = {
             ...input,
+            vasServices: input.vasServices ?? [],
             id: this.generateId(),
             status: 'pending',
             submittedAt: new Date().toISOString()
@@ -83,7 +84,7 @@ export class PriceRequestService {
                 carType: 'Sedan',
                 originalFare: 4200,
                 proposedFare: 3500,
-                note: 'Need a clean cab, non-smoker driver please.',
+                vasServices: ['luggage'],
                 autoConfirm: true,
                 status: 'accepted',
                 submittedAt: minutes(45),
@@ -97,7 +98,7 @@ export class PriceRequestService {
                 carType: 'SUV',
                 originalFare: 5800,
                 proposedFare: 4900,
-                note: '',
+                vasServices: [],
                 autoConfirm: false,
                 status: 'accepted',
                 submittedAt: minutes(120),
@@ -111,7 +112,7 @@ export class PriceRequestService {
                 carType: 'Innova',
                 originalFare: 9200,
                 proposedFare: 7500,
-                note: 'Same-day return, need driver familiar with the route.',
+                vasServices: ['diesel'],
                 autoConfirm: false,
                 status: 'expired',
                 submittedAt: minutes(1500)
@@ -124,7 +125,7 @@ export class PriceRequestService {
                 carType: 'Crysta',
                 originalFare: 12500,
                 proposedFare: 10800,
-                note: 'Family trip, 4 passengers + luggage.',
+                vasServices: ['luggage', 'new_car'],
                 autoConfirm: true,
                 status: 'pending',
                 submittedAt: minutes(8)
@@ -137,7 +138,7 @@ export class PriceRequestService {
                 carType: 'Hatchback',
                 originalFare: 3400,
                 proposedFare: 2800,
-                note: '',
+                vasServices: [],
                 autoConfirm: true,
                 status: 'pending',
                 submittedAt: minutes(15)

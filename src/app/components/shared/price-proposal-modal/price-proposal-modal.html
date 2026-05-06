@@ -61,13 +61,12 @@
                     </div>
                 </div>
 
-                <!-- GPS loading state -->
+                <!-- GPS loading -->
                 <div *ngIf="gpsLoading" class="flex items-center gap-2 py-2.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-500">
                     <lucide-icon name="loader-2" [size]="14" class="animate-spin text-primary"></lucide-icon>
                     Detecting your location…
                 </div>
 
-                <!-- Address input (GPS shows detected address; manual shows text input) -->
                 <div *ngIf="!gpsLoading" class="relative">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2">
                         <lucide-icon name="map-pin" [size]="13" class="text-slate-400"></lucide-icon>
@@ -75,17 +74,14 @@
                     <input type="text"
                            [(ngModel)]="pickupAddress"
                            [readonly]="pickupInputMode === 'gps' && !!pickupAddress && !gpsError"
-                           class="w-full pl-8 pr-3 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 outline-none transition-all"
+                           class="w-full pl-8 pr-3 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 outline-none transition-all"
                            [class.border-slate-200]="!showPickupError"
                            [class.dark:border-slate-700]="!showPickupError"
                            [class.focus:border-primary]="!showPickupError"
                            [class.border-rose-400]="showPickupError"
                            [class.bg-slate-50]="pickupInputMode === 'gps' && !!pickupAddress && !gpsError"
-                           [class.dark:bg-slate-800/50]="pickupInputMode === 'gps' && !!pickupAddress && !gpsError"
                            placeholder="Enter pickup address" />
                 </div>
-
-                <!-- GPS error / warning -->
                 <p *ngIf="gpsError" class="mt-1 text-[10px] text-amber-600 dark:text-amber-400">{{ gpsError }}</p>
                 <p *ngIf="showPickupError" class="mt-1 text-[10px] font-semibold text-rose-500">Pickup location is required.</p>
             </div>
@@ -101,7 +97,7 @@
                     </span>
                     <input type="text"
                            [(ngModel)]="dropAddress"
-                           class="w-full pl-8 pr-3 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 outline-none transition-all"
+                           class="w-full pl-8 pr-3 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 outline-none transition-all"
                            [class.border-slate-200]="!showDropError"
                            [class.dark:border-slate-700]="!showDropError"
                            [class.focus:border-primary]="!showDropError"
@@ -142,7 +138,7 @@
                 </label>
                 <div class="flex flex-wrap gap-2">
                     <button *ngFor="let cat of rideCategories"
-                            (click)="selectedRideCategory = cat; showCategoryError = false"
+                            (click)="selectCategory(cat)"
                             [class.bg-primary]="selectedRideCategory === cat"
                             [class.text-white]="selectedRideCategory === cat"
                             [class.border-primary]="selectedRideCategory === cat"
@@ -167,7 +163,6 @@
                     Pickup Date &amp; Time <span class="text-rose-500">*</span>
                 </label>
                 <div class="grid grid-cols-2 gap-2">
-                    <!-- Date -->
                     <div class="relative">
                         <span class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                             <lucide-icon name="calendar" [size]="13" class="text-slate-400"></lucide-icon>
@@ -181,7 +176,6 @@
                                [class.focus:border-primary]="!showDateTimeError"
                                [class.border-rose-400]="showDateTimeError" />
                     </div>
-                    <!-- Time -->
                     <div class="relative">
                         <span class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                             <lucide-icon name="clock" [size]="13" class="text-slate-400"></lucide-icon>
@@ -199,18 +193,18 @@
                 <p *ngIf="!showDateTimeError" class="mt-1 text-[10px] text-slate-400 dark:text-slate-500">Booking window must be at least 4 hours from now.</p>
             </div>
 
-            <!-- 6 — Customer Proposed Price ───────────────────────────── -->
+            <!-- 6 — Proposed Fare ──────────────────────────────────────── -->
             <div>
                 <div class="flex items-center justify-between mb-1.5">
                     <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
                         Proposed Fare <span class="text-rose-500">*</span>
                     </label>
                     <span class="text-[10px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                        Market rate: <span class="text-slate-700 dark:text-slate-300">₹{{ context.originalFare | number }}</span>
+                        Market rate: <span class="text-slate-700 dark:text-slate-300">₹{{ maxFare | number }}</span>
                     </span>
                 </div>
 
-                <!-- Fare slider -->
+                <!-- Slider -->
                 <div class="mb-2">
                     <input type="range"
                            [(ngModel)]="proposedFare"
@@ -232,7 +226,7 @@
                            [(ngModel)]="proposedFare"
                            [min]="minFare"
                            [max]="maxFare"
-                           class="w-full pl-8 pr-3 py-2.5 text-base sm:text-lg font-bold border-2 rounded-lg bg-white dark:bg-slate-800 outline-none transition-all"
+                           class="w-full pl-8 pr-3 py-2.5 text-base sm:text-lg font-bold border-2 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 outline-none transition-all"
                            [class.border-slate-200]="!showFareError"
                            [class.dark:border-slate-700]="!showFareError"
                            [class.focus:border-primary]="!showFareError"
@@ -247,16 +241,49 @@
                 </div>
             </div>
 
-            <!-- 7 — Passenger Notes (Optional) ───────────────────────── -->
+            <!-- 7 — Value Added Services ───────────────────────────────── -->
             <div>
-                <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
-                    Passenger Notes <span class="font-normal text-slate-400">(optional)</span>
-                </label>
-                <textarea [(ngModel)]="note"
-                          rows="2"
-                          maxlength="200"
-                          class="w-full px-3 py-2 text-xs sm:text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:border-primary outline-none resize-none dark:text-slate-200"
-                          placeholder="Special instructions for the driver — e.g. AC required, language preference, luggage info…"></textarea>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+                        Value Added Services
+                        <span class="font-normal text-slate-400">(optional)</span>
+                    </label>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500">Billed as extras</span>
+                </div>
+
+                <div class="space-y-2">
+                    <label *ngFor="let vas of vasOptions"
+                           class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition"
+                           [class.border-primary]="isVasSelected(vas.id)"
+                           [class.bg-primary/5]="isVasSelected(vas.id)"
+                           [class.border-slate-200]="!isVasSelected(vas.id)"
+                           [class.dark:border-slate-700]="!isVasSelected(vas.id)"
+                           [class.bg-white]="!isVasSelected(vas.id)"
+                           [class.dark:bg-slate-800/40]="!isVasSelected(vas.id)"
+                           (click)="toggleVas(vas.id)">
+                        <div class="mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition"
+                             [class.bg-primary]="isVasSelected(vas.id)"
+                             [class.border-primary]="isVasSelected(vas.id)"
+                             [class.border-slate-300]="!isVasSelected(vas.id)"
+                             [class.dark:border-slate-600]="!isVasSelected(vas.id)">
+                            <lucide-icon *ngIf="isVasSelected(vas.id)" name="check" [size]="10" class="text-white"></lucide-icon>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 leading-tight">{{ vas.label }}</p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{{ vas.description }}</p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Mutual exclusion warning -->
+                <div *ngIf="vasConflictMsg" class="mt-2 flex items-start gap-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[10px] sm:text-[11px] text-amber-700 dark:text-amber-300">
+                    <lucide-icon name="alert-triangle" [size]="12" class="shrink-0 mt-0.5"></lucide-icon>
+                    {{ vasConflictMsg }}
+                </div>
+
+                <p class="mt-2 text-[10px] text-slate-400 dark:text-slate-500 italic">
+                    VAS charges will be included as extras in the final bill.
+                </p>
             </div>
 
             <!-- 8 — Auto-confirm checkbox ─────────────────────────────── -->

@@ -13,7 +13,7 @@ export interface PriceRequest {
     carType: string;               // 'Sedan' | 'SUV' | 'Hatchback' | 'Innova' | 'Crysta'
     originalFare: number;
     proposedFare: number;
-    note: string;
+    vasServices: string[];          // e.g. ['new_car', 'luggage']
     autoConfirm: boolean;
     status: PriceRequestStatus;
     submittedAt: string;           // ISO

@@ -2175,7 +2175,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked, Ca
       tripType: this.itinerary.tripType || 'One Way',
       carType: this.selectedCar.name || this.selectedCar.type || 'Cab',
       originalFare: Math.round(fare),
-      note: this.landmark || ''
     };
   }
 
