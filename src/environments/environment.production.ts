@@ -7,7 +7,7 @@
  */
 export const environment = {
   production: true,
-  demoMode: false,
+  demoMode: true,
 
   /** Partner API: cities, availability (proxied via .htaccess) */
   partnerApiBaseUrl: '/partner-api',
