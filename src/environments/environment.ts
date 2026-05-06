@@ -10,6 +10,9 @@ export const environment = {
   production: false,
   demoMode: true,
 
+  /** Google Maps API key (Places + Geocoding) */
+  googleMapsApiKey: 'AIzaSyDGpl1h89tlUFcbiSDpiSJdZocTRKNUYn8',
+
   /** Partner API: cities, availability (proxied to api.betasavaari.com) */
   partnerApiBaseUrl: '/partner-api',
 

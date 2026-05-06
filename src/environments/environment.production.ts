@@ -9,6 +9,9 @@ export const environment = {
   production: true,
   demoMode: true,
 
+  /** Google Maps API key (Places + Geocoding) */
+  googleMapsApiKey: 'AIzaSyDGpl1h89tlUFcbiSDpiSJdZocTRKNUYn8',
+
   /** Partner API: cities, availability (proxied via .htaccess) */
   partnerApiBaseUrl: '/partner-api',
 

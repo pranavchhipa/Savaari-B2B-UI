@@ -2,9 +2,12 @@ import {
     Component,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
+    ElementRef,
     EventEmitter,
     Input,
     Output,
+    ViewChild,
+    AfterViewChecked,
     OnChanges,
     SimpleChanges,
     inject
@@ -13,14 +16,19 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { PriceRequestService } from '../../../core/services/price-request.service';
+import { GoogleMapsService } from '../../../core/services/google-maps.service';
 import { PriceRequest } from '../../../core/models/price-request.model';
+
+declare const google: any;
+
+export type ModalTripType = 'OW' | 'RT' | 'Local' | 'Airport';
 
 export interface PriceProposalContext {
     fromCity: string;
     toCity: string;
     pickupDateTime: string;       // ISO
     tripType: string;             // 'One Way' | 'Round Trip' | 'Local' | 'Airport'
-    carType: string;              // 'Sedan' | 'SUV' | ...
+    carType: string;
     originalFare: number;
 }
 
@@ -28,15 +36,9 @@ interface VasOption {
     id: string;
     label: string;
     description: string;
-    excludes?: string;   // id of a mutually exclusive VAS
+    excludes?: string;
 }
 
-/**
- * Counter-offer (price proposal) modal. Captures pickup/drop locations,
- * trip type, ride category, pickup date/time, VAS add-ons, and a proposed
- * fare. Fare range auto-adjusts when the agent switches ride category.
- * Booking window must be at least 4 hours out. Pure demo — no backend.
- */
 @Component({
     selector: 'app-price-proposal-modal',
     standalone: true,
@@ -44,44 +46,70 @@ interface VasOption {
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './price-proposal-modal.html'
 })
-export class PriceProposalModalComponent implements OnChanges {
+export class PriceProposalModalComponent implements OnChanges, AfterViewChecked {
     @Input() visible = false;
     @Input() context: PriceProposalContext | null = null;
 
-    /** Emits the created request after a successful Submit. */
     @Output() submitted = new EventEmitter<PriceRequest>();
-    /** User chose to abandon — navigate away from payment. */
     @Output() dismissed = new EventEmitter<void>();
-    /** User wants to return to the payment screen — do not navigate away. */
     @Output() continuePayment = new EventEmitter<void>();
 
-    private priceRequests = inject(PriceRequestService);
-    private cdr = inject(ChangeDetectorRef);
+    @ViewChild('pickupInputRef') pickupInputEl?: ElementRef<HTMLInputElement>;
+    @ViewChild('dropInputRef')   dropInputEl?:   ElementRef<HTMLInputElement>;
+    @ViewChild('airportInputRef') airportInputEl?: ElementRef<HTMLInputElement>;
 
-    // ── Pickup location ─────────────────────────────────────────────────────
-    pickupInputMode: 'gps' | 'manual' = 'manual';
+    private priceRequests  = inject(PriceRequestService);
+    private googleMaps     = inject(GoogleMapsService);
+    private cdr            = inject(ChangeDetectorRef);
+
+    // ── Trip type ────────────────────────────────────────────────────────────
+    selectedTripType: ModalTripType = 'OW';
+
+    readonly tripTypeOptions: { id: ModalTripType; label: string; icon: string }[] = [
+        { id: 'OW',      label: 'One Way',     icon: 'arrow-right'      },
+        { id: 'RT',      label: 'Round Trip',  icon: 'arrow-left-right' },
+        { id: 'Local',   label: 'Local',       icon: 'clock'            },
+        { id: 'Airport', label: 'Airport',     icon: 'plane'            },
+    ];
+
+    setTripType(id: ModalTripType): void {
+        this.selectedTripType = id;
+        this.showDropError = false;
+        // Re-attach autocomplete to relevant inputs after DOM updates
+        this.mapsNeedsInit = true;
+    }
+
+    get needsDrop(): boolean   { return this.selectedTripType === 'OW' || this.selectedTripType === 'RT'; }
+    get needsLocal(): boolean  { return this.selectedTripType === 'Local'; }
+    get needsAirport(): boolean { return this.selectedTripType === 'Airport'; }
+
+    // ── Pickup ───────────────────────────────────────────────────────────────
     pickupAddress = '';
     pickupLat: number | null = null;
     pickupLng: number | null = null;
+    pickupInputMode: 'manual' | 'gps' = 'manual';
     gpsLoading = false;
     gpsError = '';
 
-    // ── Drop location ───────────────────────────────────────────────────────
+    // ── Drop (OW / RT) ───────────────────────────────────────────────────────
     dropAddress = '';
+    dropLat: number | null = null;
+    dropLng: number | null = null;
 
-    // ── Trip type ───────────────────────────────────────────────────────────
-    selectedTripType: 'OW' | 'RT' = 'OW';
-    readonly tripTypes: { id: 'OW' | 'RT'; label: string }[] = [
-        { id: 'OW', label: 'One Way' },
-        { id: 'RT', label: 'Round Trip' },
-    ];
-    setTripType(id: 'OW' | 'RT'): void { this.selectedTripType = id; }
+    // ── Local ────────────────────────────────────────────────────────────────
+    localDuration = 4;
+    readonly localDurations = [2, 4, 6, 8, 10];
 
-    // ── Ride category & fare multipliers ────────────────────────────────────
+    // ── Airport ──────────────────────────────────────────────────────────────
+    airportDirection: 'to' | 'from' = 'to';
+    airportName = '';
+    airportLat: number | null = null;
+    airportLng: number | null = null;
+
+    // ── Ride category & fare multipliers ─────────────────────────────────────
     selectedRideCategory = '';
     readonly rideCategories = ['Hatchback', 'Sedan', 'SUV', 'Innova', 'Crysta'];
 
-    // Relative price multiplier for each category (Sedan = 1.0 base)
     private readonly fareMultipliers: Record<string, number> = {
         Hatchback: 0.75,
         Sedan:     1.00,
@@ -89,9 +117,6 @@ export class PriceProposalModalComponent implements OnChanges {
         Innova:    1.45,
         Crysta:    1.70,
     };
-
-    // Base fare unit — originalFare normalised to Sedan so switching category
-    // produces a proportional fare instead of keeping the original range.
     private baseFareUnit = 0;
 
     selectCategory(cat: string): void {
@@ -100,117 +125,98 @@ export class PriceProposalModalComponent implements OnChanges {
         this.recalcFare();
     }
 
-    private recalcFare(): void {
+    recalcFare(): void {
         const mul = this.fareMultipliers[this.selectedRideCategory] ?? 1.0;
         const newOriginal = Math.round(this.baseFareUnit * mul);
         this.minFare = Math.round(newOriginal * 0.7);
         this.maxFare = newOriginal;
-        // Clamp proposed fare within new range
         const current = this.proposedFare ?? Math.round(newOriginal * 0.85);
         this.proposedFare = Math.min(this.maxFare, Math.max(this.minFare, current));
     }
 
-    // ── Pickup date & time (must be ≥ 4 hours from now) ────────────────────
-    pickupDate = '';   // YYYY-MM-DD
-    pickupTime = '';   // HH:mm
+    // ── Pickup date & time ───────────────────────────────────────────────────
+    pickupDate = '';
+    pickupTime = '';
 
-    // ── Fare ────────────────────────────────────────────────────────────────
+    get minDate(): string { return new Date().toISOString().split('T')[0]; }
+
+    isPickupTimeValid(): boolean {
+        if (!this.pickupDate || !this.pickupTime) return false;
+        return new Date(`${this.pickupDate}T${this.pickupTime}`).getTime() - Date.now() >= 4 * 60 * 60 * 1000;
+    }
+
+    // ── Fare ─────────────────────────────────────────────────────────────────
     proposedFare: number | null = null;
     minFare = 0;
     maxFare = 0;
+    get fareStep(): number { return (this.maxFare - this.minFare) > 500 ? 10 : 5; }
 
-    // ── VAS ─────────────────────────────────────────────────────────────────
+    // ── VAS ──────────────────────────────────────────────────────────────────
     readonly vasOptions: VasOption[] = [
-        {
-            id: 'new_car',
-            label: 'New Car Promise',
-            description: 'Vehicle not older than 3 years',
-            excludes: 'diesel',
-        },
-        {
-            id: 'diesel',
-            label: 'Diesel Car Guarantee',
-            description: 'Fuel-efficient diesel vehicle',
-            excludes: 'new_car',
-        },
-        {
-            id: 'luggage',
-            label: 'Luggage Carrier',
-            description: 'Roof-mounted carrier for extra baggage',
-        },
+        { id: 'new_car',  label: 'New Car Promise',        description: 'Vehicle not older than 3 years', excludes: 'diesel' },
+        { id: 'diesel',   label: 'Diesel Car Guarantee',   description: 'Fuel-efficient diesel vehicle',  excludes: 'new_car' },
+        { id: 'luggage',  label: 'Luggage Carrier',        description: 'Roof-mounted carrier for extra baggage' },
     ];
     selectedVas: string[] = [];
     vasConflictMsg = '';
 
     toggleVas(id: string): void {
-        const idx = this.selectedVas.indexOf(id);
-        if (idx > -1) {
-            // Deselect
+        if (this.selectedVas.includes(id)) {
             this.selectedVas = this.selectedVas.filter(v => v !== id);
             this.vasConflictMsg = '';
             return;
         }
-        // Check mutual exclusion
         const opt = this.vasOptions.find(o => o.id === id);
         if (opt?.excludes && this.selectedVas.includes(opt.excludes)) {
             const conflicting = this.vasOptions.find(o => o.id === opt.excludes)?.label ?? opt.excludes;
-            this.vasConflictMsg = `"${opt.label}" and "${conflicting}" cannot be selected together (Govt. Policy). Please choose one.`;
+            this.vasConflictMsg = `"${opt.label}" and "${conflicting}" cannot be selected together (Govt. Policy).`;
             return;
         }
         this.vasConflictMsg = '';
         this.selectedVas = [...this.selectedVas, id];
     }
 
-    isVasSelected(id: string): boolean {
-        return this.selectedVas.includes(id);
-    }
+    isVasSelected(id: string): boolean { return this.selectedVas.includes(id); }
 
-    // ── Auto-confirm ────────────────────────────────────────────────────────
+    // ── Auto-confirm ─────────────────────────────────────────────────────────
     autoConfirm = true;
 
-    // ── Validation state ────────────────────────────────────────────────────
-    showPickupError = false;
-    showDropError = false;
-    showCategoryError = false;
-    showDateTimeError = false;
-    dateTimeErrorMsg = '';
-    showFareError = false;
+    // ── Validation ───────────────────────────────────────────────────────────
+    showPickupError    = false;
+    showDropError      = false;
+    showCategoryError  = false;
+    showDateTimeError  = false;
+    dateTimeErrorMsg   = '';
+    showFareError      = false;
 
-    // ── Computed helpers ────────────────────────────────────────────────────
-    get minDate(): string {
-        return new Date().toISOString().split('T')[0];
-    }
-
-    get fareStep(): number {
-        const range = this.maxFare - this.minFare;
-        return range > 500 ? 10 : 5;
-    }
+    // ── Google Maps lifecycle ─────────────────────────────────────────────────
+    private mapsNeedsInit = false;
+    private pickupAC: any = null;
+    private dropAC: any   = null;
+    private airportAC: any = null;
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['context'] && this.context) {
             const original = this.context.originalFare || 0;
-
-            // Detect context car's category so we can normalise to a base unit
             const car = this.context.carType?.toLowerCase() || '';
             let contextCategory = 'Sedan';
             if (car.includes('crysta'))      contextCategory = 'Crysta';
             else if (car.includes('innova')) contextCategory = 'Innova';
             else if (car.includes('suv'))    contextCategory = 'SUV';
             else if (car.includes('hatch'))  contextCategory = 'Hatchback';
-
             this.baseFareUnit = original / (this.fareMultipliers[contextCategory] ?? 1.0);
             this.selectedRideCategory = contextCategory;
-            this.selectedVas = [];
-            this.vasConflictMsg = '';
-            this.autoConfirm = true;
-            this.clearErrors();
 
-            // Pre-populate fields from context (all remain editable)
             this.pickupAddress = this.context.fromCity || '';
-            this.dropAddress = this.context.toCity || '';
+            this.dropAddress   = this.context.toCity   || '';
+            this.pickupLat = null; this.pickupLng = null;
+            this.dropLat   = null; this.dropLng   = null;
 
             const ct = this.context.tripType?.toLowerCase() || '';
-            this.selectedTripType = ct.includes('round') ? 'RT' : 'OW';
+            this.selectedTripType = ct.includes('round') ? 'RT'
+                                  : ct.includes('local') ? 'Local'
+                                  : ct.includes('airport') ? 'Airport'
+                                  : 'OW';
 
             if (this.context.pickupDateTime) {
                 const d = new Date(this.context.pickupDateTime);
@@ -220,14 +226,91 @@ export class PriceProposalModalComponent implements OnChanges {
                 }
             }
 
+            this.selectedVas = [];
+            this.vasConflictMsg = '';
+            this.autoConfirm = true;
+            this.clearErrors();
             this.recalcFare();
         }
-        if (changes['visible'] && this.visible) {
-            this.clearErrors();
+        if (changes['visible']) {
+            if (this.visible) {
+                this.clearErrors();
+                this.mapsNeedsInit = true;
+            } else {
+                // Detach autocomplete instances when modal is hidden
+                this.pickupAC  = null;
+                this.dropAC    = null;
+                this.airportAC = null;
+                this.mapsNeedsInit = false;
+            }
         }
     }
 
-    detectGpsLocation(): void {
+    ngAfterViewChecked(): void {
+        if (!this.mapsNeedsInit || !this.visible) return;
+        // Inputs are in the DOM; attach Autocomplete
+        if (this.pickupInputEl?.nativeElement) {
+            this.mapsNeedsInit = false;
+            this.initAutocomplete();
+        }
+    }
+
+    private async initAutocomplete(): Promise<void> {
+        try {
+            await this.googleMaps.load();
+        } catch {
+            return; // Maps failed to load — fall back to plain text inputs
+        }
+
+        // Pickup autocomplete
+        if (this.pickupInputEl?.nativeElement && !this.pickupAC) {
+            this.pickupAC = this.googleMaps.attachAutocomplete(this.pickupInputEl.nativeElement);
+            if (this.pickupAC) {
+                this.pickupAC.addListener('place_changed', () => {
+                    const place = this.pickupAC.getPlace();
+                    this.pickupAddress = place.formatted_address || place.name || '';
+                    this.pickupLat = place.geometry?.location?.lat() ?? null;
+                    this.pickupLng = place.geometry?.location?.lng() ?? null;
+                    this.showPickupError = false;
+                    this.cdr.markForCheck();
+                });
+            }
+        }
+
+        // Drop autocomplete (OW / RT only)
+        if (this.dropInputEl?.nativeElement && !this.dropAC) {
+            this.dropAC = this.googleMaps.attachAutocomplete(this.dropInputEl.nativeElement);
+            if (this.dropAC) {
+                this.dropAC.addListener('place_changed', () => {
+                    const place = this.dropAC.getPlace();
+                    this.dropAddress = place.formatted_address || place.name || '';
+                    this.dropLat = place.geometry?.location?.lat() ?? null;
+                    this.dropLng = place.geometry?.location?.lng() ?? null;
+                    this.showDropError = false;
+                    this.cdr.markForCheck();
+                });
+            }
+        }
+
+        // Airport autocomplete
+        if (this.airportInputEl?.nativeElement && !this.airportAC) {
+            this.airportAC = this.googleMaps.attachAutocomplete(this.airportInputEl.nativeElement, {
+                types: ['airport'],
+            });
+            if (this.airportAC) {
+                this.airportAC.addListener('place_changed', () => {
+                    const place = this.airportAC.getPlace();
+                    this.airportName = place.name || place.formatted_address || '';
+                    this.airportLat  = place.geometry?.location?.lat() ?? null;
+                    this.airportLng  = place.geometry?.location?.lng() ?? null;
+                    this.cdr.markForCheck();
+                });
+            }
+        }
+    }
+
+    // ── GPS ───────────────────────────────────────────────────────────────────
+    async detectGpsLocation(): Promise<void> {
         this.gpsLoading = true;
         this.gpsError = '';
         this.pickupInputMode = 'gps';
@@ -241,19 +324,20 @@ export class PriceProposalModalComponent implements OnChanges {
         }
 
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
+            async (pos) => {
                 this.pickupLat = pos.coords.latitude;
                 this.pickupLng = pos.coords.longitude;
-                this.pickupAddress = `Current Location (${pos.coords.latitude.toFixed(4)}°N, ${pos.coords.longitude.toFixed(4)}°E)`;
+                try {
+                    this.pickupAddress = await this.googleMaps.reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+                } catch {
+                    this.pickupAddress = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+                }
                 this.gpsLoading = false;
                 this.cdr.markForCheck();
             },
             () => {
-                // Permission denied — demo fallback
-                this.pickupLat = 12.9716;
-                this.pickupLng = 77.5946;
-                this.pickupAddress = 'Bangalore, Karnataka';
-                this.gpsError = 'Location access denied — using an approximate location.';
+                this.gpsError = 'Location access denied — please enter the address manually.';
+                this.pickupInputMode = 'manual';
                 this.gpsLoading = false;
                 this.cdr.markForCheck();
             },
@@ -266,22 +350,17 @@ export class PriceProposalModalComponent implements OnChanges {
         this.gpsError = '';
     }
 
-    isPickupTimeValid(): boolean {
-        if (!this.pickupDate || !this.pickupTime) return false;
-        const picked = new Date(`${this.pickupDate}T${this.pickupTime}`);
-        return picked.getTime() - Date.now() >= 4 * 60 * 60 * 1000;
-    }
+    onBackdropClick(): void { this.continuePayment.emit(); }
 
-    onBackdropClick(): void {
-        this.continuePayment.emit();
-    }
-
+    // ── Submit ────────────────────────────────────────────────────────────────
     onSubmit(): void {
         this.clearErrors();
         let hasError = false;
 
         if (!this.pickupAddress.trim()) { this.showPickupError = true; hasError = true; }
-        if (!this.dropAddress.trim())   { this.showDropError   = true; hasError = true; }
+
+        if (this.needsDrop && !this.dropAddress.trim()) { this.showDropError = true; hasError = true; }
+
         if (!this.selectedRideCategory) { this.showCategoryError = true; hasError = true; }
 
         if (!this.pickupDate || !this.pickupTime) {
@@ -302,12 +381,21 @@ export class PriceProposalModalComponent implements OnChanges {
 
         if (hasError) return;
 
-        const pickupDateTime = `${this.pickupDate}T${this.pickupTime}:00`;
+        const from = this.pickupAddress.trim();
+        const to   = this.needsDrop    ? this.dropAddress.trim()
+                   : this.needsLocal   ? `${this.localDuration}-hour local`
+                   : this.airportDirection === 'to' ? `${this.airportName || 'Airport'}`
+                   : this.pickupAddress.trim();
+
+        const tripLabel = this.selectedTripType === 'OW'      ? 'One Way'
+                        : this.selectedTripType === 'RT'      ? 'Round Trip'
+                        : this.selectedTripType === 'Local'   ? 'Local'
+                        : `Airport (${this.airportDirection === 'to' ? 'Drop' : 'Pickup'})`;
 
         const created = this.priceRequests.create({
-            route: { from: this.pickupAddress.trim(), to: this.dropAddress.trim() },
-            pickupDateTime,
-            tripType: this.selectedTripType === 'RT' ? 'Round Trip' : 'One Way',
+            route: { from, to },
+            pickupDateTime: `${this.pickupDate}T${this.pickupTime}:00`,
+            tripType: tripLabel,
             carType: this.selectedRideCategory,
             originalFare: this.maxFare,
             proposedFare: fare,
@@ -318,12 +406,12 @@ export class PriceProposalModalComponent implements OnChanges {
     }
 
     private clearErrors(): void {
-        this.showPickupError = false;
-        this.showDropError = false;
+        this.showPickupError   = false;
+        this.showDropError     = false;
         this.showCategoryError = false;
         this.showDateTimeError = false;
-        this.dateTimeErrorMsg = '';
-        this.showFareError = false;
-        this.gpsError = '';
+        this.dateTimeErrorMsg  = '';
+        this.showFareError     = false;
+        this.gpsError          = '';
     }
 }

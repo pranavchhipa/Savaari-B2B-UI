@@ -2,10 +2,8 @@
      class="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4"
      (click)="onBackdropClick()">
 
-    <!-- Backdrop -->
     <div class="absolute inset-0 bg-black/55 backdrop-blur-sm animate-in fade-in"></div>
 
-    <!-- Modal Card -->
     <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[94vh] overflow-hidden flex flex-col"
          (click)="$event.stopPropagation()">
 
@@ -21,99 +19,21 @@
                 </div>
             </div>
             <button (click)="continuePayment.emit()"
-                    class="text-white/80 hover:text-white transition cursor-pointer p-1 rounded hover:bg-white/10"
-                    aria-label="Close">
+                    class="text-white/80 hover:text-white transition cursor-pointer p-1 rounded hover:bg-white/10">
                 <lucide-icon name="x" [size]="18"></lucide-icon>
             </button>
         </div>
 
-        <!-- Body (scrollable) -->
+        <!-- Scrollable body -->
         <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
 
-            <!-- 1 — Pickup Location ─────────────────────────────────────── -->
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
-                        Pickup Location <span class="text-rose-500">*</span>
-                    </label>
-                    <!-- GPS / Manual toggle -->
-                    <div class="flex items-center gap-1 p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                        <button (click)="detectGpsLocation()"
-                                [class.bg-white]="pickupInputMode === 'gps'"
-                                [class.dark:bg-slate-700]="pickupInputMode === 'gps'"
-                                [class.shadow-sm]="pickupInputMode === 'gps'"
-                                [class.text-primary]="pickupInputMode === 'gps'"
-                                [class.text-slate-500]="pickupInputMode !== 'gps'"
-                                class="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition cursor-pointer">
-                            <lucide-icon name="navigation" [size]="10"></lucide-icon>
-                            GPS
-                        </button>
-                        <button (click)="switchToManual()"
-                                [class.bg-white]="pickupInputMode === 'manual'"
-                                [class.dark:bg-slate-700]="pickupInputMode === 'manual'"
-                                [class.shadow-sm]="pickupInputMode === 'manual'"
-                                [class.text-primary]="pickupInputMode === 'manual'"
-                                [class.text-slate-500]="pickupInputMode !== 'manual'"
-                                class="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition cursor-pointer">
-                            <lucide-icon name="map-pin" [size]="10"></lucide-icon>
-                            Manual
-                        </button>
-                    </div>
-                </div>
-
-                <!-- GPS loading -->
-                <div *ngIf="gpsLoading" class="flex items-center gap-2 py-2.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-500">
-                    <lucide-icon name="loader-2" [size]="14" class="animate-spin text-primary"></lucide-icon>
-                    Detecting your location…
-                </div>
-
-                <div *ngIf="!gpsLoading" class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2">
-                        <lucide-icon name="map-pin" [size]="13" class="text-slate-400"></lucide-icon>
-                    </span>
-                    <input type="text"
-                           [(ngModel)]="pickupAddress"
-                           [readonly]="pickupInputMode === 'gps' && !!pickupAddress && !gpsError"
-                           class="w-full pl-8 pr-3 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 outline-none transition-all"
-                           [class.border-slate-200]="!showPickupError"
-                           [class.dark:border-slate-700]="!showPickupError"
-                           [class.focus:border-primary]="!showPickupError"
-                           [class.border-rose-400]="showPickupError"
-                           [class.bg-slate-50]="pickupInputMode === 'gps' && !!pickupAddress && !gpsError"
-                           placeholder="Enter pickup address" />
-                </div>
-                <p *ngIf="gpsError" class="mt-1 text-[10px] text-amber-600 dark:text-amber-400">{{ gpsError }}</p>
-                <p *ngIf="showPickupError" class="mt-1 text-[10px] font-semibold text-rose-500">Pickup location is required.</p>
-            </div>
-
-            <!-- 2 — Drop Location ──────────────────────────────────────── -->
-            <div>
-                <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
-                    Drop Location <span class="text-rose-500">*</span>
-                </label>
-                <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2">
-                        <lucide-icon name="map-pin" [size]="13" class="text-rose-400"></lucide-icon>
-                    </span>
-                    <input type="text"
-                           [(ngModel)]="dropAddress"
-                           class="w-full pl-8 pr-3 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 outline-none transition-all"
-                           [class.border-slate-200]="!showDropError"
-                           [class.dark:border-slate-700]="!showDropError"
-                           [class.focus:border-primary]="!showDropError"
-                           [class.border-rose-400]="showDropError"
-                           placeholder="Enter drop address" />
-                </div>
-                <p *ngIf="showDropError" class="mt-1 text-[10px] font-semibold text-rose-500">Drop location is required.</p>
-            </div>
-
-            <!-- 3 — Trip Type ──────────────────────────────────────────── -->
+            <!-- ① Trip Type ──────────────────────────────────────────────── -->
             <div>
                 <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
                     Trip Type <span class="text-rose-500">*</span>
                 </label>
-                <div class="flex gap-2">
-                    <button *ngFor="let t of tripTypes"
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button *ngFor="let t of tripTypeOptions"
                             (click)="setTripType(t.id)"
                             [class.bg-primary]="selectedTripType === t.id"
                             [class.text-white]="selectedTripType === t.id"
@@ -122,16 +42,166 @@
                             [class.dark:bg-slate-800]="selectedTripType !== t.id"
                             [class.text-slate-600]="selectedTripType !== t.id"
                             [class.dark:text-slate-300]="selectedTripType !== t.id"
-                            [class.border-slate-300]="selectedTripType !== t.id"
-                            [class.dark:border-slate-600]="selectedTripType !== t.id"
-                            class="flex-1 py-2 text-xs sm:text-sm font-semibold border-2 rounded-lg transition cursor-pointer">
+                            [class.border-slate-200]="selectedTripType !== t.id"
+                            [class.dark:border-slate-700]="selectedTripType !== t.id"
+                            class="flex flex-col items-center gap-1 py-2 px-1 text-[10px] sm:text-xs font-semibold border-2 rounded-xl transition cursor-pointer">
+                        <lucide-icon [name]="t.icon" [size]="14"></lucide-icon>
                         {{ t.label }}
                     </button>
                 </div>
-                <p class="mt-1 text-[10px] text-slate-400 dark:text-slate-500">Airport and Local trips are not eligible for counter-offers.</p>
             </div>
 
-            <!-- 4 — Ride Category ──────────────────────────────────────── -->
+            <!-- ② Pickup Location ────────────────────────────────────────── -->
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+                        Pickup Location <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <button (click)="detectGpsLocation()"
+                                [class.bg-white]="pickupInputMode === 'gps'"
+                                [class.dark:bg-slate-700]="pickupInputMode === 'gps'"
+                                [class.text-primary]="pickupInputMode === 'gps'"
+                                [class.shadow-sm]="pickupInputMode === 'gps'"
+                                [class.text-slate-500]="pickupInputMode !== 'gps'"
+                                class="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition cursor-pointer">
+                            <lucide-icon name="navigation" [size]="10"></lucide-icon>
+                            GPS
+                        </button>
+                        <button (click)="switchToManual()"
+                                [class.bg-white]="pickupInputMode === 'manual'"
+                                [class.dark:bg-slate-700]="pickupInputMode === 'manual'"
+                                [class.text-primary]="pickupInputMode === 'manual'"
+                                [class.shadow-sm]="pickupInputMode === 'manual'"
+                                [class.text-slate-500]="pickupInputMode !== 'manual'"
+                                class="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold transition cursor-pointer">
+                            <lucide-icon name="map-pin" [size]="10"></lucide-icon>
+                            Search
+                        </button>
+                    </div>
+                </div>
+
+                <div *ngIf="gpsLoading"
+                     class="flex items-center gap-2 py-2.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-500">
+                    <lucide-icon name="loader-2" [size]="14" class="animate-spin text-primary"></lucide-icon>
+                    Detecting your location…
+                </div>
+
+                <div *ngIf="!gpsLoading" class="relative">
+                    <lucide-icon name="map-pin" [size]="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
+                    <input #pickupInputRef
+                           type="text"
+                           [(ngModel)]="pickupAddress"
+                           class="w-full pl-8 pr-3 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 outline-none transition-all"
+                           [class.border-slate-200]="!showPickupError"
+                           [class.dark:border-slate-700]="!showPickupError"
+                           [class.focus:border-primary]="!showPickupError"
+                           [class.border-rose-400]="showPickupError"
+                           placeholder="Search pickup address…" />
+                </div>
+                <p *ngIf="gpsError" class="mt-1 text-[10px] text-amber-600 dark:text-amber-400">{{ gpsError }}</p>
+                <p *ngIf="showPickupError" class="mt-1 text-[10px] font-semibold text-rose-500">Pickup location is required.</p>
+            </div>
+
+            <!-- ③a Drop Location (OW / RT) ────────────────────────────── -->
+            <div *ngIf="needsDrop">
+                <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
+                    Drop Location <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative">
+                    <lucide-icon name="map-pin" [size]="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 pointer-events-none"></lucide-icon>
+                    <input #dropInputRef
+                           type="text"
+                           [(ngModel)]="dropAddress"
+                           class="w-full pl-8 pr-3 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 outline-none transition-all"
+                           [class.border-slate-200]="!showDropError"
+                           [class.dark:border-slate-700]="!showDropError"
+                           [class.focus:border-primary]="!showDropError"
+                           [class.border-rose-400]="showDropError"
+                           placeholder="Search drop address…" />
+                </div>
+                <p *ngIf="showDropError" class="mt-1 text-[10px] font-semibold text-rose-500">Drop location is required.</p>
+            </div>
+
+            <!-- ③b Duration (Local) ──────────────────────────────────── -->
+            <div *ngIf="needsLocal">
+                <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
+                    Package Duration <span class="text-rose-500">*</span>
+                </label>
+                <div class="flex gap-2 flex-wrap">
+                    <button *ngFor="let d of localDurations"
+                            (click)="localDuration = d; recalcFare()"
+                            [class.bg-primary]="localDuration === d"
+                            [class.text-white]="localDuration === d"
+                            [class.border-primary]="localDuration === d"
+                            [class.bg-white]="localDuration !== d"
+                            [class.dark:bg-slate-800]="localDuration !== d"
+                            [class.text-slate-600]="localDuration !== d"
+                            [class.dark:text-slate-300]="localDuration !== d"
+                            [class.border-slate-200]="localDuration !== d"
+                            [class.dark:border-slate-700]="localDuration !== d"
+                            class="px-4 py-2 text-xs sm:text-sm font-semibold border-2 rounded-lg transition cursor-pointer">
+                        {{ d }} hrs
+                    </button>
+                </div>
+                <p class="mt-1 text-[10px] text-slate-400 dark:text-slate-500">Driver stays with you for the selected duration.</p>
+            </div>
+
+            <!-- ③c Airport Details ────────────────────────────────────── -->
+            <div *ngIf="needsAirport" class="space-y-3">
+                <!-- Direction toggle -->
+                <div>
+                    <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
+                        Direction <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <button (click)="airportDirection = 'to'"
+                                [class.bg-primary]="airportDirection === 'to'"
+                                [class.text-white]="airportDirection === 'to'"
+                                [class.border-primary]="airportDirection === 'to'"
+                                [class.bg-white]="airportDirection !== 'to'"
+                                [class.dark:bg-slate-800]="airportDirection !== 'to'"
+                                [class.text-slate-600]="airportDirection !== 'to'"
+                                [class.dark:text-slate-300]="airportDirection !== 'to'"
+                                [class.border-slate-200]="airportDirection !== 'to'"
+                                [class.dark:border-slate-700]="airportDirection !== 'to'"
+                                class="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs sm:text-sm font-semibold border-2 rounded-lg transition cursor-pointer">
+                            <lucide-icon name="plane" [size]="12"></lucide-icon>
+                            Drop to Airport
+                        </button>
+                        <button (click)="airportDirection = 'from'"
+                                [class.bg-primary]="airportDirection === 'from'"
+                                [class.text-white]="airportDirection === 'from'"
+                                [class.border-primary]="airportDirection === 'from'"
+                                [class.bg-white]="airportDirection !== 'from'"
+                                [class.dark:bg-slate-800]="airportDirection !== 'from'"
+                                [class.text-slate-600]="airportDirection !== 'from'"
+                                [class.dark:text-slate-300]="airportDirection !== 'from'"
+                                [class.border-slate-200]="airportDirection !== 'from'"
+                                [class.dark:border-slate-700]="airportDirection !== 'from'"
+                                class="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs sm:text-sm font-semibold border-2 rounded-lg transition cursor-pointer">
+                            <lucide-icon name="plane" [size]="12"></lucide-icon>
+                            Pickup from Airport
+                        </button>
+                    </div>
+                </div>
+                <!-- Airport search -->
+                <div>
+                    <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
+                        Airport <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <lucide-icon name="plane" [size]="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
+                        <input #airportInputRef
+                               type="text"
+                               [(ngModel)]="airportName"
+                               class="w-full pl-8 pr-3 py-2.5 text-xs sm:text-sm border-2 border-slate-200 dark:border-slate-700 focus:border-primary rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 outline-none transition-all"
+                               placeholder="Search airport…" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- ④ Ride Category ────────────────────────────────────────── -->
             <div>
                 <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
                     Ride Category <span class="text-rose-500">*</span>
@@ -157,35 +227,29 @@
                 <p *ngIf="showCategoryError" class="mt-1 text-[10px] font-semibold text-rose-500">Please select a ride category.</p>
             </div>
 
-            <!-- 5 — Pickup Date & Time ─────────────────────────────────── -->
+            <!-- ⑤ Pickup Date & Time ───────────────────────────────────── -->
             <div>
                 <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 block">
                     Pickup Date &amp; Time <span class="text-rose-500">*</span>
                 </label>
                 <div class="grid grid-cols-2 gap-2">
                     <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <lucide-icon name="calendar" [size]="13" class="text-slate-400"></lucide-icon>
-                        </span>
+                        <lucide-icon name="calendar" [size]="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
                         <input type="date"
                                [(ngModel)]="pickupDate"
                                [min]="minDate"
                                class="w-full pl-8 pr-2 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 dark:[color-scheme:dark] outline-none transition-all"
                                [class.border-slate-200]="!showDateTimeError"
                                [class.dark:border-slate-700]="!showDateTimeError"
-                               [class.focus:border-primary]="!showDateTimeError"
                                [class.border-rose-400]="showDateTimeError" />
                     </div>
                     <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <lucide-icon name="clock" [size]="13" class="text-slate-400"></lucide-icon>
-                        </span>
+                        <lucide-icon name="clock" [size]="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
                         <input type="time"
                                [(ngModel)]="pickupTime"
                                class="w-full pl-8 pr-2 py-2.5 text-xs sm:text-sm border-2 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 dark:[color-scheme:dark] outline-none transition-all"
                                [class.border-slate-200]="!showDateTimeError"
                                [class.dark:border-slate-700]="!showDateTimeError"
-                               [class.focus:border-primary]="!showDateTimeError"
                                [class.border-rose-400]="showDateTimeError" />
                     </div>
                 </div>
@@ -193,35 +257,29 @@
                 <p *ngIf="!showDateTimeError" class="mt-1 text-[10px] text-slate-400 dark:text-slate-500">Booking window must be at least 4 hours from now.</p>
             </div>
 
-            <!-- 6 — Proposed Fare ──────────────────────────────────────── -->
+            <!-- ⑥ Proposed Fare ───────────────────────────────────────── -->
             <div>
                 <div class="flex items-center justify-between mb-1.5">
                     <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
                         Proposed Fare <span class="text-rose-500">*</span>
                     </label>
-                    <span class="text-[10px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
                         Market rate: <span class="text-slate-700 dark:text-slate-300">₹{{ maxFare | number }}</span>
                     </span>
                 </div>
-
-                <!-- Slider -->
-                <div class="mb-2">
-                    <input type="range"
-                           [(ngModel)]="proposedFare"
-                           [min]="minFare"
-                           [max]="maxFare"
-                           [step]="fareStep"
-                           class="w-full h-2 rounded-full appearance-none cursor-pointer accent-primary bg-slate-200 dark:bg-slate-700" />
-                    <div class="flex justify-between mt-1 text-[10px] text-slate-400 dark:text-slate-500">
-                        <span>₹{{ minFare | number }}</span>
-                        <span class="font-semibold text-slate-600 dark:text-slate-300">₹{{ (proposedFare || 0) | number }}</span>
-                        <span>₹{{ maxFare | number }}</span>
-                    </div>
+                <input type="range"
+                       [(ngModel)]="proposedFare"
+                       [min]="minFare"
+                       [max]="maxFare"
+                       [step]="fareStep"
+                       class="w-full h-2 rounded-full appearance-none cursor-pointer accent-primary bg-slate-200 dark:bg-slate-700 mb-1" />
+                <div class="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 mb-2">
+                    <span>₹{{ minFare | number }}</span>
+                    <span class="font-bold text-slate-600 dark:text-slate-300">₹{{ (proposedFare || 0) | number }}</span>
+                    <span>₹{{ maxFare | number }}</span>
                 </div>
-
-                <!-- Manual number entry -->
                 <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 font-bold text-sm">₹</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-sm text-slate-500 dark:text-slate-400">₹</span>
                     <input type="number"
                            [(ngModel)]="proposedFare"
                            [min]="minFare"
@@ -233,34 +291,32 @@
                            [class.border-rose-400]="showFareError"
                            placeholder="Enter your offer" />
                 </div>
-                <div class="mt-1.5 flex items-center justify-between text-[10px] sm:text-[11px]">
+                <div class="mt-1.5 flex items-center justify-between text-[10px]">
                     <span class="text-slate-500 dark:text-slate-400">
-                        Allowed range: <span class="font-bold text-slate-700 dark:text-slate-300">₹{{ minFare | number }} – ₹{{ maxFare | number }}</span>
+                        Range: <span class="font-bold text-slate-700 dark:text-slate-300">₹{{ minFare | number }} – ₹{{ maxFare | number }}</span>
                     </span>
                     <span *ngIf="showFareError" class="font-bold text-rose-500">Enter a value within the allowed range.</span>
                 </div>
             </div>
 
-            <!-- 7 — Value Added Services ───────────────────────────────── -->
+            <!-- ⑦ Value Added Services ───────────────────────────────── -->
             <div>
                 <div class="flex items-center justify-between mb-1.5">
                     <label class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
-                        Value Added Services
-                        <span class="font-normal text-slate-400">(optional)</span>
+                        Value Added Services <span class="font-normal text-slate-400">(optional)</span>
                     </label>
-                    <span class="text-[10px] text-slate-400 dark:text-slate-500">Billed as extras</span>
+                    <span class="text-[10px] text-slate-400">Billed as extras</span>
                 </div>
-
                 <div class="space-y-2">
                     <label *ngFor="let vas of vasOptions"
+                           (click)="toggleVas(vas.id)"
                            class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition"
                            [class.border-primary]="isVasSelected(vas.id)"
                            [class.bg-primary/5]="isVasSelected(vas.id)"
                            [class.border-slate-200]="!isVasSelected(vas.id)"
                            [class.dark:border-slate-700]="!isVasSelected(vas.id)"
                            [class.bg-white]="!isVasSelected(vas.id)"
-                           [class.dark:bg-slate-800/40]="!isVasSelected(vas.id)"
-                           (click)="toggleVas(vas.id)">
+                           [class.dark:bg-slate-800/40]="!isVasSelected(vas.id)">
                         <div class="mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition"
                              [class.bg-primary]="isVasSelected(vas.id)"
                              [class.border-primary]="isVasSelected(vas.id)"
@@ -274,19 +330,16 @@
                         </div>
                     </label>
                 </div>
-
-                <!-- Mutual exclusion warning -->
                 <div *ngIf="vasConflictMsg" class="mt-2 flex items-start gap-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[10px] sm:text-[11px] text-amber-700 dark:text-amber-300">
                     <lucide-icon name="alert-triangle" [size]="12" class="shrink-0 mt-0.5"></lucide-icon>
                     {{ vasConflictMsg }}
                 </div>
-
-                <p class="mt-2 text-[10px] text-slate-400 dark:text-slate-500 italic">
+                <p class="mt-1.5 text-[10px] text-slate-400 dark:text-slate-500 italic">
                     VAS charges will be included as extras in the final bill.
                 </p>
             </div>
 
-            <!-- 8 — Auto-confirm checkbox ─────────────────────────────── -->
+            <!-- ⑧ Auto-confirm ────────────────────────────────────────── -->
             <label class="flex items-start gap-2.5 p-3 rounded-lg border border-primary/30 bg-primary/5 cursor-pointer hover:bg-primary/10 transition">
                 <input type="checkbox"
                        [(ngModel)]="autoConfirm"
@@ -300,10 +353,10 @@
 
         </div>
 
-        <!-- Footer Actions -->
+        <!-- Footer -->
         <div class="border-t border-slate-200 dark:border-slate-700 p-3 sm:p-4 flex flex-col-reverse sm:flex-row sm:items-center gap-2 sm:gap-2.5 bg-slate-50 dark:bg-slate-800/30 shrink-0">
             <button (click)="dismissed.emit()"
-                    class="px-3 py-2 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer rounded-lg">
+                    class="px-3 py-2 text-xs sm:text-sm font-semibold text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer rounded-lg">
                 Discard &amp; Exit
             </button>
             <button (click)="continuePayment.emit()"
