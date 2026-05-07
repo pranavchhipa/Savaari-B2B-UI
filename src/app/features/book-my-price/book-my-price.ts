@@ -359,22 +359,17 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
             async (pos) => {
                 this.pickupLat = pos.coords.latitude;
                 this.pickupLng = pos.coords.longitude;
-                // Try Google Maps Geocoder first; fall back to Nominatim OSM if it fails
+                // Nominatim OSM — free, no SDK needed, always works
                 try {
-                    this.pickupAddress = await this.mapsService.reverseGeocode(
-                        this.pickupLat, this.pickupLng
+                    const res  = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?lat=${this.pickupLat}&lon=${this.pickupLng}&format=json`,
+                        { headers: { 'Accept-Language': 'en' } }
                     );
+                    const data = await res.json();
+                    this.pickupAddress = data.display_name
+                        ?? `${this.pickupLat.toFixed(5)}, ${this.pickupLng.toFixed(5)}`;
                 } catch {
-                    try {
-                        const res  = await fetch(
-                            `https://nominatim.openstreetmap.org/reverse?lat=${this.pickupLat}&lon=${this.pickupLng}&format=json`
-                        );
-                        const data = await res.json();
-                        this.pickupAddress = data.display_name
-                            ?? `${this.pickupLat.toFixed(5)}, ${this.pickupLng.toFixed(5)}`;
-                    } catch {
-                        this.pickupAddress = `${this.pickupLat.toFixed(5)}, ${this.pickupLng.toFixed(5)}`;
-                    }
+                    this.pickupAddress = `${this.pickupLat.toFixed(5)}, ${this.pickupLng.toFixed(5)}`;
                 }
                 this.pickupQuery     = this.pickupAddress;
                 this.gpsLoading      = false;
