@@ -296,6 +296,21 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
         setTimeout(() => { this.showPickupDropdown = false; this.cdr.markForCheck(); }, 160);
     }
 
+    swapAddresses(): void {
+        [this.pickupQuery,   this.dropQuery]   = [this.dropQuery,   this.pickupQuery];
+        [this.pickupAddress, this.dropAddress] = [this.dropAddress, this.pickupAddress];
+        [this.pickupLat,     this.dropLat]     = [this.dropLat,     this.pickupLat];
+        [this.pickupLng,     this.dropLng]     = [this.dropLng,     this.pickupLng];
+        this.pickupSuggestions  = [];
+        this.dropSuggestions    = [];
+        this.showPickupDropdown = false;
+        this.showDropDropdown   = false;
+        this.showPickupError    = false;
+        this.showDropError      = false;
+        this.recalcDistance();
+        this.cdr.markForCheck();
+    }
+
     onDropSearch(q: string): void {
         this.dropQuery   = q;
         this.dropAddress = '';
