@@ -247,16 +247,16 @@
                 class="flex flex-col items-center gap-2 cursor-pointer group">
 
                 <!-- Image box — full card -->
-                <div class="w-full rounded-xl border-2 overflow-hidden transition-all flex items-center justify-center bg-white dark:bg-slate-700"
-                  style="aspect-ratio: 4/3;"
+                <div class="w-full rounded-xl border-2 overflow-hidden transition-all bg-white dark:bg-slate-700"
+                  style="aspect-ratio: 16/9;"
                   [ngClass]="selectedCar === car.id
-                    ? 'border-primary ring-2 ring-primary/25 shadow-md bg-primary/5 dark:bg-primary/15'
+                    ? 'border-primary ring-2 ring-primary/25 shadow-md'
                     : showCarError
                       ? 'border-red-300 dark:border-red-600'
                       : 'border-slate-200 dark:border-slate-600 group-hover:border-primary/50 group-hover:shadow-sm'">
                   <img [src]="car.image" [alt]="car.label"
-                    class="w-full h-full object-contain p-2 transition-transform duration-200"
-                    [ngClass]="selectedCar === car.id ? 'scale-105 opacity-100' : 'opacity-85 group-hover:scale-105 group-hover:opacity-100'" />
+                    class="w-full h-full object-cover scale-110 transition-transform duration-200"
+                    [ngClass]="selectedCar === car.id ? 'scale-125' : 'group-hover:scale-125'" />
                 </div>
 
                 <!-- Name + price — below the box -->
