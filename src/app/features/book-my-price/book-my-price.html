@@ -206,7 +206,11 @@
                   [ngClass]="selectedCar === car.id ? 'text-primary' : 'text-slate-700 dark:text-slate-200'">
                   {{ car.label }}
                 </span>
-                <span class="text-[10px] font-semibold"
+                <!-- Show ₹X/km until locations are picked; show total once distance is known -->
+                <span *ngIf="distanceKm === null" class="text-[10px] font-semibold text-slate-400">
+                  ₹{{ car.ratePerKm }}/km
+                </span>
+                <span *ngIf="distanceKm !== null" class="text-[10px] font-semibold"
                   [ngClass]="selectedCar === car.id ? 'text-primary/80' : 'text-slate-400'">
                   ₹{{ getFareEstimate(car.id) | number }}
                 </span>
@@ -215,7 +219,7 @@
             <p *ngIf="showCarError" class="mt-1.5 text-[11px] text-red-500">Please select a car type.</p>
             <p *ngIf="distanceKm === null && selectedCar" class="mt-1.5 text-[11px] text-amber-500 flex items-center gap-1">
               <lucide-icon name="info" [size]="11"></lucide-icon>
-              Fares are estimated using a 50 km baseline. Select pickup &amp; drop to get exact estimates.
+              Enter pickup &amp; drop locations to see the estimated fare for your selected car.
             </p>
           </div>
 
@@ -246,16 +250,28 @@
               </div>
             </div>
 
-            <!-- Saving badge -->
-            <div class="mt-2 flex items-center gap-2">
-              <div class="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-primary to-sky-400 rounded-full transition-all"
-                  [style.width.%]="maxFare > minFare ? ((proposedFare! - minFare) / (maxFare - minFare)) * 100 : 100"></div>
+            <!-- Confirmation likelihood indicator -->
+            <div *ngIf="confirmationChance as chance"
+              class="mt-3 flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-2 h-2 rounded-full shrink-0 transition-colors" [ngClass]="chance.dotClass"></div>
+                <div class="min-w-0">
+                  <p class="text-xs font-bold transition-colors" [ngClass]="chance.textClass">{{ chance.label }}</p>
+                  <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">{{ chance.sublabel }}</p>
+                </div>
               </div>
-              <span *ngIf="proposedFare !== null && proposedFare < maxFare"
-                class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                Saving ₹{{ (maxFare - proposedFare) | number }}
-              </span>
+              <!-- Signal bars -->
+              <div class="flex items-end gap-0.5 shrink-0">
+                <div class="w-1.5 rounded-sm transition-colors"
+                  [style.height.px]="6"
+                  [ngClass]="chance.bars >= 1 ? chance.dotClass : 'bg-slate-200 dark:bg-slate-600'"></div>
+                <div class="w-1.5 rounded-sm transition-colors"
+                  [style.height.px]="10"
+                  [ngClass]="chance.bars >= 2 ? chance.dotClass : 'bg-slate-200 dark:bg-slate-600'"></div>
+                <div class="w-1.5 rounded-sm transition-colors"
+                  [style.height.px]="14"
+                  [ngClass]="chance.bars >= 3 ? chance.dotClass : 'bg-slate-200 dark:bg-slate-600'"></div>
+              </div>
             </div>
             <p *ngIf="showFareError" class="mt-1.5 text-[11px] text-red-500">Fare must be between ₹{{ minFare | number }} and ₹{{ maxFare | number }}.</p>
           </div>

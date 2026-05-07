@@ -120,25 +120,50 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
 
     get fareStep(): number { return (this.maxFare - this.minFare) > 500 ? 10 : 5; }
 
+    /** Confirmation likelihood based on how close the proposed fare is to the max. */
+    get confirmationChance(): { label: string; sublabel: string; textClass: string; dotClass: string; bars: number } | null {
+        if (!this.maxFare || this.proposedFare === null) return null;
+        const ratio = this.proposedFare / this.maxFare;
+        if (ratio >= 0.93) return {
+            label: 'High chance of confirmation',
+            sublabel: 'Drivers are very likely to accept this fare.',
+            textClass: 'text-emerald-600 dark:text-emerald-400',
+            dotClass: 'bg-emerald-500',
+            bars: 3,
+        };
+        if (ratio >= 0.85) return {
+            label: 'Moderate chance of confirmation',
+            sublabel: 'Some drivers may accept — consider raising the fare.',
+            textClass: 'text-amber-500 dark:text-amber-400',
+            dotClass: 'bg-amber-500',
+            bars: 2,
+        };
+        return {
+            label: 'Lower chance of confirmation',
+            sublabel: 'Fare is quite low — raise it to improve your chances.',
+            textClass: 'text-red-500 dark:text-red-400',
+            dotClass: 'bg-red-500',
+            bars: 1,
+        };
+    }
+
     selectCar(id: string): void {
         this.selectedCar = id;
         this.showCarError = false;
         this.recalcFare();
     }
 
-    /** Fare for any car card (shown even before selection). */
+    /** Fare estimate for a car card — only valid once distance is known. */
     getFareEstimate(carId: string): number {
         const car = this.carOptions.find(c => c.id === carId);
-        if (!car) return 0;
-        const km = this.distanceKm ?? 50;
-        return Math.round(car.ratePerKm * km + car.base);
+        if (!car || this.distanceKm === null) return 0;
+        return Math.round(car.ratePerKm * this.distanceKm + car.base);
     }
 
     recalcFare(): void {
         const car = this.carOptions.find(c => c.id === this.selectedCar);
-        if (!car) return;
-        const km      = this.distanceKm ?? 50;
-        const raw     = Math.round(car.ratePerKm * km + car.base);
+        if (!car || this.distanceKm === null) return;
+        const raw         = Math.round(car.ratePerKm * this.distanceKm + car.base);
         this.originalFare = raw;
         this.maxFare      = raw;
         this.minFare      = Math.round(raw * 0.8);
