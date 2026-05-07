@@ -1545,9 +1545,33 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     const pickupAddr = typeof this.pickupAddress === 'string' ? this.pickupAddress : String(this.pickupAddress || '');
     const isAirport = apiParams.tripType === 'airport';
 
+    // For AIRPORT trips (both drop-to-airport and pickup-from-airport), the
+    // backend convention (per backend team — confirmed against the live B2B
+    // payload) is:
+    //   - `pickupAddress` field ALWAYS carries the customer's typed address
+    //     (their non-airport endpoint — i.e. their home for drop-to-airport,
+    //     their destination for pickup-from-airport). It is NOT the airport.
+    //   - `dropAddress` is EMPTY.
+    //   - The airport identity is conveyed separately via `airport_name`,
+    //     `airport_id`, `selectPlaceId`, and the `subTripType`
+    //     (drop_airport / pickup_airport).
+    // Sending the airport in the pickup slot makes the backend fall back to
+    // airport_name for the drop slot too, producing a duplicate-route admin
+    // panel record and breaking driver-facing trip details.
+    // The dashboard always stores the customer-typed address in
+    // `itinerary.pickupAddress` regardless of direction, so we use that as the
+    // single source of truth for the API field on airport bookings.
+    const customerTypedAddress = this.itinerary!.pickupAddress || this.itinerary!.custShortAddress || '';
+    const apiPickupAddress = isAirport ? customerTypedAddress : (pickupAddr || this.itinerary!.pickupAddress || '');
+    const apiDropAddress = isAirport ? '' : (this.dropAddress || '');
+
     // locality = place_name from place_id API (e.g. "Koramangala"), NOT full address
     // dropLocality = sublocality from place_id API (e.g. "Chamrajpura"), NOT full address
-    const locality = this.pickupPlaceName || pickupAddr.split(',')[0]?.trim() || '';
+    // For airport, derive locality from the customer-typed address (NOT
+    // `this.pickupAddress`, which after prefill holds the airport label for
+    // pickup-from-airport — would yield "Terminal 1" as locality).
+    const localityBase = isAirport ? customerTypedAddress : pickupAddr;
+    const locality = this.pickupPlaceName || localityBase.split(',')[0]?.trim() || '';
     const dropLocality = this.dropSublocality || this.dropPlaceName || '';
 
     return {
@@ -1556,7 +1580,7 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       subTripType: apiParams.subTripType,
       pickupDateTime: toSavaariDateTime(new Date(this.itinerary!.pickupDate), this.itinerary!.pickupTime),
       duration: this.itinerary!.duration || 1,
-      pickupAddress: pickupAddr || this.itinerary!.pickupAddress || '',
+      pickupAddress: apiPickupAddress,
       customerLatLong: this.pickupLatLng ? `${this.pickupLatLng.lat},${this.pickupLatLng.lng}` : (this.itinerary?.customerLatLong || ''),
       locality,
       // alias_source_city_id / alias_dest_city_id — populated on the request
@@ -1568,9 +1592,9 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
       // (Dhanaulti)" or "Mysore (Kevadiya)". See the long comment in
       // booking-api.service.ts for the full rationale.
       alias_source_city_id: this.pickupAliasSourceCityId || undefined,
-      dropAddress: this.dropAddress || '',
-      dropLatLong: this.dropLatLng ? `${this.dropLatLng.lat},${this.dropLatLng.lng}` : '',
-      dropLocality,
+      dropAddress: apiDropAddress,
+      dropLatLong: isAirport ? '' : (this.dropLatLng ? `${this.dropLatLng.lat},${this.dropLatLng.lng}` : ''),
+      dropLocality: isAirport ? '' : dropLocality,
       alias_dest_city_id: this.dropAliasDestCityId || this.itinerary!.aliasDestCityId || undefined,
       customerTitle: 'Mr',
       customerName: this.guestName,
