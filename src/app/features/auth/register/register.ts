@@ -226,9 +226,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
       fd.append('agentGST', '');
       fd.append('agentLogo', '');
       fd.append('asAgent', '0');
-      fd.append('agentLocalCommission', '5');
-      fd.append('agentAirportCommission', '5');
-      fd.append('agentOutstationCommission', '5');
+      // Commission params (agentLocalCommission / agentAirportCommission /
+      // agentOutstationCommission) intentionally NOT sent — backend team
+      // direction (May 2026): commissions must not be set at registration
+      // time; they are configured later via the markup-settings flow.
       fd.append('clienttip', '');
       fd.append('isAgent', 'true');
 

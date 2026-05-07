@@ -288,9 +288,10 @@ export class RegistrationService {
       agentcityId: String(payload.agentCityId || 0),
       agentLogo: '',
       asAgent: '0',
-      agentLocalCommission: '5',
-      agentAirportCommission: '5',
-      agentOutstationCommission: '5',
+      // Commission params (agentLocalCommission / agentAirportCommission /
+      // agentOutstationCommission) intentionally NOT sent — backend team
+      // direction (May 2026): commissions must not be set at registration
+      // time; they are configured later via the markup-settings flow.
       clienttip: '',
       isAgent: 'true',
     };
