@@ -99,6 +99,14 @@
                 <td class="px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-sm text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium align-top">Pickup Point</td>
                 <td class="px-3 sm:px-5 py-2.5 sm:py-3 text-[12px] sm:text-sm font-medium text-slate-800 dark:text-slate-100 break-words">{{ booking.pickupAddress }}</td>
               </tr>
+              <!-- Drop Point row — only rendered when distinct from pickup so
+                   the receipt carries both endpoints. Critical for airport
+                   pickup-from-airport bookings (where pickup = airport,
+                   drop = customer destination) and one-way trips. -->
+              <tr *ngIf="booking.dropAddress && booking.dropAddress !== booking.pickupAddress">
+                <td class="px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-sm text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium align-top">Drop Point</td>
+                <td class="px-3 sm:px-5 py-2.5 sm:py-3 text-[12px] sm:text-sm font-medium text-slate-800 dark:text-slate-100 break-words">{{ booking.dropAddress }}</td>
+              </tr>
               <tr *ngIf="booking.carName">
                 <td class="px-3 sm:px-5 py-2.5 sm:py-3 text-[11px] sm:text-sm text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-700/30 font-medium align-top">Vehicle</td>
                 <td class="px-3 sm:px-5 py-2.5 sm:py-3 text-[12px] sm:text-sm font-medium text-slate-800 dark:text-slate-100 break-words">{{ booking.carName }}</td>

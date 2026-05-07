@@ -753,12 +753,30 @@ export class BookingsComponent implements OnInit {
         const rawCity = (sourceCity || destinationCity || '').trim();
         const customerCity = rawCity.split(',')[0].trim();
 
-        // Resolve the airport display name:
-        //   1. Backend-provided `airport_name` (rare — beta doesn't return it)
-        //   2. Our CITY_TO_AIRPORT_MAP lookup for the pick city
+        // Resolve the airport display name for the COMPACT card title:
+        //   1. Our CITY_TO_AIRPORT_MAP short label (preferred — keeps the
+        //      title on one line; e.g. "Kempegowda Airport (BLR)")
+        //   2. Backend-provided `airport_name` (full long string, fallback
+        //      when the city isn't in the map)
         //   3. Plain "Airport" fallback
+        // The full long string (with terminal etc.) still appears in the
+        // expanded "Pickup / Drop" address rows — title only needs a short,
+        // recognisable label.
         const mappedAirport = this.CITY_TO_AIRPORT_MAP[customerCity.toLowerCase()] || '';
-        const airportLabel = trimmedAirport || mappedAirport || 'Airport';
+        let airportLabel = mappedAirport || trimmedAirport || 'Airport';
+
+        // If the backend's long string carries a terminal token (e.g.
+        // "Terminal 1, Kempegowda International Airport, Bangalore"), pull it
+        // out and use it in place of the airport code in the short label —
+        // that's more useful for the agent than the IATA code on a same-city
+        // booking. So "Kempegowda Airport (BLR)" becomes "Kempegowda Airport
+        // (T1)" when we know the terminal.
+        const terminalMatch = (trimmedAirport || '').match(/Terminal\s+(\w+)\b/i)
+            || (trimmedAirport || '').match(/\bT[\s-]?(\d+)\b/i);
+        const terminal = terminalMatch ? `T${terminalMatch[1]}` : '';
+        if (terminal && mappedAirport && /\s*\([A-Z]+\)\s*$/.test(mappedAirport)) {
+            airportLabel = mappedAirport.replace(/\s*\([A-Z]+\)\s*$/, ` (${terminal})`);
+        }
 
         // Customer-side label: show the pickup landmark (first comma-separated
         // segment of pick_loc) when it's meaningful. Example:
@@ -817,6 +835,37 @@ export class BookingsComponent implements OnInit {
     }
 
     /**
+     * Look up an airport name (with terminal info) from the cached airport
+     * list in localStorage. Used as a final fallback for the route line so
+     * drop-to-airport bookings — where the API doesn't return any airport
+     * identity — can still display a meaningful terminal label.
+     *
+     * Returns the first airport entry's `name` whose `cityOnly` matches the
+     * given city (case-insensitive). The returned string typically begins
+     * with "Terminal 1, " / "Terminal 2, " etc., which the terminal
+     * extraction regex downstream picks up.
+     *
+     * No-op (returns '') when the cache is missing or the city has no
+     * airport entry — caller will fall through to the IATA-code label
+     * ("Kempegowda Airport (BLR)").
+     */
+    private lookupAirportNameFromCache(city: string): string {
+        if (!city || typeof window === 'undefined' || !window.localStorage) return '';
+        try {
+            const raw = localStorage.getItem('b2b_cache_airports');
+            if (!raw) return '';
+            const parsed = JSON.parse(raw);
+            const list: any[] = Array.isArray(parsed) ? parsed : (parsed?.v || []);
+            if (!list.length) return '';
+            const target = city.toLowerCase().trim();
+            const match = list.find((a: any) => (a?.cityOnly || '').toLowerCase().trim() === target);
+            return match?.name || '';
+        } catch {
+            return '';
+        }
+    }
+
+    /**
      * Build the route line for a **Local** booking.
      *
      * Local trips don't have a destination city — the cab stays within the pickup
@@ -847,6 +896,63 @@ export class BookingsComponent implements OnInit {
      * the truth the agent needs to act on.
      */
     private toBookingCard(b: any): BookingCard {
+        // ────────────────────────────────────────────────────────────────────
+        // Address-only enrichment from local registry.
+        //
+        // Backend's /booking-details list endpoint deliberately omits the
+        // "other-side" address for airport bookings:
+        //   - pick_airport: response carries pick_loc = airport, no drop_loc
+        //                   (customer destination is missing)
+        //   - drop_airport: response carries pick_loc = customer home, no
+        //                   airport_name on the row (airport identity missing)
+        // Backend has the data — the admin panel renders both sides — but the
+        // list API just doesn't expose it. Until backend adds drop_loc /
+        // populates `itinerary` for airport rows, this enrichment fills the
+        // gap from the local registry (booking-create response is stored in
+        // localStorage by BookingRegistryService when the agent books).
+        //
+        // STRICTLY scoped to ADDRESS fields (drop_loc + airport_name +
+        // airport_sub_type). Payment/status fields are NEVER pulled from the
+        // registry — the existing "API is source of truth" rule for those
+        // stays intact (preventing the prior bug where stale registry data
+        // contradicted API-side payment progress).
+        //
+        // No-op when:
+        //   • Booking wasn't made on this device (registry has no entry)
+        //   • API already provided the drop info (rare, but handled)
+        //   • User logged out (registry is per-user-id, cleared on logout)
+        // ────────────────────────────────────────────────────────────────────
+        const bookingId = String(b.booking_id || b.bookingId || '');
+        if (bookingId) {
+            const stored = this.bookingRegistry.getStoredBookingData(bookingId);
+            if (stored) {
+                const apiHasDrop = !!(b.drop_loc || b.drop_address || b.dropAddress);
+                if (!apiHasDrop) {
+                    // Check both top-level snake_case (set by registerBookingData)
+                    // AND nested data.dropAddress (raw create-booking response shape)
+                    // — older registry entries may not have the snake_case overrides.
+                    const regDrop =
+                        stored.drop_address ||
+                        stored.dropAddress ||
+                        stored.data?.dropAddress ||
+                        stored.data?.drop_address ||
+                        (Array.isArray(stored.data) ? stored.data[0]?.dropAddress : '') ||
+                        '';
+                    if (regDrop) b = { ...b, drop_loc: regDrop };
+                }
+                if (!b.airport_name && !b.airportName) {
+                    const regAirport = stored.airport_name || stored.airportName || stored.data?.airportName || '';
+                    if (regAirport) b = { ...b, airport_name: regAirport };
+                }
+                if (!b.airport_sub_type && !b.airportSubType && !b.trip_sub_type_name && stored.airport_sub_type) {
+                    b = { ...b, airport_sub_type: stored.airport_sub_type };
+                }
+                if (!b.custShortAddress && !b.cust_short_address && stored.custShortAddress) {
+                    b = { ...b, custShortAddress: stored.custShortAddress };
+                }
+            }
+        }
+
         let pickupDate: Date | null = null;
         const dateStr = b.start_date_time || b.pickupDateTime;
         if (dateStr) {
@@ -969,11 +1075,27 @@ export class BookingsComponent implements OnInit {
             b.airportSubType || b.sub_trip_type || b.subTripType || '';
         const rawSubTypeStr = String(airportSubTypeRaw || '').toLowerCase();
         // Normalise: "drop_airport" / "to_airport" / "drop" → "drop"
-        //            "pickup_airport" / "from_airport" / "pickup" → "pickup"
+        //            "pickup_airport" / "pick_airport" / "from_airport" / "pickup" → "pickup"
+        // Backend's /booking-details API returns `subTripType: "PICK_AIRPORT"`
+        // (verified May 2026 from live response). Earlier we only matched
+        // `pickup` substring — "PICK_AIRPORT" lowercases to "pick_airport"
+        // which has no "pickup" substring (note: "pick" without "up"),
+        // so direction stayed empty and the route line fell through to the
+        // "unknown direction" branch, producing "Terminal 1 → Airport"
+        // (both endpoints rendered as airport). Adding `pick_air` /
+        // `pick airport` matchers fixes that without affecting drop
+        // detection (drop_airport still wins on the first branch).
         let airportSubType = '';
         if (rawSubTypeStr.includes('drop') || rawSubTypeStr.includes('to_air') || rawSubTypeStr.includes('toair')) {
             airportSubType = 'drop';
-        } else if (rawSubTypeStr.includes('pickup') || rawSubTypeStr.includes('from_air') || rawSubTypeStr.includes('fromair')) {
+        } else if (
+            rawSubTypeStr.includes('pickup') ||
+            rawSubTypeStr.includes('pick_air') ||
+            rawSubTypeStr.includes('pick air') ||
+            rawSubTypeStr.includes('pick up from') ||
+            rawSubTypeStr.includes('from_air') ||
+            rawSubTypeStr.includes('fromair')
+        ) {
             airportSubType = 'pickup';
         }
         // custShortAddress = the customer's long-form address. For airport
@@ -986,9 +1108,30 @@ export class BookingsComponent implements OnInit {
         const isPickupFromAirport = airportSubType === 'pickup';
         const custShortAddress = b.custShortAddress || b.cust_short_address ||
             (isPickupFromAirport ? dropLocStr : pickupLocStr);
-        const airportFullName = airportName && terminalName && !airportName.includes(terminalName)
-            ? `${airportName}, ${terminalName}`
-            : (airportName || terminalName || '');
+        // Resolve the airport name with up to 3 fallbacks so the route line
+        // can show terminal info ("(T1)") consistently:
+        //   1. `airport_name` from the API or registry-jugaad enrichment
+        //      above (preferred — most accurate, includes the actual
+        //      terminal the agent picked).
+        //   2. `pick_loc` for pick_airport bookings — backend always puts
+        //      the airport (with terminal) in pick_loc for that direction,
+        //      so this rescues pickup-from-airport rows that aren't in the
+        //      local registry.
+        //   3. The `b2b_cache_airports` localStorage cache — used for
+        //      drop-to-airport rows whose airport identity is genuinely not
+        //      in the API response. We pick the FIRST airport entry that
+        //      matches the customer-side city; the terminal token in that
+        //      entry's name is a best-effort guess (we don't know which
+        //      terminal the agent actually picked) but is more useful than
+        //      a generic "(BLR)" label.
+        const cityForAirportLookup = (sourceCity || '').split(',')[0].trim();
+        const cachedAirportName = !airportName ? this.lookupAirportNameFromCache(cityForAirportLookup) : '';
+        const effectiveAirportName = airportName ||
+            (isPickupFromAirport ? pickupLocStr : '') ||
+            cachedAirportName;
+        const airportFullName = effectiveAirportName && terminalName && !effectiveAirportName.includes(terminalName)
+            ? `${effectiveAirportName}, ${terminalName}`
+            : (effectiveAirportName || terminalName || '');
 
         const localPackage = b.local_package || b.localPackage || b.package_name || '';
 

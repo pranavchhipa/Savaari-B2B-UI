@@ -590,23 +590,77 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
       this.panAutoFilled = !!pan;
       this.companyAutoFilled = !!(legalName && address);
 
-      // Extract city/state from GST address (format: "..., City, State, Pincode")
+      // Extract city/state from GST address.
+      //
+      // GST addresses come in many shapes from gst_verification.php — common
+      // patterns observed:
+      //   "Bldg, Street, City, State, 411001"     (5 parts, last is pincode)
+      //   "Bldg, Street, City, State"             (4 parts, no pincode)
+      //   "Street, City, State"                   (3 parts)
+      //   "City, State, 411001"                   (3 parts, last is pincode)
+      //   "City, State"                           (2 parts, edge-case)
+      //
+      // Strategy: walk the parts from the end, skipping pincode-looking
+      // tokens (6 digits) and country tokens ("India"), then read state then
+      // city. This is more forgiving than the previous "parts.length >= 3"
+      // gate which silently dropped 2-part addresses and let the registration
+      // call go out with `agentCity: ''` -> backend 400 "AgentCityMissing".
+      this.resolvedCity = '';
+      this.resolvedState = '';
       if (address) {
         const parts = address.split(',').map((p: string) => p.trim()).filter((p: string) => p);
-        if (parts.length >= 3) {
-          const lastPart = parts[parts.length - 1];
-          // If last part is pincode (6 digits), state is second-to-last, city is third-to-last
-          if (/^\d{6}$/.test(lastPart)) {
-            this.resolvedState = parts[parts.length - 2] || '';
-            this.resolvedCity = parts[parts.length - 3] || '';
+        // Filter out trailing pincode + "India" tokens
+        const trimmed = [...parts];
+        while (trimmed.length > 0) {
+          const tail = trimmed[trimmed.length - 1];
+          if (/^\d{6}$/.test(tail) || /^india$/i.test(tail)) {
+            trimmed.pop();
           } else {
-            // No pincode: last is state/country, second-to-last is city
-            this.resolvedState = parts[parts.length - 2] || '';
-            this.resolvedCity = parts[parts.length - 3] || '';
+            break;
           }
+        }
+        if (trimmed.length >= 2) {
+          this.resolvedState = trimmed[trimmed.length - 1] || '';
+          this.resolvedCity = trimmed[trimmed.length - 2] || '';
+        } else if (trimmed.length === 1) {
+          // Single token left — treat as city, leave state for the user to confirm.
+          this.resolvedCity = trimmed[0] || '';
         }
       }
       this.resolvedCityId = 0;
+
+      // GST path historically left `resolvedCityId = 0`, which the backend
+      // then rejected as "AgentCityMissing" (it requires a valid Savaari
+      // city ID, not just the name). Auto-resolve via the Savaari
+      // autocomplete -> place_id pipeline so the user doesn't have to do
+      // anything extra. If this lookup fails, the pre-submit guard in
+      // `submitPassword` will block submission with a clear error message.
+      if (this.resolvedCity) {
+        const lookupQuery = this.resolvedState
+          ? `${this.resolvedCity}, ${this.resolvedState}`
+          : this.resolvedCity;
+        this.addressAutocomplete.searchAddress(lookupQuery, 'from').subscribe({
+          next: (suggestions) => {
+            const first = suggestions && suggestions.length > 0 ? suggestions[0] : null;
+            if (!first?.place_id) return;
+            this.addressAutocomplete.getPlaceDetails(first.place_id, 'from').subscribe({
+              next: (details) => {
+                if (details?.aliasSourceCityId) {
+                  this.resolvedCityId = details.aliasSourceCityId;
+                  // Prefer the canonical city/state from place_id over the
+                  // free-form GST address split — keeps the registration
+                  // payload aligned with the backend's city table.
+                  if (details.city) this.resolvedCity = details.city;
+                  if (details.state) this.resolvedState = details.state;
+                  this.cdr.markForCheck();
+                }
+              },
+              error: () => { /* swallow — pre-submit guard will catch */ },
+            });
+          },
+          error: () => { /* swallow — pre-submit guard will catch */ },
+        });
+      }
 
       // Clear any stale autocomplete state from a previous skip-GST attempt
       this.companyAddressInput = '';
@@ -778,6 +832,19 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     const lastName = (this.nameForm.value.lastName || '').trim();
     if (!firstName && !lastName) {
       this.registerError = 'Name is missing — please go back to Step 1 and enter your name.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // Safety guard: ensure resolvedCity is present. Without it the backend
+    // returns 400 "AgentCityMissing". Empties happen when:
+    //   • GST API returns an address that splits into fewer than 2 parts
+    //   • User skipped GST and never picked a place_id from the company
+    //     address autocomplete (the form lets them keep typing free text)
+    // Either way we surface a clear message instead of letting the API
+    // call go out and fail opaquely.
+    if (!this.resolvedCity) {
+      this.registerError = 'Please go back to the company step and pick your city from the address suggestions — we could not detect it automatically.';
       this.cdr.markForCheck();
       return;
     }

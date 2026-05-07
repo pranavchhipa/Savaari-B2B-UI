@@ -18,7 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $target = null;
 
-// Route to correct backend (Beta servers — per backend team instruction 2026-03-30)
+// Route to correct backend (mirrors the alpha-server proxy layout — per
+// backend team instruction; partner / b2b / wallet / address still hit
+// beta, while payment / reg / system-bookings / settlement / analytics
+// hit alpha).
 if (preg_match('#^/partner-api/(.*)$#', $uri, $m)) {
     $target = 'https://api.betasavaari.com/partner_api/public/' . $m[1];
 } elseif (preg_match('#^/b2b-api/(.*)$#', $uri, $m)) {
@@ -28,12 +31,16 @@ if (preg_match('#^/partner-api/(.*)$#', $uri, $m)) {
 } elseif (preg_match('#^/address-api/(.*)$#', $uri, $m)) {
     $target = 'https://apiext.betasavaari.com/' . $m[1];
 } elseif (preg_match('#^/payment-api/(.*)$#', $uri, $m)) {
-    $target = 'https://b2bcab.betasavaari.com/' . $m[1];
+    $target = 'https://b2bcab.alphasavaari.com/' . $m[1];
+} elseif (preg_match('#^/reg-api/(.*)$#', $uri, $m)) {
+    $target = 'https://api.alphasavaari.com/' . $m[1];
 } elseif (preg_match('#^/system-bookings-api/(.*)$#', $uri, $m)) {
-    $target = 'https://api.betasavaari.com/system_bookings/' . $m[1];
+    $target = 'https://api.alphasavaari.com/system_bookings/' . $m[1];
 } elseif (preg_match('#^/settlement-api/(.*)$#', $uri, $m)) {
-    // Settlement endpoint is alpha-only — beta returns 404 for /booking/settlement-payment.
-    // Verified via probe (invalid token produced errroCode 11001 on alpha, 404 on beta).
+    // Settlement endpoint routes to alpha partner_api.
+    $target = 'https://api.alphasavaari.com/partner_api/public/' . $m[1];
+} elseif (preg_match('#^/analytics-api/(.*)$#', $uri, $m)) {
+    // Analytics routes to alpha partner_api.
     $target = 'https://api.alphasavaari.com/partner_api/public/' . $m[1];
 } else {
     http_response_code(404);
