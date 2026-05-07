@@ -2,44 +2,39 @@ import {
     Component,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
-    ElementRef,
-    ViewChild,
-    AfterViewChecked,
     OnInit,
     OnDestroy,
     inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subscription } from 'rxjs';
-import { GoogleMapsService } from '../../core/services/google-maps.service';
+import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
 import { BookMyPriceService } from '../../core/services/book-my-price.service';
 import { BookMyPriceRequest, BmpTripType } from '../../core/models/book-my-price.model';
 import { FooterComponent } from '../../components/layout/footer/footer';
 
-declare const google: any;
-
-// ── Sub-types used only inside this component ─────────────────────────────────
+// ── Local interfaces ──────────────────────────────────────────────────────────
 
 interface CarOption {
-    id:         string;
-    label:      string;
-    ratePerKm:  number;
-    base:       number;
+    id:        string;
+    label:     string;
+    ratePerKm: number;
+    base:      number;
 }
 
 interface VasOption {
-    id:          string;
-    label:       string;
+    id:         string;
+    label:      string;
     description: string;
-    excludes?:   string;
+    excludes?:  string;
 }
 
 interface RequestCard extends BookMyPriceRequest {
     countdownLabel:   string;
-    countdownPercent: number;    // 0–100
+    countdownPercent: number;
     isExpired:        boolean;
     submittedLabel:   string;
 }
@@ -47,19 +42,16 @@ interface RequestCard extends BookMyPriceRequest {
 @Component({
     selector: 'app-book-my-price',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, LucideAngularModule, FooterComponent],
+    imports: [CommonModule, FormsModule, LucideAngularModule, FooterComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './book-my-price.html',
 })
-export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked {
+export class BookMyPriceComponent implements OnInit, OnDestroy {
 
-    private googleMaps = inject(GoogleMapsService);
-    private bmpService = inject(BookMyPriceService);
-    private cdr        = inject(ChangeDetectorRef);
-    private router     = inject(Router);
-
-    @ViewChild('pickupInputRef') pickupInputEl?: ElementRef<HTMLInputElement>;
-    @ViewChild('dropInputRef')   dropInputEl?:   ElementRef<HTMLInputElement>;
+    private addressService = inject(AddressAutocompleteService);
+    private bmpService     = inject(BookMyPriceService);
+    private cdr            = inject(ChangeDetectorRef);
+    private router         = inject(Router);
 
     // ── Trip type ─────────────────────────────────────────────────────────────
     tripType: BmpTripType = 'OW';
@@ -70,30 +62,38 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
     ];
 
     setTripType(t: BmpTripType): void {
-        this.tripType       = t;
-        this.returnDate     = '';
-        this.returnTime     = '';
+        this.tripType        = t;
+        this.returnDate      = '';
+        this.returnTime      = '';
         this.showReturnError = false;
     }
 
     // ── Pickup ────────────────────────────────────────────────────────────────
+    pickupQuery     = '';
     pickupAddress   = '';
     pickupLat:   number | null = null;
     pickupLng:   number | null = null;
-    pickupInputMode: 'manual' | 'gps' = 'manual';
-    gpsLoading      = false;
-    gpsError        = '';
+
+    pickupSuggestions: AddressSuggestion[] = [];
+    showPickupDropdown = false;
+
+    gpsLoading  = false;
+    gpsError    = '';
 
     // ── Drop ──────────────────────────────────────────────────────────────────
+    dropQuery   = '';
     dropAddress = '';
     dropLat:  number | null = null;
     dropLng:  number | null = null;
 
+    dropSuggestions: AddressSuggestion[] = [];
+    showDropDropdown = false;
+
     // ── Dates / time ──────────────────────────────────────────────────────────
-    pickupDate  = '';
-    pickupTime  = '';
-    returnDate  = '';
-    returnTime  = '';
+    pickupDate = '';
+    pickupTime = '';
+    returnDate = '';
+    returnTime = '';
 
     get minDate(): string { return new Date().toISOString().split('T')[0]; }
 
@@ -120,40 +120,12 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
 
     get fareStep(): number { return (this.maxFare - this.minFare) > 500 ? 10 : 5; }
 
-    /** Confirmation likelihood based on how close the proposed fare is to the max. */
-    get confirmationChance(): { label: string; sublabel: string; textClass: string; dotClass: string; bars: number } | null {
-        if (!this.maxFare || this.proposedFare === null) return null;
-        const ratio = this.proposedFare / this.maxFare;
-        if (ratio >= 0.93) return {
-            label: 'High chance of confirmation',
-            sublabel: 'Drivers are very likely to accept this fare.',
-            textClass: 'text-emerald-600 dark:text-emerald-400',
-            dotClass: 'bg-emerald-500',
-            bars: 3,
-        };
-        if (ratio >= 0.85) return {
-            label: 'Moderate chance of confirmation',
-            sublabel: 'Some drivers may accept — consider raising the fare.',
-            textClass: 'text-amber-500 dark:text-amber-400',
-            dotClass: 'bg-amber-500',
-            bars: 2,
-        };
-        return {
-            label: 'Lower chance of confirmation',
-            sublabel: 'Fare is quite low — raise it to improve your chances.',
-            textClass: 'text-red-500 dark:text-red-400',
-            dotClass: 'bg-red-500',
-            bars: 1,
-        };
-    }
-
     selectCar(id: string): void {
         this.selectedCar = id;
         this.showCarError = false;
         this.recalcFare();
     }
 
-    /** Fare estimate for a car card — only valid once distance is known. */
     getFareEstimate(carId: string): number {
         const car = this.carOptions.find(c => c.id === carId);
         if (!car || this.distanceKm === null) return 0;
@@ -171,24 +143,50 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
         this.proposedFare = Math.min(this.maxFare, Math.max(this.minFare, current));
     }
 
+    get confirmationChance(): { label: string; sublabel: string; textClass: string; dotClass: string; bars: number } | null {
+        if (!this.maxFare || this.proposedFare === null) return null;
+        const ratio = this.proposedFare / this.maxFare;
+        if (ratio >= 0.93) return {
+            label:     'High chance of confirmation',
+            sublabel:  'Drivers are very likely to accept this fare.',
+            textClass: 'text-emerald-600 dark:text-emerald-400',
+            dotClass:  'bg-emerald-500',
+            bars: 3,
+        };
+        if (ratio >= 0.85) return {
+            label:     'Moderate chance of confirmation',
+            sublabel:  'Consider raising the fare slightly to improve chances.',
+            textClass: 'text-amber-500 dark:text-amber-400',
+            dotClass:  'bg-amber-500',
+            bars: 2,
+        };
+        return {
+            label:     'Lower chance of confirmation',
+            sublabel:  'Raise the fare closer to the market rate.',
+            textClass: 'text-red-500 dark:text-red-400',
+            dotClass:  'bg-red-400',
+            bars: 1,
+        };
+    }
+
     // ── VAS ───────────────────────────────────────────────────────────────────
     readonly vasOptions: VasOption[] = [
         { id: 'new_car', label: 'New Car Promise',      description: 'Vehicle not older than 3 years', excludes: 'diesel'  },
         { id: 'diesel',  label: 'Diesel Car Guarantee', description: 'Fuel-efficient diesel vehicle',  excludes: 'new_car' },
         { id: 'luggage', label: 'Luggage Carrier',      description: 'Roof-mounted carrier for extra baggage'              },
     ];
-    selectedVas:     string[] = [];
-    vasConflictMsg   = '';
+    selectedVas:    string[] = [];
+    vasConflictMsg  = '';
 
     toggleVas(id: string): void {
         if (this.selectedVas.includes(id)) {
-            this.selectedVas     = this.selectedVas.filter(v => v !== id);
-            this.vasConflictMsg  = '';
+            this.selectedVas    = this.selectedVas.filter(v => v !== id);
+            this.vasConflictMsg = '';
             return;
         }
         const opt = this.vasOptions.find(o => o.id === id);
         if (opt?.excludes && this.selectedVas.includes(opt.excludes)) {
-            const conflict     = this.vasOptions.find(o => o.id === opt.excludes)?.label ?? opt.excludes;
+            const conflict      = this.vasOptions.find(o => o.id === opt.excludes)?.label ?? opt.excludes;
             this.vasConflictMsg = `"${opt.label}" and "${conflict}" cannot be selected together (Govt. Policy).`;
             return;
         }
@@ -201,7 +199,7 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
     // ── Auto-confirm ──────────────────────────────────────────────────────────
     autoConfirm = true;
 
-    // ── Validation errors ─────────────────────────────────────────────────────
+    // ── Validation ────────────────────────────────────────────────────────────
     showPickupError  = false;
     showDropError    = false;
     showCarError     = false;
@@ -218,27 +216,18 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
     private timer: ReturnType<typeof setInterval> | null = null;
 
     // ── Toast ─────────────────────────────────────────────────────────────────
-    showToast    = false;
-    toastId      = '';
-
-    // ── Google Maps ───────────────────────────────────────────────────────────
-    private mapsNeedsInit = false;
-    private pickupAC: any = null;
-    private dropAC:   any = null;
+    showToast = false;
+    toastId   = '';
 
     // ─────────────────────────────────────────────────────────────────────────
     // Lifecycle
     // ─────────────────────────────────────────────────────────────────────────
 
     ngOnInit(): void {
-        this.mapsNeedsInit = true;
-
         this.sub = this.bmpService.requests$.subscribe(list => {
             this.requests = list.map(r => this.toCard(r));
             this.cdr.markForCheck();
         });
-
-        // Refresh countdown labels every 30s
         this.timer = setInterval(() => {
             this.requests = this.requests.map(r => this.toCard(r));
             this.cdr.markForCheck();
@@ -250,62 +239,100 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
         if (this.timer) clearInterval(this.timer);
     }
 
-    ngAfterViewChecked(): void {
-        if (!this.mapsNeedsInit) return;
-        if (this.pickupInputEl?.nativeElement) {
-            this.mapsNeedsInit = false;
-            this.initAutocomplete();
-        }
+    // ─────────────────────────────────────────────────────────────────────────
+    // Address search (Savaari autocomplete API — works in demoMode)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    onPickupSearch(q: string): void {
+        this.pickupQuery   = q;
+        this.pickupAddress = '';
+        this.pickupLat     = null;
+        this.pickupLng     = null;
+        this.distanceKm    = null;
+        this.maxFare       = 0;
+        if (q.length < 2) { this.pickupSuggestions = []; this.showPickupDropdown = false; return; }
+
+        this.addressService.searchAddress(q, 'from').subscribe(list => {
+            this.pickupSuggestions  = list.slice(0, 6);
+            this.showPickupDropdown = list.length > 0;
+            this.cdr.markForCheck();
+        });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Google Maps autocomplete
-    // ─────────────────────────────────────────────────────────────────────────
+    selectPickup(s: AddressSuggestion): void {
+        this.pickupQuery        = s.description;
+        this.pickupAddress      = s.description;
+        this.pickupSuggestions  = [];
+        this.showPickupDropdown = false;
+        this.showPickupError    = false;
 
-    private async initAutocomplete(): Promise<void> {
-        try { await this.googleMaps.load(); } catch { return; }
-
-        if (this.pickupInputEl?.nativeElement && !this.pickupAC) {
-            this.pickupAC = this.googleMaps.attachAutocomplete(this.pickupInputEl.nativeElement);
-            this.pickupAC?.addListener('place_changed', () => {
-                const p          = this.pickupAC.getPlace();
-                this.pickupAddress = p.formatted_address || p.name || '';
-                this.pickupLat     = p.geometry?.location?.lat() ?? null;
-                this.pickupLng     = p.geometry?.location?.lng() ?? null;
-                this.showPickupError = false;
-                this.recalcDistance();
+        if (s.latlng) {
+            const [lat, lng] = s.latlng.split(',').map(Number);
+            if (!isNaN(lat) && !isNaN(lng)) { this.pickupLat = lat; this.pickupLng = lng; this.recalcDistance(); }
+        } else if (s.place_id) {
+            this.addressService.getPlaceDetails(s.place_id, 'from').subscribe(d => {
+                if (d?.lat && d?.lng) { this.pickupLat = d.lat; this.pickupLng = d.lng; this.recalcDistance(); }
                 this.cdr.markForCheck();
             });
         }
+        this.cdr.markForCheck();
+    }
 
-        if (this.dropInputEl?.nativeElement && !this.dropAC) {
-            this.dropAC = this.googleMaps.attachAutocomplete(this.dropInputEl.nativeElement);
-            this.dropAC?.addListener('place_changed', () => {
-                const p        = this.dropAC.getPlace();
-                this.dropAddress = p.formatted_address || p.name || '';
-                this.dropLat     = p.geometry?.location?.lat() ?? null;
-                this.dropLng     = p.geometry?.location?.lng() ?? null;
-                this.showDropError = false;
-                this.recalcDistance();
+    hidePickupDropdown(): void {
+        setTimeout(() => { this.showPickupDropdown = false; this.cdr.markForCheck(); }, 160);
+    }
+
+    onDropSearch(q: string): void {
+        this.dropQuery   = q;
+        this.dropAddress = '';
+        this.dropLat     = null;
+        this.dropLng     = null;
+        this.distanceKm  = null;
+        this.maxFare     = 0;
+        if (q.length < 2) { this.dropSuggestions = []; this.showDropDropdown = false; return; }
+
+        this.addressService.searchAddress(q, 'to').subscribe(list => {
+            this.dropSuggestions  = list.slice(0, 6);
+            this.showDropDropdown = list.length > 0;
+            this.cdr.markForCheck();
+        });
+    }
+
+    selectDrop(s: AddressSuggestion): void {
+        this.dropQuery        = s.description;
+        this.dropAddress      = s.description;
+        this.dropSuggestions  = [];
+        this.showDropDropdown = false;
+        this.showDropError    = false;
+
+        if (s.latlng) {
+            const [lat, lng] = s.latlng.split(',').map(Number);
+            if (!isNaN(lat) && !isNaN(lng)) { this.dropLat = lat; this.dropLng = lng; this.recalcDistance(); }
+        } else if (s.place_id) {
+            this.addressService.getPlaceDetails(s.place_id, 'to').subscribe(d => {
+                if (d?.lat && d?.lng) { this.dropLat = d.lat; this.dropLng = d.lng; this.recalcDistance(); }
                 this.cdr.markForCheck();
             });
         }
+        this.cdr.markForCheck();
+    }
+
+    hideDropDropdown(): void {
+        setTimeout(() => { this.showDropDropdown = false; this.cdr.markForCheck(); }, 160);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // GPS
+    // GPS — "Use my current location"
     // ─────────────────────────────────────────────────────────────────────────
 
     async detectGps(): Promise<void> {
-        this.gpsLoading      = true;
-        this.gpsError        = '';
-        this.pickupInputMode = 'gps';
+        this.gpsLoading = true;
+        this.gpsError   = '';
         this.cdr.markForCheck();
 
         if (!navigator.geolocation) {
-            this.gpsError        = 'Geolocation not supported by your browser.';
-            this.gpsLoading      = false;
-            this.pickupInputMode = 'manual';
+            this.gpsError   = 'Geolocation not supported by your browser.';
+            this.gpsLoading = false;
             this.cdr.markForCheck();
             return;
         }
@@ -315,32 +342,32 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
                 this.pickupLat = pos.coords.latitude;
                 this.pickupLng = pos.coords.longitude;
                 try {
-                    this.pickupAddress = await this.googleMaps.reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+                    const res  = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?lat=${this.pickupLat}&lon=${this.pickupLng}&format=json`
+                    );
+                    const data = await res.json();
+                    this.pickupAddress = data.display_name
+                        ?? `${this.pickupLat.toFixed(5)}, ${this.pickupLng.toFixed(5)}`;
                 } catch {
-                    this.pickupAddress = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+                    this.pickupAddress = `${this.pickupLat.toFixed(5)}, ${this.pickupLng.toFixed(5)}`;
                 }
-                this.gpsLoading = false;
+                this.pickupQuery = this.pickupAddress;
+                this.gpsLoading  = false;
+                this.showPickupError = false;
                 this.recalcDistance();
                 this.cdr.markForCheck();
             },
             () => {
-                this.gpsError        = 'Location access denied — please enter address manually.';
-                this.pickupInputMode = 'manual';
-                this.gpsLoading      = false;
+                this.gpsError   = 'Location access denied. Please enter address manually.';
+                this.gpsLoading = false;
                 this.cdr.markForCheck();
             },
             { timeout: 8000 }
         );
     }
 
-    switchToManual(): void {
-        this.pickupInputMode = 'manual';
-        this.gpsError        = '';
-        this.mapsNeedsInit   = true;
-    }
-
     // ─────────────────────────────────────────────────────────────────────────
-    // Fare
+    // Fare calculation
     // ─────────────────────────────────────────────────────────────────────────
 
     private haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -354,7 +381,7 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
 
     recalcDistance(): void {
         if (this.pickupLat != null && this.pickupLng != null &&
-            this.dropLat != null   && this.dropLng != null) {
+            this.dropLat   != null && this.dropLng   != null) {
             this.distanceKm = Math.round(
                 this.haversine(this.pickupLat, this.pickupLng, this.dropLat, this.dropLng)
             );
@@ -440,33 +467,31 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
     }
 
     private resetForm(): void {
-        this.pickupAddress   = '';
-        this.pickupLat       = null;
-        this.pickupLng       = null;
-        this.dropAddress     = '';
-        this.dropLat         = null;
-        this.dropLng         = null;
-        this.pickupDate      = '';
-        this.pickupTime      = '';
-        this.returnDate      = '';
-        this.returnTime      = '';
-        this.selectedCar     = '';
-        this.distanceKm      = null;
-        this.originalFare    = 0;
-        this.minFare         = 0;
-        this.maxFare         = 0;
-        this.proposedFare    = null;
-        this.selectedVas     = [];
-        this.vasConflictMsg  = '';
-        this.autoConfirm     = true;
-        this.pickupInputMode = 'manual';
-        this.pickupAC        = null;
-        this.dropAC          = null;
-        this.mapsNeedsInit   = true;
+        this.pickupQuery    = '';
+        this.pickupAddress  = '';
+        this.pickupLat      = null;
+        this.pickupLng      = null;
+        this.dropQuery      = '';
+        this.dropAddress    = '';
+        this.dropLat        = null;
+        this.dropLng        = null;
+        this.pickupDate     = '';
+        this.pickupTime     = '';
+        this.returnDate     = '';
+        this.returnTime     = '';
+        this.selectedCar    = '';
+        this.distanceKm     = null;
+        this.originalFare   = 0;
+        this.minFare        = 0;
+        this.maxFare        = 0;
+        this.proposedFare   = null;
+        this.selectedVas    = [];
+        this.vasConflictMsg = '';
+        this.autoConfirm    = true;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Requests panel helpers
+    // Requests panel
     // ─────────────────────────────────────────────────────────────────────────
 
     private toCard(r: BookMyPriceRequest): RequestCard {
@@ -477,20 +502,22 @@ export class BookMyPriceComponent implements OnInit, OnDestroy, AfterViewChecked
         const isExpired    = r.status === 'expired' || (isPending && remaining === 0);
 
         let countdownLabel: string;
-        if (r.status === 'accepted')              countdownLabel = 'Driver matched';
-        else if (r.status === 'rejected')         countdownLabel = 'Not accepted';
-        else if (isExpired)                       countdownLabel = 'Expired';
+        if (r.status === 'accepted')      countdownLabel = 'Driver matched';
+        else if (r.status === 'rejected') countdownLabel = 'Not accepted';
+        else if (isExpired)               countdownLabel = 'Expired';
         else {
             const m = Math.floor(remaining / 60000);
             const s = Math.floor((remaining % 60000) / 1000);
             countdownLabel = `Expires in ${m}:${s.toString().padStart(2, '0')}`;
         }
 
-        const countdownPercent = isPending && !isExpired
-            ? Math.round((remaining / this.TTL_MS) * 100)
-            : 0;
-
-        return { ...r, countdownLabel, countdownPercent, isExpired, submittedLabel: this.relativeTime(submittedAt) };
+        return {
+            ...r,
+            countdownLabel,
+            countdownPercent: isPending && !isExpired ? Math.round((remaining / this.TTL_MS) * 100) : 0,
+            isExpired,
+            submittedLabel: this.relativeTime(submittedAt),
+        };
     }
 
     private relativeTime(ts: number): string {

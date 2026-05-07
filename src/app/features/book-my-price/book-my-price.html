@@ -1,360 +1,430 @@
 <div class="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
   <div class="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
-    <!-- ── Page header ────────────────────────────────────────────────────── -->
+    <!-- ── Page header ────────────────────────────────────────────────────────── -->
     <div class="flex items-start justify-between mb-6">
       <div>
-        <div class="flex items-center gap-2.5 mb-1">
-          <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
-            <lucide-icon name="tag" [size]="16" class="text-primary"></lucide-icon>
+        <div class="flex items-center gap-2.5 mb-1.5">
+          <div class="w-9 h-9 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+            <lucide-icon name="tag" [size]="17" class="text-primary"></lucide-icon>
           </div>
           <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Book My Price</h1>
         </div>
-        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 ml-[42px]">
-          Propose your preferred fare — get driver confirmation within 20 minutes.
+        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 ml-[46px] max-w-xl leading-relaxed">
+          Propose your preferred fare for the trip — we'll ask the drivers and get back to you in 20 minutes if it gets accepted.
         </p>
       </div>
       <button (click)="goToDashboard()"
-        class="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-primary transition-colors cursor-pointer">
+        class="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-primary transition-colors cursor-pointer mt-1">
         <lucide-icon name="arrow-left" [size]="13"></lucide-icon>
-        Back to Dashboard
+        Dashboard
       </button>
     </div>
 
-    <!-- ── Success toast ──────────────────────────────────────────────────── -->
+    <!-- ── Success toast ────────────────────────────────────────────────────────── -->
     <div *ngIf="showToast"
-      class="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 flex items-start gap-3 shadow-sm">
+      class="mb-5 rounded-xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 flex items-start gap-3 shadow-sm">
       <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
-        <lucide-icon name="check" [size]="16" class="text-white"></lucide-icon>
+        <lucide-icon name="check" [size]="15" class="text-white"></lucide-icon>
       </div>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-bold text-emerald-900 dark:text-emerald-200">Request submitted!</p>
         <p class="text-xs text-emerald-700 dark:text-emerald-300/80 mt-0.5">
-          Ref <span class="font-bold">{{ toastId }}</span> — you'll hear back within 20 minutes. Check the Requests panel.
+          Ref <span class="font-bold font-mono">{{ toastId }}</span> — you'll hear back within 20 minutes.
         </p>
       </div>
-      <button (click)="showToast = false" class="text-emerald-600 hover:text-emerald-800 transition cursor-pointer">
+      <button (click)="showToast = false" class="text-emerald-500 hover:text-emerald-700 transition cursor-pointer mt-0.5">
         <lucide-icon name="x" [size]="14"></lucide-icon>
       </button>
     </div>
 
-    <!-- ── 2-column layout ────────────────────────────────────────────────── -->
-    <div class="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-6 items-start">
+    <!-- ── 2-column layout ──────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-6 items-start">
 
-      <!-- ════════════════════════════════════════════════════════════════════
+      <!-- ══════════════════════════════════════════════════════════════════════════
            LEFT — New request form
-           ════════════════════════════════════════════════════════════════════ -->
+           ══════════════════════════════════════════════════════════════════════════ -->
       <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
 
         <!-- Form header -->
-        <div class="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center gap-2">
-          <lucide-icon name="sliders-horizontal" [size]="15" class="text-primary"></lucide-icon>
-          <h2 class="text-sm font-bold text-slate-700 dark:text-slate-200">New Request</h2>
+        <div class="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
+          <div class="flex items-center gap-2">
+            <lucide-icon name="route" [size]="15" class="text-primary"></lucide-icon>
+            <h2 class="text-sm font-bold text-slate-700 dark:text-slate-200">New Price Request</h2>
+          </div>
         </div>
 
-        <div class="p-5 sm:p-6 space-y-5">
+        <div class="p-5 sm:p-6 space-y-6">
 
-          <!-- ①  Trip type ─────────────────────────────────────────────── -->
+          <!-- ①  Trip type ──────────────────────────────────────────────────── -->
           <div>
             <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Trip Type</label>
             <div class="flex gap-2">
               <button *ngFor="let t of tripTypeOptions"
                 (click)="setTripType(t.id)"
-                class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border transition-all cursor-pointer"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer"
                 [ngClass]="tripType === t.id
                   ? 'bg-primary text-white border-primary shadow-sm'
-                  : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-primary/50'">
+                  : 'bg-slate-50 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-primary/50 hover:text-primary'">
                 <lucide-icon [name]="t.icon" [size]="14"></lucide-icon>
                 {{ t.label }}
               </button>
             </div>
           </div>
 
-          <!-- ②  Pickup location ──────────────────────────────────────── -->
+          <!-- ②  Route — Pickup + Drop with connected visual ──────────────── -->
           <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pickup Location</label>
-              <button *ngIf="pickupInputMode === 'manual'" (click)="detectGps()"
-                [disabled]="gpsLoading"
-                class="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition cursor-pointer disabled:opacity-50">
-                <lucide-icon [name]="gpsLoading ? 'loader-2' : 'crosshair'" [size]="12"
-                  [class.animate-spin]="gpsLoading"></lucide-icon>
-                {{ gpsLoading ? 'Detecting…' : 'Use GPS' }}
-              </button>
-              <button *ngIf="pickupInputMode === 'gps'" (click)="switchToManual()"
-                class="text-[11px] font-semibold text-slate-400 hover:text-primary transition cursor-pointer">
-                Enter manually
-              </button>
-            </div>
+            <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Route</label>
 
-            <!-- Manual search input -->
-            <div *ngIf="pickupInputMode === 'manual'" class="relative">
-              <lucide-icon name="map-pin" [size]="14"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
-              <input #pickupInputRef
-                [(ngModel)]="pickupAddress"
-                type="text"
-                placeholder="Search pickup address…"
-                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition-all"
-                [ngClass]="showPickupError
-                  ? 'border-red-400 ring-2 ring-red-200'
-                  : 'border-slate-200 dark:border-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20'" />
-            </div>
+            <!-- Connected route card -->
+            <div class="relative rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/30 overflow-visible">
 
-            <!-- GPS address display -->
-            <div *ngIf="pickupInputMode === 'gps'"
-              class="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700">
-              <lucide-icon name="navigation" [size]="14" class="text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0"></lucide-icon>
-              <span class="text-sm text-emerald-800 dark:text-emerald-300 flex-1 leading-snug">
-                {{ pickupAddress || 'Locating…' }}
+              <!-- Pickup row -->
+              <div class="p-3 sm:p-4">
+                <div class="flex items-start gap-3">
+                  <!-- Dot + line -->
+                  <div class="flex flex-col items-center pt-3 shrink-0">
+                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/30 ring-offset-1 ring-offset-slate-50 dark:ring-offset-slate-800"></div>
+                    <div class="w-0.5 h-6 bg-slate-300 dark:bg-slate-600 my-1"></div>
+                  </div>
+
+                  <!-- Pickup input area -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pickup</span>
+                      <!-- Use my current location -->
+                      <button (click)="detectGps()" [disabled]="gpsLoading"
+                        class="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 disabled:opacity-50 transition cursor-pointer">
+                        <lucide-icon [name]="gpsLoading ? 'loader-2' : 'navigation'" [size]="11"
+                          [ngClass]="gpsLoading ? 'animate-spin' : ''"></lucide-icon>
+                        {{ gpsLoading ? 'Detecting…' : 'Use my current location' }}
+                      </button>
+                    </div>
+
+                    <!-- Autocomplete input + dropdown -->
+                    <div class="relative">
+                      <input
+                        [ngModel]="pickupQuery"
+                        (ngModelChange)="onPickupSearch($event)"
+                        (blur)="hidePickupDropdown()"
+                        (focus)="pickupSuggestions.length > 0 ? (showPickupDropdown = true) : null"
+                        type="text"
+                        placeholder="Search area, landmark, street…"
+                        autocomplete="off"
+                        class="w-full px-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition-all"
+                        [ngClass]="showPickupError
+                          ? 'border-red-400 ring-2 ring-red-200 dark:ring-red-800/50'
+                          : 'border-slate-200 dark:border-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20'" />
+
+                      <!-- Dropdown suggestions -->
+                      <div *ngIf="showPickupDropdown && pickupSuggestions.length > 0"
+                        class="absolute z-50 top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 shadow-xl overflow-hidden">
+                        <button *ngFor="let s of pickupSuggestions"
+                          (mousedown)="selectPickup(s)"
+                          class="w-full flex items-start gap-2.5 px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-700/60 last:border-0">
+                          <lucide-icon name="map-pin" [size]="13" class="text-slate-400 mt-0.5 shrink-0"></lucide-icon>
+                          <span class="text-xs text-slate-800 dark:text-slate-100 leading-snug">{{ s.description }}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <p *ngIf="gpsError" class="mt-1.5 text-[11px] text-red-500 flex items-center gap-1">
+                      <lucide-icon name="alert-circle" [size]="11"></lucide-icon>{{ gpsError }}
+                    </p>
+                    <p *ngIf="showPickupError && !gpsError" class="mt-1.5 text-[11px] text-red-500">Pickup address is required.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Divider -->
+              <div class="h-px bg-slate-200 dark:bg-slate-600/60 mx-4"></div>
+
+              <!-- Drop row -->
+              <div class="p-3 sm:p-4">
+                <div class="flex items-start gap-3">
+                  <!-- Dot -->
+                  <div class="flex flex-col items-center pt-3 shrink-0">
+                    <div class="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-500/30 ring-offset-1 ring-offset-slate-50 dark:ring-offset-slate-800"></div>
+                  </div>
+
+                  <!-- Drop input area -->
+                  <div class="flex-1 min-w-0">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Drop</span>
+
+                    <!-- Autocomplete input + dropdown -->
+                    <div class="relative">
+                      <input
+                        [ngModel]="dropQuery"
+                        (ngModelChange)="onDropSearch($event)"
+                        (blur)="hideDropDropdown()"
+                        (focus)="dropSuggestions.length > 0 ? (showDropDropdown = true) : null"
+                        type="text"
+                        placeholder="Search area, landmark, street…"
+                        autocomplete="off"
+                        class="w-full px-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition-all"
+                        [ngClass]="showDropError
+                          ? 'border-red-400 ring-2 ring-red-200 dark:ring-red-800/50'
+                          : 'border-slate-200 dark:border-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20'" />
+
+                      <!-- Dropdown suggestions -->
+                      <div *ngIf="showDropDropdown && dropSuggestions.length > 0"
+                        class="absolute z-50 top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 shadow-xl overflow-hidden">
+                        <button *ngFor="let s of dropSuggestions"
+                          (mousedown)="selectDrop(s)"
+                          class="w-full flex items-start gap-2.5 px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-700/60 last:border-0">
+                          <lucide-icon name="map-pin" [size]="13" class="text-rose-400 mt-0.5 shrink-0"></lucide-icon>
+                          <span class="text-xs text-slate-800 dark:text-slate-100 leading-snug">{{ s.description }}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <p *ngIf="showDropError" class="mt-1.5 text-[11px] text-red-500">Drop address is required.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div><!-- /route card -->
+
+            <!-- Distance chip -->
+            <div *ngIf="distanceKm !== null" class="mt-2 flex items-center gap-1.5">
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary bg-primary/8 dark:bg-primary/15 px-2.5 py-1 rounded-full">
+                <lucide-icon name="route" [size]="11"></lucide-icon>
+                ~{{ distanceKm }} km (straight-line estimate)
               </span>
             </div>
-
-            <p *ngIf="gpsError" class="mt-1.5 text-[11px] text-red-500 flex items-center gap-1">
-              <lucide-icon name="alert-circle" [size]="11"></lucide-icon>{{ gpsError }}
-            </p>
-            <p *ngIf="showPickupError && !gpsError" class="mt-1.5 text-[11px] text-red-500">Pickup address is required.</p>
           </div>
 
-          <!-- ③  Drop location ────────────────────────────────────────── -->
+          <!-- ③  Date & time ────────────────────────────────────────────────── -->
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Drop Location</label>
-            <div class="relative">
-              <lucide-icon name="map-pin" [size]="14"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 pointer-events-none"></lucide-icon>
-              <input #dropInputRef
-                [(ngModel)]="dropAddress"
-                type="text"
-                placeholder="Search drop address…"
-                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition-all"
-                [ngClass]="showDropError
-                  ? 'border-red-400 ring-2 ring-red-200'
-                  : 'border-slate-200 dark:border-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20'" />
-            </div>
-            <p *ngIf="showDropError" class="mt-1.5 text-[11px] text-red-500">Drop address is required.</p>
-
-            <!-- Distance chip (shown once both coords are known) -->
-            <p *ngIf="distanceKm !== null" class="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/8 dark:bg-primary/10 px-2 py-0.5 rounded-full">
-              <lucide-icon name="route" [size]="11"></lucide-icon>
-              ~{{ distanceKm }} km (road distance may vary)
-            </p>
-          </div>
-
-          <!-- ④  Pickup date & time ─────────────────────────────────── -->
-          <div>
-            <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+            <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
               Pickup Date &amp; Time
             </label>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-3">
               <div class="relative">
                 <lucide-icon name="calendar" [size]="13"
-                  class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
                 <input type="date" [(ngModel)]="pickupDate" [min]="minDate"
-                  class="w-full pl-8 pr-2 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white outline-none transition-all cursor-pointer"
+                  class="w-full pl-8 pr-2 py-2.5 text-sm rounded-xl border bg-white dark:bg-slate-700 text-slate-900 dark:text-white outline-none transition-all cursor-pointer"
                   [ngClass]="showDateError ? 'border-red-400 ring-2 ring-red-200' : 'border-slate-200 dark:border-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20'" />
               </div>
               <div class="relative">
                 <lucide-icon name="clock" [size]="13"
-                  class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
                 <input type="time" [(ngModel)]="pickupTime"
-                  class="w-full pl-8 pr-2 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white outline-none transition-all cursor-pointer"
+                  class="w-full pl-8 pr-2 py-2.5 text-sm rounded-xl border bg-white dark:bg-slate-700 text-slate-900 dark:text-white outline-none transition-all cursor-pointer"
                   [ngClass]="showDateError ? 'border-red-400 ring-2 ring-red-200' : 'border-slate-200 dark:border-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20'" />
               </div>
             </div>
-            <p *ngIf="showDateError" class="mt-1.5 text-[11px] text-red-500">{{ dateErrorMsg }}</p>
+            <p *ngIf="showDateError" class="mt-1.5 text-[11px] text-red-500 flex items-center gap-1">
+              <lucide-icon name="alert-circle" [size]="11"></lucide-icon>{{ dateErrorMsg }}
+            </p>
           </div>
 
-          <!-- ⑤  Return date & time (RT only) ─────────────────────── -->
+          <!-- ④  Return date & time (RT only) ──────────────────────────────── -->
           <div *ngIf="tripType === 'RT'">
-            <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+            <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
               Return Date &amp; Time
             </label>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-3">
               <div class="relative">
                 <lucide-icon name="calendar" [size]="13"
-                  class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
                 <input type="date" [(ngModel)]="returnDate" [min]="pickupDate || minDate"
-                  class="w-full pl-8 pr-2 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white outline-none transition-all cursor-pointer"
+                  class="w-full pl-8 pr-2 py-2.5 text-sm rounded-xl border bg-white dark:bg-slate-700 text-slate-900 dark:text-white outline-none transition-all cursor-pointer"
                   [ngClass]="showReturnError ? 'border-red-400 ring-2 ring-red-200' : 'border-slate-200 dark:border-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20'" />
               </div>
               <div class="relative">
                 <lucide-icon name="clock" [size]="13"
-                  class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></lucide-icon>
                 <input type="time" [(ngModel)]="returnTime"
-                  class="w-full pl-8 pr-2 py-2.5 text-sm rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white outline-none transition-all cursor-pointer"
+                  class="w-full pl-8 pr-2 py-2.5 text-sm rounded-xl border bg-white dark:bg-slate-700 text-slate-900 dark:text-white outline-none transition-all cursor-pointer"
                   [ngClass]="showReturnError ? 'border-red-400 ring-2 ring-red-200' : 'border-slate-200 dark:border-slate-600 focus:border-primary focus:ring-2 focus:ring-primary/20'" />
               </div>
             </div>
-            <p *ngIf="showReturnError" class="mt-1.5 text-[11px] text-red-500">Return date and time are required for round trips.</p>
+            <p *ngIf="showReturnError" class="mt-1.5 text-[11px] text-red-500 flex items-center gap-1">
+              <lucide-icon name="alert-circle" [size]="11"></lucide-icon>Return date and time are required for round trips.
+            </p>
           </div>
 
-          <!-- ⑥  Car type ──────────────────────────────────────────── -->
+          <!-- ⑤  Car type ──────────────────────────────────────────────────── -->
           <div>
             <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Car Type</label>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               <button *ngFor="let car of carOptions"
                 (click)="selectCar(car.id)"
-                class="flex flex-col items-center gap-1 px-2 py-3 rounded-xl border text-center transition-all cursor-pointer"
+                class="flex flex-col items-center gap-1.5 px-2 py-3.5 rounded-xl border text-center transition-all cursor-pointer"
                 [ngClass]="selectedCar === car.id
-                  ? 'bg-primary/10 dark:bg-primary/20 border-primary ring-2 ring-primary/20'
+                  ? 'bg-primary/10 dark:bg-primary/20 border-primary ring-2 ring-primary/20 shadow-sm'
                   : showCarError
                     ? 'bg-white dark:bg-slate-700 border-red-300 hover:border-primary/40'
-                    : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:border-primary/40'">
-                <lucide-icon name="car" [size]="18"
+                    : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:border-primary/40 hover:bg-slate-50 dark:hover:bg-slate-600/50'">
+                <lucide-icon name="car" [size]="20"
                   [ngClass]="selectedCar === car.id ? 'text-primary' : 'text-slate-400'"></lucide-icon>
-                <span class="text-xs font-bold"
+                <span class="text-xs font-bold leading-tight"
                   [ngClass]="selectedCar === car.id ? 'text-primary' : 'text-slate-700 dark:text-slate-200'">
                   {{ car.label }}
                 </span>
-                <!-- Show ₹X/km until locations are picked; show total once distance is known -->
-                <span *ngIf="distanceKm === null" class="text-[10px] font-semibold text-slate-400">
+                <!-- ₹X/km before locations; total once known -->
+                <span *ngIf="distanceKm === null" class="text-[10px] text-slate-400">
                   ₹{{ car.ratePerKm }}/km
                 </span>
                 <span *ngIf="distanceKm !== null" class="text-[10px] font-semibold"
-                  [ngClass]="selectedCar === car.id ? 'text-primary/80' : 'text-slate-400'">
+                  [ngClass]="selectedCar === car.id ? 'text-primary/80' : 'text-slate-500 dark:text-slate-400'">
                   ₹{{ getFareEstimate(car.id) | number }}
                 </span>
               </button>
             </div>
-            <p *ngIf="showCarError" class="mt-1.5 text-[11px] text-red-500">Please select a car type.</p>
+            <p *ngIf="showCarError" class="mt-1.5 text-[11px] text-red-500 flex items-center gap-1">
+              <lucide-icon name="alert-circle" [size]="11"></lucide-icon>Please select a car type.
+            </p>
             <p *ngIf="distanceKm === null && selectedCar" class="mt-1.5 text-[11px] text-amber-500 flex items-center gap-1">
               <lucide-icon name="info" [size]="11"></lucide-icon>
-              Enter pickup &amp; drop locations to see the estimated fare for your selected car.
+              Enter pickup &amp; drop to see fare estimates.
             </p>
           </div>
 
-          <!-- ⑦  Fare slider ───────────────────────────────────────── -->
+          <!-- ⑥  Fare slider ─────────────────────────────────────────────── -->
           <div *ngIf="maxFare > 0">
             <div class="flex items-center justify-between mb-2">
               <label class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Your Proposed Fare
               </label>
-              <span class="text-xs text-slate-400">Range: ₹{{ minFare | number }} – ₹{{ maxFare | number }}</span>
+              <span class="text-[11px] text-slate-400">₹{{ minFare | number }} – ₹{{ maxFare | number }}</span>
             </div>
 
-            <!-- Slider + input row -->
+            <!-- Slider + amount input -->
             <div class="flex items-center gap-3">
               <input type="range"
                 [(ngModel)]="proposedFare"
                 [min]="minFare" [max]="maxFare" [step]="fareStep"
                 class="flex-1 accent-primary h-2 cursor-pointer" />
               <div class="relative shrink-0">
-                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-slate-400 select-none">₹</span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400 select-none pointer-events-none">₹</span>
                 <input type="number"
                   [(ngModel)]="proposedFare"
                   [min]="minFare" [max]="maxFare" [step]="fareStep"
-                  class="w-28 pl-6 pr-2 py-2 text-sm font-bold rounded-lg border text-right outline-none transition-all"
+                  class="w-28 pl-7 pr-2 py-2 text-sm font-bold rounded-xl border text-right outline-none transition-all"
                   [ngClass]="showFareError
                     ? 'border-red-400 ring-2 ring-red-200 text-red-600'
                     : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20'" />
               </div>
             </div>
 
-            <!-- Confirmation likelihood indicator -->
+            <!-- Confirmation likelihood -->
             <div *ngIf="confirmationChance as chance"
-              class="mt-3 flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
-              <div class="flex items-center gap-2 min-w-0">
-                <div class="w-2 h-2 rounded-full shrink-0 transition-colors" [ngClass]="chance.dotClass"></div>
+              class="mt-3 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border"
+              [ngClass]="{
+                'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800': chance.bars === 3,
+                'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800': chance.bars === 2,
+                'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800': chance.bars === 1
+              }">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-2 h-2 rounded-full shrink-0" [ngClass]="chance.dotClass"></div>
                 <div class="min-w-0">
-                  <p class="text-xs font-bold transition-colors" [ngClass]="chance.textClass">{{ chance.label }}</p>
-                  <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">{{ chance.sublabel }}</p>
+                  <p class="text-xs font-bold" [ngClass]="chance.textClass">{{ chance.label }}</p>
+                  <p class="text-[10px] text-slate-400 mt-0.5">{{ chance.sublabel }}</p>
                 </div>
               </div>
               <!-- Signal bars -->
               <div class="flex items-end gap-0.5 shrink-0">
-                <div class="w-1.5 rounded-sm transition-colors"
-                  [style.height.px]="6"
+                <div class="w-1.5 rounded-sm" [style.height.px]="7"
                   [ngClass]="chance.bars >= 1 ? chance.dotClass : 'bg-slate-200 dark:bg-slate-600'"></div>
-                <div class="w-1.5 rounded-sm transition-colors"
-                  [style.height.px]="10"
+                <div class="w-1.5 rounded-sm" [style.height.px]="11"
                   [ngClass]="chance.bars >= 2 ? chance.dotClass : 'bg-slate-200 dark:bg-slate-600'"></div>
-                <div class="w-1.5 rounded-sm transition-colors"
-                  [style.height.px]="14"
+                <div class="w-1.5 rounded-sm" [style.height.px]="15"
                   [ngClass]="chance.bars >= 3 ? chance.dotClass : 'bg-slate-200 dark:bg-slate-600'"></div>
               </div>
             </div>
-            <p *ngIf="showFareError" class="mt-1.5 text-[11px] text-red-500">Fare must be between ₹{{ minFare | number }} and ₹{{ maxFare | number }}.</p>
+            <p *ngIf="showFareError" class="mt-1.5 text-[11px] text-red-500">
+              Fare must be between ₹{{ minFare | number }} and ₹{{ maxFare | number }}.
+            </p>
           </div>
 
-          <!-- Fare placeholder (before car selected) -->
+          <!-- Fare placeholder before car/location selected -->
           <div *ngIf="maxFare === 0"
-            class="flex items-center gap-2.5 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-700/40 border border-dashed border-slate-200 dark:border-slate-600">
-            <lucide-icon name="sliders-horizontal" [size]="16" class="text-slate-300 dark:text-slate-500 shrink-0"></lucide-icon>
-            <p class="text-xs text-slate-400">Select a car type above to set your proposed fare.</p>
+            class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-dashed border-slate-200 dark:border-slate-600">
+            <lucide-icon name="sliders-horizontal" [size]="18" class="text-slate-300 dark:text-slate-500 shrink-0"></lucide-icon>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Select locations and a car type above — the fare slider will appear once we can estimate the trip cost.
+            </p>
           </div>
 
-          <!-- ⑧  Value Added Services ──────────────────────────────── -->
+          <!-- ⑦  Value Added Services ────────────────────────────────────── -->
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
-              Value Added Services
-              <span class="ml-1 normal-case font-medium text-slate-400">(optional)</span>
-            </label>
-            <div class="space-y-2">
+            <div class="flex items-center gap-2 mb-2">
+              <label class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Special Services</label>
+              <span class="text-[10px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">optional</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button *ngFor="let v of vasOptions"
                 (click)="toggleVas(v.id)"
-                class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-left transition-all cursor-pointer"
+                class="flex flex-col gap-1 px-3 py-3 rounded-xl border text-left transition-all cursor-pointer"
                 [ngClass]="isVasSelected(v.id)
-                  ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-300 dark:border-violet-600'
-                  : 'bg-white dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 hover:border-violet-300'">
-                <!-- Checkbox -->
-                <div class="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all"
-                  [ngClass]="isVasSelected(v.id)
-                    ? 'bg-violet-500 border-violet-500'
-                    : 'border-slate-300 dark:border-slate-500'">
-                  <lucide-icon *ngIf="isVasSelected(v.id)" name="check" [size]="10" class="text-white"></lucide-icon>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-semibold"
+                  ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-300 dark:border-violet-600 shadow-sm'
+                  : 'bg-white dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 hover:border-violet-300 dark:hover:border-violet-600'">
+                <div class="flex items-center gap-2">
+                  <!-- Checkbox -->
+                  <div class="w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-all"
+                    [ngClass]="isVasSelected(v.id)
+                      ? 'bg-violet-500 border-violet-500'
+                      : 'border-slate-300 dark:border-slate-500'">
+                    <lucide-icon *ngIf="isVasSelected(v.id)" name="check" [size]="9" class="text-white"></lucide-icon>
+                  </div>
+                  <span class="text-xs font-bold"
                     [ngClass]="isVasSelected(v.id) ? 'text-violet-700 dark:text-violet-300' : 'text-slate-700 dark:text-slate-200'">
                     {{ v.label }}
-                  </p>
-                  <p class="text-[11px] text-slate-400 mt-0.5">{{ v.description }}</p>
+                  </span>
                 </div>
-                <span class="text-[10px] font-semibold text-slate-400 shrink-0">+ extras</span>
+                <p class="text-[10px] text-slate-400 pl-5 leading-snug">{{ v.description }}</p>
               </button>
             </div>
             <!-- Conflict message -->
             <div *ngIf="vasConflictMsg"
-              class="mt-2 flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
+              class="mt-2.5 flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
               <lucide-icon name="alert-triangle" [size]="13" class="text-amber-500 mt-0.5 shrink-0"></lucide-icon>
-              <p class="text-[11px] text-amber-700 dark:text-amber-300">{{ vasConflictMsg }}</p>
+              <p class="text-[11px] text-amber-700 dark:text-amber-300 leading-snug">{{ vasConflictMsg }}</p>
             </div>
           </div>
 
-          <!-- ⑨  Auto-confirm ────────────────────────────────────────── -->
-          <div class="flex items-start gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
-            <button (click)="autoConfirm = !autoConfirm"
-              class="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all cursor-pointer"
+          <!-- ⑧  Auto-confirm ──────────────────────────────────────────── -->
+          <button (click)="autoConfirm = !autoConfirm"
+            class="w-full flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer text-left"
+            [ngClass]="autoConfirm
+              ? 'bg-primary/5 dark:bg-primary/10 border-primary/30'
+              : 'bg-slate-50 dark:bg-slate-700/30 border-slate-200 dark:border-slate-600 hover:border-slate-300'">
+            <div class="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all"
               [ngClass]="autoConfirm
                 ? 'bg-primary border-primary'
-                : 'border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700'">
+                : 'border-slate-300 dark:border-slate-500'">
               <lucide-icon *ngIf="autoConfirm" name="check" [size]="12" class="text-white"></lucide-icon>
-            </button>
+            </div>
             <div class="flex-1">
               <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Auto-confirm best matching offer</p>
-              <p class="text-[11px] text-slate-400 mt-0.5">If a driver accepts at or below your proposed fare, the booking is confirmed automatically.</p>
+              <p class="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                If a driver accepts at or below your proposed fare, the booking is confirmed automatically without any further action from you.
+              </p>
             </div>
-          </div>
+          </button>
 
-          <!-- ⑩  Submit button ───────────────────────────────────────── -->
+          <!-- ⑨  Submit ────────────────────────────────────────────────── -->
           <button (click)="onSubmit()"
-            class="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 active:scale-[.98] shadow-sm shadow-primary/30 transition-all cursor-pointer">
-            <lucide-icon name="tag" [size]="15"></lucide-icon>
-            Submit Book My Price
+            class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 active:scale-[.98] shadow-sm shadow-primary/30 transition-all cursor-pointer">
+            <lucide-icon name="send" [size]="15"></lucide-icon>
+            Submit Price Request
           </button>
 
         </div><!-- /form body -->
       </div><!-- /left panel -->
 
 
-      <!-- ════════════════════════════════════════════════════════════════════
+      <!-- ══════════════════════════════════════════════════════════════════════════
            RIGHT — Requests panel
-           ════════════════════════════════════════════════════════════════════ -->
+           ══════════════════════════════════════════════════════════════════════════ -->
       <div class="xl:sticky xl:top-20">
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
 
           <!-- Panel header -->
-          <div class="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+          <div class="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
             <div class="flex items-center gap-2">
               <lucide-icon name="inbox" [size]="15" class="text-primary"></lucide-icon>
               <h2 class="text-sm font-bold text-slate-700 dark:text-slate-200">Your Requests</h2>
@@ -367,13 +437,13 @@
           </div>
 
           <!-- Empty state -->
-          <div *ngIf="requests.length === 0" class="flex flex-col items-center justify-center py-12 px-6 text-center">
-            <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-3">
-              <lucide-icon name="tag" [size]="22" class="text-slate-300 dark:text-slate-500"></lucide-icon>
+          <div *ngIf="requests.length === 0" class="flex flex-col items-center justify-center py-14 px-6 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-3">
+              <lucide-icon name="tag" [size]="24" class="text-slate-300 dark:text-slate-500"></lucide-icon>
             </div>
             <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">No requests yet</p>
-            <p class="text-xs text-slate-400 mt-1 max-w-xs">
-              Fill in the form and submit your price — requests appear here with live status updates.
+            <p class="text-xs text-slate-400 mt-1.5 max-w-[220px] leading-relaxed">
+              Submit your price proposal — requests will appear here with live status updates.
             </p>
           </div>
 
@@ -383,20 +453,20 @@
             <div *ngFor="let req of requests; trackBy: trackRequest"
               class="p-4 transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-700/20"
               [style.border-left]="
-                req.status === 'accepted'                        ? '4px solid #10b981' :
-                req.status === 'rejected' || req.isExpired      ? '4px solid #94a3b8' :
-                '4px solid #f59e0b'">
+                req.status === 'accepted'                    ? '3px solid #10b981' :
+                req.status === 'rejected' || req.isExpired  ? '3px solid #94a3b8' :
+                '3px solid #f59e0b'">
 
-              <!-- Top row: ID + status badge -->
-              <div class="flex items-center gap-2 mb-2 flex-wrap">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">{{ req.id }}</span>
+              <!-- Top row: ID + badges -->
+              <div class="flex items-center gap-1.5 mb-2.5 flex-wrap">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 font-mono">{{ req.id }}</span>
 
                 <span *ngIf="req.status === 'accepted'"
                   class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
                   <lucide-icon name="check-circle" [size]="9"></lucide-icon> Accepted
                 </span>
                 <span *ngIf="req.status === 'rejected'"
-                  class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500">
                   Not Accepted
                 </span>
                 <span *ngIf="req.status === 'pending' && !req.isExpired"
@@ -404,31 +474,30 @@
                   <lucide-icon name="clock" [size]="9"></lucide-icon> Pending
                 </span>
                 <span *ngIf="req.isExpired && req.status !== 'accepted' && req.status !== 'rejected'"
-                  class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500">
+                  class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500">
                   Expired
                 </span>
-
                 <span *ngIf="req.autoConfirm"
-                  class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                  class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
                   Auto
                 </span>
               </div>
 
               <!-- Route -->
-              <div class="flex items-start gap-2 mb-2">
-                <div class="flex flex-col items-center pt-1.5 shrink-0">
+              <div class="flex items-start gap-2.5 mb-2.5">
+                <div class="flex flex-col items-center pt-1 shrink-0">
                   <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                  <div class="w-px h-3 bg-slate-300 dark:bg-slate-600"></div>
+                  <div class="w-px h-3 bg-slate-200 dark:bg-slate-600 my-0.5"></div>
                   <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
                 </div>
-                <div class="min-w-0 text-xs">
+                <div class="min-w-0 space-y-0.5 text-xs">
                   <div class="font-semibold text-slate-800 dark:text-slate-100 truncate">{{ req.route.from }}</div>
-                  <div class="font-semibold text-slate-800 dark:text-slate-100 truncate mt-0.5">{{ req.route.to }}</div>
+                  <div class="font-semibold text-slate-800 dark:text-slate-100 truncate">{{ req.route.to }}</div>
                 </div>
               </div>
 
-              <!-- Meta row -->
-              <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400 mb-2">
+              <!-- Meta -->
+              <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400 mb-2.5">
                 <span class="inline-flex items-center gap-1">
                   <lucide-icon name="calendar" [size]="10"></lucide-icon>
                   {{ req.pickupDate | date:'dd MMM' }}
@@ -440,53 +509,51 @@
                 <span *ngIf="req.distanceKm" class="inline-flex items-center gap-1">
                   <lucide-icon name="route" [size]="10"></lucide-icon>~{{ req.distanceKm }} km
                 </span>
-                <span class="inline-flex items-center gap-1 text-slate-300 dark:text-slate-500">
-                  {{ req.submittedLabel }}
-                </span>
+                <span class="text-slate-300 dark:text-slate-600">{{ req.submittedLabel }}</span>
               </div>
 
               <!-- Fare row -->
               <div class="flex items-end justify-between gap-2">
                 <div>
-                  <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Proposed</div>
-                  <div class="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                  <div class="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-0.5">Your proposal</div>
+                  <div class="text-xl font-black text-slate-900 dark:text-white leading-none">
                     ₹{{ req.proposedFare | number }}
                   </div>
-                  <div class="text-[10px] text-slate-400 line-through">₹{{ req.originalFare | number }}</div>
+                  <div class="text-[10px] text-slate-400 line-through mt-0.5">est. ₹{{ req.originalFare | number }}</div>
                 </div>
 
-                <!-- Accepted fare -->
+                <!-- Accepted fare box -->
                 <div *ngIf="req.status === 'accepted'"
-                  class="rounded-lg bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1.5 text-right">
-                  <div class="text-[9px] font-bold uppercase text-emerald-600 dark:text-emerald-400">Driver matched at</div>
-                  <div class="text-sm font-bold text-emerald-700 dark:text-emerald-300">₹{{ req.vendorResponseFare | number }}</div>
+                  class="rounded-xl bg-emerald-50 dark:bg-emerald-900/30 px-3 py-2 text-right">
+                  <div class="text-[9px] font-bold uppercase text-emerald-600 dark:text-emerald-400 mb-0.5">Driver matched at</div>
+                  <div class="text-base font-black text-emerald-700 dark:text-emerald-300">₹{{ req.vendorResponseFare | number }}</div>
                 </div>
 
                 <!-- Countdown bar (pending) -->
                 <div *ngIf="req.status === 'pending' && !req.isExpired" class="flex-1 ml-2">
-                  <div class="flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 justify-end mb-1">
+                  <div class="flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 justify-end mb-1.5">
                     <lucide-icon name="clock" [size]="10"></lucide-icon>
                     {{ req.countdownLabel }}
                   </div>
-                  <div class="h-1 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div class="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-1000"
                       [style.width.%]="req.countdownPercent"></div>
                   </div>
                 </div>
 
-                <!-- Expired / rejected label -->
+                <!-- No match -->
                 <div *ngIf="(req.isExpired || req.status === 'rejected') && req.status !== 'accepted'"
-                  class="text-[11px] font-semibold text-slate-400">
+                  class="text-xs font-semibold text-slate-400 italic">
                   No match found
                 </div>
               </div>
 
               <!-- VAS chips -->
-              <div *ngIf="req.vasServices?.length" class="mt-2 flex flex-wrap gap-1">
+              <div *ngIf="req.vasServices?.length" class="mt-2.5 flex flex-wrap gap-1">
                 <span *ngFor="let v of req.vasServices"
-                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
                   <lucide-icon name="star" [size]="8"></lucide-icon>
-                  {{ v === 'new_car' ? 'New Car' : v === 'diesel' ? 'Diesel' : v === 'luggage' ? 'Luggage' : v }}
+                  {{ v === 'new_car' ? 'New Car' : v === 'diesel' ? 'Diesel' : v === 'luggage' ? 'Luggage Carrier' : v }}
                 </span>
               </div>
 
@@ -499,8 +566,8 @@
               </button>
 
             </div><!-- /card -->
-
           </div><!-- /card list -->
+
         </div>
       </div><!-- /right panel -->
 
