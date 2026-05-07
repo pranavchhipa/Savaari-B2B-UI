@@ -156,7 +156,7 @@
                                             class="text-slate-400 hover:text-primary transition-colors cursor-help"
                                             tabindex="0"></lucide-icon>
                                         <div class="absolute right-0 top-full mt-1.5 z-50 hidden group-hover/agentinfo:block w-60 sm:w-64 px-3 py-2 bg-slate-900 text-white text-[11px] leading-snug font-medium rounded-md shadow-lg">
-                                            All trip SMS &amp; driver-allocation alerts will be sent to this Agent Phone Number.
+                                            All trip SMS &amp; driver contact alerts will be sent to this Agent Phone Number.
                                             <span class="absolute -top-1.5 right-3 w-3 h-3 bg-slate-900 rotate-45"></span>
                                         </div>
                                     </div>
@@ -208,7 +208,9 @@
                                  binding rename is a bigger refactor). The actual customer's
                                  contact number; backend doesn't currently route SMS to this
                                  — it's stored for the agent's own record + future Approach B
-                                 once the backend exposes a proper customer-vs-agent split. -->
+                                 once the backend exposes a proper customer-vs-agent split.
+                                 The inline ⓘ tooltip below makes that explicit so the agent
+                                 doesn't expect SMS to land here. -->
                             <div class="relative group">
                                 <div class="absolute left-4 top-1/2 -translate-y-1/2 text-primary z-10 pointer-events-none">
                                     <lucide-icon name="phone" [size]="16"></lucide-icon>
@@ -216,10 +218,23 @@
                                 <input id="agentMobile" type="tel" [(ngModel)]="agentMobile" name="agentMobile"
                                     maxlength="10"
                                     (keypress)="$event.charCode >= 48 && $event.charCode <= 57 || $event.preventDefault()"
-                                    class="peer block w-full pl-11 pr-4 pt-5 pb-1.5 text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
+                                    class="peer block w-full pl-11 pr-10 pt-5 pb-1.5 text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border-0 border-b-2 border-slate-200 dark:border-slate-700 focus:ring-0 focus:border-primary transition-all rounded-t-lg"
                                     placeholder=" " />
                                 <label for="agentMobile"
                                     class="absolute text-sm text-slate-500 dark:text-slate-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-11 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-primary">Customer Phone Number</label>
+                                <!-- Inline ⓘ tooltip — mirrors the Agent Phone field's helper.
+                                     Tells the agent that NO SMS / driver alerts go to this
+                                     number (so they don't put the customer's number expecting
+                                     it to receive trip notifications). -->
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 z-20 group/custinfo">
+                                    <lucide-icon name="info" [size]="14"
+                                        class="text-slate-400 hover:text-primary transition-colors cursor-help"
+                                        tabindex="0"></lucide-icon>
+                                    <div class="absolute right-0 top-full mt-1.5 z-50 hidden group-hover/custinfo:block w-60 sm:w-64 px-3 py-2 bg-slate-900 text-white text-[11px] leading-snug font-medium rounded-md shadow-lg">
+                                        No info will be sent to this number.
+                                        <span class="absolute -top-1.5 right-3 w-3 h-3 bg-slate-900 rotate-45"></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <!-- ── Airport bookings: locked FROM → TO route fields ── -->
@@ -1240,7 +1255,10 @@
                                     <div class="flex-1 min-w-0">
                                         <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Drop</p>
                                         <p class="text-sm font-bold text-slate-900 dark:text-white leading-snug">{{ itinerary?.fromCity }}</p>
-                                        <p *ngIf="pickupAddress" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ pickupAddress }}</p>
+                                        <!-- Drop detail uses dropAddress (customer's destination)
+                                             — NOT pickupAddress, which holds the airport label
+                                             for pickup-from-airport bookings. -->
+                                        <p *ngIf="dropAddress" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ dropAddress }}</p>
                                     </div>
                                 </div>
                             </ng-container>

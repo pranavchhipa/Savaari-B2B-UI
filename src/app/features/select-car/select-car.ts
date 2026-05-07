@@ -260,8 +260,11 @@ export class SelectCarComponent implements OnInit {
     if ((n.includes('tempo') || n.includes('traveller')) && n.includes('13')) return base + 'tempo-13.png';
     if (n.includes('tempo') || n.includes('traveller'))  return base + 'tempo-12.png';
     // Generic "SUV" catch-all — matches API names like "SUV (6+1 seater)".
-    // Sits AFTER specific SUV models (xuv, marazzo, etc) so those win first.
-    if (n.includes('suv'))                               return base + 'suv.png';
+    // Maps to the Ertiga studio shot (7-seater MPV, fits the 6+1 capacity
+    // branding better than the Scorpio image we used earlier — stakeholder
+    // feedback May 2026). Sits AFTER specific SUV models (xuv, marazzo, etc)
+    // so those still win first.
+    if (n.includes('suv'))                               return base + 'ertiga.png';
 
     // Fallback by car type ID
     const byId: Record<number, string> = {

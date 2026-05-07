@@ -2056,16 +2056,28 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.itinerary) return;
 
     if (this.itinerary.tripType === 'Airport') {
+      // Dashboard's airport tab uses ONE address text-input (`pickupAddress`)
+      // for two semantic purposes depending on direction:
+      //   • Drop to Airport     → that input is the customer's HOME / origin
+      //   • Pickup from Airport → that input is the customer's DESTINATION
+      // The airport itself is held in `itinerary.airportName` / `dropAirport`.
+      // Earlier we only populated `this.pickupAddress` and left `this.dropAddress`
+      // blank, which sent `drop_address: ''` to the backend (admin panel then
+      // showed both pickup + drop as the airport because backend defaults the
+      // missing slot to airport_name) and the booking-confirmed UI re-used
+      // `pickupAddress` in the drop section, leaking the airport name into both
+      // pin labels. Populate BOTH addresses correctly so each side renders the
+      // right thing and the create-booking payload carries proper drop_address.
+      const airportLabel = this.itinerary.airportName || this.itinerary.dropAirport || '';
+      const customerTypedAddress = this.itinerary.pickupAddress || this.itinerary.custShortAddress || '';
       if (this.itinerary.airportSubType === 'drop') {
-        // Drop to Airport: pickup = user's home address (entered as "Pickup Address" on dashboard)
-        if (!this.pickupAddress) {
-          this.pickupAddress = this.itinerary.pickupAddress || this.itinerary.custShortAddress || '';
-        }
+        // Drop to Airport: pickup = customer's home, drop = airport
+        if (!this.pickupAddress) this.pickupAddress = customerTypedAddress;
+        if (!this.dropAddress)   this.dropAddress   = airportLabel;
       } else if (this.itinerary.airportSubType === 'pickup') {
-        // Pickup from Airport: pickup = airport terminal (entered as "Pickup Airport" on dashboard)
-        if (!this.pickupAddress) {
-          this.pickupAddress = this.itinerary.airportName || this.itinerary.dropAirport || '';
-        }
+        // Pickup from Airport: pickup = airport, drop = customer's destination
+        if (!this.pickupAddress) this.pickupAddress = airportLabel;
+        if (!this.dropAddress)   this.dropAddress   = customerTypedAddress;
       }
       // Carry over resolved lat/lng from dashboard place_id resolution
       if (!this.pickupLatLng && this.itinerary.customerLatLong) {
