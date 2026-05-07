@@ -28,6 +28,7 @@ interface CarOption {
     label:     string;
     ratePerKm: number;
     base:      number;
+    image:     string;
 }
 
 interface VasOption {
@@ -109,11 +110,11 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
 
     // ── Car & fare ────────────────────────────────────────────────────────────
     readonly carOptions: CarOption[] = [
-        { id: 'Hatchback', label: 'Hatchback', ratePerKm: 11, base: 250 },
-        { id: 'Sedan',     label: 'Sedan',     ratePerKm: 13, base: 300 },
-        { id: 'SUV',       label: 'SUV',       ratePerKm: 16, base: 350 },
-        { id: 'Innova',    label: 'Innova',    ratePerKm: 18, base: 400 },
-        { id: 'Crysta',    label: 'Crysta',    ratePerKm: 22, base: 500 },
+        { id: 'Hatchback', label: 'Hatchback', ratePerKm: 11, base: 250, image: 'assets/cars/swift.png'         },
+        { id: 'Sedan',     label: 'Sedan',     ratePerKm: 13, base: 300, image: 'assets/cars/dzire.png'         },
+        { id: 'SUV',       label: 'SUV',       ratePerKm: 16, base: 350, image: 'assets/cars/suv.png'           },
+        { id: 'Innova',    label: 'Innova',    ratePerKm: 18, base: 400, image: 'assets/cars/innova.png'        },
+        { id: 'Crysta',    label: 'Crysta',    ratePerKm: 22, base: 500, image: 'assets/cars/innova-crysta.png' },
     ];
 
     selectedCar   = '';
