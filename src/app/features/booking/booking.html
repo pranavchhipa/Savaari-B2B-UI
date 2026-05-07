@@ -1751,14 +1751,5 @@
      below the contact form on Step 1. See booking.ts: availableVasServices,
      toggleVas(), pushVasUpdate() for the dynamic implementation. -->
 
-<!-- DEMO: Customer-Proposed-Price modal — appears when user backs out of payment -->
-<app-price-proposal-modal
-    [visible]="proposalVisible"
-    [context]="proposalContext"
-    (submitted)="onProposalSubmitted($event)"
-    (dismissed)="onProposalDismissed()"
-    (continuePayment)="onProposalContinuePayment()">
-</app-price-proposal-modal>
-
 <app-footer></app-footer>
 </div>

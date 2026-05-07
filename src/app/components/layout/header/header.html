@@ -135,6 +135,11 @@
                   <lucide-icon name="briefcase" [size]="14" class="text-slate-400 sm:!w-4 sm:!h-4"></lucide-icon>
                   My Bookings
                 </a>
+                <a routerLink="/book-my-price" (click)="isUserDropdownOpen = false"
+                  class="flex items-center gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
+                  <lucide-icon name="tag" [size]="14" class="text-slate-400 sm:!w-4 sm:!h-4"></lucide-icon>
+                  Book My Price
+                </a>
                 <a routerLink="/reports" (click)="isUserDropdownOpen = false"
                   class="flex items-center gap-2.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-primary transition-colors cursor-pointer">
                   <lucide-icon name="file-bar-chart" [size]="14" class="text-slate-400 sm:!w-4 sm:!h-4"></lucide-icon>

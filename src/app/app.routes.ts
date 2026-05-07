@@ -24,6 +24,7 @@ export const routes: Routes = [
     { path: 'select-car', canActivate: [authGuard], loadComponent: () => import('./features/select-car/select-car').then(m => m.SelectCarComponent) },
     { path: 'booking', canActivate: [authGuard, bookingGuard], canDeactivate: [paymentExitGuard], loadComponent: () => import('./features/booking/booking').then(m => m.BookingComponent) },
     { path: 'wallet', canActivate: [authGuard], loadComponent: () => import('./features/wallet-dashboard/wallet-dashboard').then(m => m.WalletDashboardComponent) },
+    { path: 'book-my-price', canActivate: [authGuard], loadComponent: () => import('./features/book-my-price/book-my-price').then(m => m.BookMyPriceComponent) },
     { path: 'about-us', data: { slug: 'about-us' }, loadComponent: () => import('./features/static-pages/static-page').then(m => m.StaticPageComponent) },
     { path: 'privacy-policy', data: { slug: 'privacy-policy' }, loadComponent: () => import('./features/static-pages/static-page').then(m => m.StaticPageComponent) },
     { path: 'terms-conditions', data: { slug: 'terms-conditions' }, loadComponent: () => import('./features/static-pages/static-page').then(m => m.StaticPageComponent) },

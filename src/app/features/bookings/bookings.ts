@@ -9,21 +9,10 @@ import { BookingRegistryService } from '../../core/services/booking-registry.ser
 import { WalletService } from '../../core/services/wallet.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { AuthService } from '../../core/services/auth.service';
-import { PriceRequestService } from '../../core/services/price-request.service';
-import { PriceRequest } from '../../core/models/price-request.model';
 import { BookingDetails } from '../../core/models';
 import { environment } from '../../../environments/environment';
-import { Subscription } from 'rxjs';
 
-export type BookingTab = 'upcoming' | 'cancelled' | 'completed' | 'priceRequests';
-
-/** Per-card view-model for the Price Requests tab — countdown is recomputed on tick. */
-export interface PriceRequestCard extends PriceRequest {
-    countdownLabel: string;
-    countdownPercent: number;   // 0..100
-    isExpired: boolean;
-    submittedLabel: string;
-}
+export type BookingTab = 'upcoming' | 'cancelled' | 'completed';
 
 /**
  * Per-booking VAS line as returned by /booking-details (April 2026 sample
@@ -163,16 +152,6 @@ export class BookingsComponent implements OnInit, OnDestroy {
     private walletService = inject(WalletService);
     private paymentService = inject(PaymentService);
     private authService = inject(AuthService);
-    private priceRequestService = inject(PriceRequestService);
-
-    // ─── DEMO: Price Requests tab ─────────────────────────────────────────
-    priceRequests: PriceRequestCard[] = [];
-    /** Highlighted card id passed through the ?new=PR-xxxx query param. */
-    highlightedRequestId: string | null = null;
-    private priceRequestsSub: Subscription | null = null;
-    private countdownTimer: ReturnType<typeof setInterval> | null = null;
-    /** Demo: a request "expires" once 20 minutes have passed since submission. */
-    readonly PRICE_REQUEST_TTL_MS = 20 * 60 * 1000;
 
     // Categorized booking lists
     upcomingBookings: BookingCard[] = [];
@@ -312,87 +291,9 @@ export class BookingsComponent implements OnInit, OnDestroy {
         this.buildCalendarStrip();
         this.loadWalletBalance();
         this.loadBookings();
-        this.initPriceRequestsTab();
     }
 
-    ngOnDestroy() {
-        this.priceRequestsSub?.unsubscribe();
-        if (this.countdownTimer) clearInterval(this.countdownTimer);
-    }
-
-    // ──────────────────────────────────────────────────────────────────────
-    // DEMO: Price Requests tab
-    // ──────────────────────────────────────────────────────────────────────
-
-    private initPriceRequestsTab(): void {
-        // Allow ?tab=priceRequests&new=PR-xxxx deep-linking from booking page.
-        const qp = this.route.snapshot.queryParamMap;
-        const tabParam = qp.get('tab');
-        const newId = qp.get('new');
-        if (tabParam === 'priceRequests') this.activeTab = 'priceRequests';
-        if (newId) this.highlightedRequestId = newId;
-
-        this.priceRequestsSub = this.priceRequestService.requests$.subscribe(list => {
-            this.priceRequests = list.map(r => this.toCard(r));
-            this.cdr.markForCheck();
-        });
-
-        // Refresh countdowns every 30s — granular enough for the demo.
-        this.countdownTimer = setInterval(() => {
-            this.priceRequests = this.priceRequests.map(r => this.toCard(r));
-            this.cdr.markForCheck();
-        }, 30 * 1000);
-    }
-
-    private toCard(r: PriceRequest): PriceRequestCard {
-        const submittedAt = new Date(r.submittedAt).getTime();
-        const elapsed = Date.now() - submittedAt;
-        const remaining = Math.max(0, this.PRICE_REQUEST_TTL_MS - elapsed);
-        const isPending = r.status === 'pending';
-        const isExpired = r.status === 'expired' || (isPending && remaining === 0);
-
-        let countdownLabel: string;
-        if (r.status === 'accepted') {
-            countdownLabel = 'Driver matched';
-        } else if (isExpired) {
-            countdownLabel = 'Expired';
-        } else {
-            const mins = Math.floor(remaining / 60000);
-            const secs = Math.floor((remaining % 60000) / 1000);
-            countdownLabel = `Updates in ${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        const countdownPercent = isPending && !isExpired
-            ? Math.round((remaining / this.PRICE_REQUEST_TTL_MS) * 100)
-            : 0;
-
-        return {
-            ...r,
-            countdownLabel,
-            countdownPercent,
-            isExpired,
-            submittedLabel: this.relativeTime(submittedAt)
-        };
-    }
-
-    private relativeTime(ts: number): string {
-        const diff = Date.now() - ts;
-        const mins = Math.floor(diff / 60000);
-        if (mins < 1) return 'just now';
-        if (mins < 60) return `${mins} min${mins === 1 ? '' : 's'} ago`;
-        const hrs = Math.floor(mins / 60);
-        if (hrs < 24) return `${hrs} hr${hrs === 1 ? '' : 's'} ago`;
-        const days = Math.floor(hrs / 24);
-        return `${days} day${days === 1 ? '' : 's'} ago`;
-    }
-
-    get pendingPriceRequestsCount(): number {
-        return this.priceRequests.filter(r => r.status === 'pending' && !r.isExpired).length;
-    }
-
-    trackPriceRequest(_index: number, item: PriceRequestCard): string {
-        return item.id;
-    }
+    ngOnDestroy() { /* nothing to teardown */ }
 
     /**
      * One-time wipe of the legacy localStorage keys that used to enrich /

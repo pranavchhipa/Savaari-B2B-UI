@@ -22,17 +22,15 @@ import { AnalyticsService } from '../../core/services/analytics.service';
 import { CreateBookingRequest, VasDetail } from '../../core/models';
 import { toSavaariDateTime, calculateDuration, toSavaariDate, to24HourTime } from '../../core/utils/date-format.util';
 import { decodeGSTIN, GSTINDecodeResult } from '../../core/utils/gstin-decoder';
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 import { FooterComponent } from '../../components/layout/footer/footer';
 import { environment } from '../../../environments/environment';
-import { PriceProposalModalComponent, PriceProposalContext } from '../../components/shared/price-proposal-modal/price-proposal-modal';
-import { PriceRequest } from '../../core/models/price-request.model';
 import { CanExitPayment } from '../../core/guards/payment-exit.guard';
 
 @Component({
   selector: 'app-booking',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule, FormsModule, AutoCompleteModule, FooterComponent, PriceProposalModalComponent],
+  imports: [CommonModule, RouterLink, LucideAngularModule, FormsModule, AutoCompleteModule, FooterComponent],
 
   templateUrl: './booking.html',
   styleUrl: './booking.css',
@@ -198,18 +196,6 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked, Ca
   isProcessingWallet = false;
   bookingConfirmed = false;
   bookingId = '';
-
-  // ─── DEMO: Customer-Proposed-Price modal ──────────────────────────────
-  // When the agent tries to leave the payment screen without paying, we
-  // intercept and show a price-proposal modal. State below is purely UI;
-  // persistence lives in PriceRequestService (localStorage).
-  proposalVisible = false;
-  proposalContext: PriceProposalContext | null = null;
-  lastProposedRequestId: string | null = null;
-  /** Subject the CanDeactivate guard is awaiting on. */
-  private exitDecision$: Subject<boolean> | null = null;
-  /** Set when the agent has already responded to the modal during this back press. */
-  private exitProposalShown = false;
 
   // Full-screen confirmation overlay — shown after payment while waiting for backend
   isConfirmingPayment = false;
@@ -2147,112 +2133,12 @@ export class BookingComponent implements OnInit, OnDestroy, AfterViewChecked, Ca
     this.cdr.markForCheck();
   }
 
-  // ──────────────────────────────────────────────────────────────────────
-  // DEMO: Customer-Proposed-Price exit interception
-  // ──────────────────────────────────────────────────────────────────────
-
-  /** True when the user is on the actual payment view and hasn't paid. */
-  private isOnUnpaidPaymentView(): boolean {
-    return this.step1Complete && !this.bookingConfirmed && !this.isConfirmingPayment;
-  }
-
-  private buildProposalContext(): PriceProposalContext | null {
-    if (!this.itinerary || !this.selectedCar) return null;
-    const fare = this.selectedCar.price || this.selectedCar.regularPrice || this.selectedCar.originalPrice || 0;
-    if (!fare) return null;
-    let pickupISO = new Date().toISOString();
-    try {
-      const d = this.itinerary.pickupDate ? new Date(this.itinerary.pickupDate) : new Date();
-      const t = this.itinerary.pickupTime || '00:00';
-      const [hh, mm] = t.split(':').map(n => parseInt(n, 10));
-      if (!isNaN(hh)) d.setHours(hh, isNaN(mm) ? 0 : mm, 0, 0);
-      pickupISO = d.toISOString();
-    } catch { /* fall through with `now` */ }
-    return {
-      fromCity: this.itinerary.fromCity || '',
-      toCity: this.itinerary.toCity || this.itinerary.dropAirport || this.itinerary.airportName || '—',
-      pickupDateTime: pickupISO,
-      tripType: this.itinerary.tripType || 'One Way',
-      carType: this.selectedCar.name || this.selectedCar.type || 'Cab',
-      originalFare: Math.round(fare),
-    };
-  }
-
-  private openProposalModal(): void {
-    const ctx = this.buildProposalContext();
-    if (!ctx) return;
-    this.proposalContext = ctx;
-    this.proposalVisible = true;
-    this.cdr.markForCheck();
-  }
-
-  /** Called by paymentExitGuard when navigation is requested. */
+  /** Called by paymentExitGuard — always allow navigation. */
   canExitPayment(): boolean | Observable<boolean> {
-    // Already paid OR not yet on the payment view — let the navigation through.
-    if (!this.isOnUnpaidPaymentView()) return true;
-    // User already saw + dismissed the proposal during this back-press.
-    if (this.exitProposalShown) return true;
-
-    this.openProposalModal();
-    this.exitDecision$ = new Subject<boolean>();
-    return this.exitDecision$.asObservable();
-  }
-
-  /** Modal: user submitted a price request. */
-  onProposalSubmitted(req: PriceRequest): void {
-    this.lastProposedRequestId = req.id;
-    this.proposalVisible = false;
-    this.exitProposalShown = true;
-    this.cdr.markForCheck();
-    // Allow navigation through if guard was awaiting; then route to bookings tab.
-    this.exitDecision$?.next(true);
-    this.exitDecision$?.complete();
-    this.exitDecision$ = null;
-    this.router.navigate(['/bookings'], {
-      queryParams: { tab: 'priceRequests', new: req.id }
-    });
-  }
-
-  /** Modal: user wants to leave the page without proposing a price. */
-  onProposalDismissed(): void {
-    this.proposalVisible = false;
-    this.exitProposalShown = true;
-    this.cdr.markForCheck();
-    if (this.exitDecision$) {
-      this.exitDecision$.next(true);
-      this.exitDecision$.complete();
-      this.exitDecision$ = null;
-    } else {
-      // Triggered from in-app back button — fall through to original handler
-      // by re-invoking the normal back flow now that the gate is open.
-      this.runOriginalGoBack();
-    }
-  }
-
-  /** Modal: user wants to stay on the payment screen. */
-  onProposalContinuePayment(): void {
-    this.proposalVisible = false;
-    this.cdr.markForCheck();
-    this.exitDecision$?.next(false);
-    this.exitDecision$?.complete();
-    this.exitDecision$ = null;
-  }
-
-  /** Re-runs the original back-step logic without the proposal interception. */
-  private runOriginalGoBack(): void {
-    // Reset the gate so future back-presses re-trigger the modal.
-    queueMicrotask(() => { this.exitProposalShown = false; });
-    this.performGoBack();
+    return true;
   }
 
   goBackFromBooking() {
-    // DEMO: intercept the back press from the payment view to offer a
-    // price proposal first. The flag prevents an infinite loop when
-    // runOriginalGoBack() re-enters this method.
-    if (this.isOnUnpaidPaymentView() && !this.exitProposalShown) {
-      this.openProposalModal();
-      return;
-    }
     this.performGoBack();
   }
 
