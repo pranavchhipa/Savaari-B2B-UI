@@ -56,7 +56,58 @@ export class GoogleMapsService {
     }
 
     /**
-     * Attach a Places Autocomplete to an input element.
+     * Programmatic Places Autocomplete — no DOM element needed.
+     * Returns up to 6 predictions restricted to India.
+     */
+    async getPlacePredictions(input: string): Promise<{ description: string; place_id: string }[]> {
+        if (!input || input.length < 2) return [];
+        await this.load();
+        return new Promise((resolve) => {
+            const service = new google.maps.places.AutocompleteService();
+            service.getPlacePredictions(
+                { input, componentRestrictions: { country: 'in' } },
+                (predictions: any[], status: string) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK && predictions?.length) {
+                        resolve(predictions.slice(0, 6).map((p: any) => ({
+                            description: p.description,
+                            place_id:    p.place_id,
+                        })));
+                    } else {
+                        resolve([]);
+                    }
+                }
+            );
+        });
+    }
+
+    /**
+     * Get lat/lng from a place_id via PlacesService.getDetails().
+     * PlacesService needs a DOM node — we create a detached div for that.
+     */
+    async getPlaceLatLng(placeId: string): Promise<{ lat: number; lng: number } | null> {
+        await this.load();
+        return new Promise((resolve) => {
+            const div     = document.createElement('div');
+            const service = new google.maps.places.PlacesService(div);
+            service.getDetails(
+                { placeId, fields: ['geometry'] },
+                (result: any, status: string) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK &&
+                        result?.geometry?.location) {
+                        resolve({
+                            lat: result.geometry.location.lat(),
+                            lng: result.geometry.location.lng(),
+                        });
+                    } else {
+                        resolve(null);
+                    }
+                }
+            );
+        });
+    }
+
+    /**
+     * Attach a Places Autocomplete widget to an input element.
      * Returns the Autocomplete instance so the caller can listen to events.
      */
     attachAutocomplete(

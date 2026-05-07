@@ -11,12 +11,17 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subscription } from 'rxjs';
-import { AddressAutocompleteService, AddressSuggestion } from '../../core/services/address-autocomplete.service';
+import { GoogleMapsService } from '../../core/services/google-maps.service';
 import { BookMyPriceService } from '../../core/services/book-my-price.service';
 import { BookMyPriceRequest, BmpTripType } from '../../core/models/book-my-price.model';
 import { FooterComponent } from '../../components/layout/footer/footer';
 
 // ── Local interfaces ──────────────────────────────────────────────────────────
+
+interface PlacePrediction {
+    description: string;
+    place_id:    string;
+}
 
 interface CarOption {
     id:        string;
@@ -26,10 +31,10 @@ interface CarOption {
 }
 
 interface VasOption {
-    id:         string;
-    label:      string;
+    id:          string;
+    label:       string;
     description: string;
-    excludes?:  string;
+    excludes?:   string;
 }
 
 interface RequestCard extends BookMyPriceRequest {
@@ -48,10 +53,10 @@ interface RequestCard extends BookMyPriceRequest {
 })
 export class BookMyPriceComponent implements OnInit, OnDestroy {
 
-    private addressService = inject(AddressAutocompleteService);
-    private bmpService     = inject(BookMyPriceService);
-    private cdr            = inject(ChangeDetectorRef);
-    private router         = inject(Router);
+    private mapsService = inject(GoogleMapsService);
+    private bmpService  = inject(BookMyPriceService);
+    private cdr         = inject(ChangeDetectorRef);
+    private router      = inject(Router);
 
     // ── Trip type ─────────────────────────────────────────────────────────────
     tripType: BmpTripType = 'OW';
@@ -69,16 +74,16 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
     }
 
     // ── Pickup ────────────────────────────────────────────────────────────────
-    pickupQuery     = '';
-    pickupAddress   = '';
+    pickupQuery   = '';
+    pickupAddress = '';
     pickupLat:   number | null = null;
     pickupLng:   number | null = null;
 
-    pickupSuggestions: AddressSuggestion[] = [];
+    pickupSuggestions: PlacePrediction[] = [];
     showPickupDropdown = false;
 
-    gpsLoading  = false;
-    gpsError    = '';
+    gpsLoading = false;
+    gpsError   = '';
 
     // ── Drop ──────────────────────────────────────────────────────────────────
     dropQuery   = '';
@@ -86,7 +91,7 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
     dropLat:  number | null = null;
     dropLng:  number | null = null;
 
-    dropSuggestions: AddressSuggestion[] = [];
+    dropSuggestions: PlacePrediction[] = [];
     showDropDropdown = false;
 
     // ── Dates / time ──────────────────────────────────────────────────────────
@@ -175,8 +180,8 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
         { id: 'diesel',  label: 'Diesel Car Guarantee', description: 'Fuel-efficient diesel vehicle',  excludes: 'new_car' },
         { id: 'luggage', label: 'Luggage Carrier',      description: 'Roof-mounted carrier for extra baggage'              },
     ];
-    selectedVas:    string[] = [];
-    vasConflictMsg  = '';
+    selectedVas:   string[] = [];
+    vasConflictMsg = '';
 
     toggleVas(id: string): void {
         if (this.selectedVas.includes(id)) {
@@ -209,7 +214,7 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
     showFareError    = false;
 
     // ── Requests panel ────────────────────────────────────────────────────────
-    requests:         RequestCard[] = [];
+    requests:        RequestCard[] = [];
     readonly TTL_MS = 20 * 60 * 1000;
 
     private sub:   Subscription | null = null;
@@ -224,6 +229,9 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
     // ─────────────────────────────────────────────────────────────────────────
 
     ngOnInit(): void {
+        // Pre-load Maps SDK so first search is instant
+        this.mapsService.load().catch(() => {});
+
         this.sub = this.bmpService.requests$.subscribe(list => {
             this.requests = list.map(r => this.toCard(r));
             this.cdr.markForCheck();
@@ -240,7 +248,7 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Address search (Savaari autocomplete API — works in demoMode)
+    // Address search — Google Maps Places AutocompleteService (no DOM needed)
     // ─────────────────────────────────────────────────────────────────────────
 
     onPickupSearch(q: string): void {
@@ -250,32 +258,37 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
         this.pickupLng     = null;
         this.distanceKm    = null;
         this.maxFare       = 0;
-        if (q.length < 2) { this.pickupSuggestions = []; this.showPickupDropdown = false; return; }
 
-        this.addressService.searchAddress(q, 'from').subscribe(list => {
-            this.pickupSuggestions  = list.slice(0, 6);
+        if (q.length < 2) {
+            this.pickupSuggestions  = [];
+            this.showPickupDropdown = false;
+            this.cdr.markForCheck();
+            return;
+        }
+
+        this.mapsService.getPlacePredictions(q).then(list => {
+            this.pickupSuggestions  = list;
             this.showPickupDropdown = list.length > 0;
             this.cdr.markForCheck();
         });
     }
 
-    selectPickup(s: AddressSuggestion): void {
+    selectPickup(s: PlacePrediction): void {
         this.pickupQuery        = s.description;
         this.pickupAddress      = s.description;
         this.pickupSuggestions  = [];
         this.showPickupDropdown = false;
         this.showPickupError    = false;
-
-        if (s.latlng) {
-            const [lat, lng] = s.latlng.split(',').map(Number);
-            if (!isNaN(lat) && !isNaN(lng)) { this.pickupLat = lat; this.pickupLng = lng; this.recalcDistance(); }
-        } else if (s.place_id) {
-            this.addressService.getPlaceDetails(s.place_id, 'from').subscribe(d => {
-                if (d?.lat && d?.lng) { this.pickupLat = d.lat; this.pickupLng = d.lng; this.recalcDistance(); }
-                this.cdr.markForCheck();
-            });
-        }
         this.cdr.markForCheck();
+
+        this.mapsService.getPlaceLatLng(s.place_id).then(coords => {
+            if (coords) {
+                this.pickupLat = coords.lat;
+                this.pickupLng = coords.lng;
+                this.recalcDistance();
+            }
+            this.cdr.markForCheck();
+        });
     }
 
     hidePickupDropdown(): void {
@@ -289,32 +302,37 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
         this.dropLng     = null;
         this.distanceKm  = null;
         this.maxFare     = 0;
-        if (q.length < 2) { this.dropSuggestions = []; this.showDropDropdown = false; return; }
 
-        this.addressService.searchAddress(q, 'to').subscribe(list => {
-            this.dropSuggestions  = list.slice(0, 6);
+        if (q.length < 2) {
+            this.dropSuggestions  = [];
+            this.showDropDropdown = false;
+            this.cdr.markForCheck();
+            return;
+        }
+
+        this.mapsService.getPlacePredictions(q).then(list => {
+            this.dropSuggestions  = list;
             this.showDropDropdown = list.length > 0;
             this.cdr.markForCheck();
         });
     }
 
-    selectDrop(s: AddressSuggestion): void {
+    selectDrop(s: PlacePrediction): void {
         this.dropQuery        = s.description;
         this.dropAddress      = s.description;
         this.dropSuggestions  = [];
         this.showDropDropdown = false;
         this.showDropError    = false;
-
-        if (s.latlng) {
-            const [lat, lng] = s.latlng.split(',').map(Number);
-            if (!isNaN(lat) && !isNaN(lng)) { this.dropLat = lat; this.dropLng = lng; this.recalcDistance(); }
-        } else if (s.place_id) {
-            this.addressService.getPlaceDetails(s.place_id, 'to').subscribe(d => {
-                if (d?.lat && d?.lng) { this.dropLat = d.lat; this.dropLng = d.lng; this.recalcDistance(); }
-                this.cdr.markForCheck();
-            });
-        }
         this.cdr.markForCheck();
+
+        this.mapsService.getPlaceLatLng(s.place_id).then(coords => {
+            if (coords) {
+                this.dropLat = coords.lat;
+                this.dropLng = coords.lng;
+                this.recalcDistance();
+            }
+            this.cdr.markForCheck();
+        });
     }
 
     hideDropDropdown(): void {
@@ -322,7 +340,7 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // GPS — "Use my current location"
+    // GPS — "Use my current location" → Google Maps reverse geocoding
     // ─────────────────────────────────────────────────────────────────────────
 
     async detectGps(): Promise<void> {
@@ -342,17 +360,14 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
                 this.pickupLat = pos.coords.latitude;
                 this.pickupLng = pos.coords.longitude;
                 try {
-                    const res  = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?lat=${this.pickupLat}&lon=${this.pickupLng}&format=json`
+                    this.pickupAddress = await this.mapsService.reverseGeocode(
+                        this.pickupLat, this.pickupLng
                     );
-                    const data = await res.json();
-                    this.pickupAddress = data.display_name
-                        ?? `${this.pickupLat.toFixed(5)}, ${this.pickupLng.toFixed(5)}`;
                 } catch {
                     this.pickupAddress = `${this.pickupLat.toFixed(5)}, ${this.pickupLng.toFixed(5)}`;
                 }
-                this.pickupQuery = this.pickupAddress;
-                this.gpsLoading  = false;
+                this.pickupQuery     = this.pickupAddress;
+                this.gpsLoading      = false;
                 this.showPickupError = false;
                 this.recalcDistance();
                 this.cdr.markForCheck();
@@ -389,6 +404,7 @@ export class BookMyPriceComponent implements OnInit, OnDestroy {
             this.distanceKm = null;
         }
         if (this.selectedCar) this.recalcFare();
+        this.cdr.markForCheck();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
