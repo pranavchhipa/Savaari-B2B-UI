@@ -25,7 +25,7 @@ import {
   CalendarCheck, BarChart3, Percent, ChevronLeft,
   Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal,
   Package, Tag, Wrench, Smartphone, Landmark, Award, CircleCheck, CircleAlert, Circle,
-  Wand2 } from 'lucide-angular';
+  Wand2, Send } from 'lucide-angular';
 
 import { routes } from './app.routes';
 
@@ -64,7 +64,7 @@ export const appConfig: ApplicationConfig = {
         CalendarCheck, BarChart3, Percent, ChevronLeft,
         Printer, List, MinusCircle, ArrowLeftRight, ArrowUpDown, Navigation, SlidersHorizontal,
         Package, Tag, Wrench, Smartphone, Landmark, Award, CircleCheck, CircleAlert, Circle,
-        Wand2
+        Wand2, Send
       })
     }
   ]
