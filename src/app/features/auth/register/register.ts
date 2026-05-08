@@ -42,6 +42,15 @@ export class RegisterComponent implements OnInit, OnDestroy {
   showConfirmPassword = false;
   private testimonialInterval: any;
 
+  // Savaari retail-user reactivation popup state. Triggered when /user
+  // returns { statusCode: 400, message: "Savaari User" } — meaning the
+  // email is already registered on the consumer site (savaari.com). Agent
+  // can either pick a different email (Try Again) or deactivate retail
+  // and continue as agent (Continue → /user with asAgent=1 → new_registration).
+  showSavaariPopup = false;
+  showSuccessPopup = false;
+  isContinuing = false;
+
   // Cities from API (source-cities gives "Bangalore, Karnataka" format)
   allCities: City[] = [
     { id: 377, name: 'Bangalore, Karnataka', cityOnly: 'Bangalore', state: 'Karnataka' },
@@ -201,57 +210,168 @@ export class RegisterComponent implements OnInit, OnDestroy {
     ];
   }
 
+  /**
+   * Builds the multipart form-data payload for POST /user.
+   * Extracted so we can re-submit with `asAgent=1` after the agent confirms
+   * the Savaari-retail reactivation popup, without re-asking for any input.
+   */
+  private buildRegistrationFormData(asAgent: '0' | '1'): FormData {
+    const v = this.registerForm.value;
+    const fd = new FormData();
+    fd.append('referer', location.hostname + '/');
+    fd.append('userName', `${v.firstName} ${v.lastName}`.trim());
+    fd.append('userEmail', v.email || '');
+    fd.append('userPhone', v.phone || '');
+    fd.append('agentCompanyName', v.companyName || '');
+    const selectedCity = this.allCities.find(c => c.name === v.companyCity);
+    fd.append('agentCity', selectedCity?.cityOnly || v.companyCity?.split(',')[0]?.trim() || '');
+    fd.append('agentState', selectedCity?.state || (v.companyCity?.includes(',') ? v.companyCity.split(',').slice(1).join(',').trim() : ''));
+    fd.append('agentcityId', selectedCity?.id ? String(selectedCity.id) : '');
+    fd.append('password', v.password || '');
+    fd.append('agentCompanyAddress', '');
+    fd.append('agentPAN', '');
+    fd.append('agentGST', '');
+    fd.append('agentLogo', '');
+    fd.append('asAgent', asAgent);
+    fd.append('agentLocalCommission', '0');
+    fd.append('agentAirportCommission', '0');
+    fd.append('agentOutstationCommission', '0');
+    fd.append('clienttip', '');
+    fd.append('isAgent', 'true');
+    return fd;
+  }
+
+  /**
+   * Detects the "this email is already a Savaari.com retail user" case.
+   * Backend returns { statusCode: 400, message: "Savaari User", userId: "..." }
+   * either as an HTTP 400 error or as a 200 with the same JSON body — handle
+   * both. Anything else is a normal failure.
+   */
+  private isSavaariRetailUser(payload: any): boolean {
+    if (!payload) return false;
+    const code = payload.statusCode ?? payload.status_code;
+    const msg = (payload.message || '').toLowerCase();
+    return code === 400 && msg.includes('savaari user');
+  }
+
   onSubmit() {
-    if (this.registerForm.valid) {
-      this.isSubmitting = true;
-      this.submitError = '';
-      this.cdr.markForCheck();
+    if (!this.registerForm.valid) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
 
-      const v = this.registerForm.value;
+    this.isSubmitting = true;
+    this.submitError = '';
+    this.cdr.markForCheck();
 
-      // HAR-confirmed: POST /user with multipart/form-data (beta site)
-      const fd = new FormData();
-      fd.append('referer', location.hostname + '/');
-      fd.append('userName', `${v.firstName} ${v.lastName}`.trim());
-      fd.append('userEmail', v.email || '');
-      fd.append('userPhone', v.phone || '');
-      fd.append('agentCompanyName', v.companyName || '');
-      const selectedCity = this.allCities.find(c => c.name === v.companyCity);
-      fd.append('agentCity', selectedCity?.cityOnly || v.companyCity?.split(',')[0]?.trim() || '');
-      fd.append('agentState', selectedCity?.state || (v.companyCity?.includes(',') ? v.companyCity.split(',').slice(1).join(',').trim() : ''));
-      fd.append('agentcityId', selectedCity?.id ? String(selectedCity.id) : '');
-      fd.append('password', v.password || '');
-      fd.append('agentCompanyAddress', '');
-      fd.append('agentPAN', '');
-      fd.append('agentGST', '');
-      fd.append('agentLogo', '');
-      fd.append('asAgent', '0');
-      fd.append('agentLocalCommission', '0');
-      fd.append('agentAirportCommission', '0');
-      fd.append('agentOutstationCommission', '0');
-      fd.append('clienttip', '');
-      fd.append('isAgent', 'true');
-
-      this.api.b2bPostFormData<any>('user', fd).subscribe({
-        next: (resp) => {
-          this.isSubmitting = false;
-          if (resp.statusCode === 200 || resp.status === 'success') {
-            this.submitSuccess = true;
-            this.cdr.markForCheck();
-            setTimeout(() => this.router.navigate(['/login']), 2000);
-          } else {
-            this.submitError = resp.message || 'Registration failed. Please try again.';
-            this.cdr.markForCheck();
-          }
-        },
-        error: (err) => {
-          this.isSubmitting = false;
-          this.submitError = err?.error?.message || err?.message || 'Registration failed. Please try again.';
+    // First attempt: asAgent=0 (matches existing live behavior)
+    this.api.b2bPostFormData<any>('user', this.buildRegistrationFormData('0')).subscribe({
+      next: (resp) => {
+        this.isSubmitting = false;
+        if (this.isSavaariRetailUser(resp)) {
+          this.showSavaariPopup = true;
+          this.cdr.markForCheck();
+          return;
+        }
+        if (resp.statusCode === 200 || resp.status === 'success') {
+          this.submitSuccess = true;
+          this.cdr.markForCheck();
+          setTimeout(() => this.router.navigate(['/login']), 2000);
+        } else {
+          this.submitError = resp.message || 'Registration failed. Please try again.';
           this.cdr.markForCheck();
         }
-      });
-    } else {
-      this.registerForm.markAllAsTouched();
-    }
+      },
+      error: (err) => {
+        this.isSubmitting = false;
+        // Some backends return Savaari-User as HTTP 400 — same payload shape
+        // sits under err.error.
+        if (this.isSavaariRetailUser(err?.error)) {
+          this.showSavaariPopup = true;
+          this.cdr.markForCheck();
+          return;
+        }
+        this.submitError = err?.error?.message || err?.message || 'Registration failed. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /**
+   * Agent picked "Try Again" on the Savaari retail popup — let them edit the
+   * email and resubmit. We just close the popup; form state is preserved.
+   */
+  onTryAgain(): void {
+    this.showSavaariPopup = false;
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Agent picked "Continue" — they want to deactivate their retail (savaari.com)
+   * account and register as a B2B agent with the same email.
+   *
+   * Backend dance:
+   *   1. POST /user again, this time with asAgent=1  → recreates the row
+   *      flagged as a B2B agent.
+   *   2. POST /partner_api/public/new_registration?token=<partnerJWT>
+   *      with form body { user_name, user_email } → triggers the activation
+   *      email + retail-deactivation pipeline.
+   *
+   * Show the success popup once both calls land. If either fails, surface
+   * the error inline and keep the popup open so the agent can retry.
+   */
+  onContinueRegistration(): void {
+    if (this.isContinuing) return;
+    this.isContinuing = true;
+    this.submitError = '';
+    this.cdr.markForCheck();
+
+    const v = this.registerForm.value;
+    const userName = `${v.firstName} ${v.lastName}`.trim();
+    const userEmail = v.email || '';
+
+    this.api.b2bPostFormData<any>('user', this.buildRegistrationFormData('1')).subscribe({
+      next: () => {
+        // Step 2 — needs the Partner JWT. authenticate() returns the cached
+        // one or fetches a fresh /auth/webtoken if missing.
+        this.authService.authenticate().subscribe({
+          next: (partnerToken) => {
+            this.api.partnerPostForm<any>(
+              'new_registration',
+              { user_name: userName, user_email: userEmail },
+              { token: partnerToken }
+            ).subscribe({
+              next: () => {
+                this.isContinuing = false;
+                this.showSavaariPopup = false;
+                this.showSuccessPopup = true;
+                this.cdr.markForCheck();
+              },
+              error: (err) => {
+                this.isContinuing = false;
+                this.submitError = err?.error?.message || 'Activation failed. Please try again.';
+                this.cdr.markForCheck();
+              }
+            });
+          },
+          error: () => {
+            this.isContinuing = false;
+            this.submitError = 'Could not authenticate. Please try again.';
+            this.cdr.markForCheck();
+          }
+        });
+      },
+      error: (err) => {
+        this.isContinuing = false;
+        this.submitError = err?.error?.message || 'Registration failed. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** Close success popup → route to login. */
+  onSuccessOk(): void {
+    this.showSuccessPopup = false;
+    this.router.navigate(['/login']);
   }
 }

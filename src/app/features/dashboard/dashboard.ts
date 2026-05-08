@@ -320,10 +320,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const lng = ll[1] || '';
     const request = this.bookingForm.get('tripType')?.value === 'pickup' ? 'to' : 'from';
     this.addressAutocomplete.searchAddress(q, request, cityName, lat, lng).subscribe(suggestions => {
-      // Cap address suggestions to keep the dropdown snappy — the first 5
-      // ranked results from Savaari's autocomplete API are virtually always
-      // the right pick for airport pickup/drop points.
-      this.filteredLocalities = (suggestions || []).slice(0, this.MAX_SUGGESTIONS);
+      // For airport trips: drop entries that ARE airport terminals.
+      // Two reliable signals:
+      //   (a) main_text starts with "Terminal <digit>" AND description mentions
+      //       "International Airport" / "Domestic Airport"  → airport entry
+      //   (b) main_text itself contains "International Airport" / "Domestic
+      //       Airport"  → also the airport listing
+      // Hotels, roads, malls with "airport" in the name don't fit either
+      // pattern (their main_text is the venue name), so they pass through.
+      const isAirportTab = this.selectedTab === 'AIRPORT';
+      const cleaned = (suggestions || []).filter(s => {
+        if (!isAirportTab) return true;
+        const desc = (s.description || '').toLowerCase();
+        const main = (s.main_text || '').toLowerCase();
+        const startsWithTerminal = /^terminal\s+\d/.test(main);
+        const descMentionsAirport = /\b(international|domestic)\s+airport\b/.test(desc);
+        const mainIsAirport = /\b(international|domestic)\s+airport\b/.test(main);
+        return !((startsWithTerminal && descMentionsAirport) || mainIsAirport);
+      });
+      this.filteredLocalities = cleaned.slice(0, this.MAX_SUGGESTIONS);
       this.cdr.markForCheck();
     });
   }
@@ -333,6 +348,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
   onAddressSelect(event: any) {
     const suggestion: AddressSuggestion = event.value || event;
     if (!suggestion?.place_id) return;
+
+    // Same-airport guard (safety net — dropdown filter should have caught this).
+    // Same logic as the dropdown filter: terminal-prefixed entries with an
+    // airport-mentioning description, or main_text that is itself an airport.
+    if (this.selectedTab === 'AIRPORT') {
+      const desc = (suggestion.description || '').toLowerCase();
+      const main = (suggestion.main_text || '').toLowerCase();
+      const startsWithTerminal = /^terminal\s+\d/.test(main);
+      const descMentionsAirport = /\b(international|domestic)\s+airport\b/.test(desc);
+      const mainIsAirport = /\b(international|domestic)\s+airport\b/.test(main);
+      if ((startsWithTerminal && descMentionsAirport) || mainIsAirport) {
+        const tripType = this.bookingForm.get('tripType')?.value;
+        this.bookingForm.patchValue({ airportLocality: null });
+        this.selectedPlaceDetails = null;
+        this.showError = true;
+        this.errorMessage = tripType === 'pickup'
+          ? 'Please enter the customer\'s drop address (home/destination), not the airport.'
+          : 'Please enter the customer\'s pickup address (home/origin), not the airport.';
+        this.cdr.markForCheck();
+        return;
+      }
+    }
 
     // Fallback suggestion (city-level, has latlng directly) — skip place_id API call
     if (suggestion.isFallback && suggestion.latlng) {

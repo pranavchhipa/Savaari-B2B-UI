@@ -71,6 +71,9 @@ export interface RegisterResult {
   userId?: number;
   message?: string;
   errorCode?: string;
+  /** True when the email is already a Savaari.com retail user. UI should
+   *  show the reactivation popup instead of a generic error. */
+  isSavaariUser?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -265,7 +268,7 @@ export class RegistrationService {
    * When the backend hasn't added those fields yet, they'll be silently ignored
    * and the registration will still succeed based on the current validation.
    */
-  registerAccount(payload: RegisterPayload): Observable<RegisterResult> {
+  registerAccount(payload: RegisterPayload, asAgent: '0' | '1' = '0'): Observable<RegisterResult> {
     // Use application/x-www-form-urlencoded (NOT multipart/form-data).
     // Alpha's PHP proxy reads the body via php://input; multipart is auto-parsed
     // by PHP into $_POST and php://input returns empty — body never reaches
@@ -287,7 +290,7 @@ export class RegistrationService {
       agentState: payload.agentState || '',
       agentcityId: String(payload.agentCityId || 0),
       agentLogo: '',
-      asAgent: '0',
+      asAgent,
       agentLocalCommission: '0',
       agentAirportCommission: '0',
       agentOutstationCommission: '0',
@@ -303,8 +306,26 @@ export class RegistrationService {
       body['emailVerificationToken'] = payload.emailVerificationToken;
     }
 
+    // Detect "this email is already a Savaari.com retail user" — backend
+    // returns { statusCode: 400, message: "Savaari User", userId: "..." }
+    // either as a 200 body OR as an HTTP 400. UI uses this flag to show the
+    // reactivation popup instead of a plain error toast.
+    const isSavaariUser = (payload: any): boolean => {
+      if (!payload) return false;
+      const code = payload.statusCode ?? payload.status_code;
+      const msg = (payload.message || '').toLowerCase();
+      return code === 400 && msg.includes('savaari user');
+    };
+
     return this.api.b2bPostForm<any>('user', body).pipe(
       map(response => {
+        if (isSavaariUser(response)) {
+          return {
+            success: false,
+            isSavaariUser: true,
+            message: response?.message,
+          } as RegisterResult;
+        }
         if (response?.statusCode === 200 || response?.status === 'success' || response?.status === true) {
           const data = response?.data ?? response;
           return {
@@ -322,6 +343,13 @@ export class RegistrationService {
       catchError(err => {
         if (!environment.production) {
           console.warn('[REGISTRATION] registerAccount API error:', err?.status ?? err?.message, err?.error);
+        }
+        if (isSavaariUser(err?.error)) {
+          return of({
+            success: false,
+            isSavaariUser: true,
+            message: err?.error?.message,
+          } as RegisterResult);
         }
         return of({
           success: false,

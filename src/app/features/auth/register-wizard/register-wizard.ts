@@ -4,8 +4,10 @@ import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validat
 import { Router, RouterLink } from '@angular/router';
 import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { LucideAngularModule } from 'lucide-angular';
-import { RegistrationService } from '../../../core/services/registration.service';
+import { RegistrationService, RegisterPayload } from '../../../core/services/registration.service';
 import { AddressAutocompleteService, AddressSuggestion } from '../../../core/services/address-autocomplete.service';
+import { ApiService } from '../../../core/services/api.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 /** localStorage key shared with login page so it can pre-fill the freshly-registered email/password */
 const PENDING_LOGIN_KEY = 'b2bcab.pendingLogin';
@@ -47,6 +49,19 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
   private registrationService = inject(RegistrationService);
   private addressAutocomplete = inject(AddressAutocompleteService);
+  private api = inject(ApiService);
+  private authService = inject(AuthService);
+
+  // ── Savaari retail-user reactivation popup state ──
+  // Triggered when /user returns "Savaari User" 400 — meaning the email
+  // already exists on the consumer site. Agent can either pick a different
+  // email (Try Again) or deactivate retail and re-register as agent
+  // (Continue → /user with asAgent=1 → new_registration).
+  showSavaariPopup = false;
+  showSuccessPopup = false;
+  isContinuing = false;
+  /** Cached payload from the failed attempt — reused when agent clicks Continue */
+  private pendingRegisterPayload: RegisterPayload | null = null;
 
   readonly STEP_ORDER: StepKey[] = ['name', 'contact', 'gst', 'pan', 'company', 'password'];
   currentStep: StepKey = 'name';
@@ -874,26 +889,123 @@ export class RegisterWizardComponent implements OnInit, OnDestroy {
     this.registrationService.registerAccount(payload).subscribe(result => {
       this.isSubmitting = false;
 
+      // Email is already a Savaari.com retail user → show reactivation popup
+      // instead of failing silently. Cache the payload so Continue can retry
+      // with asAgent=1 without re-asking for any input.
+      if (result.isSavaariUser) {
+        this.pendingRegisterPayload = payload;
+        this.showSavaariPopup = true;
+        this.registerError = '';
+        this.cdr.markForCheck();
+        return;
+      }
+
       if (!result.success) {
         this.registerError = result.message || 'Registration failed. Please try again.';
         this.cdr.markForCheck();
         return;
       }
 
-      this.completedSteps.add('password');
-      this.clearSavedProgress();
-
-      // Stash the just-set credentials so the login page can pre-fill them.
-      // Wizard does NOT auto-login — user is sent to /login to actually sign in.
-      try {
-        localStorage.setItem(PENDING_LOGIN_KEY, JSON.stringify({
-          email: payload.email,
-          password: payload.password,
-        }));
-      } catch { /* localStorage may be disabled — fall through */ }
-
-      this.cdr.markForCheck();
-      this.router.navigate(['/login'], { queryParams: { registered: '1' } });
+      this.handleRegisterSuccess(payload);
     });
+  }
+
+  /**
+   * Agent picked "Try Again" on the Savaari retail popup — close it,
+   * keep all state, let them edit the email step and re-submit.
+   */
+  onTryAgain(): void {
+    this.showSavaariPopup = false;
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Agent picked "Continue" — deactivate their retail (savaari.com) account
+   * and register as a B2B agent with the same email.
+   *
+   * Backend dance:
+   *   1. POST /user with asAgent=1 (re-flags row as agent)
+   *   2. POST /partner_api/public/new_registration?token=<partnerJWT>
+   *      with form body { user_name, user_email } → triggers activation +
+   *      retail-deactivation pipeline
+   * Show success popup once both land.
+   */
+  onContinueRegistration(): void {
+    if (this.isContinuing || !this.pendingRegisterPayload) return;
+    this.isContinuing = true;
+    this.registerError = '';
+    this.cdr.markForCheck();
+
+    const payload = this.pendingRegisterPayload;
+    const userName = `${payload.firstName} ${payload.lastName}`.trim();
+    const userEmail = payload.email || '';
+
+    this.registrationService.registerAccount(payload, '1').subscribe(result => {
+      if (!result.success && !result.isSavaariUser) {
+        this.isContinuing = false;
+        this.registerError = result.message || 'Registration failed. Please try again.';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      // Step 2 — partner JWT for new_registration call. authenticate()
+      // returns the cached partner token or fetches a fresh /auth/webtoken.
+      this.authService.authenticate().subscribe({
+        next: (partnerToken) => {
+          this.api.partnerPostForm<any>(
+            'new_registration',
+            { user_name: userName, user_email: userEmail },
+            { token: partnerToken }
+          ).subscribe({
+            next: () => {
+              this.isContinuing = false;
+              this.showSavaariPopup = false;
+              this.showSuccessPopup = true;
+              this.cdr.markForCheck();
+            },
+            error: (err) => {
+              this.isContinuing = false;
+              this.registerError = err?.error?.message || 'Activation failed. Please try again.';
+              this.cdr.markForCheck();
+            }
+          });
+        },
+        error: () => {
+          this.isContinuing = false;
+          this.registerError = 'Could not authenticate. Please try again.';
+          this.cdr.markForCheck();
+        }
+      });
+    });
+  }
+
+  /** Close success popup → route to login. */
+  onSuccessOk(): void {
+    this.showSuccessPopup = false;
+    if (this.pendingRegisterPayload) {
+      this.handleRegisterSuccess(this.pendingRegisterPayload);
+    } else {
+      this.router.navigate(['/login'], { queryParams: { registered: '1' } });
+    }
+  }
+
+  /**
+   * Common post-success cleanup — used by both the normal happy path and
+   * the Savaari-User reactivation flow.
+   */
+  private handleRegisterSuccess(payload: RegisterPayload): void {
+    this.completedSteps.add('password');
+    this.clearSavedProgress();
+
+    // Stash credentials so login page can pre-fill them.
+    try {
+      localStorage.setItem(PENDING_LOGIN_KEY, JSON.stringify({
+        email: payload.email,
+        password: payload.password,
+      }));
+    } catch { /* localStorage may be disabled — fall through */ }
+
+    this.cdr.markForCheck();
+    this.router.navigate(['/login'], { queryParams: { registered: '1' } });
   }
 }
