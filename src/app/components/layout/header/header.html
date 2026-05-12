@@ -4,15 +4,15 @@
     'shadow-md shadow-slate-900/10': !isScrolled
   }"
   class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-white/5">
-  <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-16 relative">
-      <div class="flex items-center gap-2 sm:gap-4 md:gap-8">
+  <div class="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+    <div class="flex items-center h-16 gap-2 sm:gap-3 md:gap-4">
+      <div class="flex items-center gap-2 sm:gap-3 md:gap-5 flex-1 min-w-0">
         <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer group outline-none focus:outline-none"
           [routerLink]="isPublicRoute ? '/' : '/dashboard'"
           tabindex="-1">
           <!-- Agent uploaded logo -->
           <img *ngIf="agentLogo" [src]="agentLogo" alt="Company Logo"
-            class="h-10 sm:h-12 md:h-14 max-w-[180px] object-contain rounded" />
+            class="h-10 sm:h-12 md:h-14 max-w-[120px] sm:max-w-[150px] md:max-w-[180px] object-contain rounded" />
           <!-- Default B2B CAB logo (shown when no agent logo) -->
           <!-- Heights reduced 20% from h-16/20/24/28 per visual-density feedback -->
           <!-- ?v=20260415 is a cache-buster: .htaccess marks .webp as Cache-Control: immutable
@@ -20,28 +20,28 @@
                serving the stale cached copy. Bump this version string whenever the logo binary
                changes so clients fetch the new file immediately. -->
           <img *ngIf="!agentLogo" src="assets/logos/b2b-cab-logo-white.webp?v=20260415" [alt]="brandName"
-            class="h-[51px] sm:h-16 md:h-[77px] lg:h-[90px] object-contain" />
+            class="h-[44px] sm:h-14 md:h-[70px] lg:h-[82px] object-contain" />
         </div>
 
-        <!-- Company Name (shown when logged in) -->
+        <!-- Company Name (shown when logged in) — truncates safely on narrow screens -->
         <span *ngIf="!isPublicRoute && companyName"
-          class="hidden md:inline text-sm lg:text-base font-semibold text-white/80 truncate max-w-[200px]">
+          class="hidden md:inline text-sm lg:text-base font-semibold text-white/80 truncate min-w-0 max-w-[100px] lg:max-w-[160px] xl:max-w-[200px]">
           {{ companyName }}
         </span>
       </div>
 
-      <!-- Customer Care 24x7 pill — centered -->
-      <div class="hidden lg:flex absolute left-1/2 -translate-x-[60%]">
+      <!-- Customer Care 24x7 pill — in-flow center, shown only when there's enough room -->
+      <div class="hidden xl:flex flex-shrink-0">
         <a [href]="supportPhoneTel"
-          class="inline-flex items-center text-white/90 hover:text-white border-2 border-white/30 hover:border-white/50 rounded-md pl-3 pr-5 py-1.5 transition-all cursor-pointer whitespace-nowrap bg-white/5">
-          <span class="inline-flex items-center text-sm font-bold tracking-wide mr-3 border-r-2 border-white/30 pr-3">
-            <lucide-icon name="phone" [size]="14" class="mr-1.5"></lucide-icon>
+          class="inline-flex items-center text-white/90 hover:text-white border-2 border-white/30 hover:border-white/50 rounded-md pl-2.5 pr-4 py-1 transition-all cursor-pointer whitespace-nowrap bg-white/5">
+          <span class="inline-flex items-center text-xs font-bold tracking-wide mr-2.5 border-r-2 border-white/30 pr-2.5">
+            <lucide-icon name="phone" [size]="12" class="mr-1.5"></lucide-icon>
             24x7
           </span>
-          <span class="text-base font-bold tracking-wider">{{ supportPhone }}</span>
+          <span class="text-sm font-bold tracking-wider">{{ supportPhone }}</span>
         </a>
       </div>
-      <div class="flex items-center space-x-2 md:space-x-4">
+      <div class="flex items-center space-x-2 md:space-x-3 flex-1 min-w-0 justify-end">
 
         <!-- PUBLIC VIEW -->
         <ng-container *ngIf="isPublicRoute">
